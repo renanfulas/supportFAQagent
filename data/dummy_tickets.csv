@@ -1,0 +1,6 @@
+id,titulo,conteudo
+1,"Dúvida sobre VPS e n8n","O cliente quer saber como instalar o n8n na VPS. Resposta: Para instalar o n8n na VPS HostGator, recomendamos o uso de Docker. Você pode acessar via SSH e utilizar o docker-compose para subir o serviço na porta 5678."
+2,"OpenClaw integração","Como configuro o OpenClaw no meu painel? Resposta: O OpenClaw é integrado nativamente no Dulcom Portal. Basta ir na aba de integrações e inserir sua API Key."
+3,"Erro 500 no Servidor Dedicado","Meu site está retornando erro 500. Resposta: O erro 500 geralmente indica um problema interno no servidor ou configuração do .htaccess. Recomendamos checar os logs de erro do Apache no cPanel ou via SSH em /usr/local/apache/logs/error_log."
+4,"Acesso SSH negado","Não consigo acessar minha VPS via SSH. Resposta: Verifique se a porta 22 está liberada no seu firewall e se a chave pública está corretamente configurada em ~/.ssh/authorized_keys."
+5,"HostGator nameservers","Quais são os nameservers para meu plano de revenda? Resposta: Os nameservers padrão da revenda HostGator são ns1.hostgator.com.br e ns2.hostgator.com.br, mas você pode configurar os seus próprios nameservers personalizados no painel WHM."

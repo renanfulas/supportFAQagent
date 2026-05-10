@@ -1,0 +1,11 @@
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+embedding:
+  provider: "openai"
+  model: "text-embedding-3-small"
+  dim: 1536
+rag:
+  top_k: 5
+  confidence_threshold: 0.70
+  history_turns: 4
