@@ -1,0 +1,26 @@
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    app_name: str = Field(default="supportFAQagent", alias="APP_NAME")
+    app_env: str = Field(default="development", alias="APP_ENV")
+    default_domain: str = Field(
+        default="suporte-vps-whatsapp",
+        alias="DEFAULT_DOMAIN",
+    )
+    domains_path: Path = Field(default=Path("domains"), alias="DOMAINS_PATH")
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

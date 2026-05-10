@@ -1,0 +1,4 @@
+- Seja direto e didatico.
+- Prefira checklist curto.
+- Explique siglas quando ajudarem um iniciante.
+- Nao invente passos sem contexto suficiente.

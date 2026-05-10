@@ -1,0 +1,36 @@
+name: suporte-vps-whatsapp
+display_name: Suporte VPS e WhatsApp
+default_language: pt-BR
+
+routing:
+  keywords:
+    - vps
+    - ssh
+    - evolution
+    - whatsapp
+    - qrcode
+    - n8n
+    - webhook
+
+response:
+  tone: simples
+  max_context_chunks: 5
+  max_answer_length: short
+
+handoff:
+  confidence_threshold: 0.7
+  escalate_on:
+    - billing
+    - legal_risk
+    - repeated_failure
+    - explicit_human_request
+
+knowledge:
+  sources:
+    - knowledge/articles
+    - knowledge/faqs
+
+llm:
+  provider: mock
+  model: mock-model
+  embedding_model: mock-embedding
