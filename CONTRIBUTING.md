@@ -46,6 +46,36 @@ Antes de abrir PR ou compartilhar uma mudanca:
 2. Se adicionou comportamento novo, inclua testes em `tests/`
 3. Atualize a documentacao quando mudar arquitetura, fluxo ou convencoes
 
+## Commits e push
+
+Nao precisa burocratizar. A ideia aqui e manter o historico legivel e o projeto facil de acompanhar.
+
+Fluxo simples recomendado:
+
+1. Crie uma branch curta para a mudanca.
+2. Faça uma alteracao com escopo claro.
+3. Revise o que mudou com `git status` e `git diff`.
+4. Faça um commit com mensagem objetiva.
+5. Envie a branch com `git push`.
+
+Exemplo:
+
+```bash
+git checkout -b codex/nome-da-mudanca
+git status
+git add .
+git commit -m "Add initial pgvector integration"
+git push -u origin codex/nome-da-mudanca
+```
+
+Boas praticas para este repositorio:
+
+- prefira commits pequenos e com um assunto so
+- escreva mensagens que expliquem a intencao da mudanca
+- evite misturar refactor, feature e docs no mesmo commit quando der para separar
+- se a mudanca for local de um dominio, deixe isso claro na mensagem
+- antes de dar push, confirme se a branch esta correta
+
 ## Direcao do projeto
 
 O MVP atual prioriza:
