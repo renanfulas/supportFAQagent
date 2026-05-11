@@ -17,14 +17,15 @@ Se voce esta chegando agora, leia nesta ordem:
 1. `README.md`
 2. `docs/architecture.md`
 3. `docs/mvp-plan.md`
-4. `docs/technical-implementation-plan.md`
-5. `docs/integration-contracts.md`
-6. `domains/suporte-vps-whatsapp/domain.yaml`
-7. `app/main.py`
-8. `app/api/routes/`
-9. `app/orchestration/chat_flow.py`
-10. `app/retrieval/service.py`
-11. `app/ingestion/service.py`
+4. `docs/domain-contract.md`
+5. `docs/technical-implementation-plan.md`
+6. `docs/integration-contracts.md`
+7. `domains/suporte-vps-whatsapp/domain.yaml`
+8. `app/main.py`
+9. `app/api/routes/`
+10. `app/orchestration/chat_flow.py`
+11. `app/retrieval/service.py`
+12. `app/ingestion/service.py`
 
 ## O que procurar em cada pasta
 
@@ -42,7 +43,7 @@ Define entrada e saida da API.
 
 ## `app/domain_engine/`
 
-Mostra como um dominio e carregado do disco para a aplicacao.
+Mostra como um dominio e carregado do disco para a aplicacao. O contrato esperado esta em `docs/domain-contract.md`.
 
 ## `app/ingestion/`
 

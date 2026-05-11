@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import ValidationError
 import yaml
 
 from app.domain_engine.models import DomainConfig
@@ -14,7 +15,9 @@ class DomainLoader:
             return []
 
         return sorted(
-            item.name for item in self.domains_path.iterdir() if item.is_dir()
+            item.name
+            for item in self.domains_path.iterdir()
+            if item.is_dir() and self.load(item.name) is not None
         )
 
     def load(self, domain_name: str) -> DomainConfig | None:
@@ -23,8 +26,20 @@ class DomainLoader:
         if not config_path.exists():
             return None
 
-        with config_path.open("r", encoding="utf-8") as file:
-            raw = yaml.safe_load(file) or {}
+        try:
+            with config_path.open("r", encoding="utf-8") as file:
+                raw = yaml.safe_load(file) or {}
+        except (OSError, yaml.YAMLError):
+            return None
+
+        if not isinstance(raw, dict):
+            return None
+
+        if raw.get("name") != domain_name:
+            return None
 
         raw["root_path"] = domain_root
-        return DomainConfig.model_validate(raw)
+        try:
+            return DomainConfig.model_validate(raw)
+        except ValidationError:
+            return None

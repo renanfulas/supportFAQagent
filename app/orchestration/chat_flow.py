@@ -39,10 +39,7 @@ class ChatFlowService:
             handoff_reasons.append(error_code)
 
         if not chunks:
-            answer = (
-                "Nao encontrei contexto suficiente na base atual. "
-                "Vale revisar os artigos deste dominio ou escalar para humano."
-            )
+            answer = domain.response.no_context_message
         else:
             try:
                 history = self._build_history(session_id)
@@ -57,10 +54,7 @@ class ChatFlowService:
                 error_code = exc.error_code
                 if error_code not in handoff_reasons:
                     handoff_reasons.append(error_code)
-                answer = (
-                    "Nao consegui gerar uma resposta automatica agora. "
-                    "Escalando para atendimento humano."
-                )
+                answer = domain.response.provider_error_message
 
         return {
             "request_id": request_id or "",
