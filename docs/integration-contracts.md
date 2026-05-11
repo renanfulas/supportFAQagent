@@ -2,6 +2,18 @@
 
 Este documento registra os contratos HTTP que outras frentes podem consumir, especialmente `n8n`, banco e futuros canais externos.
 
+## Header `X-Request-ID`
+
+Todas as chamadas podem enviar o header `X-Request-ID` para correlacionar logs e respostas.
+
+Regras:
+
+- Se enviado, o valor e reaproveitado quando tiver ate 80 caracteres.
+- Se ausente, vazio ou grande demais, a API gera um novo UUID.
+- Todas as respostas retornam `X-Request-ID`.
+- Erros HTTP tratados tambem retornam `request_id` no corpo.
+- O `request_id` do `/chat` deve ser preservado para envio posterior no `/feedback`.
+
 ## `POST /chat`
 
 Entrada minima:

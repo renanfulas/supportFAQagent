@@ -72,6 +72,7 @@ tests/               # testes unitarios e de integracao
 - o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
 - handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
 - `/chat` ja retorna `request_id` e `error_code` para facilitar debug
+- todas as respostas HTTP retornam `X-Request-ID` para correlacao de logs e integracoes
 - retrieval ja passa por uma interface de adapter, com lexical padrao e Chroma como prototipo local
 - contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
 - o endpoint de ingestao disponivel hoje e de preview local por dominio em `/ingestion/{domain_name}/preview`
@@ -89,6 +90,7 @@ python -m pytest
 - [Arquitetura](docs/architecture.md)
 - [Plano unico do MVP](docs/mvp-plan.md)
 - [Contrato de dominio](docs/domain-contract.md)
+- [Observabilidade minima](docs/observability.md)
 - [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
 - [Contratos de integracao](docs/integration-contracts.md)
 - [Como navegar no projeto](docs/navigation.md)

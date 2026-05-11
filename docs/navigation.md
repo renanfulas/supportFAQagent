@@ -18,14 +18,15 @@ Se voce esta chegando agora, leia nesta ordem:
 2. `docs/architecture.md`
 3. `docs/mvp-plan.md`
 4. `docs/domain-contract.md`
-5. `docs/technical-implementation-plan.md`
-6. `docs/integration-contracts.md`
-7. `domains/suporte-vps-whatsapp/domain.yaml`
-8. `app/main.py`
-9. `app/api/routes/`
-10. `app/orchestration/chat_flow.py`
-11. `app/retrieval/service.py`
-12. `app/ingestion/service.py`
+5. `docs/observability.md`
+6. `docs/technical-implementation-plan.md`
+7. `docs/integration-contracts.md`
+8. `domains/suporte-vps-whatsapp/domain.yaml`
+9. `app/main.py`
+10. `app/api/routes/`
+11. `app/orchestration/chat_flow.py`
+12. `app/retrieval/service.py`
+13. `app/ingestion/service.py`
 
 ## O que procurar em cada pasta
 
@@ -36,6 +37,10 @@ Mostra como a API sobe e quais rotas estao expostas.
 ## `app/api/routes/`
 
 Aqui ficam os endpoints. E o lugar certo para entender o contrato publico da aplicacao.
+
+## `app/core/request_context.py`
+
+Centraliza o `X-Request-ID` usado para correlacionar chamadas, erros e logs.
 
 ## `app/api/schemas/`
 
