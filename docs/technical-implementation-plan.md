@@ -423,7 +423,7 @@ Casos de teste do prompt:
 ## Alexandre - Banco
 
 - Preparar tabelas de conversas e mensagens.
-- Persistir `confidence`, `escalated`, `references` e erro tecnico quando houver.
+- Persistir `confidence`, `escalated`, `references` da API no campo `message_references` e erro tecnico quando houver.
 
 SQL sugerido:
 
@@ -444,7 +444,7 @@ CREATE TABLE messages (
   content TEXT NOT NULL,
   confidence DOUBLE PRECISION,
   escalated BOOLEAN NOT NULL DEFAULT false,
-  references JSONB NOT NULL DEFAULT '[]'::jsonb,
+  message_references JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
