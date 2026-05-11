@@ -20,15 +20,16 @@ Se voce esta chegando agora, leia nesta ordem:
 4. `docs/domain-contract.md`
 5. `docs/domain-evals.md`
 6. `docs/knowledge-authoring.md`
-7. `docs/observability.md`
-8. `docs/technical-implementation-plan.md`
-9. `docs/integration-contracts.md`
-10. `domains/suporte-vps-whatsapp/domain.yaml`
-11. `app/main.py`
-12. `app/api/routes/`
-13. `app/orchestration/chat_flow.py`
-14. `app/retrieval/service.py`
-15. `app/ingestion/service.py`
+7. `docs/agent-skills.md`
+8. `docs/observability.md`
+9. `docs/technical-implementation-plan.md`
+10. `docs/integration-contracts.md`
+11. `domains/suporte-vps-whatsapp/domain.yaml`
+12. `app/main.py`
+13. `app/api/routes/`
+14. `app/orchestration/chat_flow.py`
+15. `app/retrieval/service.py`
+16. `app/ingestion/service.py`
 
 ## O que procurar em cada pasta
 
@@ -71,6 +72,10 @@ Aqui esta o fluxo principal do agente. Quando quiser entender a jornada ponta a 
 ## `app/evals/`
 
 Ferramentas locais para rodar calibragem de dominio contra casos reais versionados.
+
+## `.agents/skills/`
+
+Instrucoes universais para agentes de IA navegarem, alterarem, testarem, commitarem e abrirem PRs neste projeto.
 
 ## `domains/suporte-vps-whatsapp/`
 

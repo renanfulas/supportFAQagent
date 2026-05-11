@@ -41,6 +41,8 @@ Este projeto foi desenhado para crescer por dominios. Antes de abrir codigo novo
 
 Antes de adicionar artigos ou FAQs, leia `docs/knowledge-authoring.md`.
 
+Se estiver usando um agente de IA para ajudar no projeto, leia `docs/agent-skills.md` e use as instrucoes em `.agents/skills/`.
+
 ## Testes e validacao
 
 Antes de abrir PR ou compartilhar uma mudanca:
