@@ -86,6 +86,7 @@ python -m pytest
 - [Arquitetura](docs/architecture.md)
 - [Plano unico do MVP](docs/mvp-plan.md)
 - [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
+- [Contratos de integracao](docs/integration-contracts.md)
 - [Como navegar no projeto](docs/navigation.md)
 - [Regras simples do codigo](docs/code-standards.md)
 - [Como contribuir](CONTRIBUTING.md)
