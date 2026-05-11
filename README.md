@@ -20,6 +20,7 @@ Objetivos desta primeira versao:
 
 - expor uma API HTTP com FastAPI
 - carregar configuracoes por dominio
+- validar contratos de dominio para facilitar reuso em outros setores
 - ingerir artigos e FAQs locais
 - gerar chunks para RAG
 - preparar a base para busca vetorial e respostas com LLM
@@ -66,6 +67,7 @@ tests/               # testes unitarios e de integracao
 - a arquitetura oficial do projeto e a modular em `app/api`, `app/domain_engine`, `app/ingestion`, `app/orchestration`, `app/retrieval` e `app/llm`
 - o bootstrap HTTP fica em `app/main.py`
 - o fluxo de resposta usa retrieval lexical local e `MockLLMProvider` no dominio padrao, sem depender de LangChain/Chroma no runtime atual
+- o contrato de dominio ja controla persona, objetivo, diretrizes, escopo, mensagens padrao e politica de handoff
 - o `LLMService` ja esta preparado para usar `LLMWrapper` com OpenAI/Anthropic quando o dominio for configurado para isso
 - o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
 - handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
@@ -86,6 +88,7 @@ python -m pytest
 
 - [Arquitetura](docs/architecture.md)
 - [Plano unico do MVP](docs/mvp-plan.md)
+- [Contrato de dominio](docs/domain-contract.md)
 - [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
 - [Contratos de integracao](docs/integration-contracts.md)
 - [Como navegar no projeto](docs/navigation.md)
