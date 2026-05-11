@@ -52,6 +52,7 @@ Uso esperado:
 - `n8n` envia mensagens externas para este endpoint.
 - Se `escalated=true`, `n8n` deve rotear para humano.
 - `request_id` deve ser preservado em logs e feedback.
+- A API retorna `references`; na persistencia PostgreSQL, este campo deve ser salvo em `messages.message_references`.
 
 ## `POST /feedback`
 
