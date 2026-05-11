@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.api.schemas.chat import ChatRequest, ChatResponse
 from app.core.config import get_settings
 from app.core.logging import log_event
+from app.core.privacy import hash_sensitive_value
 from app.core.request_context import get_request_id
 from app.domain_engine.loader import DomainLoader
 from app.orchestration.chat_flow import ChatFlowService
@@ -35,7 +36,7 @@ def chat(payload: ChatRequest, request: Request) -> ChatResponse:
         "chat_completed",
         request_id=request_id,
         domain=response["domain"],
-        session_id=payload.session_id,
+        session_id_hash=hash_sensitive_value(payload.session_id),
         confidence=response["confidence"],
         escalated=response["escalated"],
         handoff_reasons=response["handoff_reasons"],
