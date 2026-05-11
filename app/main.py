@@ -90,6 +90,30 @@ def create_app() -> FastAPI:
             headers={REQUEST_ID_HEADER: request_id},
         )
 
+    @application.exception_handler(Exception)
+    async def unexpected_exception_handler(
+        request: Request,
+        exc: Exception,
+    ) -> JSONResponse:
+        request_id = get_request_id(request)
+        log_event(
+            logger,
+            "unexpected_error",
+            request_id=request_id,
+            method=request.method,
+            path=request.url.path,
+            status_code=500,
+            error_type=type(exc).__name__,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal server error",
+                "request_id": request_id,
+            },
+            headers={REQUEST_ID_HEADER: request_id},
+        )
+
     application.include_router(health.router)
     application.include_router(domains.router, prefix="/domains", tags=["domains"])
     application.include_router(ingestion.router, prefix="/ingestion", tags=["ingestion"])
