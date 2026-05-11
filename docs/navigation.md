@@ -75,7 +75,7 @@ Ferramentas locais para rodar calibragem de dominio contra casos reais versionad
 
 ## `.agents/skills/`
 
-Instrucoes universais para agentes de IA navegarem, alterarem, testarem, commitarem e abrirem PRs neste projeto.
+Instrucoes universais para agentes de IA navegarem, decidirem proximos passos, alterarem, testarem, commitarem e abrirem PRs neste projeto.
 
 ## `domains/suporte-vps-whatsapp/`
 

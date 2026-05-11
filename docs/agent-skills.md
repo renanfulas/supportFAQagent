@@ -9,6 +9,8 @@ Este repositorio possui instrucoes reutilizaveis para agentes de IA em:
       SKILL.md
     supportfaq-git-flow/
       SKILL.md
+    supportfaq-next-step-planner/
+      SKILL.md
 ```
 
 Elas foram escritas em Markdown para funcionar em diferentes ferramentas, como Codex, Claude, Antigravity ou qualquer IDE/agente que aceite project rules, custom instructions, memories ou skills.
@@ -41,6 +43,20 @@ Ajuda o agente a:
 - gerar descricao de PR consistente
 - seguir `CONTRIBUTING.md`
 
+## `supportfaq-next-step-planner`
+
+Use quando alguem perguntar "o que faco agora?", quiser iniciar uma tarefa ou validar se uma mudanca esta alinhada ao plano tecnico.
+
+Ajuda o agente a:
+
+- verificar estado atual da `main`
+- olhar commits/PRs recentes
+- ler o plano tecnico
+- perguntar apenas o que a pessoa pretende mexer e qual o nome/responsavel
+- apontar risco de atropelar outra frente
+- sugerir o menor proximo passo seguro
+- indicar docs, arquivos e validacoes esperadas
+
 ## Instalacao Universal
 
 Escolha a forma que sua ferramenta suporta.
@@ -53,12 +69,15 @@ Use quando a ferramenta tiver um campo de instrucoes do projeto.
 2. Copie o conteudo para as instrucoes do projeto.
 3. Abra `.agents/skills/supportfaq-git-flow/SKILL.md`.
 4. Copie o conteudo para as instrucoes do projeto ou deixe como segunda regra.
+5. Abra `.agents/skills/supportfaq-next-step-planner/SKILL.md`.
+6. Copie o conteudo para as instrucoes do projeto ou deixe como terceira regra.
 
 Uso recomendado:
 
 ```text
 Antes de alterar este projeto, siga a skill supportfaq-project-navigator.
 Antes de commitar, pushar ou abrir PR, siga a skill supportfaq-git-flow.
+Quando alguem perguntar o que fazer agora, siga a skill supportfaq-next-step-planner.
 ```
 
 ## Opcao B: Rules do repositorio
@@ -79,6 +98,9 @@ When navigating or modifying this repository, follow:
 
 Before testing, committing, pushing, or creating PRs, follow:
 - `.agents/skills/supportfaq-git-flow/SKILL.md`
+
+When deciding the next task or checking ownership alignment, follow:
+- `.agents/skills/supportfaq-next-step-planner/SKILL.md`
 ```
 
 ## Opcao C: Codex
@@ -100,6 +122,7 @@ Se quiser instalar como skill local do Codex, copie as pastas:
 ```text
 .agents/skills/supportfaq-project-navigator
 .agents/skills/supportfaq-git-flow
+.agents/skills/supportfaq-next-step-planner
 ```
 
 para o diretorio de skills usado pelo seu ambiente Codex.
@@ -148,6 +171,12 @@ Para tarefas de Git:
 
 ```text
 Use supportfaq-git-flow para validar, commitar, pushar e escrever a descricao do PR.
+```
+
+Para decidir o que fazer agora:
+
+```text
+Use supportfaq-next-step-planner para cruzar main, ultimos PRs, plano tecnico, intencao e responsavel.
 ```
 
 Para tarefas de conhecimento/RAG:

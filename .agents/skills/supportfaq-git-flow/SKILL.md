@@ -5,6 +5,10 @@ description: Use when an AI agent or contributor needs to prepare tests, review 
 
 # supportFAQagent Git Flow
 
+## O que esta skill faz
+
+Skill que facilita testes, commit, push e descricao de PR. Ela orienta o agente a ler o fluxo de contribuicao, revisar `git status` e `git diff`, confirmar o escopo das mudancas, rodar validacoes e montar um template de PR claro.
+
 Use this skill before committing, pushing, or opening a PR.
 
 Goal: keep history readable, validate changes before sharing, and produce useful PR descriptions without bureaucracy.

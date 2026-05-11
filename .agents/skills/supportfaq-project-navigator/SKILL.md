@@ -5,6 +5,10 @@ description: Use when an AI agent needs to understand, navigate, plan, or modify
 
 # supportFAQagent Project Navigator
 
+## O que esta skill faz
+
+Skill que ajuda o agente a navegar no projeto sem alucinar arquitetura. Ela orienta a leitura do `README.md`, `CONTRIBUTING.md` e dos docs certos para cada tipo de mudanca, indicando pastas, responsabilidades, testes e riscos de atropelar outra frente.
+
 Use this skill before changing project structure, code, docs, domains, integrations, or knowledge content.
 
 Goal: understand the project from repository sources, read only the needed docs, and avoid hallucinating architecture.
