@@ -83,6 +83,8 @@ Responsabilidades:
 
 Hoje o fluxo `/chat` ainda usa retrieval lexical. A `main` tambem possui utilitarios de embeddings e um adapter `ChromaStore`, mas essa trilha ainda nao esta ligada ao fluxo principal. Como o `PostgreSQL + pgvector` esta em andamento por outra frente, Chroma deve ser tratado como adapter local/prototipo ate a decisao final de vector store do MVP.
 
+O retrieval ja passa por uma interface `VectorStore`. Hoje o adapter padrao e `LexicalVectorStore`; `ChromaStore` implementa o mesmo contrato como prototipo local; `pgvector` deve entrar como novo adapter sem alterar a orquestracao.
+
 ## `app/llm`
 
 Abstracao dos modelos.
@@ -108,6 +110,8 @@ Responsabilidades:
 - decidir escalonamento
 
 O `ChatFlowService` usa `prompt_builder.py` como ponto unico de montagem de prompt. Historico curto ainda esta preparado como contrato, mas permanece vazio ate existir persistencia de conversas.
+
+O fluxo tambem retorna `request_id` e `error_code` quando ha falha observavel de retrieval ou provider.
 
 ## `app/handoff`
 
@@ -153,6 +157,7 @@ Curto prazo:
 - trocar `domain.yaml` para provider real quando houver API key configurada
 - consolidar pipeline LangChain/Chroma com a ingestao atual ou manter como prototipo isolado
 - integracao com PostgreSQL e pgvector
+- implementar adapter `pgvector` no contrato `VectorStore`
 - provider real de embeddings no caminho principal
 - provider real de LLM no caminho principal
 

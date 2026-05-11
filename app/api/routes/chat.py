@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi import APIRouter, HTTPException
 
 from app.api.schemas.chat import ChatRequest, ChatResponse
@@ -11,6 +13,7 @@ router = APIRouter()
 
 @router.post("", response_model=ChatResponse)
 def chat(payload: ChatRequest) -> ChatResponse:
+    request_id = str(uuid4())
     settings = get_settings()
     domain_name = payload.domain or settings.default_domain
     loader = DomainLoader(settings.domains_path)
@@ -22,5 +25,6 @@ def chat(payload: ChatRequest) -> ChatResponse:
         domain=domain,
         question=payload.message,
         session_id=payload.session_id,
+        request_id=request_id,
     )
     return ChatResponse(**response)

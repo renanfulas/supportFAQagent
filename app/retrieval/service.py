@@ -1,41 +1,22 @@
+from app.core.errors import RetrievalError
 from app.domain_engine.models import DomainConfig
-from app.ingestion.service import IngestionService
+from app.retrieval.lexical_store import LexicalVectorStore
 from app.retrieval.models import RetrievedChunk
+from app.retrieval.vector_store import VectorStore
 
 
 class RetrievalService:
-    """Temporary lexical retrieval until vector storage is added."""
+    """Retrieval facade for the current store adapter."""
 
-    def __init__(self) -> None:
-        self.ingestion_service = IngestionService()
+    def __init__(self, vector_store: VectorStore | None = None) -> None:
+        self.vector_store = vector_store or LexicalVectorStore()
 
     def retrieve(self, domain: DomainConfig, question: str) -> list[RetrievedChunk]:
-        documents = self.ingestion_service.load_domain_documents(domain)
-        chunks = self.ingestion_service.chunk_documents(documents)
-        question_terms = {term.lower() for term in question.split() if term.strip()}
-
-        ranked: list[RetrievedChunk] = []
-        for chunk in chunks:
-            score = self._score_chunk(chunk.text, question_terms)
-            if score <= 0:
-                continue
-
-            ranked.append(
-                RetrievedChunk(
-                    source=chunk.source,
-                    title=chunk.title,
-                    text=chunk.text,
-                    score=score,
-                )
+        try:
+            return self.vector_store.search(
+                domain=domain,
+                query=question,
+                top_k=domain.response.max_context_chunks,
             )
-
-        ranked.sort(key=lambda item: item.score, reverse=True)
-        return ranked[: domain.response.max_context_chunks]
-
-    def _score_chunk(self, text: str, question_terms: set[str]) -> float:
-        if not question_terms:
-            return 0.0
-
-        lowered = text.lower()
-        matches = sum(1 for term in question_terms if term in lowered)
-        return matches / len(question_terms)
+        except Exception as exc:
+            raise RetrievalError("retrieval failed") from exc

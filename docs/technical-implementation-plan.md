@@ -32,6 +32,8 @@ Ainda nao esta integrado ao caminho principal:
 - `prompt_builder.py` ja e chamado por `ChatFlowService`
 - `LLMWrapper` ja esta integrado ao `LLMService`, mas o dominio padrao ainda usa `mock`
 - handoff estruturado ja retorna motivos de escalonamento
+- `RetrievalService` ja usa contrato `VectorStore`
+- `/chat` ja retorna `request_id` e `error_code`
 - `ChromaStore` ainda nao e o retrieval oficial do endpoint `/chat`
 - `domain.yaml` ainda aponta para `llm.provider: mock`
 
@@ -311,8 +313,8 @@ Regras de banco:
 
 ## Renan - Orquestracao
 
-- Criar interface `VectorStore`.
-- Criar adapter para `ChromaStore` e futuro adapter para `pgvector` seguindo a mesma interface.
+- Manter interface `VectorStore`.
+- Criar adapter `pgvector` seguindo a mesma interface.
 - Criar `RetrievalService` chamando `EmbeddingProvider` + `VectorStore` quando o adapter oficial estiver escolhido.
 - Retornar `RetrievedChunk` com `id`, `source`, `title`, `text`, `score`.
 - Definir fallback temporario se banco vetorial estiver indisponivel.
@@ -515,6 +517,7 @@ Cuidados:
 Todo fluxo de chat deve conseguir responder:
 
 - qual dominio foi usado
+- qual `request_id` rastreia a chamada
 - quais chunks foram recuperados
 - qual score cada chunk teve
 - qual provider foi chamado

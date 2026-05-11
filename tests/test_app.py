@@ -45,11 +45,13 @@ def test_chat_returns_mock_answer_with_references() -> None:
     assert response.status_code == 200
 
     payload = response.json()
+    assert payload["request_id"]
     assert payload["domain"] == "suporte-vps-whatsapp"
     assert "mock provider" in payload["answer"].lower()
     assert isinstance(payload["confidence"], float)
     assert isinstance(payload["escalated"], bool)
     assert isinstance(payload["handoff_reasons"], list)
+    assert payload["error_code"] is None
     assert payload["references"]
 
 
