@@ -76,6 +76,7 @@ tests/               # testes unitarios e de integracao
 - retrieval ja passa por uma interface de adapter, com lexical padrao e Chroma como prototipo local
 - contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
 - a ingestao ja possui preview por payload em `POST /ingestion/preview` e preview local por dominio em `/ingestion/{domain_name}/preview`
+- o dominio inicial ja possui evals locais para calibrar respostas e escalonamento com casos reais
 
 ## Testes basicos
 
@@ -90,6 +91,7 @@ python -m pytest
 - [Arquitetura](docs/architecture.md)
 - [Plano unico do MVP](docs/mvp-plan.md)
 - [Contrato de dominio](docs/domain-contract.md)
+- [Calibragem de dominio](docs/domain-evals.md)
 - [Observabilidade minima](docs/observability.md)
 - [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
 - [Contratos de integracao](docs/integration-contracts.md)

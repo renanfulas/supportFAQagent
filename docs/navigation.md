@@ -18,15 +18,16 @@ Se voce esta chegando agora, leia nesta ordem:
 2. `docs/architecture.md`
 3. `docs/mvp-plan.md`
 4. `docs/domain-contract.md`
-5. `docs/observability.md`
-6. `docs/technical-implementation-plan.md`
-7. `docs/integration-contracts.md`
-8. `domains/suporte-vps-whatsapp/domain.yaml`
-9. `app/main.py`
-10. `app/api/routes/`
-11. `app/orchestration/chat_flow.py`
-12. `app/retrieval/service.py`
-13. `app/ingestion/service.py`
+5. `docs/domain-evals.md`
+6. `docs/observability.md`
+7. `docs/technical-implementation-plan.md`
+8. `docs/integration-contracts.md`
+9. `domains/suporte-vps-whatsapp/domain.yaml`
+10. `app/main.py`
+11. `app/api/routes/`
+12. `app/orchestration/chat_flow.py`
+13. `app/retrieval/service.py`
+14. `app/ingestion/service.py`
 
 ## O que procurar em cada pasta
 
@@ -65,6 +66,10 @@ Mostra como os providers sao isolados do restante do sistema.
 ## `app/orchestration/`
 
 Aqui esta o fluxo principal do agente. Quando quiser entender a jornada ponta a ponta, comece por aqui.
+
+## `app/evals/`
+
+Ferramentas locais para rodar calibragem de dominio contra casos reais versionados.
 
 ## `domains/suporte-vps-whatsapp/`
 
