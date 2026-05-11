@@ -16,6 +16,8 @@ class DomainResponseConfig(BaseModel):
 class DomainHandoffConfig(BaseModel):
     confidence_threshold: float = 0.7
     escalate_on: list[str] = Field(default_factory=list)
+    explicit_human_phrases: list[str] = Field(default_factory=list)
+    sensitive_terms: list[str] = Field(default_factory=list)
 
 
 class DomainKnowledgeConfig(BaseModel):
@@ -28,6 +30,12 @@ class DomainLLMConfig(BaseModel):
     embedding_model: str = "mock-embedding"
 
 
+class DomainEmbeddingConfig(BaseModel):
+    provider: str = "openai"
+    model: str = "text-embedding-3-small"
+    dimensions: int = 1536
+
+
 class DomainConfig(BaseModel):
     name: str
     display_name: str
@@ -38,3 +46,4 @@ class DomainConfig(BaseModel):
     handoff: DomainHandoffConfig = Field(default_factory=DomainHandoffConfig)
     knowledge: DomainKnowledgeConfig = Field(default_factory=DomainKnowledgeConfig)
     llm: DomainLLMConfig = Field(default_factory=DomainLLMConfig)
+    embedding: DomainEmbeddingConfig = Field(default_factory=DomainEmbeddingConfig)

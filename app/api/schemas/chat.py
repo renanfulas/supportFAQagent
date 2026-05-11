@@ -12,4 +12,5 @@ class ChatResponse(BaseModel):
     answer: str
     confidence: float
     escalated: bool
+    handoff_reasons: list[str] = Field(default_factory=list)
     references: list[str]

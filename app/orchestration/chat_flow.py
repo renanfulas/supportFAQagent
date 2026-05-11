@@ -1,6 +1,8 @@
 from app.domain_engine.models import DomainConfig
+from app.handoff.service import HandoffService
 from app.llm.service import LLMService
 from app.orchestration.confidence import compute_confidence
+from app.orchestration.prompt_builder import build_prompt
 from app.retrieval.service import RetrievalService
 
 
@@ -8,6 +10,7 @@ class ChatFlowService:
     def __init__(self) -> None:
         self.retrieval_service = RetrievalService()
         self.llm_service = LLMService()
+        self.handoff_service = HandoffService()
 
     def answer(
         self,
@@ -17,7 +20,11 @@ class ChatFlowService:
     ) -> dict[str, object]:
         chunks = self.retrieval_service.retrieve(domain, question)
         confidence = compute_confidence(domain, chunks)
-        escalated = confidence < domain.handoff.confidence_threshold
+        handoff = self.handoff_service.decide(
+            domain=domain,
+            question=question,
+            confidence=confidence,
+        )
 
         if not chunks:
             answer = (
@@ -25,31 +32,24 @@ class ChatFlowService:
                 "Vale revisar os artigos deste dominio ou escalar para humano."
             )
         else:
-            context = "\n\n".join(chunk.text for chunk in chunks)
-            prompt = self._build_prompt(domain, question, context, session_id)
+            history = self._build_history(session_id)
+            prompt = build_prompt(
+                domain=domain,
+                question=question,
+                chunks=chunks,
+                history=history,
+            )
             answer = self.llm_service.get_provider(domain).generate_answer(prompt)
 
         return {
             "domain": domain.name,
             "answer": answer,
             "confidence": confidence,
-            "escalated": escalated,
+            "escalated": handoff.escalated,
+            "handoff_reasons": handoff.reasons,
             "references": [chunk.source for chunk in chunks],
         }
 
-    def _build_prompt(
-        self,
-        domain: DomainConfig,
-        question: str,
-        context: str,
-        session_id: str | None,
-    ) -> str:
-        session_line = session_id or "anonymous"
-        return (
-            f"Dominio: {domain.display_name}\n"
-            f"Sessao: {session_line}\n"
-            f"Tom: {domain.response.tone}\n\n"
-            f"Contexto:\n{context}\n\n"
-            f"Pergunta:\n{question}\n\n"
-            "Responda de forma simples, pratica e segura."
-        )
+    def _build_history(self, session_id: str | None) -> list[dict[str, str]]:
+        _ = session_id
+        return []

@@ -1,26 +1,39 @@
-import os
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
+from app.core.config import get_settings
+from app.llm.base import BaseLLMProvider
 
-class LLMWrapper:
-    def __init__(self, provider="openai", model="gpt-4o-mini"):
+
+class LLMWrapper(BaseLLMProvider):
+    def __init__(self, provider: str = "openai", model: str = "gpt-4o-mini") -> None:
         self.provider = provider
-        if provider == 'openai':
+        settings = get_settings()
+
+        if provider == "openai":
+            if not settings.openai_api_key:
+                raise RuntimeError("OPENAI_API_KEY is required for OpenAI provider")
+            from langchain_openai import ChatOpenAI
+
             self.client = ChatOpenAI(
-                api_key=os.environ.get("OPENAI_API_KEY"),
+                api_key=settings.openai_api_key,
                 model=model,
-                temperature=0.0
+                temperature=0.0,
             )
-        elif provider == 'anthropic':
+        elif provider == "anthropic":
+            if not settings.anthropic_api_key:
+                raise RuntimeError("ANTHROPIC_API_KEY is required for Anthropic provider")
+            from langchain_anthropic import ChatAnthropic
+
             self.client = ChatAnthropic(
-                api_key=os.environ.get("ANTHROPIC_API_KEY"),
+                api_key=settings.anthropic_api_key,
                 model=model,
-                temperature=0.0
+                temperature=0.0,
             )
         else:
-            raise ValueError(f"Provider {provider} não suportado")
+            raise ValueError(f"Provider {provider} is not supported")
+
+    def generate_answer(self, prompt: str) -> str:
+        response = self.client.invoke(prompt)
+        return str(response.content)
 
     async def complete(self, prompt: str) -> str:
-        # Retorna apenas o conteúdo da resposta do LLM
         response = await self.client.ainvoke(prompt)
-        return response.content
+        return str(response.content)
