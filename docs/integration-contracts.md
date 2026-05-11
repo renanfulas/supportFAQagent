@@ -14,6 +14,12 @@ Entrada minima:
 }
 ```
 
+Validacoes:
+
+- `message`: obrigatorio, sem branco puro, maximo 4000 caracteres.
+- `session_id`: opcional, maximo 160 caracteres, branco vira `null`.
+- `domain`: opcional, maximo 80 caracteres, branco vira `null`.
+
 Saida minima:
 
 ```json
@@ -49,6 +55,16 @@ Entrada minima:
   "source": "n8n"
 }
 ```
+
+Validacoes:
+
+- `helpful`: obrigatorio.
+- `request_id`: opcional, maximo 80 caracteres, branco vira `null`.
+- `session_id`: opcional, maximo 160 caracteres, branco vira `null`.
+- `message_id`: opcional, maximo 80 caracteres, branco vira `null`.
+- `reason`: opcional, maximo 120 caracteres, branco vira `null`.
+- `comment`: opcional, maximo 1000 caracteres, branco vira `null`.
+- `source`: obrigatorio por padrao como `api`, sem branco puro, maximo 60 caracteres.
 
 Saida atual:
 

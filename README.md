@@ -71,6 +71,7 @@ tests/               # testes unitarios e de integracao
 - handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
 - `/chat` ja retorna `request_id` e `error_code` para facilitar debug
 - retrieval ja passa por uma interface de adapter, com lexical padrao e Chroma como prototipo local
+- contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
 - o endpoint de ingestao disponivel hoje e de preview local por dominio em `/ingestion/{domain_name}/preview`
 
 ## Testes basicos

@@ -38,3 +38,43 @@ def test_create_feedback_requires_helpful_flag() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_create_feedback_normalizes_blank_optional_fields() -> None:
+    response = client.post(
+        "/feedback",
+        json={
+            "request_id": "   ",
+            "session_id": " session-1 ",
+            "helpful": False,
+            "reason": "   ",
+            "source": " n8n ",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["accepted"] is True
+
+
+def test_create_feedback_rejects_blank_source() -> None:
+    response = client.post(
+        "/feedback",
+        json={
+            "helpful": True,
+            "source": "   ",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_feedback_rejects_oversized_comment() -> None:
+    response = client.post(
+        "/feedback",
+        json={
+            "helpful": True,
+            "comment": "x" * 1001,
+        },
+    )
+
+    assert response.status_code == 422
