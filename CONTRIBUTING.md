@@ -39,6 +39,8 @@ Este projeto foi desenhado para crescer por dominios. Antes de abrir codigo novo
 - `app/evals/`: calibragem local por dominio com casos reais.
 - `domains/`: configuracao e conhecimento por setor.
 
+Antes de adicionar artigos ou FAQs, leia `docs/knowledge-authoring.md`.
+
 ## Testes e validacao
 
 Antes de abrir PR ou compartilhar uma mudanca:

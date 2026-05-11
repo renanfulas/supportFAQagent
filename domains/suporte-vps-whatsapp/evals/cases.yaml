@@ -32,7 +32,7 @@ cases:
       required_terms:
         - mock provider
       expected_references:
-        - qrcode-whatsapp.md
+        - risco-bloqueio-whatsapp.md
       allowed_handoff_reasons:
         - low_confidence
         - sensitive_topic
@@ -44,6 +44,8 @@ cases:
       should_escalate: true
       required_terms:
         - mock provider
+      expected_references:
+        - ssh-timeout-vps.md
       allowed_handoff_reasons:
         - low_confidence
 
@@ -55,7 +57,7 @@ cases:
       required_terms:
         - mock provider
       expected_references:
-        - arquitetura-mvp.md
+        - iniciante-primeiros-passos.md
       allowed_handoff_reasons:
         - low_confidence
 
@@ -66,5 +68,7 @@ cases:
       should_escalate: true
       required_terms:
         - mock provider
+      expected_references:
+        - webhook-n8n-zapi.md
       allowed_handoff_reasons:
         - low_confidence

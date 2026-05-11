@@ -19,15 +19,16 @@ Se voce esta chegando agora, leia nesta ordem:
 3. `docs/mvp-plan.md`
 4. `docs/domain-contract.md`
 5. `docs/domain-evals.md`
-6. `docs/observability.md`
-7. `docs/technical-implementation-plan.md`
-8. `docs/integration-contracts.md`
-9. `domains/suporte-vps-whatsapp/domain.yaml`
-10. `app/main.py`
-11. `app/api/routes/`
-12. `app/orchestration/chat_flow.py`
-13. `app/retrieval/service.py`
-14. `app/ingestion/service.py`
+6. `docs/knowledge-authoring.md`
+7. `docs/observability.md`
+8. `docs/technical-implementation-plan.md`
+9. `docs/integration-contracts.md`
+10. `domains/suporte-vps-whatsapp/domain.yaml`
+11. `app/main.py`
+12. `app/api/routes/`
+13. `app/orchestration/chat_flow.py`
+14. `app/retrieval/service.py`
+15. `app/ingestion/service.py`
 
 ## O que procurar em cada pasta
 
@@ -74,6 +75,10 @@ Ferramentas locais para rodar calibragem de dominio contra casos reais versionad
 ## `domains/suporte-vps-whatsapp/`
 
 Mostra como um dominio e definido hoje. Use essa pasta como referencia para criar novos dominios.
+
+## `domains/suporte-vps-whatsapp/knowledge/`
+
+Base de conhecimento do dominio inicial. Use `docs/knowledge-authoring.md` antes de adicionar ou revisar artigos.
 
 ## Como pensar uma nova mudanca
 
