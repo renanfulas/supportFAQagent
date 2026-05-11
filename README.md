@@ -94,6 +94,7 @@ python -m pytest
 - [Calibragem de dominio](docs/domain-evals.md)
 - [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
 - [Observabilidade minima](docs/observability.md)
+- [Agent skills universais](docs/agent-skills.md)
 - [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
 - [Contratos de integracao](docs/integration-contracts.md)
 - [Como navegar no projeto](docs/navigation.md)
