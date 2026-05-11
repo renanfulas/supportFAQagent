@@ -1,4 +1,4 @@
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.ingestion.ticket_loader import load_tickets_from_csv
 from app.retrieval.chroma_store import ChromaStore
 

@@ -10,7 +10,7 @@ from app.retrieval.chroma_store import ChromaStore
 from app.orchestration.prompt_builder import build_prompt
 from app.ingestion.pipeline import ingest_csv_to_chroma
 from app.ingestion.ticket_loader import load_tickets_from_csv
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 app = FastAPI(title="supportFAQagent API", version="1.0")
