@@ -44,6 +44,7 @@ Responsabilidades:
 
 - configuracao
 - logging
+- contexto de request com `X-Request-ID`
 - utilitarios compartilhados
 
 ## `app/domain_engine`
@@ -70,6 +71,8 @@ Responsabilidades:
 - apoiar ingestao CSV de chamados quando houver fonte curada
 
 No estado atual, os documentos locais continuam sendo a base do fluxo `/chat`. Tambem existem utilitarios novos para CSV e pipeline com LangChain, mas eles ainda precisam ser consolidados com a ingestao principal antes de virar caminho oficial de producao.
+
+A API tambem expoe `POST /ingestion/preview`, que recebe documentos em JSON e retorna chunks para revisao. Esse contrato nao persiste dados e nao gera embeddings; ele existe para apoiar curadoria e integracoes futuras.
 
 ## `app/retrieval`
 
@@ -124,6 +127,17 @@ Responsabilidades:
 - escalar por termos sensiveis configurados no dominio
 - retornar motivos estruturados para automacoes futuras
 
+## `app/evals`
+
+Calibragem local por dominio.
+
+Responsabilidades:
+
+- carregar suites de eval versionadas no dominio
+- executar perguntas reais contra o fluxo atual
+- comparar escalonamento, referencias, termos esperados e motivos de handoff
+- servir como linha de base antes de mudar retrieval, prompt ou provider
+
 ## `domains/`
 
 Camada de especializacao por setor.
@@ -134,7 +148,7 @@ Cada dominio deve concentrar:
 - prompts
 - artigos
 - FAQs
-- exemplos futuros
+- evals locais
 
 Com isso, um novo setor deve exigir pouco codigo novo e muita configuracao boa.
 
@@ -160,6 +174,7 @@ Curto prazo:
 - implementar adapter `pgvector` no contrato `VectorStore`
 - provider real de embeddings no caminho principal
 - provider real de LLM no caminho principal
+- melhorar a base de conhecimento usando os evals como regressao
 
 Medio prazo:
 

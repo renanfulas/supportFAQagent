@@ -38,6 +38,11 @@ Hoje o repositorio ja possui:
 - handoff estruturado por baixa confianca, pedido humano e termos sensiveis
 - retrieval desacoplado por interface `VectorStore`
 - `/chat` com `request_id` e `error_code`
+- `X-Request-ID` em todas as respostas HTTP
+- `POST /feedback` como contrato aceito, ainda sem persistencia real
+- `POST /ingestion/preview` para revisar chunking por payload, sem persistir
+- contrato modular de dominio com persona, diretrizes, escopo e mensagens padrao
+- evals locais para calibrar o dominio inicial com perguntas reais recorrentes
 - smoke tests para health, dominios, preview de ingestao e chat mock
 - utilitarios LangChain para CSV, chunking, embeddings, Chroma e prompt builder
 - documentacao base de arquitetura e contribuicao
@@ -109,19 +114,27 @@ Direcao: LangChain como biblioteca auxiliar, nao como fundacao obrigatoria do si
 
 ## Fluxo funcional do MVP
 
+Estado atual:
+
 1. A API recebe a pergunta.
 2. O dominio e resolvido pela request ou pelo padrao.
 3. O dominio carrega configuracoes de prompt, retrieval e handoff.
-4. A pergunta vira embedding pelo provider configurado.
-5. O retrieval consulta o vector store principal.
-6. O sistema seleciona os top-k chunks mais relevantes.
-7. O prompt builder monta o contexto com:
+4. O retrieval lexical temporario busca chunks nos documentos locais.
+5. O sistema seleciona os top-k chunks mais relevantes.
+6. O prompt builder monta o contexto com:
    - pergunta atual
    - contexto recuperado
    - historico recente curto, se existir
-8. O LLM responde em uma unica chamada.
-9. O sistema calcula a confianca.
-10. Se a confianca estiver abaixo do threshold, marca escalonamento.
+7. O provider mock responde no dominio padrao.
+8. O sistema calcula a confianca.
+9. Se a confianca estiver abaixo do threshold, marca escalonamento.
+
+Alvo do MVP com pgvector:
+
+1. A pergunta vira embedding pelo provider configurado.
+2. O retrieval consulta o vector store principal.
+3. O sistema retorna chunks do dominio correto com score rastreavel.
+4. O LLM real responde em uma unica chamada usando o contexto recuperado.
 
 ## Fora do escopo do MVP
 
@@ -157,7 +170,7 @@ O `n8n` continua valido, mas como fase posterior do MVP funcional do nucleo.
 Uso previsto:
 
 - integrar WhatsApp e outros canais externos
-- acionar `/chat`, `/ingest` e `/feedback`
+- acionar `/chat`, `/ingestion/preview` e `/feedback`
 - lidar com notificacoes e roteamento operacional
 
 Nao deve:
@@ -178,6 +191,7 @@ Nao deve:
 - consolidar chunking com `RecursiveCharacterTextSplitter` na ingestao oficial
 - unificar ingestao de artigos/FAQs com pipeline CSV curado
 - manter suporte simples aos formatos atuais sem acoplar o core ao Chroma
+- evoluir `POST /ingestion/preview` para job persistente apenas quando banco estiver pronto
 
 ## Fase 3
 
@@ -192,6 +206,7 @@ Nao deve:
 - preparar historico curto real quando houver persistencia de conversas
 - calibrar confidence score inicial com dados reais
 - revisar termos sensiveis de handoff por dominio
+- manter evals locais como regressao de qualidade antes de mudar prompts, retrieval ou provider
 
 ## Fase 5
 

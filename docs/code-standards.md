@@ -74,6 +74,16 @@ Arquivos em `app/orchestration/` devem:
 - coordenar o fluxo entre modulos
 - evitar assumir detalhes de infraestrutura que pertencem a outras camadas
 
+## Evals
+
+Arquivos em `app/evals/` e `domains/*/evals/` devem:
+
+- medir comportamento observavel do dominio
+- usar perguntas parecidas com casos reais
+- evitar PII, telefones, tokens, senhas ou dados sensiveis
+- manter expectativas simples e revisaveis
+- ajudar a decidir se uma mudanca melhorou ou piorou o MVP
+
 ## Dominios novos
 
 Ao criar um novo dominio:

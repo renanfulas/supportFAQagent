@@ -36,6 +36,7 @@ Este projeto foi desenhado para crescer por dominios. Antes de abrir codigo novo
 - `app/retrieval/`: busca de contexto para RAG.
 - `app/llm/`: provedores e abstracoes de modelos.
 - `app/orchestration/`: fluxo principal de resposta.
+- `app/evals/`: calibragem local por dominio com casos reais.
 - `domains/`: configuracao e conhecimento por setor.
 
 ## Testes e validacao
@@ -43,8 +44,10 @@ Este projeto foi desenhado para crescer por dominios. Antes de abrir codigo novo
 Antes de abrir PR ou compartilhar uma mudanca:
 
 1. Rode `python -m compileall app scripts`
-2. Se adicionou comportamento novo, inclua testes em `tests/`
-3. Atualize a documentacao quando mudar arquitetura, fluxo ou convencoes
+2. Rode `python -m pytest`
+3. Se adicionou comportamento novo, inclua testes em `tests/`
+4. Se mexeu em resposta, retrieval, prompt ou handoff, rode os evals do dominio afetado
+5. Atualize a documentacao quando mudar arquitetura, fluxo ou convencoes
 
 ## Commits e push
 
