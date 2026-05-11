@@ -65,3 +65,16 @@ def test_chat_returns_404_for_unknown_domain() -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_feedback_route_is_registered() -> None:
+    response = client.post(
+        "/feedback",
+        json={
+            "helpful": False,
+            "source": "test",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["accepted"] is True

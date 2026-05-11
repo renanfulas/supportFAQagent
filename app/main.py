@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import chat, domains, health, ingestion
+from app.api.routes import chat, domains, feedback, health, ingestion
 from app.core.config import get_settings
 
 
@@ -17,6 +17,7 @@ def create_app() -> FastAPI:
     application.include_router(domains.router, prefix="/domains", tags=["domains"])
     application.include_router(ingestion.router, prefix="/ingestion", tags=["ingestion"])
     application.include_router(chat.router, prefix="/chat", tags=["chat"])
+    application.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
     return application
 
 
