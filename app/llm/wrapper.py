@@ -1,4 +1,5 @@
 from app.core.config import get_settings
+from app.core.errors import ProviderError
 from app.llm.base import BaseLLMProvider
 
 
@@ -31,9 +32,25 @@ class LLMWrapper(BaseLLMProvider):
             raise ValueError(f"Provider {provider} is not supported")
 
     def generate_answer(self, prompt: str) -> str:
-        response = self.client.invoke(prompt)
-        return str(response.content)
+        try:
+            response = self.client.invoke(prompt)
+            content = str(response.content)
+        except Exception as exc:
+            raise ProviderError("provider request failed") from exc
+
+        if not content.strip():
+            raise ProviderError("provider returned empty response")
+
+        return content
 
     async def complete(self, prompt: str) -> str:
-        response = await self.client.ainvoke(prompt)
-        return str(response.content)
+        try:
+            response = await self.client.ainvoke(prompt)
+            content = str(response.content)
+        except Exception as exc:
+            raise ProviderError("provider request failed") from exc
+
+        if not content.strip():
+            raise ProviderError("provider returned empty response")
+
+        return content

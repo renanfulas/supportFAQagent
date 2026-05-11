@@ -36,6 +36,8 @@ Hoje o repositorio ja possui:
 - `LLMService` integrado ao `LLMWrapper` para OpenAI/Anthropic quando o dominio trocar o provider
 - `ChatFlowService` integrado ao `prompt_builder.py`
 - handoff estruturado por baixa confianca, pedido humano e termos sensiveis
+- retrieval desacoplado por interface `VectorStore`
+- `/chat` com `request_id` e `error_code`
 - smoke tests para health, dominios, preview de ingestao e chat mock
 - utilitarios LangChain para CSV, chunking, embeddings, Chroma e prompt builder
 - documentacao base de arquitetura e contribuicao
@@ -180,6 +182,7 @@ Nao deve:
 ## Fase 3
 
 - integrar retrieval vetorial com a entrega de `pgvector`
+- implementar adapter `pgvector` seguindo o contrato `VectorStore`
 - decidir se `ChromaStore` permanece apenas como adapter local ou sera removido apos pgvector
 - ajustar top-k, threshold e formato de evidencias
 - validar performance basica do fluxo fim a fim

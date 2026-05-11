@@ -8,9 +8,11 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    request_id: str
     domain: str
     answer: str
     confidence: float
     escalated: bool
     handoff_reasons: list[str] = Field(default_factory=list)
     references: list[str]
+    error_code: str | None = None

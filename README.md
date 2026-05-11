@@ -69,6 +69,8 @@ tests/               # testes unitarios e de integracao
 - o `LLMService` ja esta preparado para usar `LLMWrapper` com OpenAI/Anthropic quando o dominio for configurado para isso
 - o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
 - handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
+- `/chat` ja retorna `request_id` e `error_code` para facilitar debug
+- retrieval ja passa por uma interface de adapter, com lexical padrao e Chroma como prototipo local
 - o endpoint de ingestao disponivel hoje e de preview local por dominio em `/ingestion/{domain_name}/preview`
 
 ## Testes basicos
