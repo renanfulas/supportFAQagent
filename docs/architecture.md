@@ -93,7 +93,7 @@ Responsabilidades:
 - permitir mock no desenvolvimento
 - facilitar troca entre OpenAI, Anthropic ou open source
 
-O provider mock ainda e o caminho usado pelo fluxo atual de chat. A `main` ja possui um `LLMWrapper` com OpenAI/Anthropic, mas ele precisa ser integrado ao `LLMService` e configurado por dominio.
+O provider mock ainda e o caminho usado pelo dominio padrao. O `LLMService` ja consegue rotear para `LLMWrapper` com OpenAI/Anthropic quando `domain.yaml` trocar `llm.provider`, mas a configuracao padrao segue em mock para desenvolvimento e testes.
 
 ## `app/orchestration`
 
@@ -107,7 +107,18 @@ Responsabilidades:
 - calcular confianca
 - decidir escalonamento
 
-A `main` ja possui um `prompt_builder.py`, mas o `ChatFlowService` ainda monta o prompt internamente. Uma proxima etapa e unificar o prompt builder com o fluxo real para evitar dois caminhos de prompt.
+O `ChatFlowService` usa `prompt_builder.py` como ponto unico de montagem de prompt. Historico curto ainda esta preparado como contrato, mas permanece vazio ate existir persistencia de conversas.
+
+## `app/handoff`
+
+Camada de decisao de escalonamento humano.
+
+Responsabilidades:
+
+- escalar por baixa confianca
+- escalar por pedido explicito de humano
+- escalar por termos sensiveis configurados no dominio
+- retornar motivos estruturados para automacoes futuras
 
 ## `domains/`
 
@@ -139,8 +150,7 @@ Com isso, um novo setor deve exigir pouco codigo novo e muita configuracao boa.
 
 Curto prazo:
 
-- integrar `LLMWrapper` ao fluxo real de chat
-- integrar `prompt_builder.py` ao `ChatFlowService`
+- trocar `domain.yaml` para provider real quando houver API key configurada
 - consolidar pipeline LangChain/Chroma com a ingestao atual ou manter como prototipo isolado
 - integracao com PostgreSQL e pgvector
 - provider real de embeddings no caminho principal
@@ -150,6 +160,6 @@ Medio prazo:
 
 - historico de conversas
 - feedback estruturado
-- regras mais ricas de handoff
+- calibragem de thresholds e termos sensiveis de handoff
 - roteamento entre dominios
 - automacao com `n8n`

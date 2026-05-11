@@ -33,6 +33,9 @@ Hoje o repositorio ja possui:
 - ingestao local de artigos e FAQs
 - retrieval lexical temporario
 - provider de LLM mock
+- `LLMService` integrado ao `LLMWrapper` para OpenAI/Anthropic quando o dominio trocar o provider
+- `ChatFlowService` integrado ao `prompt_builder.py`
+- handoff estruturado por baixa confianca, pedido humano e termos sensiveis
 - smoke tests para health, dominios, preview de ingestao e chat mock
 - utilitarios LangChain para CSV, chunking, embeddings, Chroma e prompt builder
 - documentacao base de arquitetura e contribuicao
@@ -164,8 +167,8 @@ Nao deve:
 
 ## Fase 1
 
-- integrar o `LLMWrapper` ja criado ao `LLMService`
-- integrar o wrapper de embeddings ao fluxo principal
+- trocar o dominio de `mock` para provider real quando houver API key configurada
+- integrar o wrapper de embeddings ao retrieval principal
 - atualizar `domain.yaml` com configuracoes reais de LLM, embedding e retrieval
 
 ## Fase 2
@@ -183,9 +186,9 @@ Nao deve:
 
 ## Fase 4
 
-- integrar `prompt_builder.py` ao `ChatFlowService`
-- calibrar confidence score inicial
-- definir regras de handoff no dominio
+- preparar historico curto real quando houver persistencia de conversas
+- calibrar confidence score inicial com dados reais
+- revisar termos sensiveis de handoff por dominio
 
 ## Fase 5
 

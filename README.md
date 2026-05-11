@@ -28,6 +28,7 @@ Objetivos desta primeira versao:
 Estado atual:
 
 - `/chat` ainda usa retrieval lexical temporario e provider mock
+- `LLMService` ja consegue rotear para OpenAI/Anthropic quando o dominio trocar o provider
 - ja existem utilitarios para LangChain, Chroma, embeddings, prompt builder e CSV de chamados
 - smoke tests cobrem healthcheck, dominios, preview de ingestao e chat mock
 - `PostgreSQL + pgvector` segue como integracao planejada para o retrieval principal
@@ -64,7 +65,10 @@ tests/               # testes unitarios e de integracao
 
 - a arquitetura oficial do projeto e a modular em `app/api`, `app/domain_engine`, `app/ingestion`, `app/orchestration`, `app/retrieval` e `app/llm`
 - o bootstrap HTTP fica em `app/main.py`
-- o fluxo de resposta usa retrieval lexical local e `MockLLMProvider`, sem dependencias de LangChain/Chroma no runtime atual
+- o fluxo de resposta usa retrieval lexical local e `MockLLMProvider` no dominio padrao, sem depender de LangChain/Chroma no runtime atual
+- o `LLMService` ja esta preparado para usar `LLMWrapper` com OpenAI/Anthropic quando o dominio for configurado para isso
+- o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
+- handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
 - o endpoint de ingestao disponivel hoje e de preview local por dominio em `/ingestion/{domain_name}/preview`
 
 ## Testes basicos
@@ -86,10 +90,9 @@ python -m pytest
 
 ## Proximos passos
 
-- integrar o `LLMWrapper` ao fluxo real de chat
-- integrar o `prompt_builder.py` ao `ChatFlowService`
+- trocar o dominio de `mock` para provider real quando houver API key configurada
 - consolidar o splitter LangChain com a ingestao oficial
 - integrar PostgreSQL + pgvector como vector store principal
 - conectar provider real de embeddings ao retrieval
 - persistir conversas e feedback
-- evoluir o roteamento entre dominios
+- calibrar thresholds e termos sensiveis com conversas reais
