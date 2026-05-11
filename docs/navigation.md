@@ -16,12 +16,14 @@ Se voce esta chegando agora, leia nesta ordem:
 
 1. `README.md`
 2. `docs/architecture.md`
-3. `domains/suporte-vps-whatsapp/domain.yaml`
-4. `app/main.py`
-5. `app/api/routes/`
-6. `app/orchestration/chat_flow.py`
-7. `app/retrieval/service.py`
-8. `app/ingestion/service.py`
+3. `docs/mvp-plan.md`
+4. `docs/technical-implementation-plan.md`
+5. `domains/suporte-vps-whatsapp/domain.yaml`
+6. `app/main.py`
+7. `app/api/routes/`
+8. `app/orchestration/chat_flow.py`
+9. `app/retrieval/service.py`
+10. `app/ingestion/service.py`
 
 ## O que procurar em cada pasta
 

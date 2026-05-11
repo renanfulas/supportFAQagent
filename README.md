@@ -25,6 +25,13 @@ Objetivos desta primeira versao:
 - preparar a base para busca vetorial e respostas com LLM
 - definir regras simples de escalonamento para humano
 
+Estado atual:
+
+- `/chat` ainda usa retrieval lexical temporario e provider mock
+- ja existem utilitarios para LangChain, Chroma, embeddings, prompt builder e CSV de chamados
+- smoke tests cobrem healthcheck, dominios, preview de ingestao e chat mock
+- `PostgreSQL + pgvector` segue como integracao planejada para o retrieval principal
+
 ## Estrutura
 
 ```text
@@ -79,8 +86,10 @@ python -m pytest
 
 ## Proximos passos
 
-- integrar PostgreSQL + pgvector
-- adicionar provider real de embeddings
-- adicionar provider real de LLM
+- integrar o `LLMWrapper` ao fluxo real de chat
+- integrar o `prompt_builder.py` ao `ChatFlowService`
+- consolidar o splitter LangChain com a ingestao oficial
+- integrar PostgreSQL + pgvector como vector store principal
+- conectar provider real de embeddings ao retrieval
 - persistir conversas e feedback
 - evoluir o roteamento entre dominios
