@@ -92,6 +92,7 @@ python -m pytest
 - [Plano unico do MVP](docs/mvp-plan.md)
 - [Contrato de dominio](docs/domain-contract.md)
 - [Calibragem de dominio](docs/domain-evals.md)
+- [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
 - [Observabilidade minima](docs/observability.md)
 - [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
 - [Contratos de integracao](docs/integration-contracts.md)
