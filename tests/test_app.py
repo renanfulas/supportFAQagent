@@ -49,6 +49,7 @@ def test_chat_returns_mock_answer_with_references() -> None:
     assert "mock provider" in payload["answer"].lower()
     assert isinstance(payload["confidence"], float)
     assert isinstance(payload["escalated"], bool)
+    assert isinstance(payload["handoff_reasons"], list)
     assert payload["references"]
 
 

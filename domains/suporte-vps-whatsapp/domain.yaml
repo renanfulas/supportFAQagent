@@ -24,6 +24,21 @@ handoff:
     - legal_risk
     - repeated_failure
     - explicit_human_request
+  explicit_human_phrases:
+    - falar com humano
+    - atendente
+    - suporte humano
+    - pessoa real
+  sensitive_terms:
+    - bloqueio
+    - banimento
+    - cobrado
+    - cobranca
+    - reembolso
+    - senha
+    - token
+    - chave api
+    - chave da api
 
 knowledge:
   sources:
@@ -34,3 +49,8 @@ llm:
   provider: mock
   model: mock-model
   embedding_model: mock-embedding
+
+embedding:
+  provider: openai
+  model: text-embedding-3-small
+  dimensions: 1536

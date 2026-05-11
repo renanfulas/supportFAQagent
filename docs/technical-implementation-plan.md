@@ -29,8 +29,9 @@ A `main` ja possui algumas pecas importantes:
 Ainda nao esta integrado ao caminho principal:
 
 - `/chat` continua usando `RetrievalService` lexical e provider mock
-- `prompt_builder.py` ainda nao e chamado por `ChatFlowService`
-- `LLMWrapper` ainda nao substitui o `MockLLMProvider`
+- `prompt_builder.py` ja e chamado por `ChatFlowService`
+- `LLMWrapper` ja esta integrado ao `LLMService`, mas o dominio padrao ainda usa `mock`
+- handoff estruturado ja retorna motivos de escalonamento
 - `ChromaStore` ainda nao e o retrieval oficial do endpoint `/chat`
 - `domain.yaml` ainda aponta para `llm.provider: mock`
 
@@ -147,7 +148,8 @@ Criterio de pronto:
 
 ## Renan - Arquitetura e orquestracao
 
-- Integrar `LLMWrapper` ao `LLMService` sem quebrar o mock usado nos testes.
+- Manter `LLMWrapper` integrado ao `LLMService` sem quebrar o mock usado nos testes.
+- Trocar `domain.yaml` para provider real apenas quando houver API key valida no ambiente.
 - Definir se `ChatFlowService.answer()` vira async ou se o wrapper tera chamada sincrona equivalente.
 - Criar ou consolidar `BaseEmbeddingProvider`.
 - Integrar `get_embeddings()` ao servico de retrieval quando o vector store oficial estiver pronto.
@@ -418,10 +420,11 @@ ON messages(conversation_id, created_at);
 
 ## Renan - Orquestracao, testes e seguranca
 
-- Integrar `prompt_builder.py` ja criado ao `ChatFlowService`.
-- Adicionar historico curto manual por `history_turns`.
+- Manter `prompt_builder.py` integrado ao `ChatFlowService`.
+- Adicionar historico curto real por `history_turns` quando houver persistencia de conversas.
 - Implementar confidence score inicial.
-- Implementar regras de handoff por threshold e palavras sensiveis.
+- Manter regras de handoff por threshold, pedido humano e termos sensiveis.
+- Calibrar os termos com dados reais antes de expor canal publico.
 - Criar testes do fluxo `/chat`.
 
 Criterio de pronto:

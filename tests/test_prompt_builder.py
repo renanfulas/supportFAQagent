@@ -1,0 +1,48 @@
+from pathlib import Path
+
+from app.domain_engine.models import DomainConfig
+from app.orchestration.prompt_builder import build_prompt, format_history
+from app.retrieval.models import RetrievedChunk
+
+
+def make_domain() -> DomainConfig:
+    return DomainConfig(
+        name="suporte-vps-whatsapp",
+        display_name="Suporte VPS e WhatsApp",
+        root_path=Path("."),
+    )
+
+
+def test_build_prompt_uses_retrieved_chunk_content() -> None:
+    prompt = build_prompt(
+        domain=make_domain(),
+        question="Como instalar Evolution API?",
+        chunks=[
+            RetrievedChunk(
+                source="faq.md",
+                title="Instalacao Evolution",
+                text="Valide Docker, portas e logs dos containers.",
+                score=0.9,
+            )
+        ],
+    )
+
+    assert "Suporte VPS e WhatsApp" in prompt
+    assert "Como instalar Evolution API?" in prompt
+    assert "Valide Docker, portas e logs dos containers." in prompt
+
+
+def test_format_history_limits_recent_messages() -> None:
+    history = [
+        {"role": "user", "content": "m1"},
+        {"role": "assistant", "content": "m2"},
+        {"role": "user", "content": "m3"},
+        {"role": "assistant", "content": "m4"},
+        {"role": "user", "content": "m5"},
+    ]
+
+    formatted = format_history(history, max_turns=2)
+
+    assert "m1" not in formatted
+    assert "m4" in formatted
+    assert "m5" in formatted
