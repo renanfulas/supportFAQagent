@@ -67,6 +67,30 @@ def test_chat_returns_404_for_unknown_domain() -> None:
     assert response.status_code == 404
 
 
+def test_chat_rejects_blank_message() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "domain": "suporte-vps-whatsapp",
+            "message": "   ",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_chat_rejects_oversized_message() -> None:
+    response = client.post(
+        "/chat",
+        json={
+            "domain": "suporte-vps-whatsapp",
+            "message": "x" * 4001,
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_feedback_route_is_registered() -> None:
     response = client.post(
         "/feedback",
