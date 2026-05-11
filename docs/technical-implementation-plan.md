@@ -13,18 +13,24 @@ Ele complementa o [Plano Unico do MVP](mvp-plan.md) com tarefas tecnicas, contra
 - Tratar `Chroma` como adapter local/prototipo enquanto `pgvector` nao estiver integrado.
 - Toda frente deve entregar codigo integravel, documentado e testavel.
 
-## Estado atual da main
+## Estado atual do projeto
 
-A `main` ja possui algumas pecas importantes:
+O projeto ja possui algumas pecas importantes:
 
 - `create_app()` em `app/main.py`
 - smoke tests em `tests/test_app.py`
+- contratos de entrada com limites basicos para `/chat`, `/feedback` e ingestao preview
+- `X-Request-ID` em todas as respostas HTTP para correlacao de logs e integracoes
 - `LLMWrapper` com OpenAI e Anthropic em `app/llm/wrapper.py`
 - `get_embeddings()` em `app/retrieval/embeddings.py`
 - `ChromaStore` em `app/retrieval/chroma_store.py`
 - `RecursiveCharacterTextSplitter` no pipeline CSV em `app/ingestion/pipeline.py`
 - `ticket_loader.py` para CSV de chamados
 - `prompt_builder.py` em `app/orchestration/`
+- `POST /feedback` como contrato aceito, ainda sem persistencia real
+- `POST /ingestion/preview` para validar chunks por payload sem persistir
+- contrato modular de dominio em `domain.yaml`, com persona, objetivo, regras, mensagens e handoff
+- evals locais em `domains/suporte-vps-whatsapp/evals/cases.yaml`
 
 Ainda nao esta integrado ao caminho principal:
 
@@ -36,6 +42,9 @@ Ainda nao esta integrado ao caminho principal:
 - `/chat` ja retorna `request_id` e `error_code`
 - `ChromaStore` ainda nao e o retrieval oficial do endpoint `/chat`
 - `domain.yaml` ainda aponta para `llm.provider: mock`
+- `/feedback` ainda retorna `pending_persistence`
+- `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
+- evals ainda medem a linha de base do MVP com mock/lexical, nao qualidade final de resposta
 
 ## Responsaveis
 
@@ -55,9 +64,9 @@ O backend deve expor contratos estaveis para automacoes e testes:
 - `GET /health`
 - `GET /domains`
 - `GET /ingestion/{domain_name}/preview`
+- `POST /ingestion/preview`
 - `POST /chat`
-- futuro `POST /ingest`
-- futuro `POST /feedback`
+- `POST /feedback`
 
 Contrato minimo de `POST /chat`:
 
@@ -73,11 +82,14 @@ Resposta minima:
 
 ```json
 {
+  "request_id": "uuid-ou-header",
   "domain": "suporte-vps-whatsapp",
   "answer": "texto final para o usuario",
   "confidence": 0.82,
   "escalated": false,
-  "references": ["article_chunks.id ou source"]
+  "handoff_reasons": [],
+  "references": ["article_chunks.id ou source"],
+  "error_code": null
 }
 ```
 
@@ -88,26 +100,53 @@ O `domain.yaml` deve ser a fronteira de configuracao por setor.
 Campos esperados no MVP:
 
 ```yaml
+contract_version: 1
+name: suporte-vps-whatsapp
+display_name: Suporte VPS e WhatsApp
+description: Agente para duvidas recorrentes de VPS, WhatsApp e automacoes.
+owner: Renan
+default_language: pt-BR
+
+behavior:
+  persona: agente de suporte tecnico claro e direto
+  primary_goal: orientar usuarios com respostas seguras
+  answer_guidelines:
+    - responda em linguagem simples
+  out_of_scope:
+    - acesso a senhas, tokens ou chaves privadas
+
+response:
+  tone: simples
+  max_context_chunks: 5
+  max_answer_length: short
+
+handoff:
+  confidence_threshold: 0.70
+  explicit_human_phrases:
+    - falar com humano
+  sensitive_terms:
+    - senha
+    - bloqueio
+
+knowledge:
+  sources:
+    - knowledge/articles
+    - knowledge/faqs
+
 llm:
-  provider: openai
-  model: gpt-4o-mini
+  provider: mock
+  model: mock-model
 
 embedding:
   provider: openai
   model: text-embedding-3-small
   dimensions: 1536
-
-rag:
-  top_k: 5
-  chunk_size: 800
-  chunk_overlap: 120
-  confidence_threshold: 0.70
-  history_turns: 4
-
-security:
-  redact_pii_in_logs: true
-  block_prompt_injection: true
 ```
+
+Observacao:
+
+- O provider padrao segue `mock` ate haver API key valida e decisao operacional.
+- Campos como `rag.history_turns`, `chunk_overlap` e politicas de seguranca mais detalhadas podem entrar depois, mas ainda nao sao contrato implementado.
 
 ## Fase 1 - Base de providers e contratos
 
@@ -255,12 +294,14 @@ Criterio de pronto:
 - Adaptar `IngestionService` para usar splitter configuravel.
 - Decidir como `ticket_loader.py` convive com artigos e FAQs locais.
 - Criar testes de chunking para texto curto, longo e vazio.
-- Criar preview de ingestao por dominio.
+- Manter preview de ingestao por dominio.
+- Manter preview de ingestao por payload em `POST /ingestion/preview`.
 - Definir hash de conteudo para idempotencia.
 
 Criterio de pronto:
 
 - `GET /ingestion/{domain}/preview` mostra contagem consistente.
+- `POST /ingestion/preview` permite revisar chunking antes de persistir.
 - Reprocessar o mesmo conteudo nao cria duplicacao logica.
 
 ## Fase 3 - Embeddings e retrieval vetorial
@@ -428,6 +469,7 @@ ON messages(conversation_id, created_at);
 - Manter regras de handoff por threshold, pedido humano e termos sensiveis.
 - Calibrar os termos com dados reais antes de expor canal publico.
 - Criar testes do fluxo `/chat`.
+- Manter evals locais do dominio inicial com perguntas reais recorrentes.
 
 Criterio de pronto:
 
@@ -458,7 +500,7 @@ Objetivo: preparar integracoes externas sem mover inteligencia para fora do back
 
 ## Renan - Arquitetura e seguranca
 
-- Definir contrato de `POST /feedback`.
+- Manter contrato de `POST /feedback` e preparar persistencia quando banco estiver pronto.
 - Definir payload de escalonamento.
 - Criar guia de integracao n8n.
 - Validar que n8n nao carrega regra central do agente.
@@ -557,6 +599,7 @@ Regras de debug:
 | Workflow WhatsApp | API `/chat` estavel | Alexandre |
 | Handoff | Confidence e payload de resposta | Renan + Alexandre |
 | Hardening | Deploy e endpoints expostos | Renan + Silotto |
+| Evals do dominio | Casos reais e criterios de qualidade | Renan |
 
 ## Backlog pos-MVP
 
