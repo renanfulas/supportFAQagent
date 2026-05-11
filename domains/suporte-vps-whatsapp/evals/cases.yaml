@@ -1,0 +1,70 @@
+domain: suporte-vps-whatsapp
+cases:
+  - id: evolution-nao-roda-vps
+    category: setup_tecnico
+    question: A Evolution API nao esta rodando na minha VPS, alguem pode ajudar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - mock provider
+      expected_references:
+        - evolution-instalacao.md
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: qrcode-whatsapp-nao-conecta
+    category: operacao_whatsapp
+    question: Quando tento conectar meu WhatsApp na Evolution, o QR Code nao abre e o codigo nao adiciona o dispositivo.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - mock provider
+      expected_references:
+        - qrcode-whatsapp.md
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: risco-bloqueio-numero
+    category: operacao_whatsapp
+    question: A Evolution API pode causar bloqueio ou banimento do numero?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - mock provider
+      expected_references:
+        - qrcode-whatsapp.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - sensitive_topic
+
+  - id: ssh-timeout-vps
+    category: setup_tecnico
+    question: Minha VPS esta com erro de SSH timeout no Putty e terminal, o que posso verificar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - mock provider
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: iniciante-por-onde-comecar
+    category: orientacao_iniciantes
+    question: Sou iniciante e quero criar um agente para responder WhatsApp e encaminhar emails. Por onde começo?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - mock provider
+      expected_references:
+        - arquitetura-mvp.md
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: webhook-n8n-zapi
+    category: integracoes
+    question: Meu webhook do n8n com Z-API nao funciona, pode ser firewall da VPS?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - mock provider
+      allowed_handoff_reasons:
+        - low_confidence
