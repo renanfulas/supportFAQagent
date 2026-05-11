@@ -95,16 +95,74 @@ Observacao:
 - A persistencia real entra quando a frente de banco estiver pronta.
 - Enquanto isso, a resposta indica `pending_persistence`.
 
-## Futuro `POST /ingest`
+## `POST /ingestion/preview`
 
 Objetivo:
 
-- Receber artigos, FAQs ou chamados curados para ingestao.
+- Receber artigos, FAQs ou chamados curados em JSON.
 - Normalizar conteudo.
-- Gerar chunks.
-- Enviar para o vector store oficial.
+- Gerar chunks para revisao antes da persistencia.
+- Validar rapidamente se o material esta adequado para RAG.
 
-Status:
+Entrada minima:
 
-- Ainda nao implementado como contrato publico.
-- Hoje existe apenas preview local por dominio em `GET /ingestion/{domain_name}/preview`.
+```json
+{
+  "domain": "suporte-vps-whatsapp",
+  "chunk_size": 800,
+  "documents": [
+    {
+      "title": "Conexao WhatsApp",
+      "source": "faq-qrcode.md",
+      "content": "Texto do artigo ou FAQ..."
+    }
+  ]
+}
+```
+
+Validacoes:
+
+- `domain`: obrigatorio, sem branco puro, maximo 80 caracteres.
+- `documents`: obrigatorio, minimo 1 e maximo 20 documentos.
+- `documents[].title`: obrigatorio, sem branco puro, maximo 160 caracteres.
+- `documents[].content`: obrigatorio, sem branco puro, maximo 20000 caracteres.
+- `documents[].source`: opcional, maximo 240 caracteres, branco vira fonte automatica.
+- `chunk_size`: opcional, minimo 200, maximo 2000, padrao 800.
+
+Saida minima:
+
+```json
+{
+  "request_id": "uuid-ou-header",
+  "domain": "suporte-vps-whatsapp",
+  "document_count": 1,
+  "chunk_count": 2,
+  "sample_chunks": ["primeiro chunk"],
+  "chunks": [
+    {
+      "source": "faq-qrcode.md",
+      "title": "Conexao WhatsApp",
+      "text": "primeiro chunk",
+      "chunk_index": 0
+    }
+  ]
+}
+```
+
+Observacao:
+
+- Este endpoint nao persiste dados.
+- Este endpoint nao gera embeddings.
+- O objetivo e revisar chunking e qualidade do conteudo antes de conectar banco, pgvector ou jobs de ingestao.
+
+## `GET /ingestion/{domain_name}/preview`
+
+Objetivo:
+
+- Ler os arquivos locais ja existentes em `domains/<domain_name>/knowledge`.
+- Retornar uma previa de documentos e chunks encontrados.
+
+Uso esperado:
+
+- Smoke test local do dominio.
+- Conferencia rapida antes de rodar ingestao persistente no futuro.

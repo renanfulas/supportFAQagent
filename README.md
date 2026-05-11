@@ -75,7 +75,7 @@ tests/               # testes unitarios e de integracao
 - todas as respostas HTTP retornam `X-Request-ID` para correlacao de logs e integracoes
 - retrieval ja passa por uma interface de adapter, com lexical padrao e Chroma como prototipo local
 - contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
-- o endpoint de ingestao disponivel hoje e de preview local por dominio em `/ingestion/{domain_name}/preview`
+- a ingestao ja possui preview por payload em `POST /ingestion/preview` e preview local por dominio em `/ingestion/{domain_name}/preview`
 
 ## Testes basicos
 
