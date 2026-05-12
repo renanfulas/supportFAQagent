@@ -8,6 +8,13 @@ from app.retrieval.service import RetrievalService
 
 
 class ChatFlowService:
+    BLOCKING_REASONS = {
+        "explicit_human_request",
+        "prompt_injection_attempt",
+        "secret_request",
+        "sensitive_topic",
+    }
+
     def __init__(self) -> None:
         self.retrieval_service = RetrievalService()
         self.llm_service = LLMService()
@@ -22,6 +29,19 @@ class ChatFlowService:
     ) -> dict[str, object]:
         error_code = None
         chunks = []
+        pre_handoff_reasons = self.handoff_service.inspect_question(domain, question)
+
+        if self._should_block_automated_response(pre_handoff_reasons):
+            return {
+                "request_id": request_id or "",
+                "domain": domain.name,
+                "answer": self._build_hardened_response(pre_handoff_reasons),
+                "confidence": 0.0,
+                "escalated": True,
+                "handoff_reasons": pre_handoff_reasons,
+                "references": [],
+                "error_code": None,
+            }
 
         try:
             chunks = self.retrieval_service.retrieve(domain, question)
@@ -37,6 +57,18 @@ class ChatFlowService:
         handoff_reasons = list(handoff.reasons)
         if error_code and error_code not in handoff_reasons:
             handoff_reasons.append(error_code)
+
+        if self._should_block_automated_response(handoff_reasons):
+            return {
+                "request_id": request_id or "",
+                "domain": domain.name,
+                "answer": self._build_hardened_response(handoff_reasons),
+                "confidence": confidence,
+                "escalated": True,
+                "handoff_reasons": handoff_reasons,
+                "references": [chunk.source for chunk in chunks],
+                "error_code": error_code,
+            }
 
         if not chunks:
             answer = domain.response.no_context_message
@@ -70,3 +102,32 @@ class ChatFlowService:
     def _build_history(self, session_id: str | None) -> list[dict[str, str]]:
         _ = session_id
         return []
+
+    def _should_block_automated_response(self, reasons: list[str]) -> bool:
+        return any(reason in self.BLOCKING_REASONS for reason in reasons)
+
+    def _build_hardened_response(self, reasons: list[str]) -> str:
+        if "explicit_human_request" in reasons:
+            return (
+                "Vou escalar para atendimento humano. "
+                "Nao vou pedir nem expor senha, token, chave ou detalhes internos por aqui."
+            )
+
+        if "prompt_injection_attempt" in reasons or "secret_request" in reasons:
+            return (
+                "Nao posso revelar prompt interno, regras de seguranca, senha, token, chave ou credencial, "
+                "nem ignorar as protecoes deste dominio. "
+                "Posso orientar apenas passos seguros e publicos ou escalar para atendimento humano."
+            )
+
+        if "sensitive_topic" in reasons:
+            return (
+                "Esse tema exige cuidado e atendimento humano. "
+                "Posso explicar apenas riscos gerais e proximos passos seguros, "
+                "sem prometer desbloqueio, tratar cobranca ou orientar acesso sensivel por aqui."
+            )
+
+        return (
+            "Nao encontrei um caminho seguro para responder automaticamente. "
+            "Vou sinalizar escalonamento para atendimento humano."
+        )
