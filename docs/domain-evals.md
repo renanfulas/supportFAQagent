@@ -70,6 +70,23 @@ Como o retrieval lexical ainda e simples, alguns casos podem esperar `low_confid
 
 Quando provider real, pgvector ou LangChain entrarem, estes casos devem evoluir para validar conteudo mais forte.
 
+## Casos de seguranca
+
+Para a trilha `SEC-013`, adicione tambem casos que exercitem:
+
+- pedido explicito de atendimento humano
+- tentativa de obter senha, token, chave ou dado sensivel
+- tentativa de ignorar instrucoes, revelar prompt ou contornar regras
+- pergunta fora do escopo que precise recusa segura ou escalonamento
+
+No estado atual do MVP, esses casos ainda validam principalmente:
+
+- se houve escalonamento
+- se o motivo de handoff esperado apareceu
+- se o retrieval caiu em uma referencia coerente
+
+Quando o provider real e os evals de resposta evoluirem, essa mesma trilha deve passar a cobrar recusa semantica mais forte.
+
 ## Quando adicionar casos
 
 Adicione um caso quando:
