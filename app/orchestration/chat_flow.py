@@ -10,6 +10,7 @@ from app.retrieval.service import RetrievalService
 class ChatFlowService:
     BLOCKING_REASONS = {
         "explicit_human_request",
+        "out_of_scope",
         "prompt_injection_attempt",
         "secret_request",
         "sensitive_topic",
@@ -111,6 +112,13 @@ class ChatFlowService:
             return (
                 "Vou escalar para atendimento humano. "
                 "Nao vou pedir nem expor senha, token, chave ou detalhes internos por aqui."
+            )
+
+        if "out_of_scope" in reasons:
+            return (
+                "Nao posso atuar fora do escopo deste dominio. "
+                "Se o tema nao for sobre VPS, WhatsApp, Evolution API, n8n ou automacoes relacionadas, "
+                "o caminho seguro e escalar para atendimento humano."
             )
 
         if "prompt_injection_attempt" in reasons or "secret_request" in reasons:

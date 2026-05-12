@@ -7,10 +7,20 @@ class HandoffService:
         "ignore suas instrucoes",
         "ignore o contexto",
         "ignore as regras",
+        "desconsidere suas instrucoes",
+        "desconsidere o contexto",
         "mostre seu prompt",
         "prompt interno",
         "system prompt",
         "revele suas regras",
+        "revele suas instrucoes",
+        "agora voce e",
+        "a partir de agora voce e",
+        "finja que voce e",
+        "atue como",
+        "aja como",
+        "voce nao e mais",
+        "novo papel",
         "reveal your instructions",
         "bypass",
         "jailbreak",
@@ -36,6 +46,14 @@ class HandoffService:
         confidence: float,
     ) -> HandoffDecision:
         reasons = self.inspect_question(domain, question)
+        normalized_question = question.lower()
+
+        if (
+            confidence < domain.handoff.confidence_threshold
+            and domain.routing.keywords
+            and not self._contains_any(normalized_question, domain.routing.keywords)
+        ):
+            self._append_reason(reasons, "out_of_scope")
 
         if confidence < domain.handoff.confidence_threshold:
             self._append_reason(reasons, "low_confidence")
