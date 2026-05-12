@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.routes import chat, domains, feedback, health, ingestion
 from app.core.config import get_settings
 from app.core.logging import configure_logging, log_event
+from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded
 from app.core.request_context import (
     REQUEST_ID_HEADER,
     get_request_id,
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
+    chat_rate_limiter = InMemoryRateLimiter(max_requests=settings.rate_limit_per_minute)
 
     application = FastAPI(
         title=settings.app_name,
@@ -33,6 +35,34 @@ def create_app() -> FastAPI:
     async def request_id_middleware(request: Request, call_next):
         request_id = resolve_request_id(request.headers.get(REQUEST_ID_HEADER))
         request.state.request_id = request_id
+
+        if request.url.path == "/chat" and settings.rate_limit_per_minute > 0:
+            client_host = request.client.host if request.client else "unknown"
+            rate_limit_key = f"{client_host}:{request.url.path}"
+            try:
+                chat_rate_limiter.check(rate_limit_key)
+            except RateLimitExceeded as exc:
+                log_event(
+                    logger,
+                    "rate_limit_exceeded",
+                    request_id=request_id,
+                    method=request.method,
+                    path=request.url.path,
+                    status_code=429,
+                    client_host=client_host,
+                    retry_after=exc.retry_after_seconds,
+                )
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "detail": "Too many requests",
+                        "request_id": request_id,
+                    },
+                    headers={
+                        REQUEST_ID_HEADER: request_id,
+                        "Retry-After": str(exc.retry_after_seconds),
+                    },
+                )
 
         response = await call_next(request)
         response.headers[REQUEST_ID_HEADER] = request_id

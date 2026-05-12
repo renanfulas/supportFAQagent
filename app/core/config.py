@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     domains_path: Path = Field(default=Path("domains"), alias="DOMAINS_PATH")
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+    rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE")
 
     model_config = SettingsConfigDict(
         env_file=".env",
