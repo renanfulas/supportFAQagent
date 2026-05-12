@@ -4,6 +4,9 @@ from app.core.config import get_settings
 from app.main import create_app
 
 
+API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
+
+
 def test_chat_rate_limit_returns_429_with_retry_after(monkeypatch) -> None:
     monkeypatch.setenv("RATE_LIMIT_PER_MINUTE", "2")
     get_settings.cache_clear()
@@ -14,9 +17,9 @@ def test_chat_rate_limit_returns_429_with_retry_after(monkeypatch) -> None:
         "message": "Como instalar a Evolution API no VPS?",
     }
 
-    first = client.post("/chat", json=payload)
-    second = client.post("/chat", json=payload)
-    third = client.post("/chat", json=payload)
+    first = client.post("/chat", headers=API_KEY_HEADER, json=payload)
+    second = client.post("/chat", headers=API_KEY_HEADER, json=payload)
+    third = client.post("/chat", headers=API_KEY_HEADER, json=payload)
 
     assert first.status_code == 200
     assert second.status_code == 200

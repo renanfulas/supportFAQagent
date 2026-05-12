@@ -4,6 +4,7 @@ from app.core.request_context import REQUEST_ID_HEADER
 from app.main import app
 
 
+API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
 client = TestClient(app)
 
 
@@ -17,7 +18,7 @@ def test_response_includes_generated_request_id_header() -> None:
 def test_chat_reuses_inbound_request_id() -> None:
     response = client.post(
         "/chat",
-        headers={REQUEST_ID_HEADER: "trace-123"},
+        headers={REQUEST_ID_HEADER: "trace-123", **API_KEY_HEADER},
         json={
             "domain": "suporte-vps-whatsapp",
             "session_id": "session-1",
@@ -33,7 +34,7 @@ def test_chat_reuses_inbound_request_id() -> None:
 def test_unknown_domain_error_includes_request_id() -> None:
     response = client.post(
         "/chat",
-        headers={REQUEST_ID_HEADER: "trace-404"},
+        headers={REQUEST_ID_HEADER: "trace-404", **API_KEY_HEADER},
         json={
             "domain": "nao-existe",
             "message": "teste",
@@ -49,7 +50,7 @@ def test_unknown_domain_error_includes_request_id() -> None:
 def test_validation_error_includes_request_id() -> None:
     response = client.post(
         "/chat",
-        headers={REQUEST_ID_HEADER: "trace-422"},
+        headers={REQUEST_ID_HEADER: "trace-422", **API_KEY_HEADER},
         json={
             "domain": "suporte-vps-whatsapp",
             "message": "   ",
