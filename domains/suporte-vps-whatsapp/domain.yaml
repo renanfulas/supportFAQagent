@@ -73,9 +73,9 @@ knowledge:
     - knowledge/faqs
 
 llm:
-  provider: mock
-  model: mock-model
-  embedding_model: mock-embedding
+  provider: openai
+  model: gpt-4o-mini
+  embedding_model: text-embedding-3-small
 
 embedding:
   provider: openai

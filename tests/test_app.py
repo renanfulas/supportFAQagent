@@ -32,7 +32,7 @@ def test_ingestion_preview_returns_documents_and_chunks() -> None:
     assert payload["sample_chunks"]
 
 
-def test_chat_returns_mock_answer_with_references() -> None:
+def test_chat_returns_answer_with_references() -> None:
     response = client.post(
         "/chat",
         json={
@@ -47,7 +47,6 @@ def test_chat_returns_mock_answer_with_references() -> None:
     payload = response.json()
     assert payload["request_id"]
     assert payload["domain"] == "suporte-vps-whatsapp"
-    assert "mock provider" in payload["answer"].lower()
     assert isinstance(payload["confidence"], float)
     assert isinstance(payload["escalated"], bool)
     assert isinstance(payload["handoff_reasons"], list)
@@ -71,7 +70,6 @@ def test_chat_blocks_secret_request_with_hardened_response() -> None:
     assert "secret_request" in payload["handoff_reasons"]
     assert "sensitive_topic" in payload["handoff_reasons"]
     assert "nao posso" in payload["answer"].lower()
-    assert "mock provider" not in payload["answer"].lower()
     assert payload["references"] == []
 
 
@@ -90,7 +88,6 @@ def test_chat_blocks_prompt_injection_with_hardened_response() -> None:
     assert payload["escalated"] is True
     assert "prompt_injection_attempt" in payload["handoff_reasons"]
     assert "nao posso" in payload["answer"].lower()
-    assert "mock provider" not in payload["answer"].lower()
     assert payload["references"] == []
 
 
