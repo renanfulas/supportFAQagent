@@ -17,6 +17,21 @@ class ChromaStore(VectorStore):
     def add_documents(self, docs):
         self.vector_store.add_documents(docs)
 
+    def add_chunks(self, chunks: list[dict]):
+        """
+        Permite adicionar dicts puros sem acoplar a classe Document do LangChain.
+        """
+        if not chunks:
+            return
+        texts = [c["chunk_text"] for c in chunks]
+        metadatas = []
+        for chunk in chunks:
+            metadata = dict(chunk.get("metadata", {}))
+            metadata["chunk_index"] = chunk["chunk_index"]
+            metadata["token_estimate"] = chunk["token_estimate"]
+            metadatas.append(metadata)
+        self.vector_store.add_texts(texts=texts, metadatas=metadatas)
+
     def similarity_search_with_score(self, query: str, top_k: int = 5):
         return self.vector_store.similarity_search_with_score(query, k=top_k)
 
