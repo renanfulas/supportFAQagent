@@ -1,9 +1,9 @@
 from fastapi.testclient import TestClient
 
-from app.core.config import get_settings
+from app.core.config import LOCAL_DEV_API_KEY, get_settings
 from app.main import app, create_app
 
-API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
+API_KEY_HEADER = {"X-API-Key": LOCAL_DEV_API_KEY}
 client = TestClient(app)
 
 
@@ -207,6 +207,8 @@ def test_chat_ui_static_renderer_uses_text_content() -> None:
     assert "textContent" in response.text
     assert "innerHTML" not in response.text
     assert "X-LLM-API-Key" in response.text
+    assert "X-API-Key" not in response.text
+    assert LOCAL_DEV_API_KEY not in response.text
     assert "iniciante-primeiros-passos.md" in response.text
     assert "qrcode-whatsapp.md" in response.text
     assert "risco-bloqueio-whatsapp.md" in response.text
@@ -216,6 +218,7 @@ def test_chat_ui_static_renderer_uses_text_content() -> None:
 def test_chat_ui_can_be_enabled_in_staging(monkeypatch) -> None:
     monkeypatch.setenv("APP_ENV", "staging")
     monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    monkeypatch.setenv("API_SECRET_KEY", "staging-test-secret")
     get_settings.cache_clear()
     staging_client = TestClient(create_app())
 
@@ -228,6 +231,7 @@ def test_chat_ui_can_be_enabled_in_staging(monkeypatch) -> None:
 
 def test_chat_ui_is_not_registered_in_production(monkeypatch) -> None:
     monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("API_SECRET_KEY", "production-test-secret")
     get_settings.cache_clear()
     production_client = TestClient(create_app())
 
@@ -240,6 +244,7 @@ def test_chat_ui_is_not_registered_in_production(monkeypatch) -> None:
 def test_chat_ui_flag_does_not_enable_ui_in_production(monkeypatch) -> None:
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    monkeypatch.setenv("API_SECRET_KEY", "production-test-secret")
     get_settings.cache_clear()
     production_client = TestClient(create_app())
 

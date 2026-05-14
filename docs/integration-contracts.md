@@ -13,6 +13,7 @@ Rotas protegidas atualmente:
 Regra:
 
 - o cliente deve enviar `X-API-Key` com a chave configurada em `API_SECRET_KEY`
+- `API_SECRET_KEY` e obrigatoria fora de `APP_ENV=development`, `dev` ou `local`
 - chamadas sem chave valida retornam `403`
 - em staging, quando `ENABLE_CHAT_UI=true`, `POST /chat` tambem aceita `X-LLM-API-Key` para testes pela `/chat-ui`; esse atalho nao funciona em `APP_ENV=production`
 - `GET /health`, `GET /domains` e `GET /ingestion/{domain_name}/preview` continuam publicas no estado atual do MVP
@@ -22,6 +23,8 @@ Exemplo:
 ```http
 X-API-Key: local-dev-api-key
 ```
+
+O valor `local-dev-api-key` existe apenas como fallback local de desenvolvimento e nao deve ser usado em staging ou producao.
 
 Exemplo de teste pela UI com chave do provider:
 

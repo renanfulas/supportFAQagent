@@ -4,7 +4,7 @@ import hmac
 from fastapi import APIRouter, Header, HTTPException, Request, status
 
 from app.api.schemas.chat import ChatRequest, ChatResponse
-from app.core.config import Settings, get_settings
+from app.core.config import DEV_ENVS, Settings, get_settings
 from app.core.logging import log_event
 from app.core.privacy import hash_sensitive_value
 from app.core.request_context import get_request_id
@@ -68,8 +68,7 @@ def _verify_chat_access(
         return
 
     if (
-        settings.enable_chat_ui
-        and settings.app_env.lower() != "production"
+        _allows_provider_key_for_chat_ui(settings)
         and raw_provider_api_key
         and raw_provider_api_key.strip()
     ):
@@ -79,6 +78,11 @@ def _verify_chat_access(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Invalid API key",
     )
+
+
+def _allows_provider_key_for_chat_ui(settings: Settings) -> bool:
+    app_env = settings.app_env.lower()
+    return app_env in DEV_ENVS or (settings.enable_chat_ui and app_env != "production")
 
 
 def _resolve_provider_api_key(

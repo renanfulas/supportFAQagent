@@ -1,12 +1,28 @@
+import pytest
 from fastapi.testclient import TestClient
 
-from app.core.config import get_settings
+from app.core.config import LOCAL_DEV_API_KEY, Settings, get_settings
 from app.core.request_context import REQUEST_ID_HEADER
 from app.main import app, create_app
 
 
-API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
+API_KEY_HEADER = {"X-API-Key": LOCAL_DEV_API_KEY}
 client = TestClient(app)
+
+
+def test_api_secret_key_is_required_outside_development(monkeypatch) -> None:
+    monkeypatch.delenv("API_SECRET_KEY", raising=False)
+    monkeypatch.setenv("APP_ENV", "staging")
+
+    with pytest.raises(ValueError, match="API_SECRET_KEY is required"):
+        Settings(_env_file=None)
+
+
+def test_api_secret_key_uses_local_default_only_in_development(monkeypatch) -> None:
+    monkeypatch.delenv("API_SECRET_KEY", raising=False)
+    monkeypatch.setenv("APP_ENV", "development")
+
+    assert Settings(_env_file=None).api_secret_key == LOCAL_DEV_API_KEY
 
 
 def test_chat_requires_api_key() -> None:
@@ -43,6 +59,7 @@ def test_chat_accepts_provider_key_when_chat_ui_is_enabled(
 
     monkeypatch.setenv("APP_ENV", "staging")
     monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    monkeypatch.setenv("API_SECRET_KEY", "staging-test-secret")
     monkeypatch.setattr("app.llm.service.LLMWrapper", FakeWrapper)
     get_settings.cache_clear()
     staging_client = TestClient(create_app())
@@ -82,6 +99,7 @@ def test_chat_alias_uses_environment_provider_key(monkeypatch) -> None:
 
     monkeypatch.setenv("APP_ENV", "staging")
     monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    monkeypatch.setenv("API_SECRET_KEY", "staging-test-secret")
     monkeypatch.setenv("PROJECT_LLM_API_KEY_ALIAS", "project-test-alias")
     monkeypatch.setattr("app.llm.service.LLMWrapper", FakeWrapper)
     get_settings.cache_clear()
@@ -108,6 +126,7 @@ def test_chat_alias_uses_environment_provider_key(monkeypatch) -> None:
 def test_chat_ui_provider_key_does_not_bypass_auth_in_production(monkeypatch) -> None:
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    monkeypatch.setenv("API_SECRET_KEY", "production-test-secret")
     get_settings.cache_clear()
     production_client = TestClient(create_app())
 

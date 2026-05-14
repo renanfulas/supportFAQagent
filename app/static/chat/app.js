@@ -1,4 +1,3 @@
-const API_KEY_FALLBACK = "local-dev-api-key";
 const DOMAIN = "suporte-vps-whatsapp";
 
 const form = document.querySelector("#chat-form");
@@ -41,7 +40,6 @@ const QUICK_PROMPTS = [
   },
 ];
 
-let apiKey = API_KEY_FALLBACK;
 let loading = false;
 let sessionId = getSessionId();
 
@@ -128,7 +126,6 @@ async function sendChatMessage(message) {
 function buildHeaders() {
   const headers = {
       "Content-Type": "application/json",
-      "X-API-Key": apiKey,
   };
 
   const providerApiKey = providerKeyInput.value.trim();

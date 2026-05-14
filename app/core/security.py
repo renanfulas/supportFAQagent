@@ -14,7 +14,10 @@ api_key_header = APIKeyHeader(name=API_KEY_HEADER_NAME, auto_error=False)
 
 def is_valid_api_key(api_key: str | None) -> bool:
     expected_api_key = get_settings().api_secret_key
-    return bool(api_key) and hmac.compare_digest(api_key, expected_api_key)
+    return bool(api_key and expected_api_key) and hmac.compare_digest(
+        api_key,
+        expected_api_key,
+    )
 
 
 def verify_api_key(api_key: str | None = Security(api_key_header)) -> str:

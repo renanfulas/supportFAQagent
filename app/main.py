@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes import chat, domains, feedback, health, ingestion
-from app.core.config import get_settings
+from app.core.config import DEV_ENVS, get_settings
 from app.core.logging import configure_logging, log_event
 from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded
 from app.core.request_context import (
@@ -21,9 +21,6 @@ from app.core.request_context import (
 
 logger = logging.getLogger(__name__)
 CHAT_STATIC_DIR = Path(__file__).resolve().parent / "static" / "chat"
-DEV_ENVS = {"development", "dev", "local"}
-
-
 def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
