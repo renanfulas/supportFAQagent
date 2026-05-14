@@ -1,4 +1,5 @@
 import logging
+import requests
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 class ZoomJoinRequest(BaseModel):
     meeting_url: str
     bot_name: str = "SupportBot Fantasma"
+    webhook_url: str  # Obrigatório enviar a URL pública do ngrok aqui
     domain: Optional[str] = None
 
 
@@ -29,17 +31,31 @@ class ZoomWebhookPayload(BaseModel):
     data: dict
 
 
-def send_chat_to_zoom(meeting_id: str, message: str):
+def send_chat_to_zoom(bot_id: str, message: str):
     """
-    Função stub para mandar a mensagem de volta para a reunião.
-    Aqui entra a chamada para a API do Recall.ai (ou similar)
-    para postar o texto no chat.
+    Chama a API do Recall.ai para postar a resposta no chat do Zoom.
     """
-    logger.info(f"[ZOOM-OUT] Enviando para reunião {meeting_id}: {message}")
-    # TODO: requests.post("https://api.recall.ai/...", json={"text": message})
+    logger.info(f"[ZOOM-OUT] Enviando via bot_id {bot_id}: {message}")
+    settings = get_settings()
+    if not settings.recall_api_key:
+        logger.error("RECALL_API_KEY não configurada no .env!")
+        return
+
+    try:
+        # A URL base do Recall.ai (fornecida por e-mail)
+        url = f"https://us-west-2.recall.ai/api/v1/bot/{bot_id}/send_chat_message/"
+        headers = {"Authorization": f"Token {settings.recall_api_key}"}
+        body = {
+            "message": message,
+            "to": "everyone"
+        }
+        response = requests.post(url, json=body, headers=headers)
+        response.raise_for_status()
+    except Exception as e:
+        logger.error(f"Erro ao enviar mensagem para o Recall.ai: {e}")
 
 
-def process_and_reply(question: str, meeting_id: str, domain_name: Optional[str], request_id: str):
+def process_and_reply(question: str, bot_id: str, domain_name: Optional[str], request_id: str):
     """
     Função assíncrona/background que chama o nosso RAG e devolve a resposta para o Zoom.
     """
@@ -57,14 +73,14 @@ def process_and_reply(question: str, meeting_id: str, domain_name: Optional[str]
         response = ChatFlowService().answer(
             domain=domain,
             question=question,
-            session_id=meeting_id,  # Usa o meeting_id como contexto do histórico de chat
+            session_id=bot_id,  # Usa o bot_id como contexto do histórico de chat
             request_id=request_id,
         )
         
         answer_text = response.get("answer", "Desculpe, não consegui processar sua dúvida.")
         
         # Devolve a mensagem para o chat do Zoom via API do bot
-        send_chat_to_zoom(meeting_id, answer_text)
+        send_chat_to_zoom(bot_id, answer_text)
         
     except Exception as e:
         logger.error(f"Erro ao processar chat do Zoom: {str(e)}")
@@ -75,41 +91,83 @@ def join_meeting(payload: ZoomJoinRequest, request: Request):
     request_id = get_request_id(request)
     log_event(logger, "zoom_join_requested", request_id=request_id, meeting_url=payload.meeting_url)
     
-    # AQUI: Chamada para a API do bot service (Recall.ai) para enviar o bot para a sala.
-    # Ex: response = requests.post("https://api.recall.ai/bot", json={"meeting_url": payload.meeting_url})
-    
-    return {
-        "status": "success",
-        "message": "Comando enviado. O bot está a caminho da sala de espera do Zoom.",
-        "meeting_url": payload.meeting_url
-    }
+    settings = get_settings()
+    if not settings.recall_api_key:
+        raise HTTPException(status_code=500, detail="RECALL_API_KEY não configurada no servidor.")
+
+    try:
+        url = "https://us-west-2.recall.ai/api/v1/bot"
+        headers = {"Authorization": f"Token {settings.recall_api_key}"}
+        body = {
+            "meeting_url": payload.meeting_url,
+            "bot_name": payload.bot_name,
+            "recording_config": {
+                "realtime_endpoints": [
+                    {
+                        "type": "webhook",
+                        "url": payload.webhook_url,
+                        "events": ["participant_events.chat_message"]
+                    }
+                ]
+            }
+        }
+        response = requests.post(url, json=body, headers=headers)
+        response.raise_for_status()
+        bot_data = response.json()
+        
+        return {
+            "status": "success",
+            "message": "Comando enviado. O bot está a caminho da sala de espera.",
+            "bot_id": bot_data.get("id"),
+            "meeting_url": payload.meeting_url
+        }
+    except requests.exceptions.HTTPError as e:
+        error_msg = e.response.text if e.response else str(e)
+        logger.error(f"Erro HTTP do Recall.ai: {error_msg}")
+        raise HTTPException(status_code=500, detail=f"Erro do Recall.ai: {error_msg}")
+    except Exception as e:
+        logger.error(f"Erro ao chamar a API do Recall.ai: {e}")
+        raise HTTPException(status_code=500, detail=f"Falha ao acionar bot no Recall.ai: {str(e)}")
 
 
 @router.post("/webhook", summary="Recebe os eventos do bot fantasma")
-def zoom_webhook(payload: ZoomWebhookPayload, request: Request, background_tasks: BackgroundTasks):
+def zoom_webhook(payload: dict, request: Request, background_tasks: BackgroundTasks):
     request_id = get_request_id(request)
-    log_event(logger, "zoom_webhook_received", request_id=request_id, event=payload.event)
+    event_name = payload.get("event", "unknown_event")
+    data = payload.get("data", payload) # Tenta pegar 'data' ou usa o payload inteiro se não existir
+    
+    log_event(logger, "zoom_webhook_received", request_id=request_id, webhook_event=event_name)
+    logger.info(f"[ZOOM-WEBHOOK-RAW] Recebido evento: {event_name} | Dados: {payload}")
     
     # Exemplo recebendo um evento de mensagem de chat da Reunião
-    if payload.event == "bot.chat_message":
-        chat_text = payload.data.get("text", "")
-        sender = payload.data.get("sender", "")
-        meeting_id = payload.data.get("meeting_id", "unknown_meeting")
-        domain_name = payload.data.get("domain")
+    if event_name == "participant_events.chat_message":
+        try:
+            # O Recall envia o payload bem aninhado:
+            # payload['data']['data']['data']['text']
+            event_data = data.get("data", {})
+            
+            chat_text = event_data.get("data", {}).get("text", "")
+            sender = event_data.get("participant", {}).get("name", "")
+            bot_id = data.get("bot", {}).get("id", "")
+            domain_name = data.get("domain") # Se injetarmos de alguma forma no Recall
+        except Exception as e:
+            logger.error(f"Erro ao parsear payload do chat: {e}")
+            return {"status": "error", "detail": "Invalid payload format"}
         
         # Ignora as próprias mensagens para não ficar em loop infinito
-        if "SupportBot" in sender:
+        if "support" in sender.lower() or "bot" in sender.lower() or "agent" in sender.lower():
             return {"status": "ignored"}
             
-        logger.info(f"[ZOOM-IN] Recebido na reunião {meeting_id} de {sender}: {chat_text}")
+        logger.info(f"[ZOOM-IN] Recebido do Recall.ai (bot {bot_id}) de {sender}: {chat_text}")
         
-        # Gatilho: o bot só responde se for chamado ("@bot" ou "bot,")
-        if "bot" in chat_text.lower():
+        # Gatilho: o bot só responde se for chamado
+        trigger_words = ["bot", "support", "faq", "agent", "@"]
+        if any(word in chat_text.lower() for word in trigger_words):
             # Passa para o RAG em background para não segurar o timeout do webhook
             background_tasks.add_task(
                 process_and_reply, 
                 chat_text, 
-                meeting_id, 
+                bot_id,  
                 domain_name, 
                 request_id
             )

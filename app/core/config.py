@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     domains_path: Path = Field(default=Path("domains"), alias="DOMAINS_PATH")
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+    recall_api_key: str | None = Field(default=None, alias="RECALL_API_KEY")
 
     model_config = SettingsConfigDict(
         env_file=".env",
