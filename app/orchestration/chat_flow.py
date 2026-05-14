@@ -13,7 +13,6 @@ class ChatFlowService:
         "out_of_scope",
         "prompt_injection_attempt",
         "secret_request",
-        "sensitive_topic",
     }
 
     def __init__(self) -> None:

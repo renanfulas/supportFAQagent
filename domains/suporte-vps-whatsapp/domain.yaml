@@ -59,11 +59,6 @@ handoff:
     - pessoa real
     - atendimento humano
   sensitive_terms:
-    - bloqueio
-    - banimento
-    - cobrado
-    - cobranca
-    - reembolso
     - senha
     - token
     - chave api
