@@ -6,6 +6,9 @@ from app.core.request_context import REQUEST_ID_HEADER
 from app.main import create_app
 
 
+API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
+
+
 def test_chat_log_uses_session_id_hash(monkeypatch) -> None:
     captured: dict[str, object] = {}
 
@@ -18,6 +21,7 @@ def test_chat_log_uses_session_id_hash(monkeypatch) -> None:
     client = TestClient(create_app())
     response = client.post(
         "/chat",
+        headers=API_KEY_HEADER,
         json={
             "domain": "suporte-vps-whatsapp",
             "session_id": "whatsapp:+5511999999999",
@@ -43,6 +47,7 @@ def test_feedback_log_uses_session_id_hash(monkeypatch) -> None:
     client = TestClient(create_app())
     response = client.post(
         "/feedback",
+        headers=API_KEY_HEADER,
         json={
             "request_id": "chat-1",
             "session_id": "whatsapp:+5511999999999",

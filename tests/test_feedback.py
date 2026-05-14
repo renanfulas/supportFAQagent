@@ -3,12 +3,14 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
+API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
 client = TestClient(app)
 
 
 def test_create_feedback_accepts_valid_payload() -> None:
     response = client.post(
         "/feedback",
+        headers=API_KEY_HEADER,
         json={
             "request_id": "req-1",
             "session_id": "session-1",
@@ -31,6 +33,7 @@ def test_create_feedback_accepts_valid_payload() -> None:
 def test_create_feedback_requires_helpful_flag() -> None:
     response = client.post(
         "/feedback",
+        headers=API_KEY_HEADER,
         json={
             "request_id": "req-1",
             "comment": "Sem helpful deve falhar.",
@@ -43,6 +46,7 @@ def test_create_feedback_requires_helpful_flag() -> None:
 def test_create_feedback_normalizes_blank_optional_fields() -> None:
     response = client.post(
         "/feedback",
+        headers=API_KEY_HEADER,
         json={
             "request_id": "   ",
             "session_id": " session-1 ",
@@ -59,6 +63,7 @@ def test_create_feedback_normalizes_blank_optional_fields() -> None:
 def test_create_feedback_rejects_blank_source() -> None:
     response = client.post(
         "/feedback",
+        headers=API_KEY_HEADER,
         json={
             "helpful": True,
             "source": "   ",
@@ -71,6 +76,7 @@ def test_create_feedback_rejects_blank_source() -> None:
 def test_create_feedback_rejects_oversized_comment() -> None:
     response = client.post(
         "/feedback",
+        headers=API_KEY_HEADER,
         json={
             "helpful": True,
             "comment": "x" * 1001,

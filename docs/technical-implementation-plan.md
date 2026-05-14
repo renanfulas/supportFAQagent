@@ -57,6 +57,12 @@ Ainda nao esta integrado ao caminho principal:
 
 ## Contratos entre frentes
 
+Regra de fronteira para esta fase:
+
+- Renan pode definir contratos HTTP, shape de payload, testes de contrato e adapters de integracao
+- Alexandre continua dono de schema SQL, migrations, persistencia real, queries pgvector e armazenamento operacional
+- Juliano pode evoluir splitter e loaders, desde que o shape exposto pelo backend permaneça estavel
+
 ## API interna
 
 O backend deve expor contratos estaveis para automacoes e testes:
@@ -92,6 +98,23 @@ Resposta minima:
   "error_code": null
 }
 ```
+
+Campos que devem permanecer estaveis para integracoes e persistencia futura:
+
+- `request_id`
+- `domain`
+- `answer`
+- `confidence`
+- `escalated`
+- `handoff_reasons`
+- `references`
+- `error_code`
+
+Observacao de retrieval:
+
+- `references` hoje e `list[str]` rastreavel e serializavel
+- a troca de lexical para pgvector nao deve quebrar esse contrato
+- metadados mais ricos de retrieval devem entrar como extensao futura, nao como ruptura do campo atual
 
 ## Configuracao por dominio
 
