@@ -1,7 +1,11 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.core.sanitize import sanitize_user_input
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     message: str = Field(min_length=1, max_length=4000)
     session_id: str | None = Field(default=None, max_length=160)
     domain: str | None = Field(default=None, max_length=80)
@@ -9,7 +13,7 @@ class ChatRequest(BaseModel):
     @field_validator("message")
     @classmethod
     def normalize_message(cls, value: str) -> str:
-        normalized = value.strip()
+        normalized = sanitize_user_input(value, max_length=4000)
         if not normalized:
             raise ValueError("message cannot be blank")
         return normalized

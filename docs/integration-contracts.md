@@ -59,6 +59,9 @@ Validacoes:
 - `message`: obrigatorio, sem branco puro, maximo 4000 caracteres.
 - `session_id`: opcional, maximo 160 caracteres, branco vira `null`.
 - `domain`: opcional, maximo 80 caracteres, branco vira `null`.
+- campos extras sao rejeitados com `422`.
+- o canal atual e texto-only; arquivos, anexos, uploads, imagens, PDFs ou metadados de arquivo nao fazem parte deste contrato.
+- caracteres de controle no `message` sao removidos antes do fluxo de chat, sem alterar a defesa principal de seguranca do prompt e handoff.
 
 Saida minima:
 

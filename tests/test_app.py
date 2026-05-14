@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.core.config import get_settings
+from app.main import app, create_app
 
 API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
 client = TestClient(app)
@@ -173,6 +174,52 @@ def test_chat_rejects_oversized_message() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_chat_rejects_extra_file_payload_fields() -> None:
+    for extra_field in ("file", "attachment", "metadata"):
+        response = client.post(
+            "/chat",
+            headers=API_KEY_HEADER,
+            json={
+                "domain": "suporte-vps-whatsapp",
+                "message": "Como instalar a Evolution API no VPS?",
+                extra_field: "manual.pdf",
+            },
+        )
+
+        assert response.status_code == 422
+
+
+def test_chat_ui_is_available_in_development() -> None:
+    response = client.get("/chat-ui")
+
+    assert response.status_code == 200
+    assert "Suporte VPS & WhatsApp" in response.text
+    assert "Perguntas rapidas" in response.text
+
+
+def test_chat_ui_static_renderer_uses_text_content() -> None:
+    response = client.get("/chat-assets/app.js")
+
+    assert response.status_code == 200
+    assert "textContent" in response.text
+    assert "innerHTML" not in response.text
+    assert "iniciante-primeiros-passos.md" in response.text
+    assert "qrcode-whatsapp.md" in response.text
+    assert "risco-bloqueio-whatsapp.md" in response.text
+    assert "webhook-n8n-zapi.md" in response.text
+
+
+def test_chat_ui_is_not_registered_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+    get_settings.cache_clear()
+    production_client = TestClient(create_app())
+
+    response = production_client.get("/chat-ui")
+
+    assert response.status_code == 404
+    get_settings.cache_clear()
 
 
 def test_feedback_route_is_registered() -> None:
