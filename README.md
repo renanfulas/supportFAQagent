@@ -28,10 +28,10 @@ Objetivos desta primeira versao:
 
 Estado atual:
 
-- `/chat` ainda usa retrieval lexical temporario e provider mock
-- `LLMService` ja consegue rotear para OpenAI/Anthropic quando o dominio trocar o provider
+- `/chat` usa retrieval lexical temporario com provider real configurado por dominio
+- `LLMService` ja roteia para OpenAI/Anthropic e preserva tratamento de erro quando faltar credencial ou o provider falhar
 - ja existem utilitarios para LangChain, Chroma, embeddings, prompt builder e CSV de chamados
-- smoke tests cobrem healthcheck, dominios, preview de ingestao e chat mock
+- smoke tests cobrem healthcheck, dominios, preview de ingestao e chat com fallback seguro
 - `PostgreSQL + pgvector` segue como integracao planejada para o retrieval principal
 
 ## Estrutura
@@ -66,9 +66,9 @@ tests/               # testes unitarios e de integracao
 
 - a arquitetura oficial do projeto e a modular em `app/api`, `app/domain_engine`, `app/ingestion`, `app/orchestration`, `app/retrieval` e `app/llm`
 - o bootstrap HTTP fica em `app/main.py`
-- o fluxo de resposta usa retrieval lexical local e `MockLLMProvider` no dominio padrao, sem depender de LangChain/Chroma no runtime atual
+- o fluxo de resposta usa retrieval lexical local como caminho ativo e provider real configurado no dominio padrao
 - o contrato de dominio ja controla persona, objetivo, diretrizes, escopo, mensagens padrao e politica de handoff
-- o `LLMService` ja esta preparado para usar `LLMWrapper` com OpenAI/Anthropic quando o dominio for configurado para isso
+- o `LLMService` ja usa `LLMWrapper` com OpenAI/Anthropic quando o dominio aponta para provider real
 - o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
 - handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
 - `/chat` ja retorna `request_id` e `error_code` para facilitar debug
@@ -108,9 +108,8 @@ python -m pytest
 
 ## Proximos passos
 
-- trocar o dominio de `mock` para provider real quando houver API key configurada
-- consolidar o splitter LangChain com a ingestao oficial
+- estabilizar o uso de provider real com credenciais de ambiente e observabilidade de falhas
 - integrar PostgreSQL + pgvector como vector store principal
-- conectar provider real de embeddings ao retrieval
+- conectar o adapter vetorial oficial ao retrieval principal
 - persistir conversas e feedback
 - calibrar thresholds e termos sensiveis com conversas reais

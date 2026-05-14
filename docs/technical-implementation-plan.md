@@ -34,17 +34,17 @@ O projeto ja possui algumas pecas importantes:
 
 Ainda nao esta integrado ao caminho principal:
 
-- `/chat` continua usando `RetrievalService` lexical e provider mock
+- `/chat` continua usando `RetrievalService` lexical como caminho ativo
 - `prompt_builder.py` ja e chamado por `ChatFlowService`
-- `LLMWrapper` ja esta integrado ao `LLMService`, mas o dominio padrao ainda usa `mock`
+- `LLMWrapper` ja esta integrado ao `LLMService` e o dominio padrao ja aponta para provider real
 - handoff estruturado ja retorna motivos de escalonamento
 - `RetrievalService` ja usa contrato `VectorStore`
 - `/chat` ja retorna `request_id` e `error_code`
 - `ChromaStore` ainda nao e o retrieval oficial do endpoint `/chat`
-- `domain.yaml` ainda aponta para `llm.provider: mock`
+- `domain.yaml` ja aponta para `llm.provider: openai`
 - `/feedback` ainda retorna `pending_persistence`
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
-- evals ainda medem a linha de base do MVP com mock/lexical, nao qualidade final de resposta
+- evals ainda medem a linha de base do MVP com retrieval lexical e comportamento endurecido, nao qualidade final de resposta
 
 ## Responsaveis
 
@@ -134,8 +134,8 @@ knowledge:
     - knowledge/faqs
 
 llm:
-  provider: mock
-  model: mock-model
+  provider: openai
+  model: gpt-4o-mini
 
 embedding:
   provider: openai
@@ -145,7 +145,7 @@ embedding:
 
 Observacao:
 
-- O provider padrao segue `mock` ate haver API key valida e decisao operacional.
+- O provider padrao do dominio inicial ja foi movido para `openai`, mas o ambiente ainda depende de `OPENAI_API_KEY` valida para resposta automatica completa.
 - Campos como `rag.history_turns`, `chunk_overlap` e politicas de seguranca mais detalhadas podem entrar depois, mas ainda nao sao contrato implementado.
 
 ## Fase 1 - Base de providers e contratos
@@ -190,7 +190,7 @@ Criterio de pronto:
 ## Renan - Arquitetura e orquestracao
 
 - Manter `LLMWrapper` integrado ao `LLMService` sem quebrar o mock usado nos testes.
-- Trocar `domain.yaml` para provider real apenas quando houver API key valida no ambiente.
+- Endurecer fallback e observabilidade quando o provider real nao puder responder por falta de credencial, timeout ou erro externo.
 - Definir se `ChatFlowService.answer()` vira async ou se o wrapper tera chamada sincrona equivalente.
 - Criar ou consolidar `BaseEmbeddingProvider`.
 - Integrar `get_embeddings()` ao servico de retrieval quando o vector store oficial estiver pronto.
