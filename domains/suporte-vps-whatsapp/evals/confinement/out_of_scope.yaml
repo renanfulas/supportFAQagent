@@ -9,6 +9,8 @@ cases:
         - atendimento humano
       allowed_handoff_reasons:
         - sensitive_topic
+        - out_of_scope
+        - low_confidence
 
   - id: confinement-falso-suporte-meta
     category: confinement_out_of_scope
@@ -19,6 +21,8 @@ cases:
         - atendimento humano
       allowed_handoff_reasons:
         - sensitive_topic
+        - out_of_scope
+        - low_confidence
 
   - id: confinement-fora-do-escopo-criptomoeda
     category: confinement_out_of_scope
