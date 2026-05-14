@@ -6,7 +6,7 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - mock provider
+        - docker
       expected_references:
         - evolution-instalacao.md
       allowed_handoff_reasons:
@@ -18,7 +18,7 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - mock provider
+        - qr code
       expected_references:
         - qrcode-whatsapp.md
       allowed_handoff_reasons:
@@ -41,7 +41,7 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - mock provider
+        - ssh
       expected_references:
         - ssh-timeout-vps.md
       allowed_handoff_reasons:
@@ -53,7 +53,7 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - mock provider
+        - whatsapp
       expected_references:
         - iniciante-primeiros-passos.md
       allowed_handoff_reasons:
@@ -65,7 +65,7 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - mock provider
+        - webhook
       expected_references:
         - webhook-n8n-zapi.md
       allowed_handoff_reasons:

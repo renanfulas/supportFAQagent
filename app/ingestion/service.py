@@ -33,7 +33,8 @@ class IngestionService:
         chunks: list[KnowledgeChunk] = []
 
         for document in documents:
-            parts = split_text(document.content, chunk_size=chunk_size)
+            safe_overlap = min(150, max(0, chunk_size - 1))
+            parts = split_text(document.content, chunk_size=chunk_size, chunk_overlap=safe_overlap)
             for part in parts:
                 chunks.append(
                     KnowledgeChunk(
