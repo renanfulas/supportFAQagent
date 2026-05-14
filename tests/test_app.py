@@ -2,7 +2,6 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-
 client = TestClient(app)
 
 
@@ -47,6 +46,7 @@ def test_chat_returns_answer_with_references() -> None:
     payload = response.json()
     assert payload["request_id"]
     assert payload["domain"] == "suporte-vps-whatsapp"
+    assert len(payload["answer"].strip()) > 0
     assert isinstance(payload["confidence"], float)
     assert isinstance(payload["escalated"], bool)
     assert isinstance(payload["handoff_reasons"], list)
