@@ -1,14 +1,37 @@
 # Plano tecnico - Qualidade para bloqueio de WhatsApp
 
+## Status em relacao ao PR #30
+
+Implementado no PR #30 (`Improve WhatsApp blocking guidance`):
+
+- artigo `risco-bloqueio-whatsapp.md` revisado com causa, acao imediata,
+  recuperacao, prevencao, proibicoes e escalonamento
+- novos evals adicionados para perguntas sem contexto, com VPS, com disparos e
+  com API nao oficial
+- caso existente `risco-bloqueio-numero` ajustado para exigir referencia ao
+  artigo correto
+- `ChatFlowService` ajustado para tentar preservar referencias quando uma
+  resposta for bloqueada antecipadamente apenas por `sensitive_topic`
+
+Validacao local observada apos o PR:
+
+```powershell
+python -m app.evals.run_domain_eval suporte-vps-whatsapp
+```
+
+Resultado observado: 16/16 casos passaram.
+
 ## Objetivo
 
 Melhorar a resposta do dominio `suporte-vps-whatsapp` para perguntas sobre
 bloqueio, banimento ou limitacao do WhatsApp em cenarios com VPS, Evolution API,
 automacao e API nao oficial.
 
-Esta frente pode rodar em paralelo ao adapter `pgvector`, porque altera apenas
-conteudo versionado e evals do dominio. Ela nao depende de PostgreSQL, n8n,
-deploy ou persistencia.
+Esta frente pode rodar em paralelo ao adapter `pgvector`, porque altera
+principalmente conteudo versionado e evals do dominio. Quando a resposta for
+bloqueada por `sensitive_topic`, pode exigir um pequeno ajuste de orquestracao
+para recuperar referencias antes do fallback seguro. Ela nao depende de
+PostgreSQL, n8n, deploy ou persistencia.
 
 ## Problema observado
 
@@ -32,6 +55,8 @@ Entram nesta frente:
 - adicionar evals especificos em `domains/suporte-vps-whatsapp/evals/cases.yaml`
 - reforcar expectativa de resposta segura para bloqueio de WhatsApp
 - validar que o caso continua escalando para atendimento humano
+- recuperar referencias do artigo mesmo quando o fluxo bloquear resposta
+  automatica por `sensitive_topic`
 
 Ficam fora desta frente:
 
@@ -177,7 +202,7 @@ Casos recomendados:
 ```yaml
 - id: whatsapp-api-nao-oficial-bloqueou
   category: operacao_whatsapp
-  question: Usei API nao oficial e meu numero foi bloqueado em 3 dias. O que faco?
+  question: Usei API nao oficial no WhatsApp e meu numero foi bloqueado em 3 dias. O que faco?
   expectation:
     should_escalate: true
     required_terms:
@@ -200,6 +225,27 @@ A Evolution API pode causar bloqueio ou banimento do numero?
 
 Na implementacao, ele deve passar a exigir tambem a referencia
 `risco-bloqueio-whatsapp.md`.
+
+## Ajuste de orquestracao implementado
+
+Quando uma pergunta de bloqueio disparar apenas `sensitive_topic`, o fluxo
+endurecido pode responder antes da chamada normal ao LLM. Nesse caso, o chat
+ainda deve tentar buscar referencias do dominio para preservar `references` e
+permitir que os evals comprovem que o artigo correto foi recuperado.
+
+Arquivo afetado:
+
+```text
+app/orchestration/chat_flow.py
+```
+
+Regra esperada:
+
+- quando o bloqueio vier apenas de `sensitive_topic`, recuperar chunks antes de
+  montar a resposta segura
+- se o retrieval falhar, manter resposta segura e referencias vazias
+- nao recuperar referencias para bloqueios como prompt injection, pedido de
+  segredo, fora de escopo ou pedido explicito de humano
 
 Enquanto o provider e o retrieval ainda estiverem na linha de base do MVP, evite
 exigir muitos termos semanticos ao mesmo tempo. Primeiro estabilize referencia,
@@ -230,6 +276,8 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 - Casos sem contexto, com VPS, com disparos e com API nao oficial estao cobertos.
 - Os casos esperam a referencia `risco-bloqueio-whatsapp.md`.
 - Casos de bloqueio continuam escalando para humano.
+- Respostas bloqueadas apenas por `sensitive_topic` ainda tentam preservar
+  referencias.
 - O texto nao ensina evasao de deteccao.
 - Os evals do dominio passam ou registram uma falha conhecida da linha de base.
 
