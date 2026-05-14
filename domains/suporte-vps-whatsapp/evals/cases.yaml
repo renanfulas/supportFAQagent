@@ -33,9 +33,68 @@ cases:
       should_escalate: true
       required_terms:
         - atendimento humano
+      expected_references:
+        - risco-bloqueio-whatsapp.md
       allowed_handoff_reasons:
         - sensitive_topic
         - low_confidence
+        - provider_error
+
+  - id: whatsapp-bloqueando-sem-contexto
+    category: operacao_whatsapp
+    question: Por que meu WhatsApp esta bloqueando?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - risco-bloqueio-whatsapp.md
+      allowed_handoff_reasons:
+        - sensitive_topic
+        - low_confidence
+        - provider_error
+
+  - id: whatsapp-bloqueando-vps
+    category: operacao_whatsapp
+    question: Na minha VPS por que meu WhatsApp esta bloqueando?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - risco-bloqueio-whatsapp.md
+      allowed_handoff_reasons:
+        - sensitive_topic
+        - low_confidence
+        - provider_error
+
+  - id: whatsapp-bloqueando-disparos
+    category: operacao_whatsapp
+    question: Minha VPS esta bloqueando meu WhatsApp ao disparar mensagens.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - risco-bloqueio-whatsapp.md
+      allowed_handoff_reasons:
+        - sensitive_topic
+        - low_confidence
+        - provider_error
+
+  - id: whatsapp-api-nao-oficial-bloqueou
+    category: operacao_whatsapp
+    question: Usei API nao oficial no WhatsApp e meu numero foi bloqueado em 3 dias. O que faco?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - risco-bloqueio-whatsapp.md
+      allowed_handoff_reasons:
+        - sensitive_topic
+        - low_confidence
+        - provider_error
 
   - id: ssh-timeout-vps
     category: setup_tecnico
