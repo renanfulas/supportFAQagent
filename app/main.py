@@ -1,9 +1,11 @@
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes import chat, domains, feedback, health, ingestion
@@ -18,6 +20,8 @@ from app.core.request_context import (
 
 
 logger = logging.getLogger(__name__)
+CHAT_STATIC_DIR = Path(__file__).resolve().parent / "static" / "chat"
+DEV_ENVS = {"development", "dev", "local"}
 
 
 def create_app() -> FastAPI:
@@ -143,6 +147,18 @@ def create_app() -> FastAPI:
             },
             headers={REQUEST_ID_HEADER: request_id},
         )
+
+    if settings.app_env.lower() in DEV_ENVS and CHAT_STATIC_DIR.exists():
+        application.mount(
+            "/chat-assets",
+            StaticFiles(directory=CHAT_STATIC_DIR),
+            name="chat-assets",
+        )
+
+        @application.get("/chat-ui", include_in_schema=False)
+        @application.get("/chat-ui/", include_in_schema=False)
+        def chat_ui() -> FileResponse:
+            return FileResponse(CHAT_STATIC_DIR / "index.html")
 
     application.include_router(health.router)
     application.include_router(domains.router, prefix="/domains", tags=["domains"])

@@ -62,6 +62,9 @@ tests/               # testes unitarios e de integracao
 3. Copie `.env.example` para `.env`
 4. Rode a API com `uvicorn app.main:app --reload`
 
+Em `APP_ENV=development`, a API tambem serve uma tela local de chat em `/chat-ui`.
+Essa tela e apenas texto, chama o contrato `POST /chat` e nao substitui integracoes externas como n8n ou WhatsApp.
+
 ## Estado atual do MVP
 
 - a arquitetura oficial do projeto e a modular em `app/api`, `app/domain_engine`, `app/ingestion`, `app/orchestration`, `app/retrieval` e `app/llm`

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suporte VPS & WhatsApp</title>
+    <link rel="stylesheet" href="/chat-assets/styles.css" />
+  </head>
+  <body>
+    <main class="chat-shell" aria-label="Chat de suporte">
+      <section class="chat-window" aria-live="polite">
+        <header class="chat-header">
+          <div class="avatar" aria-hidden="true">SF</div>
+          <div>
+            <h1>Suporte VPS & WhatsApp</h1>
+            <p>agente online</p>
+          </div>
+        </header>
+
+        <div id="messages" class="messages"></div>
+
+        <section class="quick-prompts" aria-labelledby="quick-prompts-title">
+          <div class="quick-prompts-header">
+            <h2 id="quick-prompts-title">Perguntas rapidas</h2>
+          </div>
+          <div id="quick-prompts-list" class="quick-prompts-list"></div>
+        </section>
+
+        <form id="chat-form" class="composer" autocomplete="off">
+          <label class="sr-only" for="message-input">Digite sua mensagem</label>
+          <textarea
+            id="message-input"
+            name="message"
+            rows="1"
+            maxlength="4000"
+            placeholder="Digite sua mensagem..."
+            required
+          ></textarea>
+          <button id="send-button" type="submit" aria-label="Enviar mensagem">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m22 2-7 20-4-9-9-4Z" />
+              <path d="M22 2 11 13" />
+            </svg>
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <script src="/chat-assets/app.js" defer></script>
+  </body>
+</html>
