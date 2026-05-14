@@ -93,6 +93,7 @@ python -m pytest
 - [Contrato de dominio](docs/domain-contract.md)
 - [Calibragem de dominio](docs/domain-evals.md)
 - [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
+- [Plano de qualidade para bloqueio de WhatsApp](docs/whatsapp-blocking-quality-plan.md)
 - [Observabilidade minima](docs/observability.md)
 - [Politica publica de seguranca](SECURITY.md)
 - [Plano de seguranca da VPS](docs/security/vps-security-plan.md)
