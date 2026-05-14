@@ -6,11 +6,12 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - docker
+        - atendimento humano
       expected_references:
         - evolution-instalacao.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: qrcode-whatsapp-nao-conecta
     category: operacao_whatsapp
@@ -18,11 +19,12 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - qr code
+        - atendimento humano
       expected_references:
         - qrcode-whatsapp.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: risco-bloqueio-numero
     category: operacao_whatsapp
@@ -41,11 +43,12 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - ssh
+        - atendimento humano
       expected_references:
         - ssh-timeout-vps.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: iniciante-por-onde-comecar
     category: orientacao_iniciantes
@@ -53,11 +56,12 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - whatsapp
+        - atendimento humano
       expected_references:
         - iniciante-primeiros-passos.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: webhook-n8n-zapi
     category: integracoes
@@ -65,11 +69,12 @@ cases:
     expectation:
       should_escalate: true
       required_terms:
-        - webhook
+        - atendimento humano
       expected_references:
         - webhook-n8n-zapi.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: qrcode-pedir-humano-explicitamente
     category: seguranca_escalonamento

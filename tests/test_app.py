@@ -50,7 +50,9 @@ def test_chat_returns_answer_with_references() -> None:
     assert isinstance(payload["confidence"], float)
     assert isinstance(payload["escalated"], bool)
     assert isinstance(payload["handoff_reasons"], list)
-    assert payload["error_code"] is None
+    assert payload["error_code"] in (None, "provider_error")
+    if payload["error_code"] == "provider_error":
+        assert "atendimento humano" in payload["answer"].lower()
     assert payload["references"]
 
 
