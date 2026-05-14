@@ -6,6 +6,7 @@ const input = document.querySelector("#message-input");
 const sendButton = document.querySelector("#send-button");
 const messages = document.querySelector("#messages");
 const quickPromptsList = document.querySelector("#quick-prompts-list");
+const providerKeyInput = document.querySelector("#provider-key-input");
 
 const QUICK_PROMPTS = [
   {
@@ -105,10 +106,7 @@ function setLoading(next) {
 async function sendChatMessage(message) {
   const response = await fetch("/chat", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": apiKey,
-    },
+    headers: buildHeaders(),
     body: JSON.stringify({
       domain: DOMAIN,
       session_id: sessionId,
@@ -117,11 +115,7 @@ async function sendChatMessage(message) {
   });
 
   if (response.status === 403) {
-    const typedKey = window.prompt("Chave local da API");
-    if (typedKey) {
-      apiKey = typedKey.trim();
-      return sendChatMessage(message);
-    }
+    throw new Error("Informe uma OpenAI API key ou o codigo do projeto.");
   }
 
   if (!response.ok) {
@@ -129,6 +123,20 @@ async function sendChatMessage(message) {
   }
 
   return response.json();
+}
+
+function buildHeaders() {
+  const headers = {
+      "Content-Type": "application/json",
+      "X-API-Key": apiKey,
+  };
+
+  const providerApiKey = providerKeyInput.value.trim();
+  if (providerApiKey) {
+    headers["X-LLM-API-Key"] = providerApiKey;
+  }
+
+  return headers;
 }
 
 function addStatus(text) {

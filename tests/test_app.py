@@ -197,6 +197,7 @@ def test_chat_ui_is_available_in_development() -> None:
     assert response.status_code == 200
     assert "Suporte VPS & WhatsApp" in response.text
     assert "Perguntas rapidas" in response.text
+    assert "API do modelo" in response.text
 
 
 def test_chat_ui_static_renderer_uses_text_content() -> None:
@@ -205,14 +206,40 @@ def test_chat_ui_static_renderer_uses_text_content() -> None:
     assert response.status_code == 200
     assert "textContent" in response.text
     assert "innerHTML" not in response.text
+    assert "X-LLM-API-Key" in response.text
     assert "iniciante-primeiros-passos.md" in response.text
     assert "qrcode-whatsapp.md" in response.text
     assert "risco-bloqueio-whatsapp.md" in response.text
     assert "webhook-n8n-zapi.md" in response.text
 
 
+def test_chat_ui_can_be_enabled_in_staging(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    get_settings.cache_clear()
+    staging_client = TestClient(create_app())
+
+    response = staging_client.get("/chat-ui")
+
+    assert response.status_code == 200
+    assert "Suporte VPS & WhatsApp" in response.text
+    get_settings.cache_clear()
+
+
 def test_chat_ui_is_not_registered_in_production(monkeypatch) -> None:
     monkeypatch.setenv("APP_ENV", "production")
+    get_settings.cache_clear()
+    production_client = TestClient(create_app())
+
+    response = production_client.get("/chat-ui")
+
+    assert response.status_code == 404
+    get_settings.cache_clear()
+
+
+def test_chat_ui_flag_does_not_enable_ui_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("ENABLE_CHAT_UI", "true")
     get_settings.cache_clear()
     production_client = TestClient(create_app())
 

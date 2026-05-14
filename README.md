@@ -63,7 +63,10 @@ tests/               # testes unitarios e de integracao
 4. Rode a API com `uvicorn app.main:app --reload`
 
 Em `APP_ENV=development`, a API tambem serve uma tela local de chat em `/chat-ui`.
-Essa tela e apenas texto, chama o contrato `POST /chat` e nao substitui integracoes externas como n8n ou WhatsApp.
+Em staging, essa tela pode ser liberada com `ENABLE_CHAT_UI=true`.
+Ela e apenas texto, chama o contrato `POST /chat` e nao substitui integracoes externas como n8n ou WhatsApp.
+Para testes controlados, a UI aceita uma chave do provider por requisicao via `X-LLM-API-Key`;
+se o valor enviado bater com `PROJECT_LLM_API_KEY_ALIAS`, o backend usa a chave privada configurada em `OPENAI_API_KEY`.
 
 ## Estado atual do MVP
 

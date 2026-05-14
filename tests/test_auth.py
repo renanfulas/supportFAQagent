@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 
+from app.core.config import get_settings
 from app.core.request_context import REQUEST_ID_HEADER
-from app.main import app
+from app.main import app, create_app
 
 
 API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
@@ -21,6 +22,111 @@ def test_chat_requires_api_key() -> None:
     assert response.status_code == 403
     assert response.headers[REQUEST_ID_HEADER] == "auth-chat-1"
     assert response.json()["detail"] == "Invalid API key"
+
+
+def test_chat_accepts_provider_key_when_chat_ui_is_enabled(
+    monkeypatch,
+) -> None:
+    captured: dict[str, str | None] = {}
+
+    class FakeWrapper:
+        def __init__(
+            self,
+            provider: str,
+            model: str,
+            api_key: str | None = None,
+        ) -> None:
+            captured["api_key"] = api_key
+
+        def generate_answer(self, prompt: str) -> str:
+            return "Resposta com chave de teste."
+
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    monkeypatch.setattr("app.llm.service.LLMWrapper", FakeWrapper)
+    get_settings.cache_clear()
+    staging_client = TestClient(create_app())
+
+    response = staging_client.post(
+        "/chat",
+        headers={
+            REQUEST_ID_HEADER: "chat-ui-provider-key",
+            "X-LLM-API-Key": "sk-user-test",
+        },
+        json={
+            "domain": "suporte-vps-whatsapp",
+            "message": "Como instalar Evolution API?",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["answer"] == "Resposta com chave de teste."
+    assert captured["api_key"] == "sk-user-test"
+    get_settings.cache_clear()
+
+
+def test_chat_alias_uses_environment_provider_key(monkeypatch) -> None:
+    captured: dict[str, str | None] = {}
+
+    class FakeWrapper:
+        def __init__(
+            self,
+            provider: str,
+            model: str,
+            api_key: str | None = None,
+        ) -> None:
+            captured["api_key"] = api_key
+
+        def generate_answer(self, prompt: str) -> str:
+            return "Resposta com alias do projeto."
+
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    monkeypatch.setenv("PROJECT_LLM_API_KEY_ALIAS", "project-test-alias")
+    monkeypatch.setattr("app.llm.service.LLMWrapper", FakeWrapper)
+    get_settings.cache_clear()
+    staging_client = TestClient(create_app())
+
+    response = staging_client.post(
+        "/chat",
+        headers={
+            REQUEST_ID_HEADER: "chat-ui-project-alias",
+            "X-LLM-API-Key": "project-test-alias",
+        },
+        json={
+            "domain": "suporte-vps-whatsapp",
+            "message": "Como instalar Evolution API?",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["answer"] == "Resposta com alias do projeto."
+    assert captured["api_key"] is None
+    get_settings.cache_clear()
+
+
+def test_chat_ui_provider_key_does_not_bypass_auth_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("ENABLE_CHAT_UI", "true")
+    get_settings.cache_clear()
+    production_client = TestClient(create_app())
+
+    response = production_client.post(
+        "/chat",
+        headers={
+            REQUEST_ID_HEADER: "chat-ui-production-blocked",
+            "X-LLM-API-Key": "sk-user-test",
+        },
+        json={
+            "domain": "suporte-vps-whatsapp",
+            "message": "Como instalar Evolution API?",
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.headers[REQUEST_ID_HEADER] == "chat-ui-production-blocked"
+    assert response.json()["detail"] == "Invalid API key"
+    get_settings.cache_clear()
 
 
 def test_feedback_requires_api_key() -> None:

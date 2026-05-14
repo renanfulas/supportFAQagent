@@ -4,27 +4,34 @@ from app.llm.base import BaseLLMProvider
 
 
 class LLMWrapper(BaseLLMProvider):
-    def __init__(self, provider: str = "openai", model: str = "gpt-4o-mini") -> None:
+    def __init__(
+        self,
+        provider: str = "openai",
+        model: str = "gpt-4o-mini",
+        api_key: str | None = None,
+    ) -> None:
         self.provider = provider
         settings = get_settings()
 
         if provider == "openai":
-            if not settings.openai_api_key:
+            openai_api_key = api_key or settings.openai_api_key
+            if not openai_api_key:
                 raise RuntimeError("OPENAI_API_KEY is required for OpenAI provider")
             from langchain_openai import ChatOpenAI
 
             self.client = ChatOpenAI(
-                api_key=settings.openai_api_key,
+                api_key=openai_api_key,
                 model=model,
                 temperature=0.0,
             )
         elif provider == "anthropic":
-            if not settings.anthropic_api_key:
+            anthropic_api_key = api_key or settings.anthropic_api_key
+            if not anthropic_api_key:
                 raise RuntimeError("ANTHROPIC_API_KEY is required for Anthropic provider")
             from langchain_anthropic import ChatAnthropic
 
             self.client = ChatAnthropic(
-                api_key=settings.anthropic_api_key,
+                api_key=anthropic_api_key,
                 model=model,
                 temperature=0.0,
             )

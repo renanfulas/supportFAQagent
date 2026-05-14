@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
     api_secret_key: str = Field(default="local-dev-api-key", alias="API_SECRET_KEY")
     rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE")
+    enable_chat_ui: bool = Field(default=False, alias="ENABLE_CHAT_UI")
+    project_llm_api_key_alias: str | None = Field(
+        default=None,
+        alias="PROJECT_LLM_API_KEY_ALIAS",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
