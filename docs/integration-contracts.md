@@ -14,6 +14,7 @@ Regra:
 
 - o cliente deve enviar `X-API-Key` com a chave configurada em `API_SECRET_KEY`
 - chamadas sem chave valida retornam `403`
+- em staging, quando `ENABLE_CHAT_UI=true`, `POST /chat` tambem aceita `X-LLM-API-Key` para testes pela `/chat-ui`; esse atalho nao funciona em `APP_ENV=production`
 - `GET /health`, `GET /domains` e `GET /ingestion/{domain_name}/preview` continuam publicas no estado atual do MVP
 
 Exemplo:
@@ -21,6 +22,15 @@ Exemplo:
 ```http
 X-API-Key: local-dev-api-key
 ```
+
+Exemplo de teste pela UI com chave do provider:
+
+```http
+X-LLM-API-Key: sk-...
+```
+
+Se `X-LLM-API-Key` for igual ao alias configurado em `PROJECT_LLM_API_KEY_ALIAS`, o backend usa a chave privada do ambiente, por exemplo `OPENAI_API_KEY`.
+O valor real de `OPENAI_API_KEY` nunca deve ser enviado ao navegador, logado ou versionado.
 
 Erro esperado sem chave valida:
 
@@ -82,6 +92,7 @@ Uso esperado:
 
 - `n8n` envia mensagens externas para este endpoint.
 - `n8n` deve enviar tambem `X-API-Key` quando consumir esta rota.
+- a `/chat-ui` pode enviar `X-LLM-API-Key` em staging para permitir que cada pessoa teste com a propria chave do provider ou com o alias do projeto.
 - Se `escalated=true`, `n8n` deve rotear para humano.
 - `request_id` deve ser preservado em logs e feedback.
 - A API retorna `references`; na persistencia PostgreSQL, este campo deve ser salvo em `messages.message_references`.

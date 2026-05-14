@@ -27,6 +27,7 @@ class ChatFlowService:
         question: str,
         session_id: str | None = None,
         request_id: str | None = None,
+        provider_api_key: str | None = None,
     ) -> dict[str, object]:
         error_code = None
         chunks = []
@@ -82,7 +83,10 @@ class ChatFlowService:
                     chunks=chunks,
                     history=history,
                 )
-                answer = self.llm_service.get_provider(domain).generate_answer(prompt)
+                answer = self.llm_service.get_provider(
+                    domain,
+                    api_key=provider_api_key,
+                ).generate_answer(prompt)
             except ProviderError as exc:
                 error_code = exc.error_code
                 if error_code not in handoff_reasons:

@@ -148,7 +148,12 @@ def create_app() -> FastAPI:
             headers={REQUEST_ID_HEADER: request_id},
         )
 
-    if settings.app_env.lower() in DEV_ENVS and CHAT_STATIC_DIR.exists():
+    chat_ui_enabled = (
+        settings.app_env.lower() in DEV_ENVS
+        or (settings.enable_chat_ui and settings.app_env.lower() != "production")
+    )
+
+    if chat_ui_enabled and CHAT_STATIC_DIR.exists():
         application.mount(
             "/chat-assets",
             StaticFiles(directory=CHAT_STATIC_DIR),
