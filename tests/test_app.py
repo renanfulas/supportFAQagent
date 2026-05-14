@@ -2,7 +2,6 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-
 client = TestClient(app)
 
 
@@ -32,7 +31,7 @@ def test_ingestion_preview_returns_documents_and_chunks() -> None:
     assert payload["sample_chunks"]
 
 
-def test_chat_returns_mock_answer_with_references() -> None:
+def test_chat_returns_answer_with_references() -> None:
     response = client.post(
         "/chat",
         json={
@@ -47,11 +46,13 @@ def test_chat_returns_mock_answer_with_references() -> None:
     payload = response.json()
     assert payload["request_id"]
     assert payload["domain"] == "suporte-vps-whatsapp"
-    assert "mock provider" in payload["answer"].lower()
+    assert len(payload["answer"].strip()) > 0
     assert isinstance(payload["confidence"], float)
     assert isinstance(payload["escalated"], bool)
     assert isinstance(payload["handoff_reasons"], list)
-    assert payload["error_code"] is None
+    assert payload["error_code"] in (None, "provider_error")
+    if payload["error_code"] == "provider_error":
+        assert "atendimento humano" in payload["answer"].lower()
     assert payload["references"]
 
 

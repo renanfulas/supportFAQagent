@@ -70,15 +70,16 @@ def _create_documents(
     chunk_size: int,
     chunk_overlap: int,
 ) -> list[Any]:
+    safe_overlap = min(chunk_overlap, max(0, chunk_size - 1))
     if RecursiveCharacterTextSplitter is not None:
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
+            chunk_overlap=safe_overlap,
             separators=["\n\n", "\n", " ", ""],
         )
         return splitter.create_documents(texts)
 
-    return [_SimpleDocument(page_content=part, metadata={}) for text in texts for part in _split_string(text, chunk_size, chunk_overlap)]
+    return [_SimpleDocument(page_content=part, metadata={}) for text in texts for part in _split_string(text, chunk_size, safe_overlap)]
 
 
 def _split_documents(
@@ -86,10 +87,11 @@ def _split_documents(
     chunk_size: int,
     chunk_overlap: int,
 ) -> list[Any]:
+    safe_overlap = min(chunk_overlap, max(0, chunk_size - 1))
     if RecursiveCharacterTextSplitter is not None:
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
+            chunk_overlap=safe_overlap,
             separators=["\n\n", "\n", " ", ""],
         )
         return splitter.split_documents(documents)
@@ -98,7 +100,7 @@ def _split_documents(
     for document in documents:
         metadata = dict(getattr(document, "metadata", {}) or {})
         page_content = getattr(document, "page_content", "")
-        for part in _split_string(page_content, chunk_size, chunk_overlap):
+        for part in _split_string(page_content, chunk_size, safe_overlap):
             chunks.append(_SimpleDocument(page_content=part, metadata=metadata))
     return chunks
 
