@@ -32,8 +32,8 @@ Hoje o repositorio ja possui:
 - dominio inicial versionado em `domains/suporte-vps-whatsapp/`
 - ingestao local de artigos e FAQs
 - retrieval lexical temporario
-- provider de LLM mock
-- `LLMService` integrado ao `LLMWrapper` para OpenAI/Anthropic quando o dominio trocar o provider
+- provider real configurado por dominio, com fallback seguro quando faltar credencial ou o provider falhar
+- `LLMService` integrado ao `LLMWrapper` para OpenAI/Anthropic no dominio atual
 - `ChatFlowService` integrado ao `prompt_builder.py`
 - handoff estruturado por baixa confianca, pedido humano e termos sensiveis
 - retrieval desacoplado por interface `VectorStore`
@@ -43,7 +43,7 @@ Hoje o repositorio ja possui:
 - `POST /ingestion/preview` para revisar chunking por payload, sem persistir
 - contrato modular de dominio com persona, diretrizes, escopo e mensagens padrao
 - evals locais para calibrar o dominio inicial com perguntas reais recorrentes
-- smoke tests para health, dominios, preview de ingestao e chat mock
+- smoke tests para health, dominios, preview de ingestao e chat com fallback seguro
 - utilitarios LangChain para CSV, chunking, embeddings, Chroma e prompt builder
 - documentacao base de arquitetura e contribuicao
 
@@ -125,9 +125,10 @@ Estado atual:
    - pergunta atual
    - contexto recuperado
    - historico recente curto, se existir
-7. O provider mock responde no dominio padrao.
-8. O sistema calcula a confianca.
-9. Se a confianca estiver abaixo do threshold, marca escalonamento.
+7. O provider configurado por dominio tenta responder usando o contexto recuperado.
+8. Se o provider nao puder responder, o sistema devolve fallback seguro com `provider_error`.
+9. O sistema calcula a confianca.
+10. Se a confianca estiver abaixo do threshold, marca escalonamento.
 
 Alvo do MVP com pgvector:
 
@@ -182,7 +183,7 @@ Nao deve:
 
 ## Fase 1
 
-- trocar o dominio de `mock` para provider real quando houver API key configurada
+- estabilizar o uso do provider real com credenciais de ambiente e observabilidade de falhas
 - integrar o wrapper de embeddings ao retrieval principal
 - atualizar `domain.yaml` com configuracoes reais de LLM, embedding e retrieval
 
@@ -258,7 +259,7 @@ Mitigacao:
 
 O MVP desta frente sera considerado pronto quando:
 
-- houver provider real de LLM funcionando
+- houver provider real de LLM funcionando com fallback seguro quando indisponivel
 - houver embeddings reais funcionando
 - o chunking estiver integrado
 - o retrieval vetorial estiver conectado ao vector store principal
