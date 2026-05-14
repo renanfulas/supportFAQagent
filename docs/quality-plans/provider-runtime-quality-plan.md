@@ -16,13 +16,25 @@ fallback seguro. Mesmo assim, antes de expor canais reais, a frente precisa
 ficar previsivel em falhas de credencial, timeout, erro de provider e resposta
 vazia.
 
+Estado atual confirmado no repositorio:
+
+- `domain.yaml` do dominio inicial aponta para provider real (`openai`)
+- `LLMService` roteia `mock`, `openai` e `anthropic`, preservando mock deterministico
+- `LLMWrapper` usa LangChain para OpenAI/Anthropic e aceita chave por requisicao
+- falta de credencial, falha de inicializacao, erro externo e resposta vazia hoje viram `ProviderError`
+- o `error_code` observavel atual para falhas de LLM e `provider_error`
+- `ChatFlowService` captura `ProviderError`, retorna mensagem segura do dominio e marca escalonamento
+- falhas de retrieval usam `retrieval_error` e tambem entram em `handoff_reasons`
+- `/chat` ja preserva `request_id`, `references`, `handoff_reasons` e `error_code`
+- `X-LLM-API-Key` existe para testes pela `/chat-ui` em staging quando habilitada, com alias opcional via `PROJECT_LLM_API_KEY_ALIAS`
+
 Lacunas principais:
 
-- diferenciar claramente provider indisponivel, timeout e resposta vazia
+- diferenciar claramente provider indisponivel, timeout e resposta vazia sem quebrar o contrato atual
 - preservar `request_id` e `error_code` em todas as falhas relevantes
 - evitar vazamento de segredo, prompt completo ou PII em logs
 - manter mock estavel nos testes sem mascarar problemas do provider real
-- definir quando a UI local pode usar `X-LLM-API-Key` com seguranca
+- manter documentado que `X-LLM-API-Key` e atalho de teste, nao autenticacao de producao
 
 ## Escopo
 
@@ -30,7 +42,7 @@ Entram nesta frente:
 
 - revisar `app/llm/service.py` e `app/llm/wrapper.py`
 - revisar tratamento de erro em `app/orchestration/chat_flow.py`
-- consolidar codigos observaveis de erro em `app/core/errors.py`
+- consolidar codigos observaveis de erro em `app/core/errors.py`, se forem criados codigos mais especificos
 - validar configuracao em `app/core/config.py`
 - cobrir falhas em `tests/test_llm_service.py` e `tests/test_chat_flow_errors.py`
 - conferir contrato em `docs/integration-contracts.md` quando mudar payload
@@ -49,11 +61,12 @@ Ficam fora desta frente:
 Para qualquer chamada ao provider real, o comportamento esperado e:
 
 - sucesso retorna resposta textual, sem quebrar `ChatResponse`
-- falta de credencial retorna fallback seguro com `error_code`
-- timeout retorna erro rastreavel sem stack trace para o usuario
-- resposta vazia nao vira resposta inventada
+- falta de credencial retorna fallback seguro com `error_code=provider_error` no estado atual
+- timeout retorna erro rastreavel sem stack trace para o usuario; se houver codigo especifico futuro, ele deve ser aditivo e documentado
+- resposta vazia nao vira resposta inventada e hoje deve cair no fallback de provider
 - erro externo preserva `request_id` e nao vaza segredo
 - testes continuam podendo usar provider mock de forma deterministica
+- `references` continua `list[str]` e nao deve depender da implementacao lexical atual
 
 ## Arquivos alvo
 
@@ -66,7 +79,8 @@ app/core/errors.py
 app/orchestration/chat_flow.py
 tests/test_llm_service.py
 tests/test_chat_flow_errors.py
-tests/test_request_observability.py
+tests/test_auth.py
+tests/test_observability_hardening.py
 docs/integration-contracts.md
 docs/observability.md
 ```
@@ -76,7 +90,8 @@ docs/observability.md
 Passos recomendados:
 
 - mapear erros atuais de `LLMWrapper`
-- padronizar excecoes internas para provider indisponivel, timeout e resposta invalida
+- manter `ProviderError` como contrato externo atual ou introduzir subcodigos de forma compativel
+- padronizar excecoes internas para provider indisponivel, timeout e resposta invalida sem vazar detalhes do SDK
 - garantir que `ChatFlowService` sempre transforma falhas em resposta segura
 - confirmar que `error_code` segue serializavel no contrato `/chat`
 - testar OpenAI/Anthropic por configuracao sem acoplar o restante do app
@@ -97,11 +112,13 @@ Esta frente nao deve:
 Casos minimos:
 
 - provider mock responde sem credencial externa
-- provider real sem credencial retorna fallback seguro
-- erro do provider produz `error_code`
+- `LLMService` roteia OpenAI/Anthropic e repassa chave por requisicao sem acoplar rotas ao SDK
+- provider real sem credencial retorna fallback seguro com `provider_error`
+- erro do provider produz `error_code=provider_error` e inclui o codigo em `handoff_reasons`
 - resposta vazia do provider nao gera resposta falsa
 - `request_id` aparece no header, corpo e log esperado
-- `X-LLM-API-Key` so funciona nas condicoes ja documentadas
+- `X-LLM-API-Key` so funciona nas condicoes documentadas em staging/chat UI e nao em producao
+- se forem adicionados codigos especificos de timeout ou credencial, os testes devem provar compatibilidade com consumidores atuais
 
 ## Validacao
 
@@ -109,7 +126,7 @@ Durante a frente:
 
 ```powershell
 python -m pytest tests/test_llm_service.py tests/test_chat_flow_errors.py
-python -m pytest tests/test_request_observability.py
+python -m pytest tests/test_auth.py tests/test_observability_hardening.py
 ```
 
 Validacao completa antes de commit:

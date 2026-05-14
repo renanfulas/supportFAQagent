@@ -1,28 +1,51 @@
-# Plano tecnico - Qualidade de chat, prompt e handoff
+# Plano tecnico - Qualidade de chat, prompt, confidence e handoff
 
 ## Objetivo
 
-Melhorar a consistencia do fluxo `/chat`: contexto recuperado, prompt final,
-confidence score e escalonamento humano com motivos estruturados.
+Manter e evoluir a consistencia do fluxo `/chat`: contexto recuperado, prompt
+final, confidence score e escalonamento humano com motivos estruturados.
 
 Esta frente e transversal, mas pode avancar sem persistencia real desde que nao
 assuma historico de conversas que ainda nao existe.
 
+## Estado atual
+
+Em `main`, o PR #31 (`codex/soften-prompt-guardrails`) ja foi integrado. O
+comportamento atual do chat nao e apenas bloqueio duro: ele preserva guardrails
+centrais, mas permite orientacao segura quando ha contexto suficiente e o risco
+nao exige recusa imediata.
+
+Hoje o fluxo relevante esta assim:
+
+- `ChatFlowService` usa retrieval lexical temporario antes de montar prompt.
+- `prompt_builder.py` e o ponto unico de montagem do prompt final.
+- O dominio inicial aponta para `llm.provider: openai` e `model: gpt-4o-mini`.
+- `LLMService` pode usar provider real quando ha credencial valida.
+- Falha do provider retorna mensagem segura do dominio e `error_code`.
+- `confidence` e heuristico: `0.0` sem chunks e media arredondada dos scores recuperados quando ha chunks.
+- `HandoffService` retorna motivos estruturados antes e depois do retrieval.
+- Baixa confianca abaixo de `handoff.confidence_threshold` adiciona `low_confidence`.
+- Baixa confianca sem palavra-chave de roteamento do dominio tambem adiciona `out_of_scope`.
+- Pedido explicito de humano adiciona `explicit_human_request`.
+- Termos sensiveis adicionam `sensitive_topic`.
+- Pedido de segredo adiciona `secret_request` e `sensitive_topic`.
+- Tentativa de prompt injection ou redefinicao adiciona `prompt_injection_attempt`.
+- Respostas automatizadas sao bloqueadas para `explicit_human_request`, `out_of_scope`, `prompt_injection_attempt` e `secret_request`.
+- `sensitive_topic` escala, mas nao bloqueia automaticamente uma orientacao segura quando o restante do fluxo permite.
+- Historico recente ainda nao vem de persistencia; `_build_history()` retorna lista vazia, embora o formatter ja suporte historico curto.
+
 ## Problema observado
 
-O `ChatFlowService` ja usa `prompt_builder.py`, calcula confianca e chama handoff.
-Ainda assim, o comportamento precisa continuar previsivel quando o contexto e
-fraco, quando o usuario pede humano, quando ha termos sensiveis ou quando o
-provider falha.
-
-Lacunas principais:
+O comportamento estrutural ja esta implementado, mas ainda precisa ser calibrado
+contra conversas reais. As lacunas atuais sao:
 
 - calibrar confidence sem fingir precisao estatistica
-- garantir que baixa confianca escale
-- manter motivos estruturados de handoff
-- impedir que prompt injection do usuario ou do contexto mude regras centrais
-- preparar historico curto sem depender de persistencia inexistente
-- alinhar evals com os casos reais do dominio
+- evitar que `low_confidence` vire ruido em perguntas validas com retrieval lexical fraco
+- manter motivos estruturados de handoff sem misturar erro tecnico com decisao de negocio
+- garantir que prompt injection do usuario ou do contexto nao mude regras centrais
+- confirmar que o soften guardrails nao permite resposta arriscada em tema sensivel
+- preparar historico curto somente quando houver persistencia real
+- alinhar evals com casos reais do dominio e com o comportamento suavizado
 
 ## Escopo
 
@@ -44,6 +67,7 @@ Ficam fora desta frente:
 - roteamento omnichannel
 - mudanca de schema SQL
 - dashboard de qualidade
+- mover regra central de handoff para n8n
 
 ## Contrato de resposta esperado
 
@@ -58,10 +82,11 @@ Para cada chamada `/chat`, a resposta deve preservar:
 - `references`
 - `error_code`
 
-Quando o contexto for insuficiente, a resposta deve dizer isso de forma clara e
-encaminhar para humano quando a politica do dominio exigir.
+Quando o contexto for insuficiente, a resposta deve dizer isso de forma clara,
+manter `confidence` baixa e encaminhar para humano quando a politica do dominio
+exigir.
 
-## Arquivos alvo
+## Arquivos de referencia
 
 ```text
 app/orchestration/chat_flow.py
@@ -69,10 +94,7 @@ app/orchestration/prompt_builder.py
 app/orchestration/confidence.py
 app/handoff/service.py
 app/handoff/models.py
-app/api/schemas/chat.py
 domains/suporte-vps-whatsapp/domain.yaml
-domains/suporte-vps-whatsapp/prompts/system.txt
-domains/suporte-vps-whatsapp/prompts/style.txt
 domains/suporte-vps-whatsapp/evals/cases.yaml
 tests/test_prompt_builder.py
 tests/test_handoff_service.py
@@ -80,16 +102,31 @@ tests/test_domain_evals.py
 tests/test_app.py
 ```
 
-## Implementacao sugerida
+## Comportamento esperado por area
 
-Passos recomendados:
+Prompt:
 
-- revisar o prompt final gerado para perguntas com e sem contexto
-- garantir que o prompt instrui a responder apenas com contexto recuperado
-- separar confidence heuristica de motivos de handoff
-- testar pedido explicito de humano em frases reais
-- testar termos sensiveis configurados no dominio
-- calibrar evals antes de aumentar exigencia semantica
+- Deve priorizar o contexto recuperado e manter orientacao conservadora quando ele for incompleto.
+- Deve preservar o contrato de confinamento do dominio: fora de escopo, redefinicao, prompt interno e segredos.
+- Deve responder apenas em texto puro.
+- Deve orientar o proximo passo seguro quando faltar contexto, sem inventar comando, politica ou configuracao.
+- Deve recusar ou neutralizar pedidos para ignorar regras, revelar prompt, expor credenciais ou assumir papel fora do dominio.
+
+Confidence:
+
+- Deve continuar sendo tratado como heuristica operacional, nao como metrica estatistica.
+- Sem chunks, deve ser `0.0`.
+- Com chunks, hoje segue media dos scores retornados pelo retrieval lexical.
+- O threshold oficial vem de `domain.yaml` (`handoff.confidence_threshold`, hoje `0.7`).
+- Mudancas futuras devem ser calibradas com evals antes de alterar o threshold.
+
+Handoff:
+
+- Deve manter `handoff_reasons` estruturado e estavel.
+- `explicit_human_request`, `out_of_scope`, `prompt_injection_attempt` e `secret_request` devem bloquear resposta automatizada livre.
+- `sensitive_topic` deve escalar, mas pode permitir resposta cautelosa e textual quando houver contexto seguro.
+- `provider_error` ou outros erros tecnicos devem aparecer como `error_code` e podem ser agregados aos motivos sem virar regra de negocio.
+- n8n deve consumir a decisao do backend, nao recalcular a politica central.
 
 ## Conteudo proibido
 
@@ -111,9 +148,18 @@ Categorias recomendadas:
 - tema sensivel deve escalar
 - prompt injection deve ser recusado ou neutralizado
 - contexto insuficiente deve admitir limite
+- pedido de segredo deve escalar e nao expor credenciais
+- tema sensivel com contexto seguro deve escalar sem necessariamente bloquear toda orientacao textual
 
 Enquanto o retrieval lexical for a linha de base, prefira exigir referencia,
 escalonamento e motivo de handoff antes de exigir muitos termos semanticos.
+
+Os testes atuais ja cobrem:
+
+- prompt com conteudo recuperado, regras de dominio, texto puro e canal sem anexos
+- limite de historico formatado, embora o fluxo real ainda nao persista historico
+- handoff por baixa confianca, pedido humano, tema sensivel, redefinicao e fora de escopo
+- suite inicial de evals do dominio carregando e passando sem falhas
 
 ## Validacao
 
