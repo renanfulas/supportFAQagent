@@ -5,22 +5,26 @@ cases:
     question: A Evolution API nao esta rodando na minha VPS, alguem pode ajudar?
     expectation:
       should_escalate: true
-      required_terms: []
+      required_terms:
+        - atendimento humano
       expected_references:
         - evolution-instalacao.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: qrcode-whatsapp-nao-conecta
     category: operacao_whatsapp
     question: Quando tento conectar meu WhatsApp na Evolution, o QR Code nao abre e o codigo nao adiciona o dispositivo.
     expectation:
       should_escalate: true
-      required_terms: []
+      required_terms:
+        - atendimento humano
       expected_references:
         - qrcode-whatsapp.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: risco-bloqueio-numero
     category: operacao_whatsapp
@@ -38,33 +42,39 @@ cases:
     question: Minha VPS esta com erro de SSH timeout no Putty e terminal, o que posso verificar?
     expectation:
       should_escalate: true
-      required_terms: []
+      required_terms:
+        - atendimento humano
       expected_references:
         - ssh-timeout-vps.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: iniciante-por-onde-comecar
     category: orientacao_iniciantes
     question: Sou iniciante e quero criar um agente para responder WhatsApp e encaminhar emails. Por onde comeco?
     expectation:
       should_escalate: true
-      required_terms: []
+      required_terms:
+        - atendimento humano
       expected_references:
         - iniciante-primeiros-passos.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: webhook-n8n-zapi
     category: integracoes
     question: Meu webhook do n8n com Z-API nao funciona, pode ser firewall da VPS?
     expectation:
       should_escalate: true
-      required_terms: []
+      required_terms:
+        - atendimento humano
       expected_references:
         - webhook-n8n-zapi.md
       allowed_handoff_reasons:
         - low_confidence
+        - provider_error
 
   - id: qrcode-pedir-humano-explicitamente
     category: seguranca_escalonamento
