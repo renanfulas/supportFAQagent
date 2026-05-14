@@ -40,6 +40,12 @@ Eventos atuais:
 - `chat_completed`: dominio, `session_id_hash`, confianca, escalonamento, motivos e erro.
 - `feedback_recorded`: feedback recebido, origem, `session_id_hash` e armazenamento atual.
 
+Eventos e sinais importantes para a trilha de seguranca:
+
+- `403` em rota protegida deve ser tratado como falha de autenticacao de integracao, nao como erro funcional do dominio
+- `429` no `/chat` indica rate limiting e deve acionar retry com backoff no consumidor
+- `handoff_reasons` e `escalated=true` devem ser preservados em logs ou automacoes externas sem depender do texto livre da resposta
+
 ## Campos importantes
 
 - `request_id`: correlacao da chamada HTTP atual.
@@ -48,6 +54,14 @@ Eventos atuais:
 - `session_id_hash`: hash curto do identificador externo da conversa, quando existir.
 - `error_code`: erro observavel, como `provider_error` ou `retrieval_error`.
 - `handoff_reasons`: motivos de escalonamento para humano.
+
+Campos que integracoes externas devem preservar:
+
+- `request_id`
+- `chat_request_id`
+- `handoff_reasons`
+- `error_code`
+- `references`
 
 ## Limite intencional do MVP
 
