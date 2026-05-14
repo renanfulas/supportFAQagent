@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.schemas.ingestion import (
     IngestionPreviewChunk,
@@ -7,6 +7,7 @@ from app.api.schemas.ingestion import (
 )
 from app.core.config import get_settings
 from app.core.request_context import get_request_id
+from app.core.security import verify_api_key
 from app.domain_engine.loader import DomainLoader
 from app.ingestion.models import KnowledgeDocument
 from app.ingestion.service import IngestionService
@@ -19,6 +20,7 @@ router = APIRouter()
 def preview_payload_ingestion(
     payload: IngestionPreviewRequest,
     request: Request,
+    _: str = Depends(verify_api_key),
 ) -> IngestionPreviewResponse:
     settings = get_settings()
     loader = DomainLoader(settings.domains_path)

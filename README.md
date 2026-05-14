@@ -28,10 +28,10 @@ Objetivos desta primeira versao:
 
 Estado atual:
 
-- `/chat` ainda usa retrieval lexical temporario e provider mock
-- `LLMService` ja consegue rotear para OpenAI/Anthropic quando o dominio trocar o provider
+- `/chat` usa retrieval lexical temporario com provider real configurado por dominio
+- `LLMService` ja roteia para OpenAI/Anthropic e preserva tratamento de erro quando faltar credencial ou o provider falhar
 - ja existem utilitarios para LangChain, Chroma, embeddings, prompt builder e CSV de chamados
-- smoke tests cobrem healthcheck, dominios, preview de ingestao e chat mock
+- smoke tests cobrem healthcheck, dominios, preview de ingestao e chat com fallback seguro
 - `PostgreSQL + pgvector` segue como integracao planejada para o retrieval principal
 
 ## Estrutura
@@ -62,13 +62,19 @@ tests/               # testes unitarios e de integracao
 3. Copie `.env.example` para `.env`
 4. Rode a API com `uvicorn app.main:app --reload`
 
+Em `APP_ENV=development`, a API tambem serve uma tela local de chat em `/chat-ui`.
+Em staging, essa tela pode ser liberada com `ENABLE_CHAT_UI=true`.
+Ela e apenas texto, chama o contrato `POST /chat` e nao substitui integracoes externas como n8n ou WhatsApp.
+Para testes controlados, a UI aceita uma chave do provider por requisicao via `X-LLM-API-Key`;
+se o valor enviado bater com `PROJECT_LLM_API_KEY_ALIAS`, o backend usa a chave privada configurada em `OPENAI_API_KEY`.
+
 ## Estado atual do MVP
 
 - a arquitetura oficial do projeto e a modular em `app/api`, `app/domain_engine`, `app/ingestion`, `app/orchestration`, `app/retrieval` e `app/llm`
 - o bootstrap HTTP fica em `app/main.py`
-- o fluxo de resposta usa retrieval lexical local e `MockLLMProvider` no dominio padrao, sem depender de LangChain/Chroma no runtime atual
+- o fluxo de resposta usa retrieval lexical local como caminho ativo e provider real configurado no dominio padrao
 - o contrato de dominio ja controla persona, objetivo, diretrizes, escopo, mensagens padrao e politica de handoff
-- o `LLMService` ja esta preparado para usar `LLMWrapper` com OpenAI/Anthropic quando o dominio for configurado para isso
+- o `LLMService` ja usa `LLMWrapper` com OpenAI/Anthropic quando o dominio aponta para provider real
 - o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
 - handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
 - `/chat` ja retorna `request_id` e `error_code` para facilitar debug
@@ -93,6 +99,14 @@ python -m pytest
 - [Contrato de dominio](docs/domain-contract.md)
 - [Calibragem de dominio](docs/domain-evals.md)
 - [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
+- [Planos de qualidade por frente](docs/quality-plans/README.md)
+- [Plano de qualidade para bloqueio de WhatsApp](docs/quality-plans/whatsapp-blocking-quality-plan.md)
+- [Plano de qualidade de provider e runtime de LLM](docs/quality-plans/provider-runtime-quality-plan.md)
+- [Plano de qualidade de ingestao e chunking](docs/quality-plans/ingestion-chunking-quality-plan.md)
+- [Plano de qualidade de retrieval vetorial](docs/quality-plans/vector-retrieval-quality-plan.md)
+- [Plano de qualidade de chat, prompt e handoff](docs/quality-plans/chat-handoff-quality-plan.md)
+- [Plano de qualidade de feedback e n8n](docs/quality-plans/feedback-n8n-quality-plan.md)
+- [Plano de qualidade da chat UI local](docs/quality-plans/chat-ui-quality-plan.md)
 - [Observabilidade minima](docs/observability.md)
 - [Politica publica de seguranca](SECURITY.md)
 - [Plano de seguranca da VPS](docs/security/vps-security-plan.md)
@@ -108,9 +122,8 @@ python -m pytest
 
 ## Proximos passos
 
-- trocar o dominio de `mock` para provider real quando houver API key configurada
-- consolidar o splitter LangChain com a ingestao oficial
+- estabilizar o uso de provider real com credenciais de ambiente e observabilidade de falhas
 - integrar PostgreSQL + pgvector como vector store principal
-- conectar provider real de embeddings ao retrieval
+- conectar o adapter vetorial oficial ao retrieval principal
 - persistir conversas e feedback
 - calibrar thresholds e termos sensiveis com conversas reais

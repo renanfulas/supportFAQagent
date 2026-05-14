@@ -1,0 +1,7 @@
+title = "supportFAQagent gitleaks config"
+
+[allowlist]
+description = "Ignore local audit artifacts generated during secret scans."
+paths = [
+  '''(^|/)gitleaks-report\.json$''',
+]

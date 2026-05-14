@@ -10,9 +10,9 @@ from app.retrieval.service import RetrievalService
 class ChatFlowService:
     BLOCKING_REASONS = {
         "explicit_human_request",
+        "out_of_scope",
         "prompt_injection_attempt",
         "secret_request",
-        "sensitive_topic",
     }
 
     def __init__(self) -> None:
@@ -26,12 +26,18 @@ class ChatFlowService:
         question: str,
         session_id: str | None = None,
         request_id: str | None = None,
+        provider_api_key: str | None = None,
     ) -> dict[str, object]:
         error_code = None
         chunks = []
         pre_handoff_reasons = self.handoff_service.inspect_question(domain, question)
 
         if self._should_block_automated_response(pre_handoff_reasons):
+            if self._can_retrieve_references_for_blocked_response(pre_handoff_reasons):
+                try:
+                    chunks = self.retrieval_service.retrieve(domain, question)
+                except RetrievalError:
+                    chunks = []
             return {
                 "request_id": request_id or "",
                 "domain": domain.name,
@@ -39,7 +45,7 @@ class ChatFlowService:
                 "confidence": 0.0,
                 "escalated": True,
                 "handoff_reasons": pre_handoff_reasons,
-                "references": [],
+                "references": [chunk.source for chunk in chunks],
                 "error_code": None,
             }
 
@@ -81,7 +87,10 @@ class ChatFlowService:
                     chunks=chunks,
                     history=history,
                 )
-                answer = self.llm_service.get_provider(domain).generate_answer(prompt)
+                answer = self.llm_service.get_provider(
+                    domain,
+                    api_key=provider_api_key,
+                ).generate_answer(prompt)
             except ProviderError as exc:
                 error_code = exc.error_code
                 if error_code not in handoff_reasons:
@@ -106,11 +115,21 @@ class ChatFlowService:
     def _should_block_automated_response(self, reasons: list[str]) -> bool:
         return any(reason in self.BLOCKING_REASONS for reason in reasons)
 
+    def _can_retrieve_references_for_blocked_response(self, reasons: list[str]) -> bool:
+        return bool(reasons) and all(reason == "sensitive_topic" for reason in reasons)
+
     def _build_hardened_response(self, reasons: list[str]) -> str:
         if "explicit_human_request" in reasons:
             return (
                 "Vou escalar para atendimento humano. "
                 "Nao vou pedir nem expor senha, token, chave ou detalhes internos por aqui."
+            )
+
+        if "out_of_scope" in reasons:
+            return (
+                "Nao posso atuar fora do escopo deste dominio. "
+                "Se o tema nao for sobre VPS, WhatsApp, Evolution API, n8n ou automacoes relacionadas, "
+                "o caminho seguro e escalar para atendimento humano."
             )
 
         if "prompt_injection_attempt" in reasons or "secret_request" in reasons:

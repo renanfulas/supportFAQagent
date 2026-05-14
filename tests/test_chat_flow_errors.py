@@ -32,7 +32,11 @@ class WorkingRetrievalService:
 
 
 class FailingLLMService:
-    def get_provider(self, domain: DomainConfig):
+    def get_provider(
+        self,
+        domain: DomainConfig,
+        api_key: str | None = None,
+    ):
         raise ProviderError("failed")
 
 

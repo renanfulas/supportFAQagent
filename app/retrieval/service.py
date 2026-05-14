@@ -1,8 +1,24 @@
 from app.core.errors import RetrievalError
 from app.domain_engine.models import DomainConfig
+from app.retrieval.embeddings import get_domain_embeddings
 from app.retrieval.lexical_store import LexicalVectorStore
 from app.retrieval.models import RetrievedChunk
 from app.retrieval.vector_store import VectorStore
+
+
+def build_vector_store(domain: DomainConfig) -> VectorStore:
+    """Factory: resolve embeddings do domínio e retorna o VectorStore ativo.
+
+    get_domain_embeddings está conectado aqui e pronto para ser passado
+    ao adapter pgvector na Fase 3. LexicalVectorStore é o caminho ativo
+    até a integração com pgvector.
+    """
+    embedding_fn = get_domain_embeddings(domain)
+
+    # Fase 3 — substituir por:
+    # return PgVectorStore(embedding_function=embedding_fn)
+    _ = embedding_fn
+    return LexicalVectorStore()
 
 
 class RetrievalService:

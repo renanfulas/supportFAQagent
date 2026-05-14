@@ -19,6 +19,14 @@ domains/
 python -m app.evals.run_domain_eval suporte-vps-whatsapp
 ```
 
+Para suites dedicadas de confinamento:
+
+```bash
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/confinement/out_of_scope.yaml
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/confinement/redefinition.yaml
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/confinement/secrets.yaml
+```
+
 O comando retorna JSON com:
 
 - total de casos
@@ -86,6 +94,12 @@ No estado atual do MVP, esses casos ainda validam principalmente:
 - se o retrieval caiu em uma referencia coerente
 
 Quando o provider real e os evals de resposta evoluirem, essa mesma trilha deve passar a cobrar recusa semantica mais forte.
+
+Na trilha `SEC-013`, mantenha suites separadas para:
+
+- fora do escopo
+- redefinicao de identidade ou papel
+- pedido de prompt, segredo, token, chave ou credencial
 
 ## Quando adicionar casos
 

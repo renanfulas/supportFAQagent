@@ -4,13 +4,14 @@ from app.core.request_context import REQUEST_ID_HEADER
 from app.main import app
 
 
+API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
 client = TestClient(app)
 
 
 def test_post_ingestion_preview_chunks_payload_documents() -> None:
     response = client.post(
         "/ingestion/preview",
-        headers={REQUEST_ID_HEADER: "ingest-123"},
+        headers={REQUEST_ID_HEADER: "ingest-123", **API_KEY_HEADER},
         json={
             "domain": "suporte-vps-whatsapp",
             "chunk_size": 200,
@@ -39,6 +40,7 @@ def test_post_ingestion_preview_chunks_payload_documents() -> None:
 def test_post_ingestion_preview_uses_payload_source_fallback() -> None:
     response = client.post(
         "/ingestion/preview",
+        headers=API_KEY_HEADER,
         json={
             "domain": "suporte-vps-whatsapp",
             "documents": [
@@ -57,6 +59,7 @@ def test_post_ingestion_preview_uses_payload_source_fallback() -> None:
 def test_post_ingestion_preview_rejects_blank_document_content() -> None:
     response = client.post(
         "/ingestion/preview",
+        headers=API_KEY_HEADER,
         json={
             "domain": "suporte-vps-whatsapp",
             "documents": [
@@ -75,7 +78,7 @@ def test_post_ingestion_preview_rejects_blank_document_content() -> None:
 def test_post_ingestion_preview_returns_404_for_unknown_domain() -> None:
     response = client.post(
         "/ingestion/preview",
-        headers={REQUEST_ID_HEADER: "ingest-404"},
+        headers={REQUEST_ID_HEADER: "ingest-404", **API_KEY_HEADER},
         json={
             "domain": "nao-existe",
             "documents": [
