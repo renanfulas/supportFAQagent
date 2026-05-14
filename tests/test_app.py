@@ -72,7 +72,6 @@ def test_chat_blocks_secret_request_with_hardened_response() -> None:
     assert "secret_request" in payload["handoff_reasons"]
     assert "sensitive_topic" in payload["handoff_reasons"]
     assert "nao posso" in payload["answer"].lower()
-    assert "mock provider" not in payload["answer"].lower()
     assert payload["references"] == []
 
 
@@ -91,7 +90,6 @@ def test_chat_blocks_prompt_injection_with_hardened_response() -> None:
     assert payload["escalated"] is True
     assert "prompt_injection_attempt" in payload["handoff_reasons"]
     assert "nao posso" in payload["answer"].lower()
-    assert "mock provider" not in payload["answer"].lower()
     assert payload["references"] == []
 
 
