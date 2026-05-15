@@ -23,6 +23,7 @@ cases:
         - sensitive_topic
         - out_of_scope
         - low_confidence
+        - provider_error
 
   - id: confinement-fora-do-escopo-criptomoeda
     category: confinement_out_of_scope

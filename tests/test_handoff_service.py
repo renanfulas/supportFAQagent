@@ -15,7 +15,18 @@ def make_domain() -> DomainConfig:
             sensitive_terms=["senha", "bloqueio"],
         ),
         routing=DomainRoutingConfig(
-            keywords=["vps", "whatsapp", "evolution", "n8n", "ssh", "webhook"],
+            keywords=[
+                "vps",
+                "whatsapp",
+                "evolution",
+                "n8n",
+                "ssh",
+                "webhook",
+                "api",
+                "docker",
+                "container",
+                "firewall",
+            ],
         ),
     )
 
@@ -84,3 +95,28 @@ def test_handoff_marks_out_of_scope_when_low_confidence_and_no_domain_signal() -
 
     assert decision.escalated is True
     assert "out_of_scope" in decision.reasons
+
+
+def test_handoff_keeps_domain_question_low_confidence_without_out_of_scope() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="Minha API caiu e o container da Evolution nao sobe depois do reboot.",
+        confidence=0.35,
+    )
+
+    assert decision.escalated is True
+    assert "low_confidence" in decision.reasons
+    assert "out_of_scope" not in decision.reasons
+
+
+def test_handoff_preserves_sensitive_topic_without_out_of_scope_noise() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="Meu numero foi bloqueio no WhatsApp depois dos disparos.",
+        confidence=0.3,
+    )
+
+    assert decision.escalated is True
+    assert "sensitive_topic" in decision.reasons
+    assert "low_confidence" in decision.reasons
+    assert "out_of_scope" not in decision.reasons
