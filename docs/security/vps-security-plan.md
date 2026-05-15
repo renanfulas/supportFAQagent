@@ -31,11 +31,14 @@ Recomendacao minima:
 - SSH: liberar apenas para IPs autorizados
 - HTTP e HTTPS: liberados para o mundo quando necessario
 - Banco, paineis e portas internas: fechados por padrao
+- portas temporarias de debug, como `8081`, nao devem ficar abertas para a internet
 
 Checklist:
 
 - [ ] politica default deny incoming
 - [ ] acesso administrativo restrito
+- [ ] nenhuma porta interna/debug exposta publicamente sem justificativa temporaria
+- [ ] remover regras antigas de allow para `8081/tcp` quando a validacao terminar
 - [ ] revisao periodica das regras
 
 ## Camada 2 - Docker e isolamento interno

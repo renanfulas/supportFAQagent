@@ -18,6 +18,7 @@ Incluido nesta etapa:
 - validar endpoints de smoke test
 - verificar logs basicos
 - registrar resultado sanitizado
+- manter portas temporarias de debug fechadas para acesso publico
 
 Fora do escopo desta etapa:
 
@@ -28,6 +29,7 @@ Fora do escopo desta etapa:
 - n8n
 - Cloudflare publico
 - abertura ampla de firewall
+- exposicao publica de portas temporarias como `8081`
 - DNS definitivo
 
 ## Pre-requisitos
@@ -99,6 +101,9 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 Nao usar `0.0.0.0` nesta primeira etapa sem aprovacao explicita.
+Nao manter portas alternativas como `8081` abertas para internet. Se uma porta
+temporaria for usada para debug, remover o listener e a regra de firewall assim
+que a validacao terminar.
 
 ## Smoke tests
 
