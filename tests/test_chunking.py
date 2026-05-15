@@ -26,6 +26,10 @@ def test_split_text_returns_plain_dict_chunks_with_indexes() -> None:
     assert "token_estimate" in chunks[0]
 
 
+def test_split_text_ignores_blank_content() -> None:
+    assert split_text(" \n\t ", chunk_size=10, chunk_overlap=0) == []
+
+
 def test_split_documents_to_dicts_preserves_document_metadata() -> None:
     chunks = split_documents_to_dicts(
         [
@@ -41,6 +45,28 @@ def test_split_documents_to_dicts_preserves_document_metadata() -> None:
     assert chunks
     assert chunks[0]["metadata"]["source"] == "tickets.csv"
     assert chunks[0]["metadata"]["id"] == "123"
+
+
+def test_split_documents_to_dicts_resets_indexes_per_document_and_skips_blank() -> None:
+    chunks = split_documents_to_dicts(
+        [
+            StubDocument(page_content="primeiro documento com texto suficiente", metadata={"id": "1"}),
+            StubDocument(page_content="   ", metadata={"id": "blank"}),
+            StubDocument(page_content="segundo documento com texto suficiente", metadata={"id": "2"}),
+        ],
+        chunk_size=12,
+        chunk_overlap=0,
+    )
+
+    indexes_by_document: dict[str, list[int]] = {}
+    for chunk in chunks:
+        document_id = chunk["metadata"]["id"]
+        indexes_by_document.setdefault(document_id, []).append(chunk["chunk_index"])
+
+    assert "blank" not in indexes_by_document
+    assert set(indexes_by_document) == {"1", "2"}
+    assert indexes_by_document["1"] == list(range(len(indexes_by_document["1"])))
+    assert indexes_by_document["2"] == list(range(len(indexes_by_document["2"])))
 
 
 def test_ingestion_service_uses_shared_chunking_contract() -> None:
