@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      API_SECRET_KEY: test-secret-key
-      APP_ENV: test
+      API_SECRET_KEY: local-dev-api-key
+      APP_ENV: development
 
     steps:
       - name: Checkout
