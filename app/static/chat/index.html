@@ -25,8 +25,12 @@
             type="password"
             inputmode="text"
             autocomplete="off"
-            placeholder="OpenAI API key ou codigo do projeto"
+            placeholder="Provider API key ou alias do projeto"
+            aria-describedby="provider-key-help"
           />
+          <p id="provider-key-help">
+            Apenas para teste controlado local/staging. A chave nao e salva no navegador.
+          </p>
         </section>
 
         <div id="messages" class="messages"></div>

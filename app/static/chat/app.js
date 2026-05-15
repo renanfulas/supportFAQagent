@@ -151,7 +151,11 @@ function addMessage(role, text, response) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = text;
+  if (role === "agent") {
+    renderSafeMessageText(bubble, text);
+  } else {
+    bubble.textContent = text;
+  }
   row.appendChild(bubble);
 
   if (response && response.escalated) {
@@ -165,8 +169,55 @@ function addMessage(role, text, response) {
     row.appendChild(renderReferences(response.references));
   }
 
+  if (response) {
+    const metadata = renderDebugMetadata(response);
+    if (metadata) {
+      row.appendChild(metadata);
+    }
+  }
+
   messages.appendChild(row);
   scrollToBottom();
+}
+
+function renderSafeMessageText(container, text) {
+  const lines = String(text || "").split(/\r?\n/);
+  let list = null;
+  let listType = null;
+
+  lines.forEach((line, index) => {
+    const bulletMatch = line.match(/^\s*[-*]\s+(.+)$/);
+    const numberedMatch = line.match(/^\s*\d+[.)]\s+(.+)$/);
+
+    if (bulletMatch || numberedMatch) {
+      const nextListType = bulletMatch ? "ul" : "ol";
+      if (!list || listType !== nextListType) {
+        list = document.createElement(nextListType);
+        list.className = "message-list";
+        listType = nextListType;
+        container.appendChild(list);
+      }
+
+      const item = document.createElement("li");
+      item.textContent = bulletMatch ? bulletMatch[1] : numberedMatch[1];
+      list.appendChild(item);
+      return;
+    }
+
+    list = null;
+    listType = null;
+
+    if (line.trim()) {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = line;
+      container.appendChild(paragraph);
+      return;
+    }
+
+    if (index > 0 && index < lines.length - 1) {
+      container.appendChild(document.createElement("br"));
+    }
+  });
 }
 
 function renderReferences(references) {
@@ -178,6 +229,41 @@ function renderReferences(references) {
     item.className = "reference";
     item.textContent = filenameOnly(String(reference));
     wrapper.appendChild(item);
+  });
+
+  return wrapper;
+}
+
+function renderDebugMetadata(response) {
+  const items = [];
+
+  if (response.request_id) {
+    items.push(["request_id", response.request_id]);
+  }
+
+  if (response.error_code) {
+    items.push(["error_code", response.error_code]);
+  }
+
+  if (Array.isArray(response.handoff_reasons) && response.handoff_reasons.length) {
+    items.push(["handoff", response.handoff_reasons.join(", ")]);
+  }
+
+  if (!items.length) {
+    return null;
+  }
+
+  const wrapper = document.createElement("dl");
+  wrapper.className = "debug-metadata";
+
+  items.forEach(([label, value]) => {
+    const term = document.createElement("dt");
+    term.textContent = label;
+
+    const detail = document.createElement("dd");
+    detail.textContent = String(value);
+
+    wrapper.append(term, detail);
   });
 
   return wrapper;

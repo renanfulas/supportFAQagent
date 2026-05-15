@@ -198,6 +198,8 @@ def test_chat_ui_is_available_in_development() -> None:
     assert "Suporte VPS & WhatsApp" in response.text
     assert "Perguntas rapidas" in response.text
     assert "API do modelo" in response.text
+    assert "Apenas para teste controlado local/staging" in response.text
+    assert "nao e salva no navegador" in response.text
 
 
 def test_chat_ui_static_renderer_uses_text_content() -> None:
@@ -209,6 +211,14 @@ def test_chat_ui_static_renderer_uses_text_content() -> None:
     assert "X-LLM-API-Key" in response.text
     assert "X-API-Key" not in response.text
     assert LOCAL_DEV_API_KEY not in response.text
+    assert "localStorage" not in response.text
+    assert "sessionStorage" not in response.text
+    assert "renderSafeMessageText" in response.text
+    assert "message-list" in response.text
+    assert "debug-metadata" in response.text
+    assert "request_id" in response.text
+    assert "error_code" in response.text
+    assert "handoff_reasons" in response.text
     assert "iniciante-primeiros-passos.md" in response.text
     assert "qrcode-whatsapp.md" in response.text
     assert "risco-bloqueio-whatsapp.md" in response.text
