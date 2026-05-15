@@ -23,7 +23,12 @@ class LLMService:
                     model=domain.llm.model,
                     api_key=api_key,
                 )
+            except ProviderError:
+                raise
             except Exception as exc:
-                raise ProviderError("provider initialization failed") from exc
+                raise ProviderError(
+                    "provider initialization failed",
+                    failure_kind="initialization_error",
+                ) from exc
 
         raise ValueError(f"LLM provider {domain.llm.provider} is not supported")

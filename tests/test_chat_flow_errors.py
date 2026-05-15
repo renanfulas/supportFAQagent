@@ -37,7 +37,7 @@ class FailingLLMService:
         domain: DomainConfig,
         api_key: str | None = None,
     ):
-        raise ProviderError("failed")
+        raise ProviderError("failed", failure_kind="provider_timeout")
 
 
 def test_chat_flow_returns_observable_retrieval_error() -> None:
@@ -71,3 +71,4 @@ def test_chat_flow_returns_observable_provider_error() -> None:
     assert response["error_code"] == "provider_error"
     assert response["escalated"] is True
     assert "provider_error" in response["handoff_reasons"]
+    assert "provider_timeout" not in response["handoff_reasons"]
