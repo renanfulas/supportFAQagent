@@ -37,12 +37,11 @@ Quando a mudanca for uma frente executavel ainda em aberto, use estes planos
 curtos antes de codar:
 
 - `docs/quality-plans/vector-retrieval-quality-plan.md`: embeddings, adapter vetorial e isolamento por dominio.
-- `docs/quality-plans/chat-handoff-quality-plan.md`: prompt, confidence e escalonamento.
-- `docs/quality-plans/feedback-n8n-quality-plan.md`: feedback, contratos n8n e preservacao de `request_id`.
 
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
-ingestao/chunking e chat UI local, devem ser entendidas pelo estado atual do
-codigo e pelos docs principais, nao por planos de execucao antigos.
+ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
+feedback/n8n, devem ser entendidas pelo estado atual do codigo e pelos docs
+principais, nao por planos de execucao antigos.
 
 ## O que procurar em cada pasta
 

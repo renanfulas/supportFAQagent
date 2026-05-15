@@ -35,11 +35,11 @@ Hoje o repositorio ja possui:
 - provider real configurado por dominio, com fallback seguro quando faltar credencial ou o provider falhar
 - `LLMService` integrado ao `LLMWrapper` para OpenAI/Anthropic no dominio atual
 - `ChatFlowService` integrado ao `prompt_builder.py`
-- handoff estruturado por baixa confianca, pedido humano e termos sensiveis
+- handoff estruturado por baixa confianca, pedido humano, termos sensiveis e falha tecnica observavel
 - retrieval desacoplado por interface `VectorStore`
 - `/chat` com `request_id` e `error_code`
 - `X-Request-ID` em todas as respostas HTTP
-- `POST /feedback` como contrato aceito, ainda sem persistencia real
+- `POST /feedback` como contrato aceito, ainda sem persistencia real, mas ja aceitando contexto operacional opcional
 - `POST /ingestion/preview` para revisar chunking por payload, sem persistir
 - contrato modular de dominio com persona, diretrizes, escopo e mensagens padrao
 - evals locais para calibrar o dominio inicial com perguntas reais recorrentes
@@ -206,7 +206,7 @@ Nao deve:
 
 - preparar historico curto real quando houver persistencia de conversas
 - calibrar confidence score inicial com dados reais
-- revisar termos sensiveis de handoff por dominio
+- revisar thresholds e sinais de handoff por dominio
 - manter evals locais como regressao de qualidade antes de mudar prompts, retrieval ou provider
 
 ## Fase 5

@@ -27,7 +27,7 @@ O projeto ja possui algumas pecas importantes:
 - `RecursiveCharacterTextSplitter` no pipeline CSV em `app/ingestion/pipeline.py`
 - `ticket_loader.py` para CSV de chamados
 - `prompt_builder.py` em `app/orchestration/`
-- `POST /feedback` como contrato aceito, ainda sem persistencia real
+- `POST /feedback` como contrato aceito, ainda sem persistencia real, mas com contexto operacional opcional
 - `POST /ingestion/preview` para validar chunks por payload sem persistir
 - contrato modular de dominio em `domain.yaml`, com persona, objetivo, regras, mensagens e handoff
 - evals locais em `domains/suporte-vps-whatsapp/evals/cases.yaml`
@@ -44,7 +44,7 @@ Ainda nao esta integrado ao caminho principal:
 - `domain.yaml` ja aponta para `llm.provider: openai`
 - `/feedback` ainda retorna `pending_persistence`
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
-- evals ainda medem a linha de base do MVP com retrieval lexical e comportamento endurecido, nao qualidade final de resposta
+- evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
 
 ## Responsaveis
 

@@ -32,6 +32,7 @@ Estado atual:
 - `LLMService` ja roteia para OpenAI/Anthropic e preserva tratamento de erro quando faltar credencial ou o provider falhar
 - ja existem utilitarios para LangChain, Chroma, embeddings, prompt builder e CSV de chamados
 - smoke tests cobrem healthcheck, dominios, preview de ingestao e chat com fallback seguro
+- `POST /feedback` ja aceita contexto operacional opcional como `escalated`, `handoff_reasons`, `references` e `error_code`
 - `PostgreSQL + pgvector` segue como integracao planejada para o retrieval principal
 
 ## Estrutura
@@ -76,13 +77,14 @@ se o valor enviado bater com `PROJECT_LLM_API_KEY_ALIAS`, o backend usa a chave 
 - o contrato de dominio ja controla persona, objetivo, diretrizes, escopo, mensagens padrao e politica de handoff
 - o `LLMService` ja usa `LLMWrapper` com OpenAI/Anthropic quando o dominio aponta para provider real
 - o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
-- handoff ja retorna motivos estruturados como baixa confianca, pedido de humano e assunto sensivel
+- handoff ja retorna motivos estruturados como baixa confianca, pedido de humano, assunto sensivel e falha tecnica observavel
 - `/chat` ja retorna `request_id` e `error_code` para facilitar debug
 - todas as respostas HTTP retornam `X-Request-ID` para correlacao de logs e integracoes
 - retrieval ja passa por uma interface de adapter, com lexical padrao e Chroma como prototipo local
 - contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
 - a ingestao ja possui preview por payload em `POST /ingestion/preview` e preview local por dominio em `/ingestion/{domain_name}/preview`
 - o dominio inicial ja possui evals locais para calibrar respostas e escalonamento com casos reais
+- `POST /feedback` continua em `pending_persistence`, mas ja preserva contexto util para integracoes externas e persistencia futura
 
 ## Testes basicos
 
@@ -101,8 +103,6 @@ python -m pytest
 - [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
 - [Planos de qualidade por frente](docs/quality-plans/README.md)
 - [Plano de qualidade de retrieval vetorial](docs/quality-plans/vector-retrieval-quality-plan.md)
-- [Plano de qualidade de chat, prompt e handoff](docs/quality-plans/chat-handoff-quality-plan.md)
-- [Plano de qualidade de feedback e n8n](docs/quality-plans/feedback-n8n-quality-plan.md)
 - [Observabilidade minima](docs/observability.md)
 - [Politica publica de seguranca](SECURITY.md)
 - [Plano de seguranca da VPS](docs/security/vps-security-plan.md)
@@ -122,4 +122,4 @@ python -m pytest
 - integrar PostgreSQL + pgvector como vector store principal
 - conectar o adapter vetorial oficial ao retrieval principal
 - persistir conversas e feedback
-- calibrar thresholds e termos sensiveis com conversas reais
+- calibrar thresholds e retrieval com conversas reais

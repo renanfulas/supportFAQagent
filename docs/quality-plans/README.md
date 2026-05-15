@@ -7,8 +7,6 @@ escopo, arquivos alvo, validacao, criterios de pronto e riscos de fronteira.
 Use estes documentos antes de abrir codigo novo em uma frente especifica:
 
 - [Retrieval vetorial](vector-retrieval-quality-plan.md)
-- [Chat, prompt e handoff](chat-handoff-quality-plan.md)
-- [Feedback e n8n](feedback-n8n-quality-plan.md)
 
 Frentes ja implementadas e mergeadas devem sair desta pasta quando o plano
 virar historico obsoleto. Nesses casos, a fonte de verdade passa a ser:
