@@ -9,8 +9,6 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes import chat, domains, feedback, health, ingestion, zoom
-from app.core.config import get_settings
-from app.api.routes import chat, domains, feedback, health, ingestion
 from app.core.config import DEV_ENVS, get_settings
 from app.core.logging import configure_logging, log_event
 from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded

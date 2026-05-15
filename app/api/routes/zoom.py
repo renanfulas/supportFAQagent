@@ -2,12 +2,13 @@ import logging
 import requests
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.core.logging import log_event
 from app.core.request_context import get_request_id
+from app.core.security import verify_api_key
 from app.domain_engine.loader import DomainLoader
 from app.orchestration.chat_flow import ChatFlowService
 
@@ -87,7 +88,11 @@ def process_and_reply(question: str, bot_id: str, domain_name: Optional[str], re
 
 
 @router.post("/join", summary="Pede para o bot fantasma entrar na reunião")
-def join_meeting(payload: ZoomJoinRequest, request: Request):
+def join_meeting(
+    payload: ZoomJoinRequest,
+    request: Request,
+    _: str = Depends(verify_api_key),
+):
     request_id = get_request_id(request)
     log_event(logger, "zoom_join_requested", request_id=request_id, meeting_url=payload.meeting_url)
     

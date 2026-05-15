@@ -9,6 +9,7 @@ Rotas protegidas atualmente:
 - `POST /chat`
 - `POST /feedback`
 - `POST /ingestion/preview`
+- `POST /zoom/join`
 
 Regra:
 
@@ -16,7 +17,7 @@ Regra:
 - `API_SECRET_KEY` e obrigatoria fora de `APP_ENV=development`, `dev` ou `local`
 - chamadas sem chave valida retornam `403`
 - em staging, quando `ENABLE_CHAT_UI=true`, `POST /chat` tambem aceita `X-LLM-API-Key` para testes pela `/chat-ui`; esse atalho nao funciona em `APP_ENV=production`
-- `GET /health`, `GET /domains` e `GET /ingestion/{domain_name}/preview` continuam publicas no estado atual do MVP
+- `GET /health`, `GET /domains`, `GET /ingestion/{domain_name}/preview` e `POST /zoom/webhook` continuam publicas no estado atual do MVP
 
 Exemplo:
 
