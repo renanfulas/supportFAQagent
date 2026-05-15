@@ -20,16 +20,28 @@ def split_text(
     mas retorna dicionarios puros para evitar acoplamento com Document.
     """
     chunk_metadata = dict(metadata or {})
-    docs = _create_documents([text], chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    normalized_text = text.strip()
+    if not normalized_text:
+        return []
+
+    docs = _create_documents(
+        [normalized_text],
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
 
     chunks: list[dict[str, Any]] = []
-    for index, doc in enumerate(docs):
+    for doc in docs:
+        chunk_text = str(doc.page_content).strip()
+        if not chunk_text:
+            continue
+
         chunks.append(
             {
-                "chunk_index": index,
-                "chunk_text": doc.page_content,
+                "chunk_index": len(chunks),
+                "chunk_text": chunk_text,
                 "metadata": chunk_metadata,
-                "token_estimate": len(doc.page_content) // 4,
+                "token_estimate": len(chunk_text) // 4,
             }
         )
 
@@ -45,21 +57,16 @@ def split_documents_to_dicts(
     Recebe documentos do LangChain e converte o resultado em dicionarios
     padrao do sistema com metadados preservados.
     """
-    split_docs = _split_documents(
-        documents,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-    )
-
     chunks: list[dict[str, Any]] = []
-    for index, doc in enumerate(split_docs):
-        chunks.append(
-            {
-                "chunk_index": index,
-                "chunk_text": doc.page_content,
-                "metadata": dict(doc.metadata or {}),
-                "token_estimate": len(doc.page_content) // 4,
-            }
+    for document in documents:
+        page_content = getattr(document, "page_content", "") or ""
+        chunks.extend(
+            split_text(
+                str(page_content),
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                metadata=dict(getattr(document, "metadata", {}) or {}),
+            )
         )
 
     return chunks
