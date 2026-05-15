@@ -1,23 +1,22 @@
 from app.core.errors import RetrievalError
 from app.domain_engine.models import DomainConfig
-from app.retrieval.embeddings import get_domain_embeddings
 from app.retrieval.lexical_store import LexicalVectorStore
 from app.retrieval.models import RetrievedChunk
 from app.retrieval.vector_store import VectorStore
 
 
 def build_vector_store(domain: DomainConfig) -> VectorStore:
-    """Factory: resolve embeddings do domínio e retorna o VectorStore ativo.
+    """Factory: retorna o VectorStore ativo para o dominio.
 
-    get_domain_embeddings está conectado aqui e pronto para ser passado
-    ao adapter pgvector na Fase 3. LexicalVectorStore é o caminho ativo
-    até a integração com pgvector.
+    LexicalVectorStore e o caminho ativo ate a integracao com pgvector. Nao
+    resolvemos embeddings aqui enquanto o caminho ativo for lexical, para evitar
+    exigir credencial de provider antes do adapter vetorial oficial entrar.
     """
-    embedding_fn = get_domain_embeddings(domain)
+    _ = domain
 
-    # Fase 3 — substituir por:
+    # Fase 3: substituir por:
+    # embedding_fn = get_domain_embeddings(domain)
     # return PgVectorStore(embedding_function=embedding_fn)
-    _ = embedding_fn
     return LexicalVectorStore()
 
 
@@ -34,5 +33,7 @@ class RetrievalService:
                 query=question,
                 top_k=domain.response.max_context_chunks,
             )
+        except RetrievalError:
+            raise
         except Exception as exc:
             raise RetrievalError("retrieval failed") from exc
