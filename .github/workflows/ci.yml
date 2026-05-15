@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Compile and test
+    runs-on: windows-latest
+
+    env:
+      API_SECRET_KEY: local-dev-api-key
+      APP_ENV: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Compile Python modules
+        run: python -m compileall app tests scripts
+
+      - name: Run tests
+        run: python -m pytest
