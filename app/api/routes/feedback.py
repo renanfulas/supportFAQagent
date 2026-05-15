@@ -30,6 +30,10 @@ def create_feedback(
         helpful=payload.helpful,
         reason=payload.reason,
         source=payload.source,
+        escalated=payload.escalated,
+        handoff_reasons=payload.handoff_reasons,
+        reference_count=len(payload.references),
+        error_code=payload.error_code,
         storage=response.storage,
     )
     return response

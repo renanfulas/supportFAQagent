@@ -142,7 +142,11 @@ Entrada minima:
   "helpful": true,
   "reason": "resolved",
   "comment": "Resposta resolveu o caso",
-  "source": "n8n"
+  "source": "n8n",
+  "escalated": true,
+  "handoff_reasons": ["low_confidence"],
+  "references": ["domains/suporte-vps-whatsapp/knowledge/faqs/qrcode-whatsapp.md"],
+  "error_code": "provider_error"
 }
 ```
 
@@ -155,6 +159,10 @@ Validacoes:
 - `reason`: opcional, maximo 120 caracteres, branco vira `null`.
 - `comment`: opcional, maximo 1000 caracteres, branco vira `null`.
 - `source`: obrigatorio por padrao como `api`, sem branco puro, maximo 60 caracteres.
+- `escalated`: opcional.
+- `handoff_reasons`: opcional, lista com ate 10 strings nao vazias.
+- `references`: opcional, lista com ate 20 strings nao vazias.
+- `error_code`: opcional, maximo 80 caracteres, branco vira `null`.
 
 Saida atual:
 
@@ -180,6 +188,9 @@ Contrato preparatorio para persistencia:
 - `session_id` deve ser tratado como dado sensivel fora da API
 - `message_id` continua opcional para permitir integracoes que ainda nao tenham ID interno de mensagem
 - `helpful`, `reason`, `comment` e `source` devem continuar serializaveis sem conversao especial
+- `escalated`, `handoff_reasons`, `references` e `error_code` podem ser reenviados
+  pelo consumidor para preservar o contexto operacional da resposta avaliada
+  sem exigir persistencia final imediata
 
 Shape minimo recomendado para armazenamento futuro:
 

@@ -18,6 +18,10 @@ def test_create_feedback_accepts_valid_payload() -> None:
             "reason": "resolved",
             "comment": "A resposta ajudou.",
             "source": "test",
+            "escalated": True,
+            "handoff_reasons": ["low_confidence", "provider_error"],
+            "references": ["domains/suporte-vps-whatsapp/knowledge/faqs/qrcode-whatsapp.md"],
+            "error_code": "provider_error",
         },
     )
 
@@ -53,11 +57,35 @@ def test_create_feedback_normalizes_blank_optional_fields() -> None:
             "helpful": False,
             "reason": "   ",
             "source": " n8n ",
+            "handoff_reasons": [" low_confidence ", "   "],
+            "references": [" domains/suporte-vps-whatsapp/knowledge/faqs/qrcode-whatsapp.md ", " "],
+            "error_code": " provider_error ",
         },
     )
 
     assert response.status_code == 200
     assert response.json()["accepted"] is True
+
+
+def test_create_feedback_accepts_chat_context_fields() -> None:
+    response = client.post(
+        "/feedback",
+        headers=API_KEY_HEADER,
+        json={
+            "request_id": "req-2",
+            "helpful": False,
+            "source": "n8n",
+            "escalated": True,
+            "handoff_reasons": ["low_confidence"],
+            "references": [
+                "domains/suporte-vps-whatsapp/knowledge/faqs/risco-bloqueio-whatsapp.md"
+            ],
+            "error_code": "provider_error",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["storage"] == "pending_persistence"
 
 
 def test_create_feedback_rejects_blank_source() -> None:
@@ -80,6 +108,19 @@ def test_create_feedback_rejects_oversized_comment() -> None:
         json={
             "helpful": True,
             "comment": "x" * 1001,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_feedback_rejects_too_many_handoff_reasons() -> None:
+    response = client.post(
+        "/feedback",
+        headers=API_KEY_HEADER,
+        json={
+            "helpful": True,
+            "handoff_reasons": [f"reason-{index}" for index in range(11)],
         },
     )
 

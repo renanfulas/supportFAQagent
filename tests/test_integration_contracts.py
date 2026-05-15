@@ -36,6 +36,13 @@ def test_feedback_request_contract_normalizes_optional_fields() -> None:
         reason=" needs_review ",
         comment=" comentario ",
         source=" n8n ",
+        escalated=True,
+        handoff_reasons=[" low_confidence ", " "],
+        references=[
+            " domains/suporte-vps-whatsapp/knowledge/faqs/qrcode-whatsapp.md ",
+            " ",
+        ],
+        error_code=" provider_error ",
     ).model_dump()
 
     assert payload["request_id"] == "req-123"
@@ -44,6 +51,12 @@ def test_feedback_request_contract_normalizes_optional_fields() -> None:
     assert payload["reason"] == "needs_review"
     assert payload["comment"] == "comentario"
     assert payload["source"] == "n8n"
+    assert payload["escalated"] is True
+    assert payload["handoff_reasons"] == ["low_confidence"]
+    assert payload["references"] == [
+        "domains/suporte-vps-whatsapp/knowledge/faqs/qrcode-whatsapp.md"
+    ]
+    assert payload["error_code"] == "provider_error"
 
 
 def test_feedback_response_contract_remains_simple_for_future_persistence() -> None:
