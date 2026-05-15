@@ -33,16 +33,16 @@ Se voce esta chegando agora, leia nesta ordem:
 
 ## Planos por frente
 
-Quando a mudanca for uma frente executavel, use estes planos curtos antes de
-codar:
+Quando a mudanca for uma frente executavel ainda em aberto, use estes planos
+curtos antes de codar:
 
-- `docs/quality-plans/whatsapp-blocking-quality-plan.md`: qualidade de resposta para bloqueio de WhatsApp.
-- `docs/quality-plans/provider-runtime-quality-plan.md`: provider real, fallback e erros observaveis.
-- `docs/quality-plans/ingestion-chunking-quality-plan.md`: ingestao, chunking e preview.
 - `docs/quality-plans/vector-retrieval-quality-plan.md`: embeddings, adapter vetorial e isolamento por dominio.
 - `docs/quality-plans/chat-handoff-quality-plan.md`: prompt, confidence e escalonamento.
 - `docs/quality-plans/feedback-n8n-quality-plan.md`: feedback, contratos n8n e preservacao de `request_id`.
-- `docs/quality-plans/chat-ui-quality-plan.md`: UI local de chat, renderizacao segura e debug.
+
+Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
+ingestao/chunking e chat UI local, devem ser entendidas pelo estado atual do
+codigo e pelos docs principais, nao por planos de execucao antigos.
 
 ## O que procurar em cada pasta
 
