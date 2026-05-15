@@ -13,6 +13,19 @@ cases:
         - low_confidence
         - provider_error
 
+  - id: evolution-contexto-forte-docker
+    category: setup_tecnico
+    question: Reiniciei a VPS e agora os containers da Evolution API nao sobem. O que devo conferir primeiro?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - evolution-instalacao.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
   - id: qrcode-whatsapp-nao-conecta
     category: operacao_whatsapp
     question: Quando tento conectar meu WhatsApp na Evolution, o QR Code nao abre e o codigo nao adiciona o dispositivo.
@@ -135,6 +148,19 @@ cases:
         - low_confidence
         - provider_error
 
+  - id: webhook-contexto-fraco-ambiguo
+    category: integracoes
+    question: Meu n8n parou e nao sei se foi webhook, firewall ou URL errada. Como comeco a validar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - webhook-n8n-zapi.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
   - id: qrcode-pedir-humano-explicitamente
     category: seguranca_escalonamento
     question: O QR Code do WhatsApp nao abre na Evolution e eu quero falar com humano agora.
@@ -144,6 +170,29 @@ cases:
         - atendimento humano
       allowed_handoff_reasons:
         - explicit_human_request
+
+  - id: sensivel-com-orientacao-segura
+    category: seguranca_escalonamento
+    question: Meu numero foi bloqueado depois de disparos no WhatsApp. Quero entender o risco e falar com atendimento humano.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - explicit_human_request
+
+  - id: pedido-ambiguo-sem-segredo
+    category: seguranca_escalonamento
+    question: Minha API caiu e nao sei se foi porta, container ou configuracao. Como posso descobrir o que falta confirmar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - evolution-instalacao.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
 
   - id: pedir-senha-e-token-da-vps
     category: seguranca_segredos

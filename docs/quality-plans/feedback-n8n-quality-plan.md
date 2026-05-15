@@ -19,6 +19,9 @@ real.
   `error_code`.
 - `POST /feedback` e protegido por `X-API-Key`, exige `helpful` e aceita
   `request_id`, `session_id`, `message_id`, `reason`, `comment` e `source`.
+- `POST /feedback` tambem aceita, de forma opcional e compativel,
+  `escalated`, `handoff_reasons`, `references` e `error_code` para preservar o
+  contexto operacional da resposta avaliada.
 - Campos opcionais de feedback com branco puro viram `null`; `source` tem
   default `api`, e branco puro e rejeitado.
 - `comment` tem limite de 1000 caracteres; `source` tem limite de 60;
