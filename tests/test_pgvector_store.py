@@ -248,6 +248,7 @@ def test_postgres_pgvector_backend_uses_database_url_and_domain_filter() -> None
     assert rows[0]["source"] == "knowledge/faqs/test.md"
     assert rows[0]["score"] == 0.91
     assert "WHERE name = %s" in factory.cursor.sql
+    assert "domains.status" not in factory.cursor.sql
     assert "c.domain_id = (SELECT id FROM resolved_domain)" in factory.cursor.sql
     assert "a.status = 'active'" in factory.cursor.sql
     assert factory.cursor.params == (
