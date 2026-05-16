@@ -4,6 +4,8 @@ Este documento detalha como executar o MVP do `supportFAQagent` por fase e por r
 
 Ele complementa o [Plano Unico do MVP](mvp-plan.md) com tarefas tecnicas, contratos entre frentes, riscos, criterios de pronto e trilhas de SQL, seguranca, performance e debug.
 
+Consulte tambem o [Mapa Oficial de Ambientes](environments.md) para a definicao de ambiente oficial, papel do `DATABASE_URL`, status de Hostinger/EasyPanel e fronteira entre backend, banco e `n8n`.
+
 ## Principios de execucao
 
 - Fazer o menor sistema que prove o fluxo RAG com qualidade.
@@ -62,6 +64,7 @@ Regra de fronteira para esta fase:
 - Renan pode definir contratos HTTP, shape de payload, testes de contrato e adapters de integracao
 - Alexandre continua dono de schema SQL, migrations, persistencia real, queries pgvector e armazenamento operacional
 - Juliano pode evoluir splitter e loaders, desde que o shape exposto pelo backend permaneça estavel
+- Silotto define o provisionamento oficial da HostGator, secrets e conectividade do runtime, conforme o [Mapa Oficial de Ambientes](environments.md)
 
 ## API interna
 
@@ -194,6 +197,7 @@ Criterio de pronto:
 - Habilitar extensao `vector`.
 - Definir `DATABASE_URL`.
 - Criar primeira migration relacional quando a estrategia estiver fechada.
+- Seguir o ambiente oficial descrito em [Mapa Oficial de Ambientes](environments.md), sem usar laboratorio externo como fonte de verdade do projeto.
 
 Criterio de pronto:
 
@@ -233,6 +237,7 @@ Objetivo: transformar artigos e FAQs em chunks consistentes, prontos para embedd
 
 - Garantir permissao de leitura dos arquivos de dominio no deploy.
 - Validar volume ou pasta onde conhecimento sera versionado.
+- Fechar com o time o PostgreSQL oficial do staging HostGator, incluindo `DATABASE_URL`, secrets e conectividade privada.
 
 ## Alexandre - Banco
 
@@ -339,6 +344,7 @@ Nota de estado:
 - Validar variaveis de API do provider de embeddings.
 - Confirmar conectividade de saida para o provider, se for externo.
 - Monitorar consumo de CPU/memoria durante ingestao.
+- Provisionar o banco oficial do staging HostGator conforme o [Mapa Oficial de Ambientes](environments.md).
 
 ## Alexandre - Banco
 
@@ -368,6 +374,7 @@ Regras de banco:
 - Nunca buscar em todos os dominios por padrao.
 - Guardar `metadata` suficiente para rastrear fonte.
 - Evitar PII em `chunk_text` quando vier de chamados reais.
+- Manter `pgvector` no mesmo PostgreSQL da aplicacao, nao em banco separado.
 
 ## Juliano - LangChain
 
@@ -516,6 +523,7 @@ Objetivo: preparar integracoes externas sem mover inteligencia para fora do back
 - Criar workflow `escalation-notify`.
 - Preparar `POST /feedback` quando o backend expuser contrato.
 - Exportar workflows como JSON versionado, nao depender apenas de pasta runtime.
+- Consumir o backend pela API HTTP, preservando `X-Request-ID`, `request_id`, `handoff_reasons`, `references` e `error_code`.
 
 ## Juliano - LangChain
 
@@ -527,6 +535,7 @@ Objetivo: preparar integracoes externas sem mover inteligencia para fora do back
 - Definir payload de escalonamento.
 - Criar guia de integracao n8n.
 - Validar que n8n nao carrega regra central do agente.
+- Tratar domain evals como gate deterministico desta frente SQL, sem provider real bloqueando a validacao de banco.
 
 ## Seguranca e privacidade
 
