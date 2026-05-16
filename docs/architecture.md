@@ -18,6 +18,37 @@ O primeiro dominio e `suporte-vps-whatsapp`.
 - O fluxo de atendimento deve continuar simples enquanto o MVP amadurece.
 - O projeto deve poder evoluir para RAG vetorial sem reescrever a API.
 
+## Persistencia multi-dominio
+
+O banco do projeto deve nascer como banco da plataforma, nao como banco do
+primeiro dominio.
+
+Isso significa:
+
+- um unico PostgreSQL oficial por ambiente
+- `pgvector` no mesmo banco da aplicacao
+- isolamento obrigatorio por `domain_id`
+- tabelas centrais genericas para conhecimento, retrieval, conversas e mensagens
+- comportamento especifico de suporte, vendas, onboarding ou atendimento fora do schema central
+
+O que deve ficar no core:
+
+- `domains`
+- `articles`
+- `article_chunks`
+- `conversations`
+- `messages`
+
+O que nao deve ser hardcoded no core:
+
+- campos especificos de VPS ou WhatsApp
+- colunas especificas de vendas ou onboarding
+- regras de handoff por setor
+- detalhes operacionais do `n8n`
+
+Esses detalhes devem continuar em `domains/<domain>/`, contratos HTTP e
+integracoes externas.
+
 ## Camadas
 
 ## `app/api`
@@ -151,6 +182,13 @@ Cada dominio deve concentrar:
 - evals locais
 
 Com isso, um novo setor deve exigir pouco codigo novo e muita configuracao boa.
+
+Exemplos esperados de dominios futuros:
+
+- suporte tecnico
+- vendas
+- onboarding
+- atendimento operacional
 
 ## Fluxo atual do MVP
 
