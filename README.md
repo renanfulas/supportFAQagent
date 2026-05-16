@@ -35,6 +35,18 @@ Estado atual:
 - `POST /feedback` ja aceita contexto operacional opcional como `escalated`, `handoff_reasons`, `references` e `error_code`
 - `PostgreSQL + pgvector` segue como integracao planejada para o retrieval principal
 
+Avancos recentes ja incorporados entre 13/05/2026 e 16/05/2026:
+
+- provider real `openai` configurado no dominio inicial
+- factory de embeddings conectada ao caminho de retrieval, sem tornar `pgvector` o backend oficial ainda
+- chunking consolidado e indices normalizados
+- `chat-ui` local/staging em texto para testes controlados
+- classificacao de falhas de provider e fallback seguro
+- handoff calibrado com motivos estruturados e contrato de feedback expandido
+- hardening de runtime com `API_SECRET_KEY` fora de desenvolvimento e rate limit no `/chat`
+- contrato Python do `PgVectorStore`, validacao SQL executavel e docs do ambiente oficial
+- runbook de contingencia operacional da VPS e script `scripts/runtime_preflight.ps1`
+
 ## Estrutura
 
 ```text
@@ -119,8 +131,14 @@ python -m pytest
 
 ## Proximos passos
 
-- estabilizar o uso de provider real com credenciais de ambiente e observabilidade de falhas
+- executar a contingencia operacional do staging em ambiente privado e registrar relatorio sanitizado
 - integrar PostgreSQL + pgvector como vector store principal
 - conectar o adapter vetorial oficial ao retrieval principal
 - persistir conversas e feedback
 - calibrar thresholds e retrieval com conversas reais
+
+## Evitar retrabalho
+
+- nao reimplementar provider real, fallback seguro, `chat-ui`, handoff calibrado, contrato de feedback ou hardening basico de runtime: essas frentes ja avancaram no historico recente
+- nao promover `Chroma` a fonte oficial de producao enquanto `PostgreSQL + pgvector` segue como caminho principal planejado
+- nao misturar a contingencia de VPS com ownership de schema SQL, migrations, indices, queries finais de `pgvector` ou persistencia real, que continuam com Alexandre

@@ -6,6 +6,29 @@ Este runbook descreve como validar o runtime do `supportFAQagent` em uma VPS de 
 
 Provar que a API FastAPI sobe na VPS, carrega o dominio inicial, le a base de conhecimento, chama o provider quando configurado e registra eventos rastreaveis com `request_id`.
 
+## Status desta frente em 16/05/2026
+
+Ja preparado no repositorio:
+
+- runbook de execucao controlada
+- hardening basico de runtime e seguranca de rotas
+- `API_SECRET_KEY` obrigatoria fora de desenvolvimento
+- `chat-ui` local/staging para testes controlados, quando liberada
+- smoke tests automatizados no codigo
+- preflight de runtime via PowerShell sem imprimir valores de segredo
+
+Ainda nao comprovado neste runbook:
+
+- execucao real em VPS privada do staging oficial
+- resultado sanitizado dos smoke tests
+- validacao privada de conectividade com `DATABASE_URL`
+
+Evitar retrabalho:
+
+- nao reabrir discussao sobre bind local, portas temporarias e sigilo de segredo sem evidencia nova
+- nao mover este runbook para cobrir schema, migrations, indices ou tuning de `pgvector`
+- nao misturar validacao operacional do staging com definicao de banco oficial ou SQL final
+
 ## Escopo
 
 Incluido nesta etapa:
@@ -216,6 +239,27 @@ Depois do smoke test controlado, preparar uma proposta separada para:
 - decisao sobre exposicao controlada
 - hardening minimo antes de qualquer acesso publico
 
+Depois da execucao real deste runbook, registrar um relatorio curto com tres blocos:
+
+- o que ja estava pronto no repositorio e foi confirmado no ambiente
+- o que ainda ficou pendente por dependencia de ambiente ou banco
+- o que nao deve ser retrabalhado porque ja estava coberto no codigo ou na documentacao
+
+Se `DATABASE_URL` estiver disponivel, executar a validacao SQL em uma sessao
+privada e registrar somente o resultado sanitizado:
+
+```bash
+psql "$DATABASE_URL" -f migrations/001_initial_schema.sql
+psql "$DATABASE_URL" -f tests/db/test_01_extensions.sql
+psql "$DATABASE_URL" -f tests/db/test_02_schema.sql
+psql "$DATABASE_URL" -f tests/db/test_03_idempotency.sql
+psql "$DATABASE_URL" -f tests/db/test_04_vector_search.sql
+psql "$DATABASE_URL" -f tests/db/test_05_isolation.sql
+psql "$DATABASE_URL" -f tests/db/validate_pgvector_search.sql
+```
+
+Nao publicar output bruto se ele contiver hostname, usuario, nome real de banco
+ou qualquer detalhe operacional sensivel.
 ## Relatorio sanitizado
 
 Modelo de resultado para compartilhar no time:

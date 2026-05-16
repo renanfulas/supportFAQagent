@@ -4,7 +4,7 @@ Este documento detalha como executar o MVP do `supportFAQagent` por fase e por r
 
 Ele complementa o [Plano Unico do MVP](mvp-plan.md) com tarefas tecnicas, contratos entre frentes, riscos, criterios de pronto e trilhas de SQL, seguranca, performance e debug.
 
-Consulte tambem o [Mapa Oficial de Ambientes](environments.md) para a definicao de ambiente oficial, papel do `DATABASE_URL`, status de Hostinger/EasyPanel e fronteira entre backend, banco e `n8n`.
+Consulte tambem o runbook de staging e os contratos SQL do repositorio para a definicao de ambiente oficial, papel do `DATABASE_URL` e fronteira entre backend, banco e `n8n`.
 
 ## Principios de execucao
 
@@ -33,6 +33,19 @@ O projeto ja possui algumas pecas importantes:
 - `POST /ingestion/preview` para validar chunks por payload sem persistir
 - contrato modular de dominio em `domain.yaml`, com persona, objetivo, regras, mensagens e handoff
 - evals locais em `domains/suporte-vps-whatsapp/evals/cases.yaml`
+
+Avancos confirmados no historico entre 13/05/2026 e 16/05/2026:
+
+- dominio inicial configurado com provider real `openai`
+- fallback classificado para falhas de provider
+- `chat-ui` de texto para desenvolvimento e staging controlado
+- `API_SECRET_KEY` obrigatoria fora de `development`
+- rate limit no endpoint `/chat`
+- handoff calibrado com motivos estruturados
+- contrato de feedback expandido para contexto operacional
+- adapter `PgVectorStore` e testes Python do contrato
+- contrato SQL executavel para validacao de busca vetorial
+- runbook e preflight da contingencia de VPS
 
 Ainda nao esta integrado ao caminho principal:
 
@@ -64,7 +77,23 @@ Regra de fronteira para esta fase:
 - Renan pode definir contratos HTTP, shape de payload, testes de contrato e adapters de integracao
 - Alexandre continua dono de schema SQL, migrations, persistencia real, queries pgvector e armazenamento operacional
 - Juliano pode evoluir splitter e loaders, desde que o shape exposto pelo backend permaneça estavel
-- Silotto define o provisionamento oficial da HostGator, secrets e conectividade do runtime, conforme o [Mapa Oficial de Ambientes](environments.md)
+- Silotto define o provisionamento oficial da HostGator, secrets e conectividade do runtime
+
+Contingencia:
+
+- se Silotto estiver temporariamente indisponivel, Renan pode cobrir ambiente de
+  staging, `DATABASE_URL`, secrets privados, conectividade, runtime e logs para
+  destravar o MVP
+- essa cobertura nao transfere ownership de schema, migrations, indices, queries
+  `pgvector` ou persistencia real, que continuam com Alexandre
+- qualquer resultado compartilhado deve ser sanitizado, sem IPs, hostnames,
+  usuarios, portas administrativas, credenciais ou logs sensiveis
+
+Leitura pratica do ponto atual:
+
+- a frente de VPS ja esta preparada em documentacao, hardening basico e utilitarios de validacao
+- o pendente principal nesta contingencia e executar o staging oficial em ambiente privado
+- a frente de banco continua separada e nao deve ser absorvida junto com a contingencia
 
 ## Modelo multi-dominio
 
@@ -223,7 +252,7 @@ Criterio de pronto:
 - Habilitar extensao `vector`.
 - Definir `DATABASE_URL`.
 - Criar primeira migration relacional quando a estrategia estiver fechada.
-- Seguir o ambiente oficial descrito em [Mapa Oficial de Ambientes](environments.md), sem usar laboratorio externo como fonte de verdade do projeto.
+- Seguir o ambiente oficial do projeto, sem usar laboratorio externo como fonte de verdade.
 
 Criterio de pronto:
 
@@ -254,6 +283,11 @@ Criterio de pronto:
 
 - `POST /chat` consegue chamar provider real em ambiente local.
 - Falha de provider retorna erro rastreavel sem vazar secret.
+
+Status em 16/05/2026:
+
+- considerado essencialmente concluido para a frente de aplicacao
+- nao retrabalhar provider real, fallback ou exigencia de segredo sem bug concreto
 
 ## Fase 2 - Ingestao e chunking
 
@@ -365,6 +399,11 @@ Criterio de pronto:
 - `POST /ingestion/preview` permite revisar chunking antes de persistir.
 - Reprocessar o mesmo conteudo nao cria duplicacao logica.
 
+Status em 16/05/2026:
+
+- chunking e preview avancaram de forma suficiente para o MVP atual
+- evitar retrabalho em `chunk_index`, metadata de chunk e isolamento basico de dependencias LangChain sem evidencias novas
+
 ## Fase 3 - Embeddings e retrieval vetorial
 
 Objetivo: consultar contexto real no pgvector usando embeddings.
@@ -372,12 +411,18 @@ Objetivo: consultar contexto real no pgvector usando embeddings.
 Nota de estado:
 `ChromaStore` ja existe e pode continuar como prototipo local. O caminho de producao deve esperar a decisao final com `pgvector`, para nao criar duas fontes de verdade.
 
+Status em 16/05/2026:
+
+- o contrato do `PgVectorStore`, os testes Python e a validacao SQL ja existem
+- ainda falta ligar backend real, `DATABASE_URL` oficial e query de banco ao caminho principal
+- evitar retrabalho reimplementando adapter, reabrindo contrato de `references` ou promovendo `Chroma` a fonte oficial
+
 ## Silotto - VPS
 
 - Validar variaveis de API do provider de embeddings.
 - Confirmar conectividade de saida para o provider, se for externo.
 - Monitorar consumo de CPU/memoria durante ingestao.
-- Provisionar o banco oficial do staging HostGator conforme o [Mapa Oficial de Ambientes](environments.md).
+- Provisionar o banco oficial do staging HostGator conforme a definicao operacional vigente do projeto.
 
 ## Alexandre - Banco
 
