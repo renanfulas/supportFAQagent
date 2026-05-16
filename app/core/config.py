@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
     recall_api_key: str | None = Field(default=None, alias="RECALL_API_KEY")
+    database_url: str | None = Field(default=None, alias="DATABASE_URL")
+    retrieval_backend: str = Field(default="lexical", alias="RETRIEVAL_BACKEND")
     api_secret_key: str | None = Field(default=None, alias="API_SECRET_KEY")
     rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE")
     enable_chat_ui: bool = Field(default=False, alias="ENABLE_CHAT_UI")
