@@ -65,7 +65,6 @@ class PostgresPgVectorSearchBackend(PgVectorSearchBackend):
                       SELECT id
                       FROM domains
                       WHERE name = %s
-                        AND status = 'active'
                       LIMIT 1
                     )
                     SELECT
