@@ -69,3 +69,23 @@ def test_retrieval_service_preserves_mapped_retrieval_errors() -> None:
             domain=make_domain(),
             question="hello",
         )
+
+
+def test_retrieval_service_uses_factory_when_no_adapter_is_injected(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_store = FakeVectorStore()
+    calls: list[DomainConfig] = []
+
+    def fake_build_vector_store(domain: DomainConfig) -> FakeVectorStore:
+        calls.append(domain)
+        return fake_store
+
+    monkeypatch.setattr("app.retrieval.service.build_vector_store", fake_build_vector_store)
+
+    chunks = RetrievalService().retrieve(
+        domain=make_domain(),
+        question="factory path",
+    )
+
+    assert len(calls) == 1
+    assert calls[0].name == "test-domain"
+    assert chunks[0].text == "factory path"

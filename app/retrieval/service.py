@@ -24,11 +24,12 @@ class RetrievalService:
     """Retrieval facade for the current store adapter."""
 
     def __init__(self, vector_store: VectorStore | None = None) -> None:
-        self.vector_store = vector_store or LexicalVectorStore()
+        self.vector_store = vector_store
 
     def retrieve(self, domain: DomainConfig, question: str) -> list[RetrievedChunk]:
         try:
-            return self.vector_store.search(
+            vector_store = self.vector_store or build_vector_store(domain)
+            return vector_store.search(
                 domain=domain,
                 query=question,
                 top_k=domain.response.max_context_chunks,
