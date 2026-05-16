@@ -6,33 +6,45 @@ Preparar a qualidade do retrieval vetorial oficial usando o contrato
 `VectorStore`, com filtro obrigatorio por dominio, scores rastreaveis e falha
 segura quando embedding, banco vetorial ou adapter estiver indisponivel.
 
-Esta frente deve alinhar o contrato Python com a decisao operacional de
-`PostgreSQL + pgvector`, sem assumir ownership de schema, migrations, queries
-finais ou armazenamento operacional da frente de banco.
+Esta frente deve fechar a qualidade do caminho oficial com `PostgreSQL +
+pgvector`, sem assumir ownership de schema, migrations, queries finais ou
+armazenamento operacional da frente de banco.
 
 ## Problema observado
 
 O fluxo `/chat` ainda usa `RetrievalService` com `LexicalVectorStore` como
 caminho ativo. O projeto ja tem `VectorStore`, `LexicalVectorStore`,
-`ChromaStore`, `RetrievedChunk` e embeddings por dominio, mas o adapter
-`pgvector` ainda nao existe como caminho oficial.
+`ChromaStore`, `RetrievedChunk`, o contrato Python do `PgVectorStore` e
+validacao SQL executavel do shape da busca vetorial, mas o backend real de
+PostgreSQL ainda nao foi conectado como caminho oficial.
 
-Tambem existe `build_vector_store(domain)` em `app/retrieval/service.py`, que ja
-resolve embeddings do dominio e documenta o ponto futuro para trocar para
-`PgVectorStore`, mas o construtor atual de `RetrievalService` ainda instancia
-`LexicalVectorStore()` diretamente quando nenhum adapter e injetado.
+Tambem existe `build_vector_store(domain)` em `app/retrieval/service.py`, que
+documenta o ponto futuro para trocar para `PgVectorStore`, mas o construtor
+atual de `RetrievalService` ainda instancia `LexicalVectorStore()` diretamente
+quando nenhum adapter e injetado.
 
 O `ChromaStore` implementa a interface e preserva metadados em `add_chunks`, mas
 `search(domain, query, top_k)` nao filtra por dominio hoje. Por isso, Chroma deve
 continuar descrito como prototipo local, nao como store oficial de producao.
 
-Lacunas principais:
+Entregas ja concluidas nesta frente:
 
-- implementar adapter `pgvector` sem quebrar `RetrievalService`
+- adapter `PgVectorStore` implementado como contrato Python
+- mapeamento de falhas para `RetrievalError`
+- preservacao de `RetrievedChunk(source, title, text, score)`
+- validacao Python do adapter em `tests/test_pgvector_store.py`
+- validacao SQL executavel em `tests/db/validate_pgvector_search.sql`
+- documentacao do contrato SQL em
+  `docs/runbooks/pgvector-retrieval-contract.md`
+
+Lacunas principais desta fase:
+
+- conectar um backend real de PostgreSQL ao `PgVectorStore`
 - garantir filtro por dominio em toda busca
 - preservar `references` como `list[str]`
 - retornar score e fonte rastreaveis internamente
-- definir fallback quando banco ou embedding falhar
+- validar a query oficial contra o banco do ambiente definido
+- definir fallback quando banco ou embedding falhar no runtime real
 - evitar Chroma como segunda fonte de verdade em producao
 - alinhar a factory `build_vector_store(domain)` com o caminho ativo quando o
   adapter oficial existir
@@ -46,7 +58,7 @@ Entram nesta frente:
 
 - revisar `app/retrieval/vector_store.py`
 - revisar `app/retrieval/service.py`
-- criar ou integrar adapter `pgvector`
+- revisar `app/retrieval/pgvector_store.py`
 - revisar `app/retrieval/embeddings.py`
 - ajustar modelos em `app/retrieval/models.py`
 - adicionar ou fortalecer testes de isolamento por dominio
@@ -81,6 +93,7 @@ Para uma pergunta dentro de um dominio, o retrieval deve:
 ```text
 app/retrieval/vector_store.py
 app/retrieval/service.py
+app/retrieval/pgvector_store.py
 app/retrieval/models.py
 app/retrieval/embeddings.py
 app/retrieval/chroma_store.py
@@ -88,8 +101,11 @@ app/retrieval/lexical_store.py
 app/orchestration/chat_flow.py
 tests/test_retrieval_service.py
 tests/test_chroma_store.py
+tests/test_pgvector_store.py
 tests/db/test_04_vector_search.sql
 tests/db/test_05_isolation.sql
+tests/db/validate_pgvector_search.sql
+docs/runbooks/pgvector-retrieval-contract.md
 docs/integration-contracts.md
 docs/technical-implementation-plan.md
 ```
@@ -103,14 +119,15 @@ Observacao de ownership:
 
 ## Implementacao sugerida
 
-Passos recomendados:
+Passos recomendados desta fase:
 
 - manter `VectorStore.search(domain, query, top_k)` como interface publica do
   adapter
-- adicionar adapter `PgVectorStore` sem alterar chamada do `ChatFlowService`
+- manter `PgVectorStore` sem alterar chamada do `ChatFlowService`
 - converter resultado SQL para `RetrievedChunk`
 - filtrar por `domain_id` ou equivalente antes de ordenar por vetor
 - mapear erros de banco para `RetrievalError`
+- plugar um `search_backend` real ao contrato atual do adapter
 - usar `build_vector_store(domain)` como ponto de selecao do adapter quando o
   caminho oficial sair do lexical
 - manter `LexicalVectorStore` como caminho local/temporario somente quando
@@ -149,6 +166,8 @@ Casos minimos:
 
 - retrieval respeita `max_context_chunks`
 - falha do store vira `RetrievalError`
+- `PgVectorStore` converte linhas do backend para `RetrievedChunk`
+- `PgVectorStore` rejeita linha sem `source` rastreavel ou `text`
 - busca vetorial nunca retorna chunks de outro dominio
 - resultados preservam `source` ou referencia equivalente
 - score e ordenacao sao coerentes em teste controlado
@@ -170,6 +189,9 @@ Sobre `tests/db`:
   filtro por `domain_id`
 - `test_05_isolation.sql` deve evoluir para provar que dados de outro dominio
   nao aparecem em uma busca real, nao apenas que uma tabela esta vazia
+- `validate_pgvector_search.sql` deve continuar como script executavel via
+  `psql`, com fixtures proprias, shape `source/title/text/score`, exclusao de
+  `embedding IS NULL` e exclusao de artigos inativos
 
 ## Validacao
 
@@ -178,6 +200,7 @@ Durante a frente:
 ```powershell
 python -m pytest tests/test_retrieval_service.py
 python -m pytest tests/test_chroma_store.py
+python -m pytest tests/test_pgvector_store.py
 ```
 
 Validacao de scripts SQL, quando houver banco local preparado pela frente de
@@ -189,6 +212,7 @@ psql $env:DATABASE_URL -f tests/db/test_02_schema.sql
 psql $env:DATABASE_URL -f tests/db/test_03_idempotency.sql
 psql $env:DATABASE_URL -f tests/db/test_04_vector_search.sql
 psql $env:DATABASE_URL -f tests/db/test_05_isolation.sql
+psql $env:DATABASE_URL -f tests/db/validate_pgvector_search.sql
 ```
 
 Validacao completa antes de commit:
@@ -205,6 +229,7 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 - Toda busca filtra por dominio.
 - `references` continua serializavel e compativel com `/chat`.
 - Falhas de embedding ou banco sao rastreaveis.
+- O contrato Python do adapter e o contrato SQL da busca estao alinhados.
 - Chroma permanece apenas prototipo/local, salvo decisao contraria.
 - Testes provam isolamento entre dominios.
 - `ChatFlowService` continua desacoplado de SQL, pgvector e persistencia.
@@ -213,10 +238,10 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 - A fronteira com PostgreSQL fica clara: esta frente valida contrato e adapter;
   a frente de banco define schema, migrations, indices, extensoes e operacao.
 
-## Estimativa
+## Estimativa da fase atual
 
-- Alinhar contrato com schema de banco: 45 a 90 minutos
-- Implementar adapter e mapeamento: 2 a 4 horas
-- Testar isolamento, falhas e evals: 1,5 a 3 horas
+- alinhar backend real com schema de banco: 45 a 90 minutos
+- conectar `PgVectorStore` a um backend PostgreSQL real: 2 a 4 horas
+- validar isolamento, falhas, scripts SQL e evals: 1,5 a 3 horas
 
 Total esperado: 4 a 8,5 horas.
