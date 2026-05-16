@@ -14,7 +14,7 @@ class IngestionService:
             if not base_path.exists():
                 continue
 
-            for file_path in base_path.rglob("*"):
+            for file_path in sorted(base_path.rglob("*"), key=lambda path: path.as_posix()):
                 if not file_path.is_file() or file_path.suffix.lower() not in {
                     ".md",
                     ".txt",
