@@ -16,11 +16,11 @@ Ja preparado no repositorio:
 - `chat-ui` local/staging para testes controlados, quando liberada
 - smoke tests automatizados no codigo
 - preflight de runtime via PowerShell sem imprimir valores de segredo
+- relatorio sanitizado da validacao real em
+  [staging-runtime-validation-report.md](staging-runtime-validation-report.md)
 
 Ainda nao comprovado neste runbook:
 
-- execucao real em VPS privada do staging oficial
-- resultado sanitizado dos smoke tests
 - validacao privada de conectividade com `DATABASE_URL`
 
 Evitar retrabalho:
