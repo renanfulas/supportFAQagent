@@ -76,6 +76,8 @@ DEFAULT_DOMAIN=suporte-vps-whatsapp
 DOMAINS_PATH=domains
 OPENAI_API_KEY=<set-private-value>
 ANTHROPIC_API_KEY=
+API_SECRET_KEY=<set-private-value>
+DATABASE_URL=<set-private-value-when-available>
 ```
 
 Regras:
@@ -83,6 +85,8 @@ Regras:
 - nunca commitar `.env`
 - nao colar valores reais em issue, PR ou documento publico
 - se `OPENAI_API_KEY` nao estiver disponivel, validar fallback `provider_error`
+- se `DATABASE_URL` nao estiver disponivel, registrar como pendencia de banco
+  sem bloquear smoke tests sem persistencia
 - manter credenciais de producao separadas das credenciais de desenvolvimento
 
 ## Preparacao do codigo
@@ -112,6 +116,13 @@ Validar localmente no servidor:
 python -m pytest
 python -m compileall app tests
 python -m app.evals.run_domain_eval suporte-vps-whatsapp
+```
+
+Em Windows ou PowerShell, usar o preflight seguro para conferir ferramentas e
+variaveis sem imprimir valores de segredo:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\runtime_preflight.ps1
 ```
 
 ## Execucao controlada
