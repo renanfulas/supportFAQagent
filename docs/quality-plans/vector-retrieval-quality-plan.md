@@ -36,18 +36,25 @@ Entregas ja concluidas nesta frente:
 - validacao SQL executavel em `tests/db/validate_pgvector_search.sql`
 - documentacao do contrato SQL em
   `docs/runbooks/pgvector-retrieval-contract.md`
+- backend real de leitura PostgreSQL/pgvector conectado por `DATABASE_URL`
+- selecao por `RETRIEVAL_BACKEND=pgvector` validada em staging privado
+- writer explicito de ingestao em `app/ingestion/pgvector_writer.py`,
+  preparado para persistir documentos locais, chunks e embeddings no schema
+  multi-dominio existente sem alterar migrations
+- script operacional `scripts/ingest_domain_pgvector.py` para rodar a ingestao
+  persistente apenas quando `DATABASE_URL` e chave de embeddings estiverem
+  configurados no ambiente privado
 
 Lacunas principais desta fase:
 
-- conectar um backend real de PostgreSQL ao `PgVectorStore`
-- garantir filtro por dominio em toda busca
+- popular a base oficial com embeddings reais do dominio inicial usando o
+  script operacional
 - preservar `references` como `list[str]`
 - retornar score e fonte rastreaveis internamente
-- validar a query oficial contra o banco do ambiente definido
+- validar a query oficial contra dados reais do dominio no ambiente definido
 - definir fallback quando banco ou embedding falhar no runtime real
 - evitar Chroma como segunda fonte de verdade em producao
-- alinhar a factory `build_vector_store(domain)` com o caminho ativo quando o
-  adapter oficial existir
+- calibrar thresholds com conteudo real, nao apenas seeds sinteticos
 - manter o formato publico do `/chat` estavel: `request_id`, `domain`,
   `answer`, `confidence`, `escalated`, `handoff_reasons`, `references` e
   `error_code`
@@ -98,10 +105,13 @@ app/retrieval/models.py
 app/retrieval/embeddings.py
 app/retrieval/chroma_store.py
 app/retrieval/lexical_store.py
+app/ingestion/pgvector_writer.py
 app/orchestration/chat_flow.py
+scripts/ingest_domain_pgvector.py
 tests/test_retrieval_service.py
 tests/test_chroma_store.py
 tests/test_pgvector_store.py
+tests/test_pgvector_ingestion_writer.py
 tests/db/test_04_vector_search.sql
 tests/db/test_05_isolation.sql
 tests/db/validate_pgvector_search.sql
@@ -134,6 +144,11 @@ Passos recomendados desta fase:
   configurado
 - manter `ChromaStore` como prototipo local enquanto ele nao provar isolamento
   por dominio e enquanto pgvector for a fonte oficial planejada
+- manter ingestao persistente como comando operacional explicito, nao como
+  efeito colateral de `/chat` ou `/ingestion/preview`
+- usar o subconjunto de colunas ja validado no banco oficial para `domains`,
+  `articles` e `article_chunks`, sem assumir campos ainda nao presentes em
+  staging
 
 Contrato minimo do adapter `PgVectorStore`:
 
