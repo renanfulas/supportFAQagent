@@ -4,6 +4,7 @@ import pytest
 
 from app.core.errors import RetrievalError
 from app.domain_engine.models import DomainConfig
+from app.ingestion.models import KnowledgeChunk
 from app.retrieval.lexical_store import LexicalVectorStore
 from app.retrieval.models import RetrievedChunk
 from app.retrieval.service import RetrievalService, build_vector_store
@@ -89,3 +90,20 @@ def test_retrieval_service_uses_factory_when_no_adapter_is_injected(monkeypatch:
     assert len(calls) == 1
     assert calls[0].name == "test-domain"
     assert chunks[0].text == "factory path"
+
+
+def test_lexical_store_orders_equal_scores_deterministically() -> None:
+    store = LexicalVectorStore()
+    store.ingestion_service.load_domain_documents = lambda domain: []  # type: ignore[method-assign]
+    store.ingestion_service.chunk_documents = lambda documents: [  # type: ignore[method-assign]
+        KnowledgeChunk(source="z.md", title="Z", text="alpha beta", chunk_index=0),
+        KnowledgeChunk(source="a.md", title="A", text="alpha beta", chunk_index=0),
+    ]
+
+    chunks = store.search(
+        domain=make_domain(),
+        query="alpha",
+        top_k=2,
+    )
+
+    assert [chunk.source for chunk in chunks] == ["a.md", "z.md"]

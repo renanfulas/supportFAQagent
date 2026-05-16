@@ -3,6 +3,7 @@ from pathlib import Path
 from app.ingestion.chunking import split_documents_to_dicts, split_text
 from app.ingestion.models import KnowledgeDocument
 from app.ingestion.service import IngestionService
+from app.domain_engine.models import DomainConfig, DomainKnowledgeConfig
 
 
 class StubDocument:
@@ -85,3 +86,24 @@ def test_ingestion_service_uses_shared_chunking_contract() -> None:
     assert chunks[0].source.endswith("faq.md")
     assert chunks[0].title == "FAQ"
     assert chunks[0].chunk_index == 0
+
+
+def test_ingestion_service_loads_domain_documents_deterministically(tmp_path: Path) -> None:
+    knowledge_path = tmp_path / "knowledge" / "faqs"
+    knowledge_path.mkdir(parents=True)
+    (knowledge_path / "z-last.md").write_text("ultimo", encoding="utf-8")
+    (knowledge_path / "a-first.md").write_text("primeiro", encoding="utf-8")
+
+    domain = DomainConfig(
+        name="test-domain",
+        display_name="Test Domain",
+        root_path=tmp_path,
+        knowledge=DomainKnowledgeConfig(sources=["knowledge/faqs"]),
+    )
+
+    documents = IngestionService().load_domain_documents(domain)
+
+    assert [Path(document.source).name for document in documents] == [
+        "a-first.md",
+        "z-last.md",
+    ]

@@ -35,7 +35,14 @@ class LexicalVectorStore(VectorStore):
                 )
             )
 
-        ranked.sort(key=lambda item: item.score, reverse=True)
+        ranked.sort(
+            key=lambda item: (
+                -item.score,
+                item.source.replace("\\", "/").lower(),
+                item.title.lower(),
+                item.text.lower(),
+            )
+        )
         return ranked[:top_k]
 
     def _score_chunk(self, text: str, query_terms: set[str]) -> float:
