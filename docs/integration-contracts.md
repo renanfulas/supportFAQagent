@@ -112,6 +112,9 @@ Contrato atual de `references`:
 
 - hoje a API retorna uma lista de fontes rastreaveis do retrieval atual
 - no estado atual do MVP, essas fontes costumam ser caminhos de arquivo em `domains/.../knowledge/...`
+- com `RETRIEVAL_BACKEND=pgvector`, essas fontes continuam serializadas como
+  caminhos rastreaveis de conhecimento versionado, preservando o contrato
+  publico mesmo quando a busca vem do PostgreSQL
 - quando a persistencia relacional estiver pronta, esse mesmo campo deve continuar sendo serializavel em JSON sem quebrar consumidores
 - o contrato que outras frentes devem assumir hoje e `list[str]`
 - se no futuro o backend passar a carregar metadados mais ricos de retrieval, isso deve entrar em um campo novo ou versao nova de contrato, sem quebrar `references`
@@ -269,19 +272,24 @@ Observacao:
 
 - Este endpoint nao persiste dados.
 - Este endpoint nao gera embeddings.
-- O objetivo e revisar chunking e qualidade do conteudo antes de conectar banco, pgvector ou jobs de ingestao.
+- O objetivo e revisar chunking e qualidade do conteudo antes de rodar ingestao
+  persistente no pgvector.
 - esta rota exige `X-API-Key` porque aceita payload livre e pode consumir recursos de processamento
 
 Contrato preparatorio para retrieval e ingestao futura:
 
 - `domain`, `source`, `title`, `text` e `chunk_index` devem continuar como campos basicos de interoperabilidade
 - o backend atual nao promete IDs persistidos de chunk nesta rota
-- quando a frente de banco ligar pgvector, IDs persistidos e metadados extras devem complementar esse payload sem quebrar os campos atuais
+- a ingestao persistente por script operacional pode gravar artigos, chunks e
+  embeddings no pgvector sem alterar este contrato de preview
+- IDs persistidos e metadados extras devem complementar esse payload em uma
+  evolucao futura, sem quebrar os campos atuais
 
 Fronteira de responsabilidade:
 
 - Renan pode evoluir o contrato HTTP e os testes de contrato
-- Alexandre implementa persistencia real de artigos, chunks, embeddings e consulta vetorial
+- Alexandre continua dono de schema, migrations, indices e persistencia final
+  de banco
 - Juliano pode evoluir splitter e loaders sem quebrar o shape HTTP acordado aqui
 
 ## `GET /ingestion/{domain_name}/preview`

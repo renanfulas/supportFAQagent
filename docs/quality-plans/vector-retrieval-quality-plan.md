@@ -10,18 +10,19 @@ Esta frente deve fechar a qualidade do caminho oficial com `PostgreSQL +
 pgvector`, sem assumir ownership de schema, migrations, queries finais ou
 armazenamento operacional da frente de banco.
 
-## Problema observado
+## Estado observado
 
-O fluxo `/chat` ainda usa `RetrievalService` com `LexicalVectorStore` como
-caminho ativo. O projeto ja tem `VectorStore`, `LexicalVectorStore`,
-`ChromaStore`, `RetrievedChunk`, o contrato Python do `PgVectorStore` e
-validacao SQL executavel do shape da busca vetorial, mas o backend real de
-PostgreSQL ainda nao foi conectado como caminho oficial.
+O fluxo `/chat` usa `RetrievalService` com lexical como padrao seguro, mas ja
+pode usar `PgVectorStore` quando `RETRIEVAL_BACKEND=pgvector` esta configurado.
+O projeto ja tem `VectorStore`, `LexicalVectorStore`, `ChromaStore`,
+`RetrievedChunk`, o contrato Python do `PgVectorStore`, validacao SQL
+executavel do shape da busca vetorial, backend PostgreSQL real por
+`DATABASE_URL` e writer operacional de ingestao persistente.
 
-Tambem existe `build_vector_store(domain)` em `app/retrieval/service.py`, que
-documenta o ponto futuro para trocar para `PgVectorStore`, mas o construtor
-atual de `RetrievalService` ainda instancia `LexicalVectorStore()` diretamente
-quando nenhum adapter e injetado.
+`build_vector_store(domain)` em `app/retrieval/service.py` e o ponto de selecao
+entre lexical e `pgvector`. O caminho vetorial foi validado em staging privado
+com dados reais do dominio inicial, depois da remocao de seeds artificiais de
+smoke.
 
 O `ChromaStore` implementa a interface e preserva metadados em `add_chunks`, mas
 `search(domain, query, top_k)` nao filtra por dominio hoje. Por isso, Chroma deve
@@ -47,8 +48,7 @@ Entregas ja concluidas nesta frente:
 
 Lacunas principais desta fase:
 
-- popular a base oficial com embeddings reais do dominio inicial usando o
-  script operacional
+- transformar a validacao operacional em uma rotina reproduzivel de release
 - preservar `references` como `list[str]`
 - retornar score e fonte rastreaveis internamente
 - validar a query oficial contra dados reais do dominio no ambiente definido

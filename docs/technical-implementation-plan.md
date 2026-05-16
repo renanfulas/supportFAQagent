@@ -12,7 +12,9 @@ Consulte tambem o runbook de staging e os contratos SQL do repositorio para a de
 - Manter o core Python independente de fornecedor sempre que isso for simples.
 - Usar LangChain apenas onde ele reduz codigo real ou melhora manutencao.
 - Tratar `PostgreSQL + pgvector` como vector store principal do MVP.
-- Tratar `Chroma` como adapter local/prototipo enquanto `pgvector` nao estiver integrado.
+- Tratar `Chroma` como adapter local/prototipo; o caminho oficial de producao
+  deve permanecer em `PostgreSQL + pgvector` quando estiver configurado e
+  calibrado para o ambiente.
 - Toda frente deve entregar codigo integravel, documentado e testavel.
 
 ## Estado atual do projeto
@@ -46,20 +48,29 @@ Avancos confirmados no historico entre 13/05/2026 e 16/05/2026:
 - adapter `PgVectorStore` e testes Python do contrato
 - contrato SQL executavel para validacao de busca vetorial
 - runbook e preflight da contingencia de VPS
+- backend real PostgreSQL/pgvector conectado por `DATABASE_URL`
+- writer operacional de ingestao persistente para artigos, chunks e embeddings
+- staging privado validado com pgvector, embeddings reais e seeds artificiais
+  removidos antes da calibragem
 
-Ainda nao esta integrado ao caminho principal:
+Ainda nao esta promovido como padrao permanente:
 
-- `/chat` continua usando `RetrievalService` lexical como caminho ativo
+- `/chat` continua usando retrieval lexical como padrao seguro quando
+  `RETRIEVAL_BACKEND` nao aponta para `pgvector`
+- `RETRIEVAL_BACKEND=pgvector` ja ativa o caminho vetorial oficial em runtime
+  com `DATABASE_URL` e dados ingeridos
 - `prompt_builder.py` ja e chamado por `ChatFlowService`
 - `LLMWrapper` ja esta integrado ao `LLMService` e o dominio padrao ja aponta para provider real
 - handoff estruturado ja retorna motivos de escalonamento
 - `RetrievalService` ja usa contrato `VectorStore`
 - `/chat` ja retorna `request_id` e `error_code`
-- `ChromaStore` ainda nao e o retrieval oficial do endpoint `/chat`
+- `ChromaStore` continua como prototipo local e nao e o retrieval oficial do endpoint `/chat`
 - `domain.yaml` ja aponta para `llm.provider: openai`
 - `/feedback` ainda retorna `pending_persistence`
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
+- falta calibrar confidence, handoff e ranking com dados reais recuperados pelo
+  pgvector antes de promover o backend como padrao permanente
 
 ## Responsaveis
 
@@ -91,8 +102,11 @@ Contingencia:
 
 Leitura pratica do ponto atual:
 
-- a frente de VPS ja esta preparada em documentacao, hardening basico e utilitarios de validacao
-- o pendente principal nesta contingencia e executar o staging oficial em ambiente privado
+- a frente de VPS foi coberta em contingencia para staging privado, com
+  documentacao, hardening basico, utilitarios de validacao e relatorios
+  sanitizados
+- o pendente principal agora e manter a operacao reproduzivel e calibrar o
+  comportamento antes de exposicao mais ampla
 - a frente de banco continua separada e nao deve ser absorvida junto com a contingencia
 
 ## Modelo multi-dominio
@@ -414,8 +428,14 @@ Nota de estado:
 Status em 16/05/2026:
 
 - o contrato do `PgVectorStore`, os testes Python e a validacao SQL ja existem
-- ainda falta ligar backend real, `DATABASE_URL` oficial e query de banco ao caminho principal
-- evitar retrabalho reimplementando adapter, reabrindo contrato de `references` ou promovendo `Chroma` a fonte oficial
+- o backend real por `DATABASE_URL` ja foi conectado e validado em staging
+  privado com embeddings reais do dominio inicial
+- a ingestao persistente existe como comando operacional explicito em
+  `scripts/ingest_domain_pgvector.py`
+- ainda falta calibrar confidence, threshold, ranking e handoff antes de tornar
+  `pgvector` o padrao permanente
+- evitar retrabalho reimplementando adapter, reabrindo contrato de `references`
+  ou promovendo `Chroma` a fonte oficial
 
 ## Silotto - VPS
 

@@ -28,12 +28,16 @@ Objetivos desta primeira versao:
 
 Estado atual:
 
-- `/chat` usa retrieval lexical temporario com provider real configurado por dominio
+- `/chat` usa retrieval lexical como padrao seguro, mas ja pode usar `pgvector`
+  via `RETRIEVAL_BACKEND=pgvector` quando o ambiente tiver `DATABASE_URL`,
+  embeddings e dados ingeridos
 - `LLMService` ja roteia para OpenAI/Anthropic e preserva tratamento de erro quando faltar credencial ou o provider falhar
 - ja existem utilitarios para LangChain, Chroma, embeddings, prompt builder e CSV de chamados
 - smoke tests cobrem healthcheck, dominios, preview de ingestao e chat com fallback seguro
 - `POST /feedback` ja aceita contexto operacional opcional como `escalated`, `handoff_reasons`, `references` e `error_code`
-- `PostgreSQL + pgvector` segue como integracao planejada para o retrieval principal
+- `PostgreSQL + pgvector` ja foi validado em staging privado como caminho
+  ponta a ponta de retrieval vetorial, ainda aguardando calibragem antes de
+  virar padrao permanente
 
 Avancos recentes ja incorporados entre 13/05/2026 e 16/05/2026:
 
@@ -46,6 +50,8 @@ Avancos recentes ja incorporados entre 13/05/2026 e 16/05/2026:
 - hardening de runtime com `API_SECRET_KEY` fora de desenvolvimento e rate limit no `/chat`
 - contrato Python do `PgVectorStore`, validacao SQL executavel e docs do ambiente oficial
 - runbook de contingencia operacional da VPS e script `scripts/runtime_preflight.ps1`
+- backend real PostgreSQL/pgvector por `DATABASE_URL`, writer de ingestao
+  persistente e smoke em staging com embeddings reais do dominio inicial
 
 ## Estrutura
 
@@ -85,14 +91,16 @@ se o valor enviado bater com `PROJECT_LLM_API_KEY_ALIAS`, o backend usa a chave 
 
 - a arquitetura oficial do projeto e a modular em `app/api`, `app/domain_engine`, `app/ingestion`, `app/orchestration`, `app/retrieval` e `app/llm`
 - o bootstrap HTTP fica em `app/main.py`
-- o fluxo de resposta usa retrieval lexical local como caminho ativo e provider real configurado no dominio padrao
+- o fluxo de resposta usa retrieval lexical local como padrao seguro, com
+  `pgvector` disponivel por feature flag de ambiente
 - o contrato de dominio ja controla persona, objetivo, diretrizes, escopo, mensagens padrao e politica de handoff
 - o `LLMService` ja usa `LLMWrapper` com OpenAI/Anthropic quando o dominio aponta para provider real
 - o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
 - handoff ja retorna motivos estruturados como baixa confianca, pedido de humano, assunto sensivel e falha tecnica observavel
 - `/chat` ja retorna `request_id` e `error_code` para facilitar debug
 - todas as respostas HTTP retornam `X-Request-ID` para correlacao de logs e integracoes
-- retrieval ja passa por uma interface de adapter, com lexical padrao e Chroma como prototipo local
+- retrieval ja passa por uma interface de adapter, com lexical padrao,
+  `pgvector` validado em staging e Chroma como prototipo local
 - contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
 - a ingestao ja possui preview por payload em `POST /ingestion/preview` e preview local por dominio em `/ingestion/{domain_name}/preview`
 - o dominio inicial ja possui evals locais para calibrar respostas e escalonamento com casos reais
@@ -131,11 +139,13 @@ python -m pytest
 
 ## Proximos passos
 
-- executar a contingencia operacional do staging em ambiente privado e registrar relatorio sanitizado
-- integrar PostgreSQL + pgvector como vector store principal
-- conectar o adapter vetorial oficial ao retrieval principal
+- calibrar retrieval, confidence e handoff com perguntas reais usando
+  `RETRIEVAL_BACKEND=pgvector`
+- decidir quando promover `pgvector` de feature flag validada para padrao
+  permanente do runtime
 - persistir conversas e feedback
-- calibrar thresholds e retrieval com conversas reais
+- preparar integracao n8n consumindo `/chat` e preservando `request_id`,
+  `references`, `handoff_reasons` e `error_code`
 
 ## Evitar retrabalho
 

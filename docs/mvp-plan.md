@@ -31,7 +31,8 @@ Hoje o repositorio ja possui:
 - estrutura modular de `app/`
 - dominio inicial versionado em `domains/suporte-vps-whatsapp/`
 - ingestao local de artigos e FAQs
-- retrieval lexical temporario
+- retrieval lexical como padrao seguro
+- retrieval PostgreSQL/pgvector validado em staging privado por feature flag
 - provider real configurado por dominio, com fallback seguro quando faltar credencial ou o provider falhar
 - `LLMService` integrado ao `LLMWrapper` para OpenAI/Anthropic no dominio atual
 - `ChatFlowService` integrado ao `prompt_builder.py`
@@ -45,10 +46,13 @@ Hoje o repositorio ja possui:
 - evals locais para calibrar o dominio inicial com perguntas reais recorrentes
 - smoke tests para health, dominios, preview de ingestao e chat com fallback seguro
 - utilitarios LangChain para CSV, chunking, embeddings, Chroma e prompt builder
+- writer operacional para persistir artigos, chunks e embeddings no pgvector
 - documentacao base de arquitetura e contribuicao
 
 Importante:
-Os utilitarios LangChain/Chroma ja existem na `main`, mas ainda nao sao o caminho principal do endpoint `/chat`.
+`pgvector` ja funciona como caminho vetorial em staging quando
+`RETRIEVAL_BACKEND=pgvector` esta configurado. O padrao permanente ainda deve
+esperar calibragem de confidence, handoff e qualidade das referencias.
 
 ## Responsabilidades
 
@@ -68,14 +72,17 @@ Para este MVP, as frentes ficam organizadas assim:
 
 ## Dependencias em andamento fora desta frente
 
-Estas entregas estao sendo conduzidas por outro desenvolvedor e devem ser tratadas como dependencia do plano:
+Estas entregas pertencem principalmente a outra frente e devem continuar
+coordenadas para evitar sobreposicao:
 
 - PostgreSQL
 - pgvector
 - persistencia relacional principal
 - base vetorial principal para retrieval
 
-Este plano nao duplica essa implementacao. Ele prepara a aplicacao para integrar com ela e evita transformar Chroma em uma segunda base de producao paralela sem decisao explicita do time.
+Este plano nao substitui ownership de schema, migrations ou indices finais. Ele
+prepara e valida a aplicacao para integrar com essa base, mantendo Chroma como
+prototipo local e evitando uma segunda fonte de producao paralela.
 
 ## Escopo do MVP desta frente
 
@@ -119,7 +126,8 @@ Estado atual:
 1. A API recebe a pergunta.
 2. O dominio e resolvido pela request ou pelo padrao.
 3. O dominio carrega configuracoes de prompt, retrieval e handoff.
-4. O retrieval lexical temporario busca chunks nos documentos locais.
+4. O retrieval lexical padrao busca chunks nos documentos locais quando
+   `RETRIEVAL_BACKEND=pgvector` nao esta configurado.
 5. O sistema seleciona os top-k chunks mais relevantes.
 6. O prompt builder monta o contexto com:
    - pergunta atual
@@ -130,12 +138,16 @@ Estado atual:
 9. O sistema calcula a confianca.
 10. Se a confianca estiver abaixo do threshold, marca escalonamento.
 
-Alvo do MVP com pgvector:
+Estado validado com pgvector:
 
 1. A pergunta vira embedding pelo provider configurado.
 2. O retrieval consulta o vector store principal.
 3. O sistema retorna chunks do dominio correto com score rastreavel.
 4. O LLM real responde em uma unica chamada usando o contexto recuperado.
+
+O caminho acima ja foi validado em staging privado com dados reais do dominio
+inicial. O proximo trabalho e calibrar score, confidence e handoff antes de
+promover esse caminho como padrao permanente.
 
 ## Fora do escopo do MVP
 
@@ -199,8 +211,8 @@ Nao deve:
 - integrar retrieval vetorial com a entrega de `pgvector`
 - implementar adapter `pgvector` seguindo o contrato `VectorStore`
 - decidir se `ChromaStore` permanece apenas como adapter local ou sera removido apos pgvector
-- ajustar top-k, threshold e formato de evidencias
-- validar performance basica do fluxo fim a fim
+- ajustar top-k, threshold e formato de evidencias com dados reais
+- validar performance basica do fluxo fim a fim em staging privado
 
 ## Fase 4
 
