@@ -66,6 +66,32 @@ Regra de fronteira para esta fase:
 - Juliano pode evoluir splitter e loaders, desde que o shape exposto pelo backend permaneça estavel
 - Silotto define o provisionamento oficial da HostGator, secrets e conectividade do runtime, conforme o [Mapa Oficial de Ambientes](environments.md)
 
+## Modelo multi-dominio
+
+O schema do projeto deve nascer como schema da plataforma de agentes por dominio, nao como schema especifico de `suporte-vps-whatsapp`.
+
+O que deve permanecer generico no banco:
+
+- dominios
+- artigos e fontes
+- chunks e embeddings
+- conversas
+- mensagens
+
+O que deve ficar fora do schema central:
+
+- regras especificas de suporte VPS
+- logica especifica de vendas
+- handoff especifico de onboarding
+- detalhes operacionais de `n8n` ou canais externos
+
+Direcao pratica:
+
+- um unico PostgreSQL por ambiente
+- `pgvector` no mesmo banco da aplicacao
+- isolamento estrutural por `domain_id`
+- configuracao e comportamento especifico em `domains/<domain>/`
+
 ## API interna
 
 O backend deve expor contratos estaveis para automacoes e testes:
@@ -255,6 +281,9 @@ CREATE TABLE domains (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
   display_name TEXT NOT NULL,
+  owner TEXT NOT NULL DEFAULT 'community',
+  status TEXT NOT NULL DEFAULT 'active',
+  config_version INT NOT NULL DEFAULT 1,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -265,8 +294,10 @@ CREATE TABLE articles (
   title TEXT NOT NULL,
   source TEXT NOT NULL,
   source_type TEXT NOT NULL DEFAULT 'markdown',
+  external_id TEXT,
   content_hash TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'active',
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (domain_id, source)
@@ -287,6 +318,7 @@ CREATE TABLE article_chunks (
 );
 
 CREATE INDEX idx_articles_domain_status ON articles(domain_id, status);
+CREATE INDEX idx_articles_domain_source_type_external ON articles(domain_id, source_type, external_id);
 CREATE INDEX idx_chunks_domain_article ON article_chunks(domain_id, article_id);
 CREATE INDEX idx_chunks_metadata_gin ON article_chunks USING gin(metadata);
 ```
@@ -304,6 +336,7 @@ Observacao:
 
 - Criar o indice vetorial depois de inserir dados iniciais costuma ser mais rapido.
 - Ajustar `lists` com base no volume real.
+- `external_id` e `metadata` preparam ingestao futura de fontes externas sem acoplar o core a um setor especifico.
 
 ## Juliano - LangChain
 
@@ -461,7 +494,9 @@ SQL sugerido:
 CREATE TABLE conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   domain_id UUID NOT NULL REFERENCES domains(id),
+  channel TEXT NOT NULL DEFAULT 'api',
   session_id TEXT NOT NULL,
+  external_conversation_id TEXT,
   status TEXT NOT NULL DEFAULT 'bot',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -472,18 +507,30 @@ CREATE TABLE messages (
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   role TEXT NOT NULL,
   content TEXT NOT NULL,
+  provider TEXT,
   confidence DOUBLE PRECISION,
   escalated BOOLEAN NOT NULL DEFAULT false,
   message_references JSONB NOT NULL DEFAULT '[]'::jsonb,
+  error_code TEXT,
+  latency_ms INT,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_conversations_session_domain
 ON conversations(session_id, domain_id, updated_at DESC);
 
+CREATE INDEX idx_conversations_domain_channel_external
+ON conversations(domain_id, channel, external_conversation_id);
+
 CREATE INDEX idx_messages_conversation_created
 ON messages(conversation_id, created_at);
 ```
+
+Observacao:
+
+- `channel` e `external_conversation_id` preparam a plataforma para WhatsApp, web, CRM, email ou outros canais sem criar tabelas por setor.
+- `provider`, `error_code` e `latency_ms` permitem observabilidade e auditoria sem depender de campos especificos do primeiro dominio.
 
 ## Juliano - LangChain
 

@@ -2,6 +2,13 @@
 
 Este documento registra os contratos HTTP que outras frentes podem consumir, especialmente `n8n`, banco e futuros canais externos.
 
+Regra de modelagem:
+
+- o banco e a API devem ser tratados como plataforma multi-dominio
+- `suporte-vps-whatsapp` e apenas o primeiro dominio do projeto
+- detalhes especificos de suporte, vendas, onboarding ou atendimento nao devem criar contratos HTTP separados sem necessidade real
+- o isolamento logico entre setores continua vindo de `domain` no contrato e `domain_id` na persistencia
+
 ## Header `X-API-Key`
 
 Rotas protegidas atualmente:
