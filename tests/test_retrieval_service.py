@@ -7,6 +7,7 @@ from app.domain_engine.models import DomainConfig
 from app.ingestion.models import KnowledgeChunk
 from app.retrieval.lexical_store import LexicalVectorStore
 from app.retrieval.models import RetrievedChunk
+from app.retrieval.pgvector_store import PgVectorStore
 from app.retrieval.service import RetrievalService, build_vector_store
 
 
@@ -44,6 +45,31 @@ def test_build_vector_store_keeps_lexical_path_without_resolving_embeddings() ->
     store = build_vector_store(make_domain())
 
     assert isinstance(store, LexicalVectorStore)
+
+
+def test_build_vector_store_can_select_pgvector_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.retrieval.service.get_settings",
+        lambda: type("Settings", (), {"retrieval_backend": "pgvector"})(),
+    )
+    monkeypatch.setattr(
+        "app.retrieval.service.get_domain_embeddings",
+        lambda domain: lambda query: [0.1] * domain.embedding.dimensions,
+    )
+
+    store = build_vector_store(make_domain())
+
+    assert isinstance(store, PgVectorStore)
+
+
+def test_build_vector_store_rejects_unknown_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.retrieval.service.get_settings",
+        lambda: type("Settings", (), {"retrieval_backend": "unknown"})(),
+    )
+
+    with pytest.raises(RetrievalError, match="not supported"):
+        build_vector_store(make_domain())
 
 
 def test_retrieval_service_uses_vector_store_adapter() -> None:
