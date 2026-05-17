@@ -123,6 +123,7 @@ python -m pytest
 - [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
 - [Planos de qualidade por frente](docs/quality-plans/README.md)
 - [Plano de qualidade de retrieval vetorial](docs/quality-plans/vector-retrieval-quality-plan.md)
+- [Runbook de intake de perguntas anonimas HostGator](docs/runbooks/hostgator-anonymous-eval-intake.md)
 - [Mapa oficial de ambientes](docs/environments.md)
 - [Observabilidade minima](docs/observability.md)
 - [Politica publica de seguranca](SECURITY.md)

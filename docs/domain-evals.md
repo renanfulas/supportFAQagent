@@ -27,6 +27,15 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/confinemen
 python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/confinement/secrets.yaml
 ```
 
+Para a futura suite opt-in de calibragem com `pgvector` e provider real:
+
+```bash
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_real.yaml
+```
+
+Essa suite nao deve entrar como gate obrigatorio de CI enquanto depender de
+`DATABASE_URL`, provider externo e dados ingeridos no pgvector.
+
 O comando retorna JSON com:
 
 - total de casos
@@ -78,6 +87,29 @@ Como o retrieval lexical ainda e simples, alguns casos podem esperar `low_confid
 
 Quando provider real, pgvector ou LangChain entrarem, estes casos devem evoluir para validar conteudo mais forte.
 
+## Suite pgvector/provider real
+
+A suite `evals/pgvector_real.yaml` deve ser criada somente depois do relatorio
+anonimo da HostGator chegar. Ate la, use
+`evals/pgvector_real.example.yaml` apenas como template.
+
+Objetivo dessa suite:
+
+- validar perguntas anonimas parecidas com o suporte real
+- medir se o pgvector recupera as referencias esperadas
+- medir se `confidence` e `handoff_reasons` estao coerentes
+- garantir que `error_code` fique ausente em casos saudaveis
+- calibrar antes de promover `RETRIEVAL_BACKEND=pgvector` como padrao
+
+Ela deve ser rodada de forma opt-in em ambiente privado com:
+
+- `DATABASE_URL` configurado
+- provider real configurado, como `OPENAI_API_KEY`
+- conhecimento do dominio ingerido no pgvector
+
+O processo de entrada dos casos esta em
+`docs/runbooks/hostgator-anonymous-eval-intake.md`.
+
 ## Casos de seguranca
 
 Para a trilha `SEC-013`, adicione tambem casos que exercitem:
@@ -116,4 +148,6 @@ Adicione um caso quando:
 - Evite casos enormes demais.
 - Mantenha expectativas simples no inicio.
 - Nao coloque PII, telefones reais, tokens, senhas ou dados sensiveis.
+- Nao coloque IP publico, dominio de cliente, payload bruto, header, log cru ou
+  qualquer identificador reversivel.
 - Se um caso falhar por falta de artigo, primeiro melhore a base de conhecimento.

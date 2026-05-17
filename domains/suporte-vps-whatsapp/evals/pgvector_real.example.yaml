@@ -1,0 +1,29 @@
+# Template para a futura suite opt-in de calibragem pgvector/provider real.
+#
+# Nao rode este arquivo diretamente. Quando o relatorio anonimo da HostGator
+# chegar, copie para `pgvector_real.yaml`, substitua os exemplos por perguntas
+# anonimas reais e rode com:
+#
+# python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_real.yaml
+#
+# Regras:
+# - nao incluir telefone, email, IP publico, dominio de cliente, senha, token ou
+#   qualquer identificador reversivel
+# - preferir perguntas curtas, parecidas com a mensagem original do suporte
+# - usar `expected_references` para medir se o pgvector recuperou a fonte certa
+# - manter esta suite opt-in; ela depende de ambiente com provider real e dados
+#   ingeridos no pgvector
+
+domain: suporte-vps-whatsapp
+cases:
+  - id: substituir-por-pergunta-anonima-real
+    category: substituir_categoria
+    question: Substitua por uma pergunta anonima real do relatorio HostGator.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - substituir-artigo-esperado.md
+      allowed_handoff_reasons:
+        - low_confidence
