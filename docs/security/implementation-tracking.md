@@ -47,9 +47,14 @@ Uma excecao temporaria permitiu acesso externo ao banco durante a fase inicial. 
 Credenciais circularam em canal de comunicacao do time na fase inicial. Nomes reais de usuario e valores de segredo nao devem aparecer em documento publico.
 
 **Tarefas:**
-- [ ] Trocar credenciais afetadas
+- [ ] Trocar credenciais afetadas, incluindo acesso administrativo/SSH,
+  `API_SECRET_KEY`, chaves de provider LLM e qualquer senha ou token
+  compartilhado em conversa operacional
 - [ ] Distribuir novos segredos apenas por canal privado
 - [ ] Auditar historico Git e materiais compartilhados
+- [ ] Revogar ou invalidar credenciais antigas depois da troca
+- [ ] Registrar somente status sanitizado da rotacao, sem valores, usuarios,
+  hostnames, IPs ou canais privados
 
 **Definition of Done:** nenhuma credencial ativa continua exposta.
 

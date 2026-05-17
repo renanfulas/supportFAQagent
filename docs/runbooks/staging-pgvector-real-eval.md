@@ -93,6 +93,9 @@ Nao incluir:
 - usuarios
 - portas administrativas
 - logs crus
+- prompts completos
+- respostas completas com risco de PII
+- headers, cookies, payloads brutos ou stack traces com detalhe de ambiente
 - perguntas com identificadores reversiveis
 
 ## Criterio de decisao

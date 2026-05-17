@@ -212,7 +212,9 @@ Nao registrar em documento publico:
 - usuario SSH
 - valor de segredo
 - conteudo completo de prompt
+- resposta completa ou pergunta original quando houver identificador reversivel
 - telefone, email, token ou qualquer PII
+- headers, cookies, payload bruto ou stack trace com detalhe sensivel
 - logs brutos com informacao sensivel
 
 ## Criterios de sucesso

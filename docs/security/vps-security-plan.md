@@ -68,6 +68,10 @@ Regras publicas:
 - segredos nao sao compartilhados em grupo
 - producao usa credenciais separadas de desenvolvimento
 - placeholders de exemplo podem existir, segredos reais nao
+- qualquer credencial compartilhada em conversa operacional deve ser tratada
+  como exposta e entrar em fila de rotacao
+- relatorios publicos devem registrar apenas status de rotacao, nunca valores,
+  usuarios, hostnames, IPs ou canais privados
 
 ## Camada 6 - API
 
@@ -97,17 +101,22 @@ Princípio:
 - `request_id` em respostas e logs
 - preservacao de `handoff_reasons`, `error_code` e `references`
 - logs sem PII, token, senha ou segredo
+- logs e relatorios nao devem incluir prompt completo, resposta completa,
+  pergunta original com identificador reversivel, payload bruto, headers ou
+  stack traces com detalhes de ambiente
 
 ## Checklist pre-deploy
 
 - [ ] IP real nao fica exposto publicamente
 - [ ] banco nao aceita conexao externa direta
 - [ ] segredos fora do Git
+- [ ] credenciais compartilhadas em conversas operacionais foram rotacionadas
 - [ ] autenticação por API key ativa
 - [ ] rate limit ativo
 - [ ] confinamento do agente validado
 - [ ] backups configurados
 - [ ] HTTPS ativo
+- [ ] runbooks e relatorios revisados para nao conter logs crus, secrets ou PII
 
 ## Nota publica
 

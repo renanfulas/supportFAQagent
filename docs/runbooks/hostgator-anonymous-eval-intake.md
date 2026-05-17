@@ -48,6 +48,10 @@ Antes de versionar qualquer caso:
   ou `minha instancia`
 - nao incluir conversas longas; transformar em uma pergunta curta e realista
 - nao copiar logs crus
+- nao versionar pergunta/resposta completa se ainda houver identificador
+  reversivel
+- nao registrar no relatorio final prompts, headers, payloads, stack traces ou
+  valores de ambiente
 
 Se houver duvida se um dado e reversivel, nao versionar.
 

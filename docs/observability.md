@@ -63,6 +63,23 @@ Campos que integracoes externas devem preservar:
 - `error_code`
 - `references`
 
+## Dados proibidos em logs e relatorios
+
+Mesmo em staging, nao registrar:
+
+- prompt completo
+- resposta completa quando houver risco de PII
+- pergunta original com telefone, email, IP publico, dominio de cliente ou ID
+  reversivel
+- `DATABASE_URL`, API keys, tokens, senhas, cookies, headers sensiveis ou
+  payload bruto
+- hostname interno, usuario administrativo, porta administrativa ou stack trace
+  com detalhe operacional sensivel
+
+Quando for preciso compartilhar resultado com o time, preferir resumo
+sanitizado com status HTTP, `request_id`, quantidade de `references`,
+`confidence`, `escalated`, `handoff_reasons` e `error_code`.
+
 ## Limite intencional do MVP
 
 Esta frente nao adiciona APM, tracing distribuido, dashboards ou fila de logs. A ideia e criar um contrato simples agora para nao perder rastreabilidade quando as integracoes reais entrarem.
