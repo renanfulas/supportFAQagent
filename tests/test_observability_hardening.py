@@ -36,6 +36,10 @@ def test_chat_log_uses_session_id_hash(monkeypatch) -> None:
     assert captured["retrieval_backend"] == "lexical"
     assert isinstance(captured["references_count"], int)
     assert captured["references_count"] >= 0
+    assert isinstance(captured["total_ms"], float)
+    assert isinstance(captured["retrieval_ms"], float)
+    assert isinstance(captured["llm_ms"], float)
+    assert captured["total_ms"] >= captured["retrieval_ms"]
 
 
 def test_feedback_log_uses_session_id_hash(monkeypatch) -> None:

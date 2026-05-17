@@ -1,3 +1,5 @@
+from time import perf_counter
+
 from app.core.errors import ProviderError, RetrievalError
 from app.domain_engine.models import DomainConfig
 from app.handoff.service import HandoffService
@@ -28,6 +30,10 @@ class ChatFlowService:
         request_id: str | None = None,
         provider_api_key: str | None = None,
     ) -> dict[str, object]:
+        total_started_at = perf_counter()
+        retrieval_ms = 0.0
+        llm_ms = 0.0
+        llm_started_at = None
         error_code = None
         chunks = []
         pre_handoff_reasons = self.handoff_service.inspect_question(domain, question)
@@ -35,9 +41,12 @@ class ChatFlowService:
         if self._should_block_automated_response(pre_handoff_reasons):
             if self._can_retrieve_references_for_blocked_response(pre_handoff_reasons):
                 try:
+                    retrieval_started_at = perf_counter()
                     chunks = self.retrieval_service.retrieve(domain, question)
                 except RetrievalError:
                     chunks = []
+                finally:
+                    retrieval_ms += self._elapsed_ms(retrieval_started_at)
             return {
                 "request_id": request_id or "",
                 "domain": domain.name,
@@ -47,12 +56,20 @@ class ChatFlowService:
                 "handoff_reasons": pre_handoff_reasons,
                 "references": [chunk.source for chunk in chunks],
                 "error_code": None,
+                "observability": self._build_observability(
+                    total_started_at=total_started_at,
+                    retrieval_ms=retrieval_ms,
+                    llm_ms=llm_ms,
+                ),
             }
 
         try:
+            retrieval_started_at = perf_counter()
             chunks = self.retrieval_service.retrieve(domain, question)
         except RetrievalError as exc:
             error_code = exc.error_code
+        finally:
+            retrieval_ms += self._elapsed_ms(retrieval_started_at)
 
         confidence = compute_confidence(domain, chunks)
         handoff = self.handoff_service.decide(
@@ -87,6 +104,7 @@ class ChatFlowService:
                     chunks=chunks,
                     history=history,
                 )
+                llm_started_at = perf_counter()
                 answer = self.llm_service.get_provider(
                     domain,
                     api_key=provider_api_key,
@@ -96,6 +114,9 @@ class ChatFlowService:
                 if error_code not in handoff_reasons:
                     handoff_reasons.append(error_code)
                 answer = domain.response.provider_error_message
+            finally:
+                if llm_started_at is not None:
+                    llm_ms += self._elapsed_ms(llm_started_at)
 
         return {
             "request_id": request_id or "",
@@ -106,6 +127,11 @@ class ChatFlowService:
             "handoff_reasons": handoff_reasons,
             "references": [chunk.source for chunk in chunks],
             "error_code": error_code,
+            "observability": self._build_observability(
+                total_started_at=total_started_at,
+                retrieval_ms=retrieval_ms,
+                llm_ms=llm_ms,
+            ),
         }
 
     def _build_history(self, session_id: str | None) -> list[dict[str, str]]:
@@ -150,3 +176,18 @@ class ChatFlowService:
             "Nao encontrei um caminho seguro para responder automaticamente. "
             "Vou sinalizar escalonamento para atendimento humano."
         )
+
+    def _elapsed_ms(self, started_at: float) -> float:
+        return round((perf_counter() - started_at) * 1000, 3)
+
+    def _build_observability(
+        self,
+        total_started_at: float,
+        retrieval_ms: float,
+        llm_ms: float,
+    ) -> dict[str, float]:
+        return {
+            "total_ms": self._elapsed_ms(total_started_at),
+            "retrieval_ms": round(retrieval_ms, 3),
+            "llm_ms": round(llm_ms, 3),
+        }

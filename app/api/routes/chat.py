@@ -45,6 +45,8 @@ def chat(
         request_id=request_id,
         provider_api_key=provider_api_key,
     )
+    observability = response.get("observability", {})
+    observability_fields = observability if isinstance(observability, dict) else {}
     log_event(
         logger,
         "chat_completed",
@@ -57,6 +59,9 @@ def chat(
         error_code=response["error_code"],
         retrieval_backend=settings.retrieval_backend,
         references_count=len(response["references"]),
+        total_ms=observability_fields.get("total_ms"),
+        retrieval_ms=observability_fields.get("retrieval_ms"),
+        llm_ms=observability_fields.get("llm_ms"),
     )
     return ChatResponse(**response)
 

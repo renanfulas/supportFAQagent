@@ -38,7 +38,8 @@ Eventos atuais:
 - `validation_error`: erro de validacao com `request_id`.
 - `unexpected_error`: erro inesperado com status 500, tipo do erro e `request_id`.
 - `chat_completed`: dominio, `session_id_hash`, confianca, escalonamento,
-  motivos, erro, backend de retrieval e quantidade de referencias.
+  motivos, erro, backend de retrieval, quantidade de referencias e tempos
+  agregados do fluxo.
 - `feedback_recorded`: feedback recebido, origem, `session_id_hash` e armazenamento atual.
 
 Eventos e sinais importantes para a trilha de seguranca:
@@ -59,6 +60,9 @@ Eventos e sinais importantes para a trilha de seguranca:
   `pgvector`.
 - `references_count`: quantidade de referencias retornadas, sem registrar o
   conteudo completo das fontes.
+- `total_ms`: tempo total aproximado do fluxo de chat dentro da aplicacao.
+- `retrieval_ms`: tempo aproximado gasto em retrieval.
+- `llm_ms`: tempo aproximado gasto com inicializacao/chamada do provider LLM.
 
 Campos que integracoes externas devem preservar:
 
