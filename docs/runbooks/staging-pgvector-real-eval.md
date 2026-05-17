@@ -69,6 +69,7 @@ Registrar somente:
 - `escalated`
 - `handoff_reasons`
 - `error_code`
+- `retrieval_backend`
 
 Nao registrar resposta completa se houver risco de PII.
 

@@ -108,6 +108,9 @@ Uso esperado:
 - `request_id` deve ser preservado em logs e feedback.
 - A API retorna `references`; na persistencia PostgreSQL, este campo deve ser salvo em `messages.message_references`.
 
+Para detalhes operacionais do consumidor n8n/WhatsApp, use
+`docs/runbooks/n8n-whatsapp-chat-contract.md`.
+
 Contrato atual de `references`:
 
 - hoje a API retorna uma lista de fontes rastreaveis do retrieval atual

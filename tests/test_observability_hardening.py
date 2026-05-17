@@ -33,6 +33,9 @@ def test_chat_log_uses_session_id_hash(monkeypatch) -> None:
     assert captured["event"] == "chat_completed"
     assert "session_id" not in captured
     assert captured["session_id_hash"] != "whatsapp:+5511999999999"
+    assert captured["retrieval_backend"] == "lexical"
+    assert isinstance(captured["references_count"], int)
+    assert captured["references_count"] >= 0
 
 
 def test_feedback_log_uses_session_id_hash(monkeypatch) -> None:

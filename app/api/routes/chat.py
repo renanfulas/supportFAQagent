@@ -55,6 +55,8 @@ def chat(
         escalated=response["escalated"],
         handoff_reasons=response["handoff_reasons"],
         error_code=response["error_code"],
+        retrieval_backend=settings.retrieval_backend,
+        references_count=len(response["references"]),
     )
     return ChatResponse(**response)
 

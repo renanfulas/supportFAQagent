@@ -126,6 +126,8 @@ python -m pytest
 - [Revisao da base de conhecimento](docs/quality-plans/knowledge-base-review-2026-05-17.md)
 - [Runbook de intake de perguntas anonimas HostGator](docs/runbooks/hostgator-anonymous-eval-intake.md)
 - [Runbook de eval pgvector real em staging](docs/runbooks/staging-pgvector-real-eval.md)
+- [Runbook de contrato n8n/WhatsApp](docs/runbooks/n8n-whatsapp-chat-contract.md)
+- [Checklist de promocao do pgvector](docs/runbooks/pgvector-promotion-checklist.md)
 - [Mapa oficial de ambientes](docs/environments.md)
 - [Observabilidade minima](docs/observability.md)
 - [Politica publica de seguranca](SECURITY.md)
