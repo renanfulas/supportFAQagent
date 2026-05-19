@@ -70,6 +70,7 @@ Regras publicas:
 - placeholders de exemplo podem existir, segredos reais nao
 - qualquer credencial compartilhada em conversa operacional deve ser tratada
   como exposta e entrar em fila de rotacao
+- `ZOOM_WEBHOOK_SECRET`, quando usado, deve ser aleatorio, privado, diferente por ambiente e rotacionado ao recriar integracoes de webhook
 - relatorios publicos devem registrar apenas status de rotacao, nunca valores,
   usuarios, hostnames, IPs ou canais privados
 

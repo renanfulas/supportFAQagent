@@ -81,11 +81,9 @@ tests/               # testes unitarios e de integracao
 3. Copie `.env.example` para `.env`
 4. Rode a API com `uvicorn app.main:app --reload`
 
-Em `APP_ENV=development`, a API tambem serve uma tela local de chat em `/chat-ui`.
-Em staging, essa tela pode ser liberada com `ENABLE_CHAT_UI=true`.
-Ela e apenas texto, chama o contrato `POST /chat` e nao substitui integracoes externas como n8n ou WhatsApp.
-Para testes controlados, a UI aceita uma chave do provider por requisicao via `X-LLM-API-Key`;
-se o valor enviado bater com `PROJECT_LLM_API_KEY_ALIAS`, o backend usa a chave privada configurada em `OPENAI_API_KEY`.
+Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados.
+Em ambientes nao produtivos, essa superficie pode ser habilitada de forma explicita para validacao interna.
+Ela nao substitui integracoes externas como n8n ou WhatsApp.
 
 ## Estado atual do MVP
 
@@ -102,7 +100,7 @@ se o valor enviado bater com `PROJECT_LLM_API_KEY_ALIAS`, o backend usa a chave 
 - retrieval ja passa por uma interface de adapter, com lexical padrao,
   `pgvector` validado em staging e Chroma como prototipo local
 - contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
-- a ingestao ja possui preview por payload em `POST /ingestion/preview` e preview local por dominio em `/ingestion/{domain_name}/preview`
+- a ingestao ja possui endpoints de preview para validacao controlada por operadores autenticados
 - o dominio inicial ja possui evals locais para calibrar respostas e escalonamento com casos reais
 - `POST /feedback` continua em `pending_persistence`, mas ja preserva contexto util para integracoes externas e persistencia futura
 

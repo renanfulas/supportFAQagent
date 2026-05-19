@@ -77,6 +77,8 @@ DOMAINS_PATH=domains
 OPENAI_API_KEY=<set-private-value>
 ANTHROPIC_API_KEY=
 API_SECRET_KEY=<set-private-value>
+RECALL_API_KEY=<set-private-value-when-zoom-enabled>
+ZOOM_WEBHOOK_SECRET=<set-private-random-value-when-zoom-enabled>
 DATABASE_URL=<set-private-value-when-available>
 ```
 
@@ -88,6 +90,23 @@ Regras:
 - se `DATABASE_URL` nao estiver disponivel, registrar como pendencia de banco
   sem bloquear smoke tests sem persistencia
 - manter credenciais de producao separadas das credenciais de desenvolvimento
+- quando `POST /zoom/join` e `POST /zoom/webhook` estiverem em uso, definir `ZOOM_WEBHOOK_SECRET` com valor aleatorio privado e rotacionar junto com `RECALL_API_KEY` em caso de exposicao
+
+## Rotacao do webhook do Zoom
+
+Quando houver suspeita de exposicao, troca de ambiente ou troca de operador:
+
+1. gerar um novo `ZOOM_WEBHOOK_SECRET` privado
+2. atualizar o `.env` do runtime antes de criar novos bots/reunioes
+3. reiniciar a API para recarregar o segredo
+4. recriar ou reemitir `POST /zoom/join` para que o novo token seja anexado ao `webhook_url`
+5. invalidar links antigos e tratar o segredo anterior como comprometido
+
+Regras:
+
+- nao publicar o token em chat, issue, PR, screenshot ou runbook publico
+- nao reutilizar o mesmo segredo entre staging e producao
+- registrar apenas o status da rotacao, nunca o valor
 
 ## Preparacao do codigo
 

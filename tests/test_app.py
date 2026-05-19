@@ -15,14 +15,17 @@ def test_app_import_and_healthcheck() -> None:
 
 
 def test_list_domains_returns_known_domain() -> None:
-    response = client.get("/domains")
+    response = client.get("/domains", headers=API_KEY_HEADER)
 
     assert response.status_code == 200
     assert "suporte-vps-whatsapp" in response.json()["domains"]
 
 
 def test_ingestion_preview_returns_documents_and_chunks() -> None:
-    response = client.get("/ingestion/suporte-vps-whatsapp/preview")
+    response = client.get(
+        "/ingestion/suporte-vps-whatsapp/preview",
+        headers=API_KEY_HEADER,
+    )
 
     assert response.status_code == 200
 
