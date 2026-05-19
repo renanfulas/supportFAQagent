@@ -64,6 +64,12 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
   - deve preservar `X-Request-ID`, `request_id`, `handoff_reasons`, `references` e `error_code`
   - nao deve acessar diretamente as tabelas internas do RAG
   - nao deve carregar regra central de inteligencia
+- Pode coexistir em Docker com `supportfaq_api`, desde que seja um servico
+  separado e reversivel.
+- Desabilitar temporariamente o `n8n` nao deve derrubar a API, apagar banco ou
+  remover volumes de workflow.
+- Desabilitar temporariamente a API nao deve apagar o PostgreSQL/pgvector nem os
+  dados da Evolution.
 
 ## Responsabilidades por frente
 

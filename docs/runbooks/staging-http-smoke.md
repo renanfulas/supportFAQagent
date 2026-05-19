@@ -9,6 +9,7 @@ Use este runbook para validar rapidamente:
 
 - `/health`
 - `/domains`
+- `/ingestion/{domain}/preview` quando o operador precisar conferir a base local autenticada
 - `/chat`
 - `/feedback` opcional, apenas quando for seguro registrar feedback operacional
 
@@ -32,6 +33,20 @@ python scripts/staging_smoke.py \
   --request-id smoke-$(date +%Y%m%d%H%M%S) \
   --output /tmp/supportfaq-staging-smoke.md
 ```
+
+Se o host da VPS estiver com Python antigo, execute o smoke dentro do container
+da API ou em um ambiente Python 3.11+:
+
+```bash
+docker exec supportfaq_api python scripts/staging_smoke.py \
+  --base-url http://127.0.0.1:8000 \
+  --domain suporte-vps-whatsapp \
+  --request-id smoke-$(date +%Y%m%d%H%M%S) \
+  --output /tmp/supportfaq-staging-smoke.md
+```
+
+Motivo: o script usa recursos da versao moderna do Python e pode falhar no
+Python do host mesmo quando a API esta saudavel.
 
 Para tambem validar o contrato atual de feedback:
 

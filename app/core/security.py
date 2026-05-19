@@ -12,12 +12,15 @@ API_KEY_HEADER_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_HEADER_NAME, auto_error=False)
 
 
-def is_valid_api_key(api_key: str | None) -> bool:
-    expected_api_key = get_settings().api_secret_key
-    return bool(api_key and expected_api_key) and hmac.compare_digest(
-        api_key,
-        expected_api_key,
+def is_valid_secret(candidate: str | None, expected: str | None) -> bool:
+    return bool(candidate and expected) and hmac.compare_digest(
+        candidate,
+        expected,
     )
+
+
+def is_valid_api_key(api_key: str | None) -> bool:
+    return is_valid_secret(api_key, get_settings().api_secret_key)
 
 
 def verify_api_key(api_key: str | None = Security(api_key_header)) -> str:

@@ -9,6 +9,47 @@ workflow.
 Este runbook prepara a integracao. Ele nao implementa workflow n8n, nao define
 schema SQL e nao substitui a calibragem do `pgvector`.
 
+## Coexistencia Docker com a API
+
+O `supportFAQagent` e o `n8n` podem rodar ao mesmo tempo em Docker na mesma VPS,
+desde que continuem como servicos separados.
+
+Modelo recomendado:
+
+- `supportfaq_api`: backend Python/FastAPI do agente.
+- `supportfaq_postgres`: PostgreSQL/pgvector oficial do agente.
+- `n8n`: automacao externa que consome a API HTTP.
+- Evolution API: servico externo de WhatsApp, com banco proprio separado.
+
+Regras:
+
+- o `n8n` deve chamar `supportfaq_api` por HTTP usando `/chat` e `/feedback`;
+- o `n8n` nao deve acessar diretamente as tabelas internas do RAG;
+- o `n8n` nao deve montar prompt, ranking ou contexto vetorial;
+- cada servico deve ter nome, portas, volumes e variaveis proprias;
+- nao subir duas instancias da API apontando para a mesma porta publica sem
+  decisao explicita;
+- manter rollback simples: parar/desabilitar `n8n` nao deve parar a API, e
+  parar/desabilitar a API nao deve apagar banco, volumes ou workflows.
+
+Desabilitacao temporaria esperada:
+
+```bash
+docker stop n8n
+```
+
+ou, se o `n8n` for criado como servico Swarm/EasyPanel, pausar/remover apenas o
+servico `n8n`, preservando o volume de dados.
+
+Antes de desabilitar qualquer servico, registrar:
+
+- nome do container/servico;
+- imagem usada;
+- volumes associados;
+- variaveis obrigatorias sem valores secretos;
+- motivo da pausa;
+- plano para religar.
+
 ## Chamada para `/chat`
 
 Endpoint:
@@ -107,7 +148,7 @@ Campos recomendados:
 Antes de ligar canal real:
 
 - `/health` responde `200`
-- `/domains` lista o dominio esperado
+- `/domains` responde `200` apenas com `X-API-Key` valida
 - `/chat` responde `200` com `request_id`
 - `X-Request-ID` enviado aparece no header e no corpo
 - `references` e `handoff_reasons` sao arrays

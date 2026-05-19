@@ -59,7 +59,10 @@ def preview_payload_ingestion(
 
 
 @router.get("/{domain_name}/preview", response_model=IngestionPreviewResponse)
-def preview_domain_ingestion(domain_name: str) -> IngestionPreviewResponse:
+def preview_domain_ingestion(
+    domain_name: str,
+    _: str = Depends(verify_api_key),
+) -> IngestionPreviewResponse:
     settings = get_settings()
     loader = DomainLoader(settings.domains_path)
     domain = loader.load(domain_name)

@@ -13,10 +13,13 @@ Regra de modelagem:
 
 Rotas protegidas atualmente:
 
+- `GET /domains`
 - `POST /chat`
 - `POST /feedback`
 - `POST /ingestion/preview`
+- `GET /ingestion/{domain_name}/preview`
 - `POST /zoom/join`
+- `POST /zoom/webhook`
 
 Regra:
 
@@ -24,7 +27,8 @@ Regra:
 - `API_SECRET_KEY` e obrigatoria fora de `APP_ENV=development`, `dev` ou `local`
 - chamadas sem chave valida retornam `403`
 - em staging, quando `ENABLE_CHAT_UI=true`, `POST /chat` tambem aceita `X-LLM-API-Key` para testes pela `/chat-ui`; esse atalho nao funciona em `APP_ENV=production`
-- `GET /health`, `GET /domains`, `GET /ingestion/{domain_name}/preview` e `POST /zoom/webhook` continuam publicas no estado atual do MVP
+- `GET /health` continua publica no estado atual do MVP
+- `POST /zoom/webhook` tambem aceita segredo compartilhado via query string quando `ZOOM_WEBHOOK_SECRET` estiver configurado para integracoes controladas com Recall/Zoom
 
 Exemplo:
 
@@ -306,3 +310,26 @@ Uso esperado:
 
 - Smoke test local do dominio.
 - Conferencia rapida antes de rodar ingestao persistente no futuro.
+
+Regra de seguranca:
+
+- esta rota exige `X-API-Key`
+- a previa existe para operadores autenticados e nao deve ser exposta publicamente em staging ou producao
+
+## `POST /zoom/webhook`
+
+Objetivo:
+
+- receber callbacks controlados do bot de reuniao
+- disparar processamento assinado do chat recebido sem expor o endpoint para trafego anonimo
+
+Autenticacao aceita:
+
+- `X-API-Key` para chamadas internas controladas
+- query param `token` quando igual ao segredo privado configurado em `ZOOM_WEBHOOK_SECRET`
+
+Regras:
+
+- chamadas sem `X-API-Key` valida ou sem `token` valido retornam `403`
+- quando `ZOOM_WEBHOOK_SECRET` estiver configurado, `POST /zoom/join` anexa esse segredo ao `webhook_url` enviado ao Recall/Zoom
+- o backend nao deve logar payload bruto do webhook, mensagem completa, nomes reais de participantes ou segredos
