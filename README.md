@@ -101,6 +101,7 @@ Ela nao substitui integracoes externas como n8n ou WhatsApp.
   `pgvector` validado em staging e Chroma como prototipo local
 - contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
 - a ingestao ja possui endpoints de preview para validacao controlada por operadores autenticados
+- existe um adaptador Python para ler arquivos do GitHub via Contents API oficial, sem scraping de HTML, em `app/ingestion/github_loader.py`
 - o dominio inicial ja possui evals locais para calibrar respostas e escalonamento com casos reais
 - `POST /feedback` continua em `pending_persistence`, mas ja preserva contexto util para integracoes externas e persistencia futura
 
