@@ -19,6 +19,8 @@ Use this skill when a contributor asks:
 
 Goal: act as a lightweight technical coordinator. Do not implement first. First align intent, responsibility, plan, and next safe action.
 
+When the task touches README, docs, PR text, onboarding, or agent instructions, keep recommendations aligned with `docs/product-positioning.md`: commercial-technical, safe, traceable, and honest about MVP limits.
+
 ## Core Rule
 
 Ask only these two questions when the user's intent or identity is missing:
@@ -55,21 +57,25 @@ Do not force reset or discard user changes.
 Read these first:
 
 1. `README.md`
-2. `docs/technical-implementation-plan.md`
-3. `docs/mvp-plan.md`
-4. `docs/navigation.md`
+2. `docs/product-positioning.md`
+3. `docs/technical-implementation-plan.md`
+4. `docs/mvp-plan.md`
+5. `docs/navigation.md`
 
 Then read only the task-specific docs:
 
 | Intended area | Additional docs |
 | --- | --- |
+| README/docs/product narrative | `docs/product-positioning.md`, `docs/agent-skills.md` |
 | API/n8n/contracts | `docs/integration-contracts.md`, `docs/observability.md` |
 | Domain config | `docs/domain-contract.md` |
 | Knowledge/RAG content | `docs/knowledge-authoring.md`, `docs/domain-evals.md` |
+| GitHub document loader or external source loading | `docs/knowledge-authoring.md`, `docs/technical-implementation-plan.md`, `app/ingestion/github_loader.py`, `scripts/fetch_github_document.py` |
 | Evals/calibration | `docs/domain-evals.md` |
 | Observability/security | `docs/observability.md`, `docs/code-standards.md` |
 | PostgreSQL/pgvector | `docs/technical-implementation-plan.md` SQL sections |
 | LangChain/splitters/loaders | `docs/technical-implementation-plan.md`, ingestion sections |
+| Dependency management/security audit | `pyproject.toml`, `requirements.txt`, `.github/workflows/security.yml`, `CONTRIBUTING.md` |
 | Contribution/commit/PR | `CONTRIBUTING.md`, `.agents/skills/supportfaq-git-flow/SKILL.md` |
 
 ## Responsibility Map
@@ -127,6 +133,7 @@ Keep the answer practical. Do not write a long architecture essay unless asked.
 - If the task is about contracts, tests, docs, evals, safety, or orchestration, Renan can usually proceed.
 - If the task requires tables, migrations, pgvector queries, persistence, or workflow storage, involve Alexandre.
 - If the task changes LangChain dependency strategy, splitter behavior, or loaders, involve Juliano.
+- If the task changes the GitHub Contents API loader, dependency strategy, install commands, or audit gates, treat it as shared quality/architecture work and validate the contracts.
 - If the task assumes deploy, VPS logs, TLS, reverse proxy, environment variables, or runtime networking, involve Silotto.
 - If the task touches public exposure, security, secrets, PII, or logs, require hardening and tests.
 

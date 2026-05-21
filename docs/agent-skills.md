@@ -1,6 +1,6 @@
 # Agent Skills Universais
 
-Este repositorio possui instrucoes reutilizaveis para agentes de IA em:
+Este repositorio possui instrucoes reutilizaveis versionadas para agentes de IA em:
 
 ```text
 .agents/
@@ -14,6 +14,10 @@ Este repositorio possui instrucoes reutilizaveis para agentes de IA em:
 ```
 
 Elas foram escritas em Markdown para funcionar em diferentes ferramentas, como Codex, Claude, Antigravity ou qualquer IDE/agente que aceite project rules, custom instructions, memories ou skills.
+
+As skills tambem preservam o posicionamento do produto definido em `docs/product-positioning.md`: comercial tecnico, seguro, rastreavel e honesto sobre limites do MVP.
+
+Outras skills locais podem existir no workspace, mas este documento cobre apenas as skills versionadas no repositorio.
 
 ## Skills disponiveis
 
@@ -191,6 +195,9 @@ Atualize as skills quando:
 
 - a arquitetura mudar
 - novos endpoints ou contratos forem criados
+- novos diretorios ou scripts operacionais forem adicionados
+- novas fontes de conhecimento, loaders ou adapters forem criados
+- regras de dependencia, extras ou auditoria mudarem
 - novos dominios forem adicionados
 - o fluxo de testes/evals mudar
 - o processo de PR mudar

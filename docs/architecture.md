@@ -2,7 +2,9 @@
 
 ## Visao geral
 
-O projeto e uma plataforma em Python para agentes de atendimento por dominio. A mesma base tecnica deve suportar setores diferentes, trocando principalmente:
+O projeto e o nucleo tecnico do `supportFAQagent`: um agente de suporte por dominio para responder duvidas recorrentes com base em conhecimento controlado, preservar rastreabilidade e escalar para humano quando o contexto nao for suficiente.
+
+A mesma base tecnica deve suportar setores diferentes, trocando principalmente:
 
 - artigos e FAQs
 - prompts
@@ -10,6 +12,16 @@ O projeto e uma plataforma em Python para agentes de atendimento por dominio. A 
 - configuracao do dominio
 
 O primeiro dominio e `suporte-vps-whatsapp`.
+
+## Promessa operacional
+
+A arquitetura deve proteger estas promessas:
+
+- responder com evidencias recuperaveis
+- evitar resposta inventada quando o contexto for fraco
+- retornar `request_id`, `references`, `confidence`, `handoff_reasons` e `error_code`
+- falhar de forma segura quando retrieval, provider ou credencial falhar
+- manter n8n, WhatsApp e outros canais como consumidores de contrato, nao como nucleo de inteligencia
 
 ## Principios da arquitetura
 
@@ -105,6 +117,8 @@ No estado atual, os documentos locais continuam sendo a base do fluxo `/chat`. T
 
 A API tambem expoe `POST /ingestion/preview`, que recebe documentos em JSON e retorna chunks para revisao. Esse contrato nao persiste dados e nao gera embeddings; ele existe para apoiar curadoria e integracoes futuras.
 
+Quando a fonte estiver no GitHub, use `app/ingestion/github_loader.py`, que acessa a Contents API oficial e evita scraping de HTML. O script `scripts/fetch_github_document.py` existe para validacao operacional desse caminho.
+
 ## `app/retrieval`
 
 Busca de contexto para resposta.
@@ -115,9 +129,9 @@ Responsabilidades:
 - ranquear contexto
 - entregar evidencias para o fluxo de chat
 
-Hoje o fluxo `/chat` ainda usa retrieval lexical. A `main` tambem possui utilitarios de embeddings e um adapter `ChromaStore`, mas essa trilha ainda nao esta ligada ao fluxo principal. Como o `PostgreSQL + pgvector` esta em andamento por outra frente, Chroma deve ser tratado como adapter local/prototipo ate a decisao final de vector store do MVP.
+Hoje o fluxo `/chat` usa retrieval lexical como padrao seguro e pode usar `pgvector` por `RETRIEVAL_BACKEND=pgvector` quando o ambiente tiver `DATABASE_URL`, embeddings e dados ingeridos. Chroma deve continuar como adapter local/prototipo, nao como fonte oficial de producao.
 
-O retrieval ja passa por uma interface `VectorStore`. Hoje o adapter padrao e `LexicalVectorStore`; `ChromaStore` implementa o mesmo contrato como prototipo local; `pgvector` deve entrar como novo adapter sem alterar a orquestracao.
+O retrieval ja passa por uma interface `VectorStore`. Hoje o adapter padrao e `LexicalVectorStore`; `PgVectorStore` implementa o caminho vetorial oficial por feature flag; `ChromaStore` implementa o mesmo contrato como prototipo local.
 
 ## `app/llm`
 
@@ -129,7 +143,7 @@ Responsabilidades:
 - permitir mock no desenvolvimento
 - facilitar troca entre OpenAI, Anthropic ou open source
 
-O provider mock ainda e o caminho usado pelo dominio padrao. O `LLMService` ja consegue rotear para `LLMWrapper` com OpenAI/Anthropic quando `domain.yaml` trocar `llm.provider`, mas a configuracao padrao segue em mock para desenvolvimento e testes.
+O `LLMService` roteia para `LLMWrapper` com OpenAI/Anthropic quando o dominio aponta para provider real. Quando faltam credenciais ou o provider falha, o fluxo deve preservar fallback seguro e erro rastreavel.
 
 ## `app/orchestration`
 
@@ -198,7 +212,7 @@ Exemplos esperados de dominios futuros:
 4. O `ingestion` le os documentos e gera chunks.
 5. O `retrieval` busca os trechos mais proximos da pergunta.
 6. O `orchestration` monta o prompt com contexto.
-7. O `llm` gera a resposta pelo provider mock atual.
+7. O `llm` tenta gerar a resposta pelo provider configurado.
 8. O sistema calcula confianca.
 9. Se a confianca estiver abaixo do limite, marca escalonamento.
 
@@ -206,12 +220,9 @@ Exemplos esperados de dominios futuros:
 
 Curto prazo:
 
-- trocar `domain.yaml` para provider real quando houver API key configurada
-- consolidar pipeline LangChain/Chroma com a ingestao atual ou manter como prototipo isolado
-- integracao com PostgreSQL e pgvector
-- implementar adapter `pgvector` no contrato `VectorStore`
-- provider real de embeddings no caminho principal
-- provider real de LLM no caminho principal
+- calibrar confidence, handoff e ranking com perguntas reais
+- promover `pgvector` para padrao permanente apenas depois da calibragem
+- manter Chroma como prototipo local ou remover quando deixar de trazer valor
 - melhorar a base de conhecimento usando os evals como regressao
 
 Medio prazo:

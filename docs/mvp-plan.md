@@ -4,7 +4,9 @@
 
 Este documento consolida a direcao do MVP do `supportFAQagent` em um unico plano de execucao.
 
-A meta e evitar frentes paralelas conflitantes e alinhar o time sobre:
+A meta de produto e entregar um agente de suporte que reduza perguntas repetidas, responda com base em conhecimento versionado e escale para humano quando faltar contexto.
+
+A meta de execucao e evitar frentes paralelas conflitantes e alinhar o time sobre:
 
 - o que entra agora
 - o que depende de outras pessoas
@@ -17,6 +19,7 @@ O detalhamento tecnico por fase e por responsavel esta em [Plano Tecnico de Impl
 - O nucleo segue em Python com FastAPI.
 - A arquitetura continua modular por dominio.
 - O primeiro dominio segue sendo `suporte-vps-whatsapp`.
+- A comunicacao do projeto deve seguir `docs/product-positioning.md`: comercial tecnica, honesta sobre limites e focada em seguranca operacional.
 - O fluxo do MVP sera RAG simples, linear e previsivel.
 - O MVP nao usara `ConversationalRetrievalChain`.
 - O `n8n` continua sendo camada de automacao externa, nao parte do nucleo de inteligencia.

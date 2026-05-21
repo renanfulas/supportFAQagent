@@ -10,26 +10,31 @@ Pense no repositorio em duas partes:
 Se a mudanca serve para mais de um setor, ela provavelmente mora em `app/`.
 Se a mudanca so faz sentido para um setor, ela provavelmente mora em `domains/`.
 
+Antes de escrever texto publico, README, descricao de PR ou material para agentes, leia tambem `docs/product-positioning.md`. O projeto deve soar como produto tecnico operacional: util, rastreavel e seguro, sem prometer autonomia total.
+
 ## Caminho mais comum para leitura
 
 Se voce esta chegando agora, leia nesta ordem:
 
 1. `README.md`
-2. `docs/architecture.md`
-3. `docs/mvp-plan.md`
-4. `docs/domain-contract.md`
-5. `docs/domain-evals.md`
-6. `docs/knowledge-authoring.md`
-7. `docs/agent-skills.md`
-8. `docs/observability.md`
-9. `docs/technical-implementation-plan.md`
-10. `docs/integration-contracts.md`
-11. `domains/suporte-vps-whatsapp/domain.yaml`
-12. `app/main.py`
-13. `app/api/routes/`
-14. `app/orchestration/chat_flow.py`
-15. `app/retrieval/service.py`
-16. `app/ingestion/service.py`
+2. `docs/product-positioning.md`
+3. `docs/architecture.md`
+4. `docs/mvp-plan.md`
+5. `docs/domain-contract.md`
+6. `docs/domain-evals.md`
+7. `docs/knowledge-authoring.md`
+8. `docs/agent-skills.md`
+9. `docs/observability.md`
+10. `docs/technical-implementation-plan.md`
+11. `docs/integration-contracts.md`
+12. `domains/suporte-vps-whatsapp/domain.yaml`
+13. `app/main.py`
+14. `app/api/routes/`
+15. `app/orchestration/chat_flow.py`
+16. `app/retrieval/service.py`
+17. `app/ingestion/service.py`
+18. `app/ingestion/github_loader.py`
+19. `scripts/`
 
 ## Planos por frente
 
@@ -57,6 +62,10 @@ Aqui ficam os endpoints. E o lugar certo para entender o contrato publico da apl
 
 Centraliza o `X-Request-ID` usado para correlacionar chamadas, erros e logs.
 
+## `app/core/config.py`
+
+Mostra variaveis de ambiente, defaults locais, feature flags como `RETRIEVAL_BACKEND` e protecoes como `API_SECRET_KEY`.
+
 ## `app/api/schemas/`
 
 Define entrada e saida da API.
@@ -68,6 +77,8 @@ Mostra como um dominio e carregado do disco para a aplicacao. O contrato esperad
 ## `app/ingestion/`
 
 Mostra como artigos e FAQs viram insumos utilizaveis pelo RAG.
+
+Inclui tambem `github_loader.py`, que busca arquivos pela GitHub Contents API oficial. Use esse caminho para fontes GitHub; nao crie scraping de HTML do GitHub.
 
 ## `app/retrieval/`
 
@@ -81,13 +92,37 @@ Mostra como os providers sao isolados do restante do sistema.
 
 Aqui esta o fluxo principal do agente. Quando quiser entender a jornada ponta a ponta, comece por aqui.
 
+## `app/handoff/`
+
+Concentra regras de escalonamento humano reutilizaveis, como baixa confianca, pedido explicito e termos sensiveis.
+
+## `app/feedback/`
+
+Concentra servico e contrato interno de feedback enquanto a persistencia real ainda nao e definitiva.
+
 ## `app/evals/`
 
 Ferramentas locais para rodar calibragem de dominio contra casos reais versionados.
 
+## `app/db/` e `migrations/`
+
+Guardam modelos, conexao e artefatos SQL. Mudancas de schema, indices, migrations e queries finais de pgvector devem respeitar ownership de banco.
+
+## `app/static/`
+
+Chat UI local/staging para validacao controlada. Nao substitui integracoes externas como WhatsApp ou n8n.
+
+## `scripts/`
+
+Comandos operacionais e validacoes pontuais, incluindo ingestao pgvector, preflight de runtime, smoke de staging e fetch de documento GitHub.
+
+## `docs/security/`, `docs/runbooks/` e `docs/quality-plans/`
+
+Guardam hardening, operacao, ambientes, checks de qualidade e planos por frente. Use esses diretorios antes de mexer em seguranca, staging, VPS, pgvector ou criterios de qualidade.
+
 ## `.agents/skills/`
 
-Instrucoes universais para agentes de IA navegarem, decidirem proximos passos, alterarem, testarem, commitarem e abrirem PRs neste projeto.
+Instrucoes versionadas para agentes de IA navegarem, decidirem proximos passos, alterarem, testarem, commitarem e abrirem PRs neste projeto.
 
 ## `domains/suporte-vps-whatsapp/`
 

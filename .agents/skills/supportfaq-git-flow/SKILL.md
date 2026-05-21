@@ -20,6 +20,7 @@ Goal: keep history readable, validate changes before sharing, and produce useful
 3. Run `git diff --stat`.
 4. Confirm the change has one clear scope.
 5. Check if docs or evals must be updated.
+6. If the change touches public docs, README, PR narrative, or agent instructions, check `docs/product-positioning.md`.
 
 Do not commit unrelated changes.
 
@@ -31,7 +32,7 @@ Default validation:
 
 ```bash
 python -m pytest
-python -m compileall app tests
+python -m compileall app tests scripts
 ```
 
 Also run evals when the change touches:
@@ -42,6 +43,20 @@ Also run evals when the change touches:
 - retrieval
 - handoff
 - LLM response behavior
+
+Also run dependency/security checks when the change touches `pyproject.toml`, `requirements.txt`, install docs, or audit workflows:
+
+```bash
+python -m pip check
+python -m pip_audit .
+```
+
+If `requirements.txt` or optional extras change, also validate the compatibility wrapper or affected extras, for example:
+
+```bash
+python -m pip_audit -r requirements.txt
+python -m pip install --dry-run -e ".[chroma]"
+```
 
 Command:
 
@@ -60,10 +75,12 @@ Use this quick map:
 | API schema/route | endpoint test with status code and payload |
 | Domain loader/config | loader or domain contract test |
 | Ingestion | preview/chunking test |
+| GitHub document loader | loader unit test without network plus script/help validation when practical |
 | Retrieval | adapter/service test |
 | Observability | request id, log field, error contract test |
 | Privacy/security | non-leakage or validation test |
 | Knowledge/prompt/handoff | domain eval update |
+| Dependency management | `pip check`, `pip_audit .`, and extra dry-runs for changed extras |
 
 Docs-only changes usually do not need new unit tests, but still run the default validation if the repo is available.
 
@@ -125,6 +142,8 @@ Resumo curto da entrega e por que ela existe.
 - `python -m compileall app tests`
 - `python -m app.evals.run_domain_eval suporte-vps-whatsapp` quando aplicavel
 ```
+
+For README, docs, or PR narrative changes, include the product or operational impact and avoid promises that conflict with `docs/product-positioning.md`.
 
 ## Final Response After Push
 

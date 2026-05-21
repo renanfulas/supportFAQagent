@@ -4,6 +4,11 @@ Este documento detalha como executar o MVP do `supportFAQagent` por fase e por r
 
 Ele complementa o [Plano Unico do MVP](mvp-plan.md) com tarefas tecnicas, contratos entre frentes, riscos, criterios de pronto e trilhas de SQL, seguranca, performance e debug.
 
+Para comunicacao publica, README, PRs e tarefas de agentes, use tambem o
+[Posicionamento do Produto](product-positioning.md). Ele define a promessa
+comercial tecnica: reduzir repeticao no suporte, responder com conhecimento
+versionado, preservar rastreabilidade e escalar quando faltar contexto.
+
 Consulte tambem o runbook de staging e os contratos SQL do repositorio para a definicao de ambiente oficial, papel do `DATABASE_URL` e fronteira entre backend, banco e `n8n`.
 
 ## Principios de execucao

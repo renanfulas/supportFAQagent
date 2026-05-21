@@ -76,16 +76,16 @@ cases:
 
 ## Como usar no MVP
 
-No estado atual, o provider padrao ainda e mock. Por isso alguns casos validam comportamento estrutural:
+No estado atual, os evals locais devem continuar deterministas e nao depender de provider real ou credenciais privadas. Por isso alguns casos validam comportamento estrutural:
 
 - se recuperou a referencia correta
 - se escalou quando deveria
 - se manteve motivo de handoff esperado
-- se respondeu pelo caminho do provider mock
+- se preservou fallback seguro quando o provider real nao pode responder
 
 Como o retrieval lexical ainda e simples, alguns casos podem esperar `low_confidence` mesmo quando ha documentos relacionados. Isso e uma linha de base do MVP, nao o comportamento final desejado.
 
-Quando provider real, pgvector ou LangChain entrarem, estes casos devem evoluir para validar conteudo mais forte.
+Quando provider real e pgvector estiverem calibrados em ambiente privado, estes casos devem evoluir para validar conteudo mais forte sem quebrar o gate deterministico local.
 
 ## Suite pgvector/provider real
 

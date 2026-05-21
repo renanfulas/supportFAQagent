@@ -10,48 +10,123 @@
 
 # supportFAQagent
 
-Plataforma em Python para agentes de atendimento por dominio com RAG, preparada para reutilizar a mesma base tecnica em diferentes setores.
+Agente de suporte com RAG para responder duvidas recorrentes de VPS, WhatsApp e automacoes com seguranca, rastreabilidade e escalonamento humano.
 
-## MVP inicial
+O `supportFAQagent` transforma conhecimento tecnico versionado em respostas consistentes, auditaveis e reutilizaveis por dominio. O primeiro dominio do produto e `suporte-vps-whatsapp`, voltado para atendimento tecnico de VPS, WhatsApp e automacoes operacionais.
 
-O primeiro dominio do projeto e `suporte-vps-whatsapp`.
+## O Problema
 
-Objetivos desta primeira versao:
+Equipes de suporte perdem tempo com perguntas repetidas, respostas inconsistentes e dificuldade para saber quando um bot deve parar e chamar uma pessoa.
 
-- expor uma API HTTP com FastAPI
-- carregar configuracoes por dominio
-- validar contratos de dominio para facilitar reuso em outros setores
-- ingerir artigos e FAQs locais
-- gerar chunks para RAG
-- preparar a base para busca vetorial e respostas com LLM
-- definir regras simples de escalonamento para humano
+Este projeto resolve isso com um nucleo Python modular que:
 
-Estado atual:
+- responde com base em conhecimento controlado
+- evita inventar respostas quando falta contexto
+- registra `request_id`, referencias e motivos de escalonamento
+- permite evoluir de um dominio inicial para varios setores
+- prepara integracao com WhatsApp, n8n e PostgreSQL/pgvector
 
-- `/chat` usa retrieval lexical como padrao seguro, mas ja pode usar `pgvector`
-  via `RETRIEVAL_BACKEND=pgvector` quando o ambiente tiver `DATABASE_URL`,
-  embeddings e dados ingeridos
-- `LLMService` ja roteia para OpenAI/Anthropic e preserva tratamento de erro quando faltar credencial ou o provider falhar
-- ja existem utilitarios para LangChain, Chroma, embeddings, prompt builder e CSV de chamados
-- smoke tests cobrem healthcheck, dominios, preview de ingestao e chat com fallback seguro
-- `POST /feedback` ja aceita contexto operacional opcional como `escalated`, `handoff_reasons`, `references` e `error_code`
-- `PostgreSQL + pgvector` ja foi validado em staging privado como caminho
-  ponta a ponta de retrieval vetorial, ainda aguardando calibragem antes de
-  virar padrao permanente
+## O Que Ja Funciona
 
-Avancos recentes ja incorporados entre 13/05/2026 e 16/05/2026:
+- API HTTP com FastAPI
+- dominio inicial para suporte de VPS, WhatsApp e automacoes
+- retrieval lexical como padrao seguro
+- retrieval PostgreSQL/pgvector disponivel por `RETRIEVAL_BACKEND=pgvector`
+- provider real de LLM com OpenAI/Anthropic
+- fallback seguro quando credenciais ou providers falham
+- handoff estruturado por baixa confianca, pedido humano, termo sensivel ou erro tecnico
+- contrato de feedback preparado para persistencia futura
+- adaptador para ler arquivos do GitHub pela Contents API oficial, sem scraping de HTML
+- rate limit no `/chat`
+- `X-Request-ID` em todas as respostas
+- testes automatizados cobrindo API, seguranca, retrieval, LLM, handoff e contratos
 
-- provider real `openai` configurado no dominio inicial
-- factory de embeddings conectada ao caminho de retrieval, sem tornar `pgvector` o backend oficial ainda
-- chunking consolidado e indices normalizados
-- `chat-ui` local/staging em texto para testes controlados
-- classificacao de falhas de provider e fallback seguro
-- handoff calibrado com motivos estruturados e contrato de feedback expandido
-- hardening de runtime com `API_SECRET_KEY` fora de desenvolvimento e rate limit no `/chat`
-- contrato Python do `PgVectorStore`, validacao SQL executavel e docs do ambiente oficial
-- runbook de contingencia operacional da VPS e script `scripts/runtime_preflight.ps1`
-- backend real PostgreSQL/pgvector por `DATABASE_URL`, writer de ingestao
-  persistente e smoke em staging com embeddings reais do dominio inicial
+## Casos De Uso
+
+- atendimento inicial em WhatsApp
+- suporte tecnico para VPS
+- triagem de duvidas recorrentes
+- consulta a FAQs e artigos internos
+- automacoes com n8n consumindo uma API estavel
+- base para agentes reutilizaveis em outros dominios
+
+## Como Funciona
+
+```text
+Canal externo
+  -> FastAPI
+  -> Configuracao do dominio
+  -> Retrieval de conhecimento
+  -> Prompt builder
+  -> LLM provider
+  -> Resposta com confianca, referencias e handoff
+```
+
+O dominio define persona, escopo, regras de resposta, limites, provider de LLM, embedding e politica de escalonamento.
+
+## Exemplo De Uso
+
+Request:
+
+```json
+{
+  "message": "Como conectar o WhatsApp na Evolution API?",
+  "session_id": "whatsapp:+5511999999999",
+  "domain": "suporte-vps-whatsapp"
+}
+```
+
+Response:
+
+```json
+{
+  "request_id": "uuid",
+  "domain": "suporte-vps-whatsapp",
+  "answer": "Resposta final para o usuario.",
+  "confidence": 0.82,
+  "escalated": false,
+  "handoff_reasons": [],
+  "references": ["article-or-chunk-id"],
+  "error_code": null
+}
+```
+
+## Seguranca E Controle
+
+O projeto foi desenhado para uso operacional controlado:
+
+- secrets fora do Git
+- `API_SECRET_KEY` obrigatorio fora de desenvolvimento
+- logs com cuidado para nao expor dados sensiveis
+- fallback seguro em falha de provider
+- rate limit no endpoint de chat
+- rastreabilidade por `request_id`
+- escalonamento quando o contexto nao for suficiente
+
+## Status Do Produto
+
+Pronto no MVP atual:
+
+- API principal
+- dominio inicial
+- resposta com fallback seguro
+- handoff estruturado
+- retrieval lexical
+- pgvector validado por feature flag
+- testes e documentacao base
+
+Em validacao:
+
+- calibragem de confidence e ranking com pgvector
+- qualidade das referencias recuperadas
+- promocao do pgvector como padrao permanente
+
+Roadmap:
+
+- persistencia de conversas e feedback
+- integracao n8n/WhatsApp
+- calibragem com perguntas reais
+- expansao para novos dominios
 
 ## Estrutura
 
@@ -61,67 +136,63 @@ app/
   core/              # configuracao, logging e utilitarios
   db/                # modelos e conexao de persistencia
   domain_engine/     # carga de dominios, prompts e politicas
+  evals/             # runner e modelos de calibragem local
+  feedback/          # contrato e servico de feedback operacional
+  handoff/           # regras reutilizaveis de escalonamento humano
   ingestion/         # leitura e chunking da base de conhecimento
   llm/               # contratos e provedores de modelos
   orchestration/     # fluxo principal de atendimento
   retrieval/         # embeddings, vetores e recuperacao
+  static/            # chat UI local para validacao controlada
 domains/
   suporte-vps-whatsapp/
     domain.yaml
     knowledge/
     prompts/
+docs/                # arquitetura, produto, contratos, runbooks e seguranca
+migrations/          # scripts SQL e artefatos de evolucao do banco
 scripts/             # comandos operacionais
 tests/               # testes unitarios e de integracao
 ```
 
-## Rodando localmente
+## Rodando Localmente
 
 1. Crie um ambiente virtual.
-2. Instale as dependencias com `pip install -e .[dev]`
-3. Copie `.env.example` para `.env`
-4. Rode a API com `uvicorn app.main:app --reload`
+2. Instale as dependencias:
+
+```bash
+pip install -e ".[dev]"
+```
+
+3. Copie `.env.example` para `.env`.
+4. Rode a API:
+
+```bash
+uvicorn app.main:app --reload
+```
 
 O `pyproject.toml` e a fonte unica de dependencias. O `requirements.txt`
 existe apenas como wrapper de compatibilidade para comandos antigos baseados em
 `pip install -r requirements.txt`.
 
-Para usar o prototipo local com ChromaDB e CSV, instale tambem o extra
-`pip install -e .[chroma]`.
-
-Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados.
-Em ambientes nao produtivos, essa superficie pode ser habilitada de forma explicita para validacao interna.
-Ela nao substitui integracoes externas como n8n ou WhatsApp.
-
-## Estado atual do MVP
-
-- a arquitetura oficial do projeto e a modular em `app/api`, `app/domain_engine`, `app/ingestion`, `app/orchestration`, `app/retrieval` e `app/llm`
-- o bootstrap HTTP fica em `app/main.py`
-- o fluxo de resposta usa retrieval lexical local como padrao seguro, com
-  `pgvector` disponivel por feature flag de ambiente
-- o contrato de dominio ja controla persona, objetivo, diretrizes, escopo, mensagens padrao e politica de handoff
-- o `LLMService` ja usa `LLMWrapper` com OpenAI/Anthropic quando o dominio aponta para provider real
-- o `ChatFlowService` ja usa `prompt_builder.py` como ponto unico de montagem de prompt
-- handoff ja retorna motivos estruturados como baixa confianca, pedido de humano, assunto sensivel e falha tecnica observavel
-- `/chat` ja retorna `request_id` e `error_code` para facilitar debug
-- todas as respostas HTTP retornam `X-Request-ID` para correlacao de logs e integracoes
-- retrieval ja passa por uma interface de adapter, com lexical padrao,
-  `pgvector` validado em staging e Chroma como prototipo local
-- contratos de entrada ja possuem limites basicos para reduzir payloads abusivos
-- a ingestao ja possui endpoints de preview para validacao controlada por operadores autenticados
-- existe um adaptador Python para ler arquivos do GitHub via Contents API oficial, sem scraping de HTML, em `app/ingestion/github_loader.py`
-- o dominio inicial ja possui evals locais para calibrar respostas e escalonamento com casos reais
-- `POST /feedback` continua em `pending_persistence`, mas ja preserva contexto util para integracoes externas e persistencia futura
-
-## Testes basicos
-
-Depois da instalacao, rode:
+Para usar o prototipo local com ChromaDB e CSV:
 
 ```bash
+pip install -e ".[chroma]"
+```
+
+Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados. Em ambientes nao produtivos, essa superficie pode ser habilitada de forma explicita para validacao interna. Ela nao substitui integracoes externas como n8n ou WhatsApp.
+
+## Testes
+
+```bash
+python -m compileall app tests scripts
 python -m pytest
 ```
 
 ## Documentacao
 
+- [Posicionamento do produto](docs/product-positioning.md)
 - [Arquitetura](docs/architecture.md)
 - [Plano unico do MVP](docs/mvp-plan.md)
 - [Contrato de dominio](docs/domain-contract.md)
@@ -149,18 +220,8 @@ python -m pytest
 - [Regras simples do codigo](docs/code-standards.md)
 - [Como contribuir](CONTRIBUTING.md)
 
-## Proximos passos
+## Contribuicao
 
-- calibrar retrieval, confidence e handoff com perguntas reais usando
-  `RETRIEVAL_BACKEND=pgvector`
-- decidir quando promover `pgvector` de feature flag validada para padrao
-  permanente do runtime
-- persistir conversas e feedback
-- preparar integracao n8n consumindo `/chat` e preservando `request_id`,
-  `references`, `handoff_reasons` e `error_code`
+Este projeto cresce por dominios. Antes de adicionar comportamento novo, alinhe a mudanca com a arquitetura modular existente e leia o [guia de contribuicao](CONTRIBUTING.md).
 
-## Evitar retrabalho
-
-- nao reimplementar provider real, fallback seguro, `chat-ui`, handoff calibrado, contrato de feedback ou hardening basico de runtime: essas frentes ja avancaram no historico recente
-- nao promover `Chroma` a fonte oficial de producao enquanto `PostgreSQL + pgvector` segue como caminho principal planejado
-- nao misturar a contingencia de VPS com ownership de schema SQL, migrations, indices, queries finais de `pgvector` ou persistencia real, que continuam com Alexandre
+Ao escrever docs, issues, PRs ou prompts para agentes, preserve o posicionamento do produto: serio, operacional, rastreavel e seguro. Evite prometer autonomia total ou substituir suporte humano; o valor esta em reduzir repeticao, melhorar consistencia e escalar quando falta contexto.

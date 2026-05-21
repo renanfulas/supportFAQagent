@@ -13,6 +13,10 @@ Ao adicionar ou remover pacotes, atualize o `pyproject.toml`. O
 `requirements.txt` nao deve voltar a listar dependencias manualmente; ele e
 apenas um wrapper de compatibilidade.
 
+Ao escrever README, docs, issues ou PRs, preserve o posicionamento em
+`docs/product-positioning.md`: produto tecnico operacional, seguro,
+rastreavel e honesto sobre limites do MVP.
+
 ## Fluxo recomendado
 
 1. Entenda em qual camada sua mudanca pertence.
