@@ -1,4 +1,4 @@
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 from app.domain_engine.models import DomainConfig
 from app.retrieval.models import RetrievedChunk

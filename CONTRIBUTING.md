@@ -9,6 +9,10 @@ Este projeto foi desenhado para crescer por dominios. Antes de abrir codigo novo
 3. Copie `.env.example` para `.env`
 4. Rode a API com `uvicorn app.main:app --reload`
 
+Ao adicionar ou remover pacotes, atualize o `pyproject.toml`. O
+`requirements.txt` nao deve voltar a listar dependencias manualmente; ele e
+apenas um wrapper de compatibilidade.
+
 ## Fluxo recomendado
 
 1. Entenda em qual camada sua mudanca pertence.

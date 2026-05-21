@@ -81,6 +81,13 @@ tests/               # testes unitarios e de integracao
 3. Copie `.env.example` para `.env`
 4. Rode a API com `uvicorn app.main:app --reload`
 
+O `pyproject.toml` e a fonte unica de dependencias. O `requirements.txt`
+existe apenas como wrapper de compatibilidade para comandos antigos baseados em
+`pip install -r requirements.txt`.
+
+Para usar o prototipo local com ChromaDB e CSV, instale tambem o extra
+`pip install -e .[chroma]`.
+
 Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados.
 Em ambientes nao produtivos, essa superficie pode ser habilitada de forma explicita para validacao interna.
 Ela nao substitui integracoes externas como n8n ou WhatsApp.

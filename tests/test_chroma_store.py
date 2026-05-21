@@ -12,13 +12,10 @@ class FakeVectorStore:
 
 
 def test_add_chunks_preserves_chunk_contract_metadata() -> None:
-    fake_vectorstores = types.ModuleType("langchain_community.vectorstores")
-    fake_vectorstores.Chroma = FakeVectorStore
-    fake_package = types.ModuleType("langchain_community")
-    fake_package.vectorstores = fake_vectorstores
+    fake_package = types.ModuleType("langchain_chroma")
+    fake_package.Chroma = FakeVectorStore
 
-    sys.modules["langchain_community"] = fake_package
-    sys.modules["langchain_community.vectorstores"] = fake_vectorstores
+    sys.modules["langchain_chroma"] = fake_package
 
     chroma_module = importlib.import_module("app.retrieval.chroma_store")
     importlib.reload(chroma_module)

@@ -47,4 +47,4 @@ jobs:
           python -m pip install pip-audit
 
       - name: Audit Python dependencies
-        run: python -m pip_audit -r requirements.txt
+        run: python -m pip_audit .
