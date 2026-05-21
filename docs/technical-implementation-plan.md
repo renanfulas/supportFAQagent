@@ -275,7 +275,7 @@ Criterio de pronto:
 
 ## Juliano - LangChain
 
-- Revisar as dependencias atuais `langchain`, `langchain-community`, `langchain-openai` e `langchain-anthropic`.
+- Revisar as dependencias atuais `langchain-core`, `langchain-text-splitters`, `langchain-openai`, `langchain-anthropic` e o extra opcional `chroma`.
 - Confirmar se todas sao necessarias no MVP ou se alguma pode sair depois da integracao.
 - Evitar chains e memoria gerenciada nesta fase.
 
