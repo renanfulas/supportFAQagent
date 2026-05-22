@@ -1,8 +1,8 @@
-# Runbook - Intake de perguntas anonimas HostGator para evals
+# Runbook - Intake de perguntas anonimas para calibração evals
 
 ## Objetivo
 
-Preparar a entrada do relatorio anonimo da HostGator como material de
+Preparar a entrada do relatorio anonimo da empresa como material de
 calibragem de RAG, sem transformar dados brutos em prompt, treinamento de
 modelo ou base oficial sem curadoria.
 
