@@ -19,7 +19,7 @@ administrativas ou logs brutos.
 ## Ambiente Local
 
 - Branch: `main`
-- Commit: `a1ad6e9`
+- Commit de referencia do baseline: `4bee1bd`
 - `APP_ENV`: `development`
 - `RETRIEVAL_BACKEND`: `pgvector`
 - `DATABASE_URL`: presente

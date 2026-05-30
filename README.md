@@ -117,9 +117,9 @@ Pronto no MVP atual:
 
 Em validacao:
 
-- calibragem de confidence e ranking com pgvector
-- qualidade das referencias recuperadas
-- promocao do pgvector como padrao permanente
+- execucao da `pgvector_gate.yaml` no staging oficial
+- comparacao do staging com o baseline local `74/78`
+- promocao do pgvector como padrao permanente depois da validacao oficial
 
 Roadmap:
 
@@ -201,9 +201,10 @@ python -m pytest
 - [Planos de qualidade por frente](docs/quality-plans/README.md)
 - [Plano de qualidade de retrieval vetorial](docs/quality-plans/vector-retrieval-quality-plan.md)
 - [Revisao da base de conhecimento](docs/quality-plans/knowledge-base-review-2026-05-17.md)
-- [Runbook de intake de perguntas anonimas HostGator](docs/runbooks/hostgator-anonymous-eval-intake.md)
+- [Runbook de intake anonimo para evals](docs/runbooks/anonymous-eval-intake.md)
 - [Runbook da gate pgvector em staging](docs/runbooks/staging-pgvector-gate.md)
 - [Runbook de eval pgvector real em staging](docs/runbooks/staging-pgvector-real-eval.md)
+- [Relatorio oficial do baseline local pgvector](docs/runbooks/local-pgvector-baseline-report.md)
 - [Runbook de smoke HTTP automatizado em staging](docs/runbooks/staging-http-smoke.md)
 - [Runbook de contrato n8n/WhatsApp](docs/runbooks/n8n-whatsapp-chat-contract.md)
 - [Checklist de promocao do pgvector](docs/runbooks/pgvector-promotion-checklist.md)

@@ -74,8 +74,10 @@ Ainda nao esta promovido como padrao permanente:
 - `/feedback` ainda retorna `pending_persistence`
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
-- falta calibrar confidence, handoff e ranking com dados reais recuperados pelo
-  pgvector antes de promover o backend como padrao permanente
+- a calibragem local com `pgvector` ja gerou baseline forte:
+  `pgvector_gate.yaml=74/78` e `pgvector_curated.yaml=179/240`
+- falta confirmar esse baseline no staging oficial antes de promover o backend
+  como padrao permanente
 
 ## Responsaveis
 
@@ -221,7 +223,7 @@ response:
   max_answer_length: short
 
 handoff:
-  confidence_threshold: 0.70
+  confidence_threshold: 0.55
   explicit_human_phrases:
     - falar com humano
   sensitive_terms:
@@ -430,15 +432,19 @@ Objetivo: consultar contexto real no pgvector usando embeddings.
 Nota de estado:
 `ChromaStore` ja existe e pode continuar como prototipo local. O caminho de producao deve esperar a decisao final com `pgvector`, para nao criar duas fontes de verdade.
 
-Status em 16/05/2026:
+Status consolidado em 30/05/2026:
 
 - o contrato do `PgVectorStore`, os testes Python e a validacao SQL ja existem
 - o backend real por `DATABASE_URL` ja foi conectado e validado em staging
   privado com embeddings reais do dominio inicial
 - a ingestao persistente existe como comando operacional explicito em
   `scripts/ingest_domain_pgvector.py`
-- ainda falta calibrar confidence, threshold, ranking e handoff antes de tornar
-  `pgvector` o padrao permanente
+- a calibragem local aceitou `pgvector_gate.yaml` como gate forte de
+  laboratorio com `74/78`
+- `pgvector_curated.yaml` ficou em `179/240` e segue como backlog de
+  calibracao, nao como bloqueio de release
+- ainda falta confirmar em staging oficial confidence, threshold, ranking e
+  handoff antes de tornar `pgvector` o padrao permanente
 - evitar retrabalho reimplementando adapter, reabrindo contrato de `references`
   ou promovendo `Chroma` a fonte oficial
 
@@ -627,6 +633,11 @@ Criterio de pronto:
 ## Fase 5 - n8n, operacao e feedback
 
 Objetivo: preparar integracoes externas sem mover inteligencia para fora do backend.
+
+Nota de sequencia:
+
+- esta fase deve comecar depois da comparacao oficial entre staging e o
+  baseline local da `pgvector_gate.yaml`
 
 ## Silotto - VPS
 
