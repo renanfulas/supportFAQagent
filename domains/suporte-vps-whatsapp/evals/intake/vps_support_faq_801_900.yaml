@@ -1,0 +1,996 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-801
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS antes de
+    colocar o site em producao, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-802
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS antes de
+    colocar o site em producao, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-803
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS sem querer
+    derrubar outros dominios, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-804
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS sem querer
+    derrubar outros dominios, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-805
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS sem querer
+    derrubar outros dominios, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-806
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS depois de subir uma
+    aplicacao nova, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-807
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS depois de subir uma
+    aplicacao nova, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-808
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS depois de subir uma
+    aplicacao nova, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-809
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS com o dominio ja apontado,
+    o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-810
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS com o dominio ja apontado,
+    qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-811
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS com o dominio ja apontado,
+    como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-812
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS apos mexer na configuracao
+    do servidor web, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-813
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS apos mexer na configuracao
+    do servidor web, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-814
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS apos mexer na configuracao
+    do servidor web, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-815
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS antes de colocar o
+    site em producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-816
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS antes de colocar o
+    site em producao, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-817
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS antes de colocar o
+    site em producao, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-818
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS sem querer derrubar
+    outros dominios, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-819
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS sem querer derrubar
+    outros dominios, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-820
+  category: webserver_ssl
+  question: Preciso redirecionar HTTP para HTTPS no site da VPS sem querer derrubar
+    outros dominios, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-821
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao depois
+    de subir uma aplicacao nova, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-822
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao depois
+    de subir uma aplicacao nova, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-823
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao depois
+    de subir uma aplicacao nova, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-824
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao com o dominio
+    ja apontado, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-825
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao com o dominio
+    ja apontado, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-826
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao com o dominio
+    ja apontado, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-827
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao apos mexer
+    na configuracao do servidor web, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-828
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao apos mexer
+    na configuracao do servidor web, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-829
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao apos mexer
+    na configuracao do servidor web, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-830
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao antes de
+    colocar o site em producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-831
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao antes de
+    colocar o site em producao, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-832
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao antes de
+    colocar o site em producao, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-833
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao sem querer
+    derrubar outros dominios, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-834
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao sem querer
+    derrubar outros dominios, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-835
+  category: webserver_ssl
+  question: O Nginx nao sobe depois que alterei um arquivo de configuracao sem querer
+    derrubar outros dominios, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-836
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS depois de
+    subir uma aplicacao nova, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-837
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS depois de
+    subir uma aplicacao nova, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-838
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS depois de
+    subir uma aplicacao nova, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-839
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS com o dominio
+    ja apontado, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-840
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS com o dominio
+    ja apontado, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-841
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS com o dominio
+    ja apontado, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-842
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS apos mexer
+    na configuracao do servidor web, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-843
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS apos mexer
+    na configuracao do servidor web, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-844
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS apos mexer
+    na configuracao do servidor web, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-845
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS antes de colocar
+    o site em producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-846
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS antes de colocar
+    o site em producao, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-847
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS antes de colocar
+    o site em producao, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-848
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS sem querer
+    derrubar outros dominios, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-849
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS sem querer
+    derrubar outros dominios, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-850
+  category: webserver_ssl
+  question: O Apache nao inicia porque a porta 80 ja esta em uso na VPS sem querer
+    derrubar outros dominios, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-851
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local em ambiente
+    de producao, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-852
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local em ambiente
+    de producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-853
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local em ambiente
+    de producao, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-854
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local depois de
+    uma mudanca recente, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-855
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local depois de
+    uma mudanca recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-856
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local depois de
+    uma mudanca recente, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-857
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local com aplicacao
+    dependente do banco, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-858
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local com aplicacao
+    dependente do banco, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-859
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local com aplicacao
+    dependente do banco, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-860
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local antes de uma
+    migracao, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-861
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local antes de uma
+    migracao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-862
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local antes de uma
+    migracao, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-863
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local sem querer
+    corromper dados, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-864
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local sem querer
+    corromper dados, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-865
+  category: banco_dados
+  question: Minha aplicacao na VPS nao consegue conectar no MySQL local sem querer
+    corromper dados, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-866
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco em ambiente
+    de producao, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-867
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco em ambiente
+    de producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-868
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco em ambiente
+    de producao, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-869
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco depois
+    de uma mudanca recente, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-870
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco depois
+    de uma mudanca recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-871
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco depois
+    de uma mudanca recente, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-872
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco com aplicacao
+    dependente do banco, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-873
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco com aplicacao
+    dependente do banco, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-874
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco com aplicacao
+    dependente do banco, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-875
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco antes de
+    uma migracao, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-876
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco antes de
+    uma migracao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-877
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco antes de
+    uma migracao, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-878
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco sem querer
+    corromper dados, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-879
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco sem querer
+    corromper dados, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-880
+  category: banco_dados
+  question: Quero liberar conexao remota ao MySQL da VPS sem expor o banco sem querer
+    corromper dados, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-881
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS em ambiente de
+    producao, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-882
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS em ambiente de
+    producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-883
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS em ambiente de
+    producao, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-884
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS depois de uma
+    mudanca recente, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-885
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS depois de uma
+    mudanca recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-886
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS depois de uma
+    mudanca recente, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-887
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS com aplicacao
+    dependente do banco, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-888
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS com aplicacao
+    dependente do banco, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-889
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS com aplicacao
+    dependente do banco, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-890
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS antes de uma
+    migracao, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-891
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS antes de uma
+    migracao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-892
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS antes de uma
+    migracao, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-893
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS sem querer corromper
+    dados, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-894
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS sem querer corromper
+    dados, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-895
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS sem querer corromper
+    dados, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-896
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia em ambiente de
+    producao, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-897
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia em ambiente de
+    producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-898
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia em ambiente de
+    producao, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-899
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia depois de uma mudanca
+    recente, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-900
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia depois de uma mudanca
+    recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence

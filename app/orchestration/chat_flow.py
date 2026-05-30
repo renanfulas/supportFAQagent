@@ -142,7 +142,8 @@ class ChatFlowService:
         return any(reason in self.BLOCKING_REASONS for reason in reasons)
 
     def _can_retrieve_references_for_blocked_response(self, reasons: list[str]) -> bool:
-        return bool(reasons) and all(reason == "sensitive_topic" for reason in reasons)
+        retrievable_reasons = {"sensitive_topic", "explicit_human_request"}
+        return bool(reasons) and all(reason in retrievable_reasons for reason in reasons)
 
     def _build_hardened_response(self, reasons: list[str]) -> str:
         if "explicit_human_request" in reasons:

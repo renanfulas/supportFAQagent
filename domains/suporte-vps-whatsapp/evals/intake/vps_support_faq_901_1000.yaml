@@ -1,0 +1,1009 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-901
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia depois de uma mudanca
+    recente, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-902
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia com aplicacao dependente
+    do banco, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-903
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia com aplicacao dependente
+    do banco, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-904
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia com aplicacao dependente
+    do banco, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-905
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia antes de uma migracao,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-906
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia antes de uma migracao,
+    qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-907
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia antes de uma migracao,
+    como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-908
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia sem querer corromper
+    dados, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-909
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia sem querer corromper
+    dados, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-910
+  category: banco_dados
+  question: O PostgreSQL nao inicia depois de uma queda de energia sem querer corromper
+    dados, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-911
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS em ambiente de producao,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-912
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS em ambiente de producao,
+    qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-913
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS em ambiente de producao,
+    como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-914
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS depois de uma mudanca
+    recente, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-915
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS depois de uma mudanca
+    recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-916
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS depois de uma mudanca
+    recente, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-917
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS com aplicacao dependente
+    do banco, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-918
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS com aplicacao dependente
+    do banco, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-919
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS com aplicacao dependente
+    do banco, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-920
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS antes de uma migracao,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-921
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS antes de uma migracao,
+    qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-922
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS antes de uma migracao,
+    como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-923
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS sem querer corromper
+    dados, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-924
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS sem querer corromper
+    dados, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-925
+  category: banco_dados
+  question: Quero gerar backup do MySQL antes de atualizar a VPS sem querer corromper
+    dados, como validar sem aumentar o risco para os dados?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-926
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao depois de reiniciar
+    o servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-927
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao depois de reiniciar
+    o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-928
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao depois de reiniciar
+    o servidor, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-929
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com a automacao
+    quase pronta para producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-930
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com a automacao
+    quase pronta para producao, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-931
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com a automacao
+    quase pronta para producao, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-932
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao apos mudar DNS
+    ou proxy, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-933
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao apos mudar DNS
+    ou proxy, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-934
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao apos mudar DNS
+    ou proxy, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-935
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com mensagens
+    chegando de forma intermitente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-936
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com mensagens
+    chegando de forma intermitente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-937
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com mensagens
+    chegando de forma intermitente, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-938
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao sem querer quebrar
+    outros fluxos, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-939
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao sem querer quebrar
+    outros fluxos, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-940
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao sem querer quebrar
+    outros fluxos, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-941
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS depois
+    de reiniciar o servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-942
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS depois
+    de reiniciar o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-943
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS depois
+    de reiniciar o servidor, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-944
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com a
+    automacao quase pronta para producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-945
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com a
+    automacao quase pronta para producao, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-946
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com a
+    automacao quase pronta para producao, como validar o fluxo sem perder a sessao
+    atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-947
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS apos mudar
+    DNS ou proxy, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-948
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS apos mudar
+    DNS ou proxy, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-949
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS apos mudar
+    DNS ou proxy, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-950
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com mensagens
+    chegando de forma intermitente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-951
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com mensagens
+    chegando de forma intermitente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-952
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com mensagens
+    chegando de forma intermitente, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-953
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS sem querer
+    quebrar outros fluxos, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-954
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS sem querer
+    quebrar outros fluxos, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-955
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS sem querer
+    quebrar outros fluxos, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-956
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia depois de reiniciar
+    o servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-957
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia depois de reiniciar
+    o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-958
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia depois de reiniciar
+    o servidor, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-959
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia com a automacao quase
+    pronta para producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-960
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia com a automacao quase
+    pronta para producao, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-961
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia com a automacao quase
+    pronta para producao, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-962
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia apos mudar DNS ou
+    proxy, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-963
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia apos mudar DNS ou
+    proxy, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-964
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia apos mudar DNS ou
+    proxy, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-965
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia com mensagens chegando
+    de forma intermitente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-966
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia com mensagens chegando
+    de forma intermitente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-967
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia com mensagens chegando
+    de forma intermitente, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-968
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia sem querer quebrar
+    outros fluxos, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-969
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia sem querer quebrar
+    outros fluxos, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-970
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia sem querer quebrar
+    outros fluxos, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-971
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS depois
+    de reiniciar o servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-972
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS depois
+    de reiniciar o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-973
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS depois
+    de reiniciar o servidor, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-974
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS com a
+    automacao quase pronta para producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-975
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS com a
+    automacao quase pronta para producao, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-976
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS com a
+    automacao quase pronta para producao, como validar o fluxo sem perder a sessao
+    atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-977
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS apos
+    mudar DNS ou proxy, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-978
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS apos
+    mudar DNS ou proxy, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-979
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS apos
+    mudar DNS ou proxy, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-980
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS com mensagens
+    chegando de forma intermitente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-981
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS com mensagens
+    chegando de forma intermitente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-982
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS com mensagens
+    chegando de forma intermitente, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-983
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS sem querer
+    quebrar outros fluxos, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-984
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS sem querer
+    quebrar outros fluxos, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-985
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe depois que reiniciei a VPS sem querer
+    quebrar outros fluxos, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-986
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde depois
+    de reiniciar o servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-987
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde depois
+    de reiniciar o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-988
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde depois
+    de reiniciar o servidor, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-989
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde com a
+    automacao quase pronta para producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-990
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde com a
+    automacao quase pronta para producao, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-991
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde com a
+    automacao quase pronta para producao, como validar o fluxo sem perder a sessao
+    atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-992
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde apos mudar
+    DNS ou proxy, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-993
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde apos mudar
+    DNS ou proxy, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-994
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde apos mudar
+    DNS ou proxy, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-995
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde com mensagens
+    chegando de forma intermitente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-996
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde com mensagens
+    chegando de forma intermitente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-997
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde com mensagens
+    chegando de forma intermitente, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-998
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde sem querer
+    quebrar outros fluxos, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-999
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde sem querer
+    quebrar outros fluxos, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-1000
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n mas a automacao nao responde sem querer
+    quebrar outros fluxos, como validar o fluxo sem perder a sessao atual?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []

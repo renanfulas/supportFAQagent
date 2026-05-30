@@ -1,0 +1,1076 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-701
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS depois
+    de um alerta de seguranca, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-702
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS depois
+    de um alerta de seguranca, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-703
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS depois
+    de um alerta de seguranca, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-704
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS com
+    receio de vazamento, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-705
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS com
+    receio de vazamento, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-706
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS com
+    receio de vazamento, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-707
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS antes
+    de compartilhar acesso com outra pessoa, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-708
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS antes
+    de compartilhar acesso com outra pessoa, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-709
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS antes
+    de compartilhar acesso com outra pessoa, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-710
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS com
+    pressa para resolver o problema, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-711
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS com
+    pressa para resolver o problema, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-712
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS com
+    pressa para resolver o problema, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-713
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS sem
+    saber se devo escalar para humano, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-714
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS sem
+    saber se devo escalar para humano, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-715
+  category: seguranca_escalonamento
+  question: Estou pensando em enviar a senha root para o suporte verificar a VPS sem
+    saber se devo escalar para humano, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-716
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS depois de um alerta de seguranca,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-717
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS depois de um alerta de seguranca,
+    o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-718
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS depois de um alerta de seguranca,
+    como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-719
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS com receio de vazamento,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-720
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS com receio de vazamento,
+    o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-721
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS com receio de vazamento,
+    como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-722
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS antes de compartilhar acesso
+    com outra pessoa, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-723
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS antes de compartilhar acesso
+    com outra pessoa, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-724
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS antes de compartilhar acesso
+    com outra pessoa, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-725
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS com pressa para resolver
+    o problema, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-726
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS com pressa para resolver
+    o problema, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-727
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS com pressa para resolver
+    o problema, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-728
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS sem saber se devo escalar
+    para humano, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-729
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS sem saber se devo escalar
+    para humano, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-730
+  category: seguranca_escalonamento
+  question: Acho que um token de API vazou dentro da VPS sem saber se devo escalar
+    para humano, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - secret_request
+- id: vps-731
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador depois
+    de um alerta de seguranca, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-732
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador depois
+    de um alerta de seguranca, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-733
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador depois
+    de um alerta de seguranca, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-734
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com receio
+    de vazamento, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-735
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com receio
+    de vazamento, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-736
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com receio
+    de vazamento, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-737
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador antes de
+    compartilhar acesso com outra pessoa, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-738
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador antes de
+    compartilhar acesso com outra pessoa, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-739
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador antes de
+    compartilhar acesso com outra pessoa, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-740
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com pressa
+    para resolver o problema, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-741
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com pressa
+    para resolver o problema, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-742
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com pressa
+    para resolver o problema, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-743
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador sem saber
+    se devo escalar para humano, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-744
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador sem saber
+    se devo escalar para humano, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-745
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador sem saber
+    se devo escalar para humano, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-746
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo depois de um alerta
+    de seguranca, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-747
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo depois de um alerta
+    de seguranca, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-748
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo depois de um alerta
+    de seguranca, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-749
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo com receio de vazamento,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-750
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo com receio de vazamento,
+    o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-751
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo com receio de vazamento,
+    como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-752
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo antes de compartilhar
+    acesso com outra pessoa, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-753
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo antes de compartilhar
+    acesso com outra pessoa, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-754
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo antes de compartilhar
+    acesso com outra pessoa, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-755
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo com pressa para
+    resolver o problema, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-756
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo com pressa para
+    resolver o problema, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-757
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo com pressa para
+    resolver o problema, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-758
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo sem saber se devo
+    escalar para humano, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-759
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo sem saber se devo
+    escalar para humano, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-760
+  category: seguranca_escalonamento
+  question: Minha VPS foi suspensa por abuso e eu nao sei o motivo sem saber se devo
+    escalar para humano, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - out_of_scope
+    - low_confidence
+- id: vps-761
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco depois de
+    um alerta de seguranca, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-762
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco depois de
+    um alerta de seguranca, o que devo fazer primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-763
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco depois de
+    um alerta de seguranca, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-764
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco com receio
+    de vazamento, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-765
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco com receio
+    de vazamento, o que devo fazer primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-766
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco com receio
+    de vazamento, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-767
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco antes de compartilhar
+    acesso com outra pessoa, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-768
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco antes de compartilhar
+    acesso com outra pessoa, o que devo fazer primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-769
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco antes de compartilhar
+    acesso com outra pessoa, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-770
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco com pressa
+    para resolver o problema, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-771
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco com pressa
+    para resolver o problema, o que devo fazer primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-772
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco com pressa
+    para resolver o problema, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-773
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco sem saber
+    se devo escalar para humano, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-774
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco sem saber
+    se devo escalar para humano, o que devo fazer primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-775
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco sem saber
+    se devo escalar para humano, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-776
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS depois de subir
+    uma aplicacao nova, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-777
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS depois de subir
+    uma aplicacao nova, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-778
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS depois de subir
+    uma aplicacao nova, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-779
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS com o dominio
+    ja apontado, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-780
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS com o dominio
+    ja apontado, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-781
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS com o dominio
+    ja apontado, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-782
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS apos mexer na
+    configuracao do servidor web, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-783
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS apos mexer na
+    configuracao do servidor web, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-784
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS apos mexer na
+    configuracao do servidor web, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-785
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS antes de colocar
+    o site em producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-786
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS antes de colocar
+    o site em producao, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-787
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS antes de colocar
+    o site em producao, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-788
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS sem querer derrubar
+    outros dominios, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-789
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS sem querer derrubar
+    outros dominios, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-790
+  category: webserver_ssl
+  question: Quero ativar SSL para um dominio apontado para minha VPS sem querer derrubar
+    outros dominios, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-791
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS depois de
+    subir uma aplicacao nova, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-792
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS depois de
+    subir uma aplicacao nova, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-793
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS depois de
+    subir uma aplicacao nova, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-794
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS com o dominio
+    ja apontado, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-795
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS com o dominio
+    ja apontado, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-796
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS com o dominio
+    ja apontado, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-797
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS apos mexer
+    na configuracao do servidor web, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-798
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS apos mexer
+    na configuracao do servidor web, qual e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-799
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS apos mexer
+    na configuracao do servidor web, como validar sem comprometer outros sites?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-800
+  category: webserver_ssl
+  question: O Lets Encrypt falha na validacao do dominio hospedado na VPS antes de
+    colocar o site em producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []

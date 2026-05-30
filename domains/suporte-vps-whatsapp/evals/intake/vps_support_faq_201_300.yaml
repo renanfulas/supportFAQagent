@@ -1,0 +1,993 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-201
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused sem acesso ao terminal web, qual
+    teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-202
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused sem acesso ao terminal web, como
+    seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-203
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused com urgencia para voltar ao ambiente,
+    o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-204
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused com urgencia para voltar ao ambiente,
+    qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-205
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused com urgencia para voltar ao ambiente,
+    como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-206
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha depois de alterar
+    o firewall, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-207
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha depois de alterar
+    o firewall, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-208
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha depois de alterar
+    o firewall, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-209
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha apos reiniciar
+    o servidor, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-210
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha apos reiniciar
+    o servidor, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-211
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha apos reiniciar
+    o servidor, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-212
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha usando PuTTY no
+    Windows, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-213
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha usando PuTTY no
+    Windows, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-214
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha usando PuTTY no
+    Windows, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-215
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha sem acesso ao terminal
+    web, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-216
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha sem acesso ao terminal
+    web, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-217
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha sem acesso ao terminal
+    web, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-218
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha com urgencia para
+    voltar ao ambiente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-219
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha com urgencia para
+    voltar ao ambiente, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-220
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH e a VPS continua pedindo senha com urgencia para
+    voltar ao ambiente, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-221
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor depois de alterar o
+    firewall, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-222
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor depois de alterar o
+    firewall, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-223
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor depois de alterar o
+    firewall, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-224
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor apos reiniciar o servidor,
+    o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-225
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor apos reiniciar o servidor,
+    qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-226
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor apos reiniciar o servidor,
+    como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-227
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor usando PuTTY no Windows,
+    o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-228
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor usando PuTTY no Windows,
+    qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-229
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor usando PuTTY no Windows,
+    como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-230
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor sem acesso ao terminal
+    web, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-231
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor sem acesso ao terminal
+    web, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-232
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor sem acesso ao terminal
+    web, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-233
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor com urgencia para voltar
+    ao ambiente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-234
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor com urgencia para voltar
+    ao ambiente, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-235
+  category: acesso_ssh
+  question: Mudei a porta do SSH e perdi o acesso ao servidor com urgencia para voltar
+    ao ambiente, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-236
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH depois de alterar
+    o firewall, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-237
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH depois de alterar
+    o firewall, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-238
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH depois de alterar
+    o firewall, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-239
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH apos reiniciar
+    o servidor, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-240
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH apos reiniciar
+    o servidor, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-241
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH apos reiniciar
+    o servidor, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-242
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH usando PuTTY
+    no Windows, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-243
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH usando PuTTY
+    no Windows, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-244
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH usando PuTTY
+    no Windows, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-245
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH sem acesso ao
+    terminal web, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-246
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH sem acesso ao
+    terminal web, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-247
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH sem acesso ao
+    terminal web, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-248
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH com urgencia
+    para voltar ao ambiente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-249
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH com urgencia
+    para voltar ao ambiente, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-250
+  category: acesso_ssh
+  question: Ativei o firewall da VPS e acho que bloqueei a porta SSH com urgencia
+    para voltar ao ambiente, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-251
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A depois de
+    uma mudanca recente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-252
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A depois de
+    uma mudanca recente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-253
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A depois de
+    uma mudanca recente, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-254
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A com o dominio
+    registrado fora do provedor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-255
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A com o dominio
+    registrado fora do provedor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-256
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A com o dominio
+    registrado fora do provedor, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-257
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A antes de
+    migrar meu site, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-258
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A antes de
+    migrar meu site, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-259
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A antes de
+    migrar meu site, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-260
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A com receio
+    de indisponibilidade, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-261
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A com receio
+    de indisponibilidade, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-262
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A com receio
+    de indisponibilidade, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-263
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A para manter
+    a configuracao organizada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-264
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A para manter
+    a configuracao organizada, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-265
+  category: dns_dominios
+  question: Quero apontar meu dominio para o IP da VPS usando registro A para manter
+    a configuracao organizada, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-266
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    depois de uma mudanca recente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-267
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    depois de uma mudanca recente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-268
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    depois de uma mudanca recente, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-269
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    com o dominio registrado fora do provedor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-270
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    com o dominio registrado fora do provedor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-271
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    com o dominio registrado fora do provedor, como validar sem quebrar o que ja esta
+    funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-272
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    antes de migrar meu site, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-273
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    antes de migrar meu site, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-274
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    antes de migrar meu site, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-275
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    com receio de indisponibilidade, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-276
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    com receio de indisponibilidade, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-277
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    com receio de indisponibilidade, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-278
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    para manter a configuracao organizada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-279
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    para manter a configuracao organizada, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-280
+  category: dns_dominios
+  question: Alterei o DNS do dominio para a VPS e o site ainda abre no servidor antigo
+    para manter a configuracao organizada, como validar sem quebrar o que ja esta
+    funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-281
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS depois de
+    uma mudanca recente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-282
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS depois de
+    uma mudanca recente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-283
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS depois de
+    uma mudanca recente, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-284
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS com o dominio
+    registrado fora do provedor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-285
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS com o dominio
+    registrado fora do provedor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-286
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS com o dominio
+    registrado fora do provedor, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-287
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS antes de
+    migrar meu site, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-288
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS antes de
+    migrar meu site, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-289
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS antes de
+    migrar meu site, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-290
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS com receio
+    de indisponibilidade, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-291
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS com receio
+    de indisponibilidade, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-292
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS com receio
+    de indisponibilidade, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-293
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS para manter
+    a configuracao organizada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-294
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS para manter
+    a configuracao organizada, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-295
+  category: dns_dominios
+  question: Preciso criar nameservers personalizados para usar com a VPS para manter
+    a configuracao organizada, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-296
+  category: dns_dominios
+  question: Nao encontro a zona DNS do dominio no painel do servidor depois de uma
+    mudanca recente, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-297
+  category: dns_dominios
+  question: Nao encontro a zona DNS do dominio no painel do servidor depois de uma
+    mudanca recente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-298
+  category: dns_dominios
+  question: Nao encontro a zona DNS do dominio no painel do servidor depois de uma
+    mudanca recente, como validar sem quebrar o que ja esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-299
+  category: dns_dominios
+  question: Nao encontro a zona DNS do dominio no painel do servidor com o dominio
+    registrado fora do provedor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-300
+  category: dns_dominios
+  question: Nao encontro a zona DNS do dominio no painel do servidor com o dominio
+    registrado fora do provedor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []

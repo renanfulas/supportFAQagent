@@ -2,6 +2,14 @@
 
 Para quem esta comecando com agentes de WhatsApp, VPS, n8n e automacoes, o melhor caminho e validar um fluxo pequeno antes de criar uma solucao completa.
 
+Conceitos basicos que costumam gerar duvida:
+
+- VPS nao e o mesmo que hospedagem compartilhada. Na VPS voce administra mais partes do servidor, como acesso SSH, portas, firewall e instalacoes.
+- Muitas VPS nao vem com painel. Isso significa que parte da administracao pode ser feita por SSH, console web do provedor ou um painel instalado depois.
+- `root` e o usuario com permissao total no sistema. Use com cuidado, porque um comando incorreto pode derrubar servicos ou bloquear o proprio acesso.
+- Ao escolher sistema operacional, o caminho mais comum para comecar e usar uma distribuicao Linux popular e bem documentada, como Ubuntu LTS.
+- Instalar Docker cedo pode ajudar em padronizacao, mas nao substitui validacao basica de rede, DNS, SSH, logs e healthcheck.
+
 Sequencia recomendada:
 
 1. Defina uma duvida recorrente simples para o agente responder.

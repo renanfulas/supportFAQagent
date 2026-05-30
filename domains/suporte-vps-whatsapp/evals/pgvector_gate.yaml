@@ -1,0 +1,792 @@
+# Gate pgvector suite for release-oriented validation.
+#
+# This suite is a smaller, high-signal subset of pgvector_curated.yaml.
+# It prioritizes SSH access, incident handling, n8n and webhook flows,
+# QR Code and Evolution behavior, security-sensitive cases, and the domain's
+# strongest knowledge articles. Use it as the final release-facing signal
+# after broader calibration in the curated suite.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-011-ssh-timeout
+  category: acesso_ssh
+  question: Estou tentando acessar a VPS por SSH e aparece connection timed out.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-012-ssh-connection-refused
+  category: acesso_ssh
+  question: O SSH da minha VPS responde connection refused, o que posso verificar?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-013-ssh-porta-alterada
+  category: acesso_ssh
+  question: Mudei a porta do SSH e agora nao consigo mais conectar na VPS.
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-016-chave-ssh-nao-funciona
+  category: acesso_ssh
+  question: Cadastrei uma chave SSH, mas a VPS continua pedindo senha.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-017-firewall-bloqueou-ssh
+  category: acesso_ssh
+  question: Ativei o firewall e acho que bloqueei a porta SSH da VPS.
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-020-erro-permission-denied-publickey
+  category: acesso_ssh
+  question: Ao conectar por SSH aparece permission denied publickey.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-176
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira depois de alterar
+    o firewall, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-177
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira depois de alterar
+    o firewall, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-178
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira depois de alterar
+    o firewall, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-179
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira apos reiniciar
+    o servidor, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-180
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira apos reiniciar
+    o servidor, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-181
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira apos reiniciar
+    o servidor, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-182
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira usando PuTTY
+    no Windows, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-183
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira usando PuTTY
+    no Windows, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-057-vps-nao-pinga
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar.
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-058-servidor-reinicia-sozinho
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-059-boot-falhou
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais.
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-060-recovery-mode
+  category: indisponibilidade_incidente
+  question: Quando devo usar modo rescue ou recovery em uma VPS sem acesso?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-061-aplicacoes-fora
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel, mas nenhuma aplicacao responde.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-063-status-node
+  category: indisponibilidade_incidente
+  question: Como diferenciar problema no meu servidor de uma indisponibilidade da
+    infraestrutura do provedor?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-064-perdi-acesso-total
+  category: indisponibilidade_incidente
+  question: Perdi acesso total a VPS e preciso de ajuda humana para verificar o servidor.
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - explicit_human_request
+    - low_confidence
+- id: vps-551
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar durante
+    horario comercial, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-552
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar durante
+    horario comercial, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-553
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar durante
+    horario comercial, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-554
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar apos uma
+    reinicializacao, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-555
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar apos uma
+    reinicializacao, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-556
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar apos uma
+    reinicializacao, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-563
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar com urgencia
+    para restaurar o ambiente, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-095-n8n-nao-abre
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-096-n8n-ssl-webhook
+  category: automacoes_n8n
+  question: Os webhooks do n8n na VPS falham porque a URL nao esta em HTTPS.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-097-n8n-conexao-perdida
+  category: automacoes_n8n
+  question: O editor do n8n na VPS perde conexao com frequencia mesmo com o servidor
+    ligado.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-098-evolution-container-nao-sobe
+  category: automacoes_n8n
+  question: O container da Evolution API nao sobe na VPS depois que reiniciei o servidor.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-099-webhook-whatsapp-sem-resposta
+  category: automacoes_n8n
+  question: O webhook do WhatsApp chega no n8n, mas minha automacao nao responde.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-100-qrcode-evolution-na-vps
+  category: automacoes_n8n
+  question: O QR Code da Evolution API nao aparece depois que subi a aplicacao na
+    VPS.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - qrcode-whatsapp.md
+    allowed_handoff_reasons: []
+- id: vps-926
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao depois de reiniciar
+    o servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-927
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao depois de reiniciar
+    o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-929
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com a automacao
+    quase pronta para producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-930
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao com a automacao
+    quase pronta para producao, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-932
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao apos mudar DNS
+    ou proxy, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-933
+  category: automacoes_n8n
+  question: Meu n8n na VPS nao abre no navegador depois da instalacao apos mudar DNS
+    ou proxy, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - n8n-acesso-vps.md
+    allowed_handoff_reasons: []
+- id: vps-941
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS depois
+    de reiniciar o servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-944
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com a
+    automacao quase pronta para producao, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-945
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS com a
+    automacao quase pronta para producao, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-947
+  category: automacoes_n8n
+  question: Os webhooks do n8n falham porque a URL da VPS nao esta em HTTPS apos mudar
+    DNS ou proxy, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - webhook-n8n-zapi.md
+    allowed_handoff_reasons: []
+- id: vps-075-malware-miner
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito que instalaram minerador.
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-077-ataque-bruteforce
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH na VPS, como reduzo o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-731
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador depois
+    de um alerta de seguranca, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-732
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador depois
+    de um alerta de seguranca, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-733
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador depois
+    de um alerta de seguranca, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-734
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com receio
+    de vazamento, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-735
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com receio
+    de vazamento, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-736
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com receio
+    de vazamento, como agir sem expor mais o ambiente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-737
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador antes de
+    compartilhar acesso com outra pessoa, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-738
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador antes de
+    compartilhar acesso com outra pessoa, o que devo fazer primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-740
+  category: seguranca_escalonamento
+  question: A VPS esta com consumo alto e suspeito de malware ou minerador com pressa
+    para resolver o problema, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-761
+  category: seguranca_escalonamento
+  question: Vejo muitas tentativas de login SSH e quero reduzir o risco depois de
+    um alerta de seguranca, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-047-cpu-100
+  category: performance_recursos
+  question: A CPU da minha VPS fica em 100 por cento e o site cai.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-048-ram-esgotada
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam sozinhos.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-049-disco-cheio
+  category: performance_recursos
+  question: Minha VPS ficou sem espaco em disco e nao consigo subir o site.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-051-site-lento
+  category: performance_recursos
+  question: Meu site na VPS esta muito lento mesmo com poucos acessos.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-053-container-consome-memoria
+  category: performance_recursos
+  question: Um container Docker na VPS esta consumindo toda a memoria.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-056-preciso-upgrade
+  category: performance_recursos
+  question: Como sei se preciso fazer upgrade da VPS ou se e problema de configuracao?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-476
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai em horario de maior uso,
+    o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-477
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai em horario de maior uso,
+    qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-479
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai depois de publicar uma
+    aplicacao nova, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-480
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai depois de publicar uma
+    aplicacao nova, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-001-primeiro-acesso
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual e o primeiro passo para comecar
+    com seguranca.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-002-diferenca-vps-hospedagem
+  category: orientacao_iniciantes
+  question: Qual e a diferenca pratica entre uma VPS e uma hospedagem compartilhada?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-003-vps-sem-painel
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel, isso e normal ou preciso instalar alguma coisa?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-004-root-o-que-significa
+  category: orientacao_iniciantes
+  question: O que significa ter acesso root na VPS e que cuidados devo tomar?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-005-escolher-sistema-operacional
+  category: orientacao_iniciantes
+  question: Qual sistema operacional devo escolher para hospedar uma aplicacao simples
+    na VPS?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-007-instalar-docker
+  category: orientacao_iniciantes
+  question: Posso instalar Docker na minha VPS ou preciso de um plano especifico?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - evolution-instalacao.md
+    allowed_handoff_reasons: []
+- id: vps-084-nginx-nao-sobe
+  category: webserver_ssl
+  question: O Nginx da VPS nao sobe depois que alterei o arquivo de configuracao.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-085-apache-porta-80
+  category: webserver_ssl
+  question: O Apache da VPS nao inicia porque a porta 80 ja esta em uso.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-091-banco-consome-disco
+  category: banco_dados
+  question: O banco de dados esta ocupando quase todo o disco da VPS.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-092-postgres-nao-inicia
+  category: banco_dados
+  question: O PostgreSQL da VPS nao inicia depois de uma queda de energia.
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-034-whm-nao-carrega
+  category: painel_whm_cpanel
+  question: O WHM da minha VPS nao carrega pela porta padrao.
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-371
+  category: painel_whm_cpanel
+  question: O WHM nao carrega pela porta padrao do painel em uma VPS com cPanel, qual
+    e a checagem mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []

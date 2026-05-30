@@ -1,0 +1,1011 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-101
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro na primeira
+    configuracao, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-102
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro na primeira
+    configuracao, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-103
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro na primeira
+    configuracao, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-104
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro depois
+    de contratar o plano, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-105
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro depois
+    de contratar o plano, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-106
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro depois
+    de contratar o plano, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-107
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro antes
+    de publicar meu site, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-108
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro antes
+    de publicar meu site, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-109
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro antes
+    de publicar meu site, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-110
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro para uma
+    aplicacao simples, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-111
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro para uma
+    aplicacao simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-112
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro para uma
+    aplicacao simples, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-113
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro sem experiencia
+    com servidor, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-114
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro sem experiencia
+    com servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-115
+  category: orientacao_iniciantes
+  question: Acabei de contratar uma VPS e nao sei qual passo fazer primeiro sem experiencia
+    com servidor, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-116
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    na primeira configuracao, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-117
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    na primeira configuracao, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-118
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    na primeira configuracao, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-119
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    depois de contratar o plano, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-120
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    depois de contratar o plano, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-121
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    depois de contratar o plano, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-122
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    antes de publicar meu site, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-123
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    antes de publicar meu site, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-124
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    antes de publicar meu site, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-125
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    para uma aplicacao simples, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-126
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    para uma aplicacao simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-127
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    para uma aplicacao simples, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-128
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    sem experiencia com servidor, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-129
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    sem experiencia com servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-130
+  category: orientacao_iniciantes
+  question: Quero entender a diferenca entre uma VPS e uma hospedagem compartilhada
+    sem experiencia com servidor, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-131
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    na primeira configuracao, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-132
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    na primeira configuracao, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-133
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    na primeira configuracao, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-134
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    depois de contratar o plano, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-135
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    depois de contratar o plano, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-136
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    depois de contratar o plano, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-137
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    antes de publicar meu site, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-138
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    antes de publicar meu site, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-139
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    antes de publicar meu site, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-140
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    para uma aplicacao simples, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-141
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    para uma aplicacao simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-142
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    para uma aplicacao simples, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-143
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    sem experiencia com servidor, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-144
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    sem experiencia com servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-145
+  category: orientacao_iniciantes
+  question: Minha VPS veio sem painel e nao sei se preciso instalar alguma ferramenta
+    sem experiencia com servidor, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-146
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    na primeira configuracao, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-147
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    na primeira configuracao, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-148
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    na primeira configuracao, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-149
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    depois de contratar o plano, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-150
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    depois de contratar o plano, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-151
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    depois de contratar o plano, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-152
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    antes de publicar meu site, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-153
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    antes de publicar meu site, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-154
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    antes de publicar meu site, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-155
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    para uma aplicacao simples, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-156
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    para uma aplicacao simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-157
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    para uma aplicacao simples, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-158
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    sem experiencia com servidor, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-159
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    sem experiencia com servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-160
+  category: orientacao_iniciantes
+  question: Nao sei quando vale usar Docker na VPS em vez de instalar tudo manualmente
+    sem experiencia com servidor, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-161
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    na primeira configuracao, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-162
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    na primeira configuracao, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-163
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    na primeira configuracao, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-164
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    depois de contratar o plano, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-165
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    depois de contratar o plano, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-166
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    depois de contratar o plano, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-167
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    antes de publicar meu site, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-168
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    antes de publicar meu site, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-169
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    antes de publicar meu site, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-170
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    para uma aplicacao simples, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-171
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    para uma aplicacao simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-172
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    para uma aplicacao simples, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-173
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    sem experiencia com servidor, o que devo conferir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-174
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    sem experiencia com servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-175
+  category: orientacao_iniciantes
+  question: Estou escolhendo o sistema operacional da VPS e nao sei por onde comecar
+    sem experiencia com servidor, como comecar sem pular etapa importante?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - iniciante-primeiros-passos.md
+    allowed_handoff_reasons: []
+- id: vps-176
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira depois de alterar
+    o firewall, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-177
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira depois de alterar
+    o firewall, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-178
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira depois de alterar
+    o firewall, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-179
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira apos reiniciar
+    o servidor, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-180
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira apos reiniciar
+    o servidor, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-181
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira apos reiniciar
+    o servidor, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-182
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira usando PuTTY
+    no Windows, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-183
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira usando PuTTY
+    no Windows, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-184
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira usando PuTTY
+    no Windows, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-185
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira sem acesso ao
+    terminal web, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-186
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira sem acesso ao
+    terminal web, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-187
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira sem acesso ao
+    terminal web, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-188
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira com urgencia
+    para voltar ao ambiente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-189
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira com urgencia
+    para voltar ao ambiente, qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-190
+  category: acesso_ssh
+  question: Nao consigo acessar a VPS por SSH porque a conexao expira com urgencia
+    para voltar ao ambiente, como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-191
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused depois de alterar o firewall,
+    o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-192
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused depois de alterar o firewall,
+    qual teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-193
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused depois de alterar o firewall,
+    como seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-194
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused apos reiniciar o servidor, o
+    que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-195
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused apos reiniciar o servidor, qual
+    teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-196
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused apos reiniciar o servidor, como
+    seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-197
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused usando PuTTY no Windows, o que
+    devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-198
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused usando PuTTY no Windows, qual
+    teste simples eu posso fazer?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-199
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused usando PuTTY no Windows, como
+    seguir sem aumentar o risco?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []
+- id: vps-200
+  category: acesso_ssh
+  question: O SSH da VPS responde connection refused sem acesso ao terminal web, o
+    que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - ssh-timeout-vps.md
+    allowed_handoff_reasons: []

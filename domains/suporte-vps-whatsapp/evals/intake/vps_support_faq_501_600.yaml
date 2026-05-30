@@ -1,0 +1,1046 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-501
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam com poucos acessos
+    aparentes, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-502
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam com poucos acessos
+    aparentes, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-503
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam sem querer derrubar
+    o ambiente, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-504
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam sem querer derrubar
+    o ambiente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-505
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam sem querer derrubar
+    o ambiente, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-506
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe em horario de maior
+    uso, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-507
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe em horario de maior
+    uso, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-508
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe em horario de maior
+    uso, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-509
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe depois de publicar
+    uma aplicacao nova, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-510
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe depois de publicar
+    uma aplicacao nova, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-511
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe depois de publicar
+    uma aplicacao nova, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-512
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe apos reiniciar
+    o servidor, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-513
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe apos reiniciar
+    o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-514
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe apos reiniciar
+    o servidor, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-515
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe com poucos acessos
+    aparentes, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-516
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe com poucos acessos
+    aparentes, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-517
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe com poucos acessos
+    aparentes, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-518
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe sem querer derrubar
+    o ambiente, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-519
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe sem querer derrubar
+    o ambiente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-520
+  category: performance_recursos
+  question: A VPS ficou sem espaco em disco e a aplicacao nao sobe sem querer derrubar
+    o ambiente, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-521
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    em horario de maior uso, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-522
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    em horario de maior uso, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-523
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    em horario de maior uso, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-524
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    depois de publicar uma aplicacao nova, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-525
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    depois de publicar uma aplicacao nova, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-526
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    depois de publicar uma aplicacao nova, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-527
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    apos reiniciar o servidor, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-528
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    apos reiniciar o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-529
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    apos reiniciar o servidor, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-530
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    com poucos acessos aparentes, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-531
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    com poucos acessos aparentes, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-532
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    com poucos acessos aparentes, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-533
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    sem querer derrubar o ambiente, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-534
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    sem querer derrubar o ambiente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-535
+  category: performance_recursos
+  question: Vejo uso alto de disco na VPS mas nao sei qual processo esta causando
+    sem querer derrubar o ambiente, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-536
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos em horario de
+    maior uso, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-537
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos em horario de
+    maior uso, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-538
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos em horario de
+    maior uso, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-539
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos depois de publicar
+    uma aplicacao nova, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-540
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos depois de publicar
+    uma aplicacao nova, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-541
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos depois de publicar
+    uma aplicacao nova, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-542
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos apos reiniciar
+    o servidor, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-543
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos apos reiniciar
+    o servidor, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-544
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos apos reiniciar
+    o servidor, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-545
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos com poucos acessos
+    aparentes, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-546
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos com poucos acessos
+    aparentes, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-547
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos com poucos acessos
+    aparentes, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-548
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos sem querer derrubar
+    o ambiente, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-549
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos sem querer derrubar
+    o ambiente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-550
+  category: performance_recursos
+  question: O site na VPS esta muito lento mesmo com poucos acessos sem querer derrubar
+    o ambiente, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-551
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar durante
+    horario comercial, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-552
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar durante
+    horario comercial, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-553
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar durante
+    horario comercial, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-554
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar apos uma
+    reinicializacao, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-555
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar apos uma
+    reinicializacao, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-556
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar apos uma
+    reinicializacao, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-557
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar sem aviso
+    no painel, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-558
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar sem aviso
+    no painel, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-559
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar sem aviso
+    no painel, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-560
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar com varios
+    servicos afetados ao mesmo tempo, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-561
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar com varios
+    servicos afetados ao mesmo tempo, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-562
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar com varios
+    servicos afetados ao mesmo tempo, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-563
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar com urgencia
+    para restaurar o ambiente, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-564
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar com urgencia
+    para restaurar o ambiente, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-565
+  category: indisponibilidade_incidente
+  question: Minha VPS nao responde ping e todos os sites ficaram fora do ar com urgencia
+    para restaurar o ambiente, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-566
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia durante horario comercial,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-567
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia durante horario comercial,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-568
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia durante horario comercial,
+    como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-569
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia apos uma reinicializacao,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-570
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia apos uma reinicializacao,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-571
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia apos uma reinicializacao,
+    como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-572
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia sem aviso no painel, o que
+    devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-573
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia sem aviso no painel, qual
+    e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-574
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia sem aviso no painel, como
+    validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-575
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia com varios servicos afetados
+    ao mesmo tempo, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-576
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia com varios servicos afetados
+    ao mesmo tempo, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-577
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia com varios servicos afetados
+    ao mesmo tempo, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-578
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia com urgencia para restaurar
+    o ambiente, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-579
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia com urgencia para restaurar
+    o ambiente, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-580
+  category: indisponibilidade_incidente
+  question: A VPS reinicia sozinha varias vezes por dia com urgencia para restaurar
+    o ambiente, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-581
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais durante horario comercial,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-582
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais durante horario comercial,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-583
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais durante horario comercial,
+    como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-584
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais apos uma reinicializacao,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-585
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais apos uma reinicializacao,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-586
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais apos uma reinicializacao,
+    como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-587
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais sem aviso no painel,
+    o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-588
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais sem aviso no painel,
+    qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-589
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais sem aviso no painel,
+    como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-590
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais com varios servicos
+    afetados ao mesmo tempo, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-591
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais com varios servicos
+    afetados ao mesmo tempo, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-592
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais com varios servicos
+    afetados ao mesmo tempo, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-593
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais com urgencia para restaurar
+    o ambiente, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-594
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais com urgencia para restaurar
+    o ambiente, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-595
+  category: indisponibilidade_incidente
+  question: Depois de reiniciar a VPS ela nao inicializa mais com urgencia para restaurar
+    o ambiente, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-596
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso durante
+    horario comercial, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-597
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso durante
+    horario comercial, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-598
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso durante
+    horario comercial, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-599
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso apos
+    uma reinicializacao, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-600
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso apos
+    uma reinicializacao, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence

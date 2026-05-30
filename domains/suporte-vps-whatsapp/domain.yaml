@@ -57,7 +57,7 @@ response:
   provider_error_message: Nao consegui gerar uma resposta automatica agora. Vou sinalizar escalonamento para atendimento humano.
 
 handoff:
-  confidence_threshold: 0.7
+  confidence_threshold: 0.55
   escalate_on:
     - billing
     - legal_risk
@@ -69,6 +69,7 @@ handoff:
     - suporte humano
     - pessoa real
     - atendimento humano
+    - ajuda humana
   sensitive_terms:
     - senha
     - token

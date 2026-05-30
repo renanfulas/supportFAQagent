@@ -120,3 +120,47 @@ def test_handoff_preserves_sensitive_topic_without_out_of_scope_noise() -> None:
     assert "sensitive_topic" in decision.reasons
     assert "low_confidence" in decision.reasons
     assert "out_of_scope" not in decision.reasons
+
+
+def test_handoff_does_not_treat_benign_auth_troubleshooting_as_secret_request() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="Cadastrei uma chave SSH, mas a VPS continua pedindo senha.",
+        confidence=0.8,
+    )
+
+    assert decision.escalated is False
+    assert decision.reasons == []
+
+
+def test_handoff_escalates_critical_operational_case_even_above_threshold() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="Minha VPS nao responde ping e todos os sites ficaram fora do ar.",
+        confidence=0.8,
+    )
+
+    assert decision.escalated is True
+    assert "low_confidence" in decision.reasons
+
+
+def test_handoff_escalates_security_incident_case_even_above_threshold() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="A VPS esta com consumo alto e suspeito de malware depois de um alerta de seguranca.",
+        confidence=0.8,
+    )
+
+    assert decision.escalated is True
+    assert "low_confidence" in decision.reasons
+
+
+def test_handoff_escalates_boot_failure_even_above_threshold() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="Depois de reiniciar a VPS ela nao inicializa mais.",
+        confidence=0.8,
+    )
+
+    assert decision.escalated is True
+    assert "low_confidence" in decision.reasons

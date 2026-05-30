@@ -27,16 +27,53 @@ class HandoffService:
     )
 
     SECRET_REQUEST_PATTERNS = (
-        "senha",
-        "token",
-        "chave api",
-        "chave da api",
-        "api key",
-        "credencial",
-        "secret",
-        "segredo",
-        "ssh key",
-        "private key",
+        "qual a senha",
+        "me passe a senha",
+        "envie a senha",
+        "manda a senha",
+        "me passa o token",
+        "envie o token",
+        "me passe o token",
+        "qual o token",
+        "me passe a chave api",
+        "envie a chave api",
+        "qual a chave api",
+        "me passe a credencial",
+        "envie a credencial",
+        "qual a credencial",
+        "me passe o secret",
+        "me passe o segredo",
+        "envie o segredo",
+        "me passe a ssh key",
+        "me passe a private key",
+    )
+
+    BENIGN_AUTH_CONTEXT_PATTERNS = (
+        "continua pedindo senha",
+        "aparece permission denied publickey",
+        "permission denied publickey",
+        "permission denied (publickey)",
+        "cadastrei uma chave ssh",
+        "chave ssh nao funciona",
+    )
+
+    CRITICAL_OPERATIONAL_PATTERNS = (
+        "mudei a porta do ssh",
+        "mudei a porta ssh",
+        "bloqueei a porta ssh",
+        "bloqueei a porta do ssh",
+        "nao responde ping",
+        "todos os sites ficaram fora do ar",
+        "perdi acesso total",
+        "nao inicializa mais",
+        "suspeito de malware",
+        "suspeito de minerador",
+        "alerta de seguranca",
+        "receio de vazamento",
+        "consumo alto e suspeito",
+        "modo rescue",
+        "modo recovery",
+        "rescue ou recovery",
     )
 
     AMBIGUOUS_PATTERNS = (
@@ -67,7 +104,9 @@ class HandoffService:
         ):
             self._append_reason(reasons, "out_of_scope")
 
-        if confidence < domain.handoff.confidence_threshold:
+        if self._is_critical_operational_case(normalized_question):
+            self._append_reason(reasons, "low_confidence")
+        elif confidence < domain.handoff.confidence_threshold:
             self._append_reason(reasons, "low_confidence")
 
         return HandoffDecision(
@@ -82,7 +121,10 @@ class HandoffService:
         if self._contains_any(normalized_question, domain.handoff.explicit_human_phrases):
             self._append_reason(reasons, "explicit_human_request")
 
-        if self._contains_any(normalized_question, domain.handoff.sensitive_terms):
+        if (
+            self._contains_any(normalized_question, domain.handoff.sensitive_terms)
+            and not self._is_benign_auth_context(normalized_question)
+        ):
             self._append_reason(reasons, "sensitive_topic")
 
         if self._contains_any(normalized_question, self.SECRET_REQUEST_PATTERNS):
@@ -109,6 +151,12 @@ class HandoffService:
             text,
             [term for term in normalized_terms if len(term) >= 4],
         )
+
+    def _is_benign_auth_context(self, text: str) -> bool:
+        return self._contains_any(text, self.BENIGN_AUTH_CONTEXT_PATTERNS)
+
+    def _is_critical_operational_case(self, text: str) -> bool:
+        return self._contains_any(text, self.CRITICAL_OPERATIONAL_PATTERNS)
 
     def _expand_domain_terms(self, terms: list[str]) -> list[str]:
         expanded_terms: list[str] = []

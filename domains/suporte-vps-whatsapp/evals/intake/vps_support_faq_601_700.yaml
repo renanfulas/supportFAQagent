@@ -1,0 +1,1008 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-601
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso apos
+    uma reinicializacao, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-602
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso sem
+    aviso no painel, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-603
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso sem
+    aviso no painel, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-604
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso sem
+    aviso no painel, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-605
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso com
+    varios servicos afetados ao mesmo tempo, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-606
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso com
+    varios servicos afetados ao mesmo tempo, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-607
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso com
+    varios servicos afetados ao mesmo tempo, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-608
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso com
+    urgencia para restaurar o ambiente, o que devo checar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-609
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso com
+    urgencia para restaurar o ambiente, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-610
+  category: indisponibilidade_incidente
+  question: Quero entender quando vale usar modo rescue em uma VPS sem acesso com
+    urgencia para restaurar o ambiente, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-611
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde durante
+    horario comercial, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-612
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde durante
+    horario comercial, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-613
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde durante
+    horario comercial, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-614
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde apos uma
+    reinicializacao, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-615
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde apos uma
+    reinicializacao, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-616
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde apos uma
+    reinicializacao, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-617
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde sem aviso
+    no painel, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-618
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde sem aviso
+    no painel, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-619
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde sem aviso
+    no painel, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-620
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde com varios
+    servicos afetados ao mesmo tempo, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-621
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde com varios
+    servicos afetados ao mesmo tempo, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-622
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde com varios
+    servicos afetados ao mesmo tempo, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-623
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde com urgencia
+    para restaurar o ambiente, o que devo checar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-624
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde com urgencia
+    para restaurar o ambiente, qual e o proximo passo mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-625
+  category: indisponibilidade_incidente
+  question: A VPS aparece ligada no painel mas nenhuma aplicacao responde com urgencia
+    para restaurar o ambiente, como validar a causa sem agravar o incidente?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-626
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor antes
+    de uma mudanca arriscada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-627
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor antes
+    de uma mudanca arriscada, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-628
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor antes
+    de uma mudanca arriscada, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-629
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor depois
+    de uma falha no servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-630
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor depois
+    de uma falha no servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-631
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor depois
+    de uma falha no servidor, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-632
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor com
+    pouco tempo para agir, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-633
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor com
+    pouco tempo para agir, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-634
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor com
+    pouco tempo para agir, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-635
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor sem
+    querer perder dados recentes, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-636
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor sem
+    querer perder dados recentes, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-637
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor sem
+    querer perder dados recentes, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-638
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor com
+    necessidade de manter rollback simples, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-639
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor com
+    necessidade de manter rollback simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-640
+  category: backup_restore
+  question: Quero criar um backup ou snapshot da VPS antes de mexer no servidor com
+    necessidade de manter rollback simples, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-641
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano antes de uma mudanca arriscada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-642
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano antes de uma mudanca arriscada, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-643
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano antes de uma mudanca arriscada, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-644
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano depois de uma falha no servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-645
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano depois de uma falha no servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-646
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano depois de uma falha no servidor, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-647
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano com pouco tempo para agir, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-648
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano com pouco tempo para agir, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-649
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano com pouco tempo para agir, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-650
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano sem querer perder dados recentes, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-651
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano sem querer perder dados recentes, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-652
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano sem querer perder dados recentes, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-653
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano com necessidade de manter rollback simples, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-654
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano com necessidade de manter rollback simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-655
+  category: backup_restore
+  question: Preciso restaurar um backup da VPS e nao quero sobrescrever dados por
+    engano com necessidade de manter rollback simples, como seguir sem aumentar o
+    risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-656
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS antes de uma mudanca arriscada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-657
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS antes de uma mudanca arriscada, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-658
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS antes de uma mudanca arriscada, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-659
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS depois de uma falha no servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-660
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS depois de uma falha no servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-661
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS depois de uma falha no servidor, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-662
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS com pouco tempo para agir, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-663
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS com pouco tempo para agir, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-664
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS com pouco tempo para agir, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-665
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS sem querer perder dados recentes, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-666
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS sem querer perder dados recentes, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-667
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS sem querer perder dados recentes, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-668
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS com necessidade de manter rollback simples, o que devo revisar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-669
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS com necessidade de manter rollback simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-670
+  category: backup_restore
+  question: Quero confirmar se devo gerar snapshot antes de atualizar o sistema da
+    VPS com necessidade de manter rollback simples, como seguir sem aumentar o risco
+    de perda?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-671
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao antes de uma mudanca
+    arriscada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-672
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao antes de uma mudanca
+    arriscada, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-673
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao antes de uma mudanca
+    arriscada, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-674
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao depois de uma falha
+    no servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-675
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao depois de uma falha
+    no servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-676
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao depois de uma falha
+    no servidor, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-677
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao com pouco tempo
+    para agir, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-678
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao com pouco tempo
+    para agir, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-679
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao com pouco tempo
+    para agir, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-680
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao sem querer perder
+    dados recentes, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-681
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao sem querer perder
+    dados recentes, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-682
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao sem querer perder
+    dados recentes, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-683
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao com necessidade
+    de manter rollback simples, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-684
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao com necessidade
+    de manter rollback simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-685
+  category: backup_restore
+  question: O backup da VPS nao aparece no painel para restauracao com necessidade
+    de manter rollback simples, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-686
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar antes de uma mudanca
+    arriscada, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-687
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar antes de uma mudanca
+    arriscada, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-688
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar antes de uma mudanca
+    arriscada, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-689
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar depois de uma
+    falha no servidor, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-690
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar depois de uma
+    falha no servidor, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-691
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar depois de uma
+    falha no servidor, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-692
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar com pouco tempo
+    para agir, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-693
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar com pouco tempo
+    para agir, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-694
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar com pouco tempo
+    para agir, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-695
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar sem querer perder
+    dados recentes, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-696
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar sem querer perder
+    dados recentes, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-697
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar sem querer perder
+    dados recentes, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-698
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar com necessidade
+    de manter rollback simples, o que devo revisar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-699
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar com necessidade
+    de manter rollback simples, qual e o caminho mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence
+- id: vps-700
+  category: backup_restore
+  question: Apaguei arquivos importantes da VPS e preciso recuperar com necessidade
+    de manter rollback simples, como seguir sem aumentar o risco de perda?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - sensitive_topic
+    - low_confidence

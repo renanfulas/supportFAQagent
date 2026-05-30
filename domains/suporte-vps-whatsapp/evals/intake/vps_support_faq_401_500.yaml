@@ -1,0 +1,952 @@
+# Synthetic anonymous intake for VPS support calibration.
+#
+# Generated in balanced batches for RAG calibration coverage. These files
+# are intake material only: they help map knowledge gaps, retrieval quality,
+# and escalation behavior before promotion to curated or gate suites.
+#
+# Cases with empty expected_references are intentional knowledge-curation
+# candidates. Fill them only after the supporting article exists and is
+# stable enough for pgvector calibration.
+domain: suporte-vps-whatsapp
+cases:
+- id: vps-401
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio depois de uma configuracao
+    recente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-402
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio depois de uma configuracao
+    recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-403
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio depois de uma configuracao
+    recente, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-404
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio com o dominio principal
+    em producao, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-405
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio com o dominio principal
+    em producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-406
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio com o dominio principal
+    em producao, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-407
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio apos mudar o DNS, o
+    que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-408
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio apos mudar o DNS, qual
+    e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-409
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio apos mudar o DNS, como
+    validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-410
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio com usuarios reclamando
+    de falha no envio, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-411
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio com usuarios reclamando
+    de falha no envio, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-412
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio com usuarios reclamando
+    de falha no envio, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-413
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio sem acesso a um relay
+    externo, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-414
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio sem acesso a um relay
+    externo, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-415
+  category: email_smtp
+  question: Os e-mails da VPS ficaram presos na fila de envio sem acesso a um relay
+    externo, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-416
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail depois de uma configuracao
+    recente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-417
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail depois de uma configuracao
+    recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-418
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail depois de uma configuracao
+    recente, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-419
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail com o dominio principal
+    em producao, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-420
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail com o dominio principal
+    em producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-421
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail com o dominio principal
+    em producao, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-422
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail apos mudar o DNS, o que
+    devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-423
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail apos mudar o DNS, qual
+    e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-424
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail apos mudar o DNS, como
+    validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-425
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail com usuarios reclamando
+    de falha no envio, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-426
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail com usuarios reclamando
+    de falha no envio, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-427
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail com usuarios reclamando
+    de falha no envio, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-428
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail sem acesso a um relay
+    externo, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-429
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail sem acesso a um relay
+    externo, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-430
+  category: email_smtp
+  question: O SMTP da VPS nao autentica no cliente de e-mail sem acesso a um relay
+    externo, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-431
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam depois de uma configuracao
+    recente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-432
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam depois de uma configuracao
+    recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-433
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam depois de uma configuracao
+    recente, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-434
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam com o dominio principal
+    em producao, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-435
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam com o dominio principal
+    em producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-436
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam com o dominio principal
+    em producao, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-437
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam apos mudar o DNS,
+    o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-438
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam apos mudar o DNS,
+    qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-439
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam apos mudar o DNS,
+    como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-440
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam com usuarios reclamando
+    de falha no envio, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-441
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam com usuarios reclamando
+    de falha no envio, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-442
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam com usuarios reclamando
+    de falha no envio, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-443
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam sem acesso a um relay
+    externo, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-444
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam sem acesso a um relay
+    externo, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-445
+  category: email_smtp
+  question: As mensagens enviadas pela VPS estao caindo no spam sem acesso a um relay
+    externo, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-446
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    depois de uma configuracao recente, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-447
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    depois de uma configuracao recente, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-448
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    depois de uma configuracao recente, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-449
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    com o dominio principal em producao, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-450
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    com o dominio principal em producao, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-451
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    com o dominio principal em producao, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-452
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    apos mudar o DNS, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-453
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    apos mudar o DNS, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-454
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    apos mudar o DNS, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-455
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    com usuarios reclamando de falha no envio, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-456
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    com usuarios reclamando de falha no envio, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-457
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    com usuarios reclamando de falha no envio, como validar sem piorar a reputacao
+    do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-458
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    sem acesso a um relay externo, o que devo verificar primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-459
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    sem acesso a um relay externo, qual e o teste mais seguro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-460
+  category: email_smtp
+  question: Preciso configurar SPF DKIM e DMARC para o dominio que envia pela VPS
+    sem acesso a um relay externo, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons: []
+- id: vps-461
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada depois de uma configuracao recente,
+    o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-462
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada depois de uma configuracao recente,
+    qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-463
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada depois de uma configuracao recente,
+    como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-464
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada com o dominio principal em producao,
+    o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-465
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada com o dominio principal em producao,
+    qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-466
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada com o dominio principal em producao,
+    como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-467
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada apos mudar o DNS, o que devo verificar
+    primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-468
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada apos mudar o DNS, qual e o teste
+    mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-469
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada apos mudar o DNS, como validar sem
+    piorar a reputacao do envio?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-470
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada com usuarios reclamando de falha
+    no envio, o que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-471
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada com usuarios reclamando de falha
+    no envio, qual e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-472
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada com usuarios reclamando de falha
+    no envio, como validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-473
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada sem acesso a um relay externo, o
+    que devo verificar primeiro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-474
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada sem acesso a um relay externo, qual
+    e o teste mais seguro?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-475
+  category: email_smtp
+  question: A porta SMTP da VPS parece bloqueada sem acesso a um relay externo, como
+    validar sem piorar a reputacao do envio?
+  expectation:
+    should_escalate: true
+    required_terms: []
+    expected_references: []
+    allowed_handoff_reasons:
+    - low_confidence
+- id: vps-476
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai em horario de maior uso,
+    o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-477
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai em horario de maior uso,
+    qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-478
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai em horario de maior uso,
+    como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-479
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai depois de publicar uma
+    aplicacao nova, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-480
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai depois de publicar uma
+    aplicacao nova, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-481
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai depois de publicar uma
+    aplicacao nova, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-482
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai apos reiniciar o servidor,
+    o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-483
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai apos reiniciar o servidor,
+    qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-484
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai apos reiniciar o servidor,
+    como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-485
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai com poucos acessos aparentes,
+    o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-486
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai com poucos acessos aparentes,
+    qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-487
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai com poucos acessos aparentes,
+    como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-488
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai sem querer derrubar o
+    ambiente, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-489
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai sem querer derrubar o
+    ambiente, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-490
+  category: performance_recursos
+  question: A CPU da VPS fica em 100 por cento e o site cai sem querer derrubar o
+    ambiente, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-491
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam em horario de maior
+    uso, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-492
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam em horario de maior
+    uso, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-493
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam em horario de maior
+    uso, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-494
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam depois de publicar
+    uma aplicacao nova, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-495
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam depois de publicar
+    uma aplicacao nova, qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-496
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam depois de publicar
+    uma aplicacao nova, como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-497
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam apos reiniciar o servidor,
+    o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-498
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam apos reiniciar o servidor,
+    qual e a verificacao mais segura?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-499
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam apos reiniciar o servidor,
+    como investigar sem mexer no que esta funcionando?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
+- id: vps-500
+  category: performance_recursos
+  question: A memoria RAM da VPS esgota e os servicos reiniciam com poucos acessos
+    aparentes, o que devo medir primeiro?
+  expectation:
+    should_escalate: false
+    required_terms: []
+    expected_references:
+    - vps-caiu.md
+    allowed_handoff_reasons: []
