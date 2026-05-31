@@ -1,0 +1,218 @@
+from datetime import UTC, datetime, timedelta
+import logging
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.core.config import get_settings
+from app.main import create_app
+from app.web_auth.delivery import OtpDeliveryUnavailable
+
+
+PHONE = "+5511999999999"
+
+
+@pytest.fixture(autouse=True)
+def clear_settings_cache() -> None:
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+@pytest.fixture
+def enabled_client(monkeypatch) -> TestClient:
+    monkeypatch.setenv("ENABLE_WEB_WHATSAPP_AUTH", "true")
+    monkeypatch.setenv("IDENTITY_HASH_SECRET", "identity-secret")
+    monkeypatch.setenv("OTP_DIGEST_SECRET", "otp-secret")
+    return TestClient(create_app())
+
+
+def _start(client: TestClient, phone: str = PHONE):
+    return client.post("/web/auth/whatsapp/start", json={"phone": phone})
+
+
+def _delivered_code(client: TestClient) -> str:
+    return client.app.state.web_auth_runtime.delivery.requests[-1].code
+
+
+def _different_code(code: str) -> str:
+    return "000000" if code != "000000" else "111111"
+
+
+def test_web_auth_is_hidden_when_disabled() -> None:
+    response = TestClient(create_app()).get("/web/auth/session")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Not Found"
+
+
+def test_start_returns_pending_challenge_and_sets_http_only_cookie(
+    enabled_client: TestClient,
+) -> None:
+    response = _start(enabled_client)
+
+    assert response.status_code == 202
+    assert response.json()["status"] == "pending"
+    assert response.json()["expires_in_seconds"] == 300
+    assert response.json()["retry_after_seconds"] == 60
+    assert "HttpOnly" in response.headers["set-cookie"]
+    delivery = enabled_client.app.state.web_auth_runtime.delivery.requests[-1]
+    assert delivery.phone == PHONE
+    assert delivery.challenge_id == response.json()["challenge_id"]
+    assert len(delivery.code) == 6
+
+
+@pytest.mark.parametrize("phone", ["11999999999", "+012345678", "+5511", "+55 11 99999-9999"])
+def test_start_rejects_non_e164_phone(enabled_client: TestClient, phone: str) -> None:
+    response = _start(enabled_client, phone)
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "invalid_phone"
+
+
+def test_start_rejects_extra_fields(enabled_client: TestClient) -> None:
+    response = enabled_client.post(
+        "/web/auth/whatsapp/start",
+        json={"phone": PHONE, "domain": "should-not-be-public"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_confirm_links_verified_identity_to_browser_session(
+    enabled_client: TestClient,
+) -> None:
+    challenge_id = _start(enabled_client).json()["challenge_id"]
+
+    response = enabled_client.post(
+        "/web/auth/whatsapp/confirm",
+        json={"challenge_id": challenge_id, "code": _delivered_code(enabled_client)},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "verified", "phone_last4": "9999"}
+    assert enabled_client.get("/web/auth/session").json() == {
+        "status": "verified",
+        "phone_last4": "9999",
+    }
+
+
+def test_confirm_uses_generic_error_and_consumes_attempts(
+    enabled_client: TestClient,
+) -> None:
+    challenge_id = _start(enabled_client).json()["challenge_id"]
+
+    response = enabled_client.post(
+        "/web/auth/whatsapp/confirm",
+        json={
+            "challenge_id": challenge_id,
+            "code": _different_code(_delivered_code(enabled_client)),
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "invalid_or_expired_code"
+    challenge = enabled_client.app.state.web_auth_runtime.service.store.get_challenge(
+        challenge_id,
+    )
+    assert challenge is not None
+    assert challenge.attempts_remaining == 4
+
+
+def test_confirm_rejects_reused_code(enabled_client: TestClient) -> None:
+    challenge_id = _start(enabled_client).json()["challenge_id"]
+    payload = {"challenge_id": challenge_id, "code": _delivered_code(enabled_client)}
+
+    assert enabled_client.post("/web/auth/whatsapp/confirm", json=payload).status_code == 200
+    response = enabled_client.post("/web/auth/whatsapp/confirm", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "invalid_or_expired_code"
+
+
+def test_confirm_blocks_challenge_after_max_attempts(enabled_client: TestClient) -> None:
+    challenge_id = _start(enabled_client).json()["challenge_id"]
+    wrong_code = _different_code(_delivered_code(enabled_client))
+
+    for _ in range(5):
+        response = enabled_client.post(
+            "/web/auth/whatsapp/confirm",
+            json={"challenge_id": challenge_id, "code": wrong_code},
+        )
+        assert response.status_code == 400
+
+    challenge = enabled_client.app.state.web_auth_runtime.service.store.get_challenge(
+        challenge_id,
+    )
+    assert challenge is not None
+    assert challenge.status == "exhausted"
+    assert challenge.attempts_remaining == 0
+
+
+def test_confirm_rejects_expired_code(enabled_client: TestClient) -> None:
+    challenge_id = _start(enabled_client).json()["challenge_id"]
+    challenge = enabled_client.app.state.web_auth_runtime.service.store.get_challenge(
+        challenge_id,
+    )
+    assert challenge is not None
+    challenge.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+
+    response = enabled_client.post(
+        "/web/auth/whatsapp/confirm",
+        json={"challenge_id": challenge_id, "code": _delivered_code(enabled_client)},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "invalid_or_expired_code"
+
+
+def test_resend_cooldown_returns_retry_after(enabled_client: TestClient) -> None:
+    assert _start(enabled_client).status_code == 202
+
+    response = _start(enabled_client)
+
+    assert response.status_code == 429
+    assert response.json()["detail"] == "too_many_requests"
+    assert int(response.headers["Retry-After"]) >= 1
+
+
+def test_delivery_failure_is_generic(enabled_client: TestClient) -> None:
+    class FailingDelivery:
+        def deliver(self, request) -> None:
+            raise OtpDeliveryUnavailable
+
+    enabled_client.app.state.web_auth_runtime.service.delivery = FailingDelivery()
+
+    response = _start(enabled_client)
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "otp_delivery_unavailable"
+    enabled_client.app.state.web_auth_runtime.service.delivery = (
+        enabled_client.app.state.web_auth_runtime.delivery
+    )
+    assert _start(enabled_client).status_code == 202
+
+
+def test_logout_returns_session_to_anonymous(enabled_client: TestClient) -> None:
+    challenge_id = _start(enabled_client).json()["challenge_id"]
+    enabled_client.post(
+        "/web/auth/whatsapp/confirm",
+        json={"challenge_id": challenge_id, "code": _delivered_code(enabled_client)},
+    )
+
+    response = enabled_client.post("/web/auth/logout")
+
+    assert response.json() == {"status": "anonymous"}
+    assert enabled_client.get("/web/auth/session").json() == {"status": "anonymous"}
+
+
+def test_logs_do_not_include_raw_phone_or_code(
+    enabled_client: TestClient,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.INFO):
+        _start(enabled_client)
+
+    combined_logs = " ".join(record.getMessage() for record in caplog.records)
+    assert PHONE not in combined_logs
+    assert _delivered_code(enabled_client) not in combined_logs

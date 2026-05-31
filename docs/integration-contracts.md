@@ -25,6 +25,10 @@ Rotas publicas controladas atualmente:
 
 - `POST /web/chat`
 - `POST /web/feedback`
+- `POST /web/auth/whatsapp/start` quando `ENABLE_WEB_WHATSAPP_AUTH=true`
+- `POST /web/auth/whatsapp/confirm` quando `ENABLE_WEB_WHATSAPP_AUTH=true`
+- `GET /web/auth/session` quando `ENABLE_WEB_WHATSAPP_AUTH=true`
+- `POST /web/auth/logout` quando `ENABLE_WEB_WHATSAPP_AUTH=true`
 
 Regra:
 
@@ -35,6 +39,32 @@ Regra:
 - `GET /health` continua publica no estado atual do MVP
 - `POST /zoom/webhook` tambem aceita segredo compartilhado via query string quando `ZOOM_WEBHOOK_SECRET` estiver configurado para integracoes controladas com Recall/Zoom
 - `POST /web/chat` e `POST /web/feedback` nao aceitam nem exigem `X-API-Key` no navegador; essa superficie publica controlada usa sessao anonima por cookie e continua chamando o mesmo core do agente no backend
+- as rotas `/web/auth/*` ficam ocultas com `404` enquanto `ENABLE_WEB_WHATSAPP_AUTH=false`
+
+## WhatsApp OTP V1A
+
+Objetivo:
+
+- permitir que o usuario vincule a sessao web anonima a uma identidade verificada por WhatsApp
+- preservar o chat anonimo V0 enquanto a autenticacao evolui em paralelo
+- testar o contrato localmente antes de acoplar o adapter de entrega ao webhook interno do `n8n`
+
+Rotas:
+
+- `POST /web/auth/whatsapp/start` recebe `{"phone":"+5511999999999"}` e retorna `202` com `challenge_id`, `status`, TTL e cooldown
+- `POST /web/auth/whatsapp/confirm` recebe `{"challenge_id":"uuid","code":"123456"}` e retorna `{"status":"verified","phone_last4":"9999"}`
+- `GET /web/auth/session` retorna `{"status":"anonymous"}` ou a identidade verificada mascarada
+- `POST /web/auth/logout` remove o vinculo da sessao e retorna `{"status":"anonymous"}`
+
+Regras:
+
+- telefone deve usar formato E.164
+- OTP possui seis digitos, TTL configuravel, cooldown de reenvio e limite de tentativas
+- erros de confirmacao usam apenas `invalid_or_expired_code`, sem revelar se o desafio existe
+- telefone bruto, OTP e cookie nao entram em logs
+- `IDENTITY_HASH_SECRET` e `OTP_DIGEST_SECRET` sao obrigatorios, privados e diferentes quando a feature flag estiver ativa
+- V1A usa armazenamento em memoria e adapter local de captura apenas para laboratorio privado; reiniciar a API perde os vinculos verificados
+- PostgreSQL e entrega real por webhook interno `n8n` entram na proxima integracao sem alterar o contrato HTTP publico
 
 Exemplo:
 

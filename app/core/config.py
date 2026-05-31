@@ -52,6 +52,29 @@ class Settings(BaseSettings):
         default=None,
         alias="PROJECT_LLM_API_KEY_ALIAS",
     )
+    enable_web_whatsapp_auth: bool = Field(
+        default=False,
+        alias="ENABLE_WEB_WHATSAPP_AUTH",
+    )
+    otp_code_ttl_seconds: int = Field(default=300, alias="OTP_CODE_TTL_SECONDS", ge=1)
+    otp_resend_cooldown_seconds: int = Field(
+        default=60,
+        alias="OTP_RESEND_COOLDOWN_SECONDS",
+        ge=1,
+    )
+    otp_max_attempts: int = Field(default=5, alias="OTP_MAX_ATTEMPTS", ge=1)
+    otp_start_limit_per_ip_per_hour: int = Field(
+        default=10,
+        alias="OTP_START_LIMIT_PER_IP_PER_HOUR",
+        ge=1,
+    )
+    otp_start_limit_per_phone_per_15_minutes: int = Field(
+        default=3,
+        alias="OTP_START_LIMIT_PER_PHONE_PER_15_MINUTES",
+        ge=1,
+    )
+    identity_hash_secret: str | None = Field(default=None, alias="IDENTITY_HASH_SECRET")
+    otp_digest_secret: str | None = Field(default=None, alias="OTP_DIGEST_SECRET")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -76,6 +99,20 @@ class Settings(BaseSettings):
                     "WEB_CHAT_RATE_LIMIT_PER_MINUTE must be at least 1 when ENABLE_PUBLIC_CHAT_UI is enabled",
                 )
 
+        if self.enable_web_whatsapp_auth:
+            self.identity_hash_secret = _normalize_required_secret(
+                self.identity_hash_secret,
+                "IDENTITY_HASH_SECRET",
+            )
+            self.otp_digest_secret = _normalize_required_secret(
+                self.otp_digest_secret,
+                "OTP_DIGEST_SECRET",
+            )
+            if self.identity_hash_secret == self.otp_digest_secret:
+                raise ValueError(
+                    "IDENTITY_HASH_SECRET and OTP_DIGEST_SECRET must be different",
+                )
+
         if self.api_secret_key and self.api_secret_key.strip():
             self.api_secret_key = self.api_secret_key.strip()
             return self
@@ -90,3 +127,9 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def _normalize_required_secret(value: str | None, name: str) -> str:
+    if value and value.strip():
+        return value.strip()
+    raise ValueError(f"{name} is required when ENABLE_WEB_WHATSAPP_AUTH is enabled")
