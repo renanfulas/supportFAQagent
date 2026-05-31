@@ -41,7 +41,13 @@ class RetrievalErrorVectorStore:
         raise RetrievalError("already mapped")
 
 
-def test_build_vector_store_keeps_lexical_path_without_resolving_embeddings() -> None:
+def test_build_vector_store_keeps_lexical_path_without_resolving_embeddings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.retrieval.service.get_settings",
+        lambda: type("Settings", (), {"retrieval_backend": "lexical"})(),
+    )
     store = build_vector_store(make_domain())
 
     assert isinstance(store, LexicalVectorStore)

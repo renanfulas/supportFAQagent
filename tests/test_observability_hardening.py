@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api.routes import chat, feedback
+from app.core.config import get_settings
 from app.core.request_context import REQUEST_ID_HEADER
 from app.main import create_app
 
@@ -33,7 +34,7 @@ def test_chat_log_uses_session_id_hash(monkeypatch) -> None:
     assert captured["event"] == "chat_completed"
     assert "session_id" not in captured
     assert captured["session_id_hash"] != "whatsapp:+5511999999999"
-    assert captured["retrieval_backend"] == "lexical"
+    assert captured["retrieval_backend"] == get_settings().retrieval_backend
     assert isinstance(captured["references_count"], int)
     assert captured["references_count"] >= 0
     assert isinstance(captured["total_ms"], float)

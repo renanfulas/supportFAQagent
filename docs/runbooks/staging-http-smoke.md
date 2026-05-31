@@ -12,6 +12,7 @@ Use este runbook para validar rapidamente:
 - `/ingestion/{domain}/preview` quando o operador precisar conferir a base local autenticada
 - `/chat`
 - `/feedback` opcional, apenas quando for seguro registrar feedback operacional
+- `/chat-ui`, `/web/chat` e `/web/feedback` quando a V0 publica do website estiver habilitada
 
 ## Pre-requisitos
 
@@ -20,6 +21,11 @@ Use este runbook para validar rapidamente:
 - `API_SECRET_KEY` carregado no shell ou passado de forma privada
 - se o objetivo for validar pgvector, runtime com `RETRIEVAL_BACKEND=pgvector`
 - se o objetivo for validar provider real, runtime com `OPENAI_API_KEY` privado
+- se o objetivo for validar a V0 publica do website, runtime com:
+  - `ENABLE_PUBLIC_CHAT_UI=true`
+  - `ENABLE_CHAT_UI=false`
+  - `WEB_CHAT_COOKIE_SECURE=true`
+  - `WEB_CHAT_RATE_LIMIT_PER_MINUTE=10` como baseline inicial de staging
 
 ## Execucao recomendada
 
@@ -57,6 +63,20 @@ python scripts/staging_smoke.py \
   --feedback
 ```
 
+Para smoke rapido da fachada publica do website:
+
+```bash
+curl -i http://127.0.0.1:8000/chat-ui
+
+curl -i \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Como conectar o WhatsApp na Evolution API?"}' \
+  http://127.0.0.1:8000/web/chat
+```
+
+Se o operador quiser validar feedback publico no mesmo fluxo, preserve o cookie
+de sessao retornado pelo `/web/chat` e reenvie o `request_id` no `/web/feedback`.
+
 ## O que o relatorio registra
 
 - data de execucao
@@ -70,6 +90,7 @@ python scripts/staging_smoke.py \
 - quantidade de referencias
 - `error_code`
 - status do feedback, quando habilitado
+- status HTTP da fachada publica do website, quando validada
 
 ## O que nao registrar
 

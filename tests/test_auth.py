@@ -25,6 +25,37 @@ def test_api_secret_key_uses_local_default_only_in_development(monkeypatch) -> N
     assert Settings(_env_file=None).api_secret_key == LOCAL_DEV_API_KEY
 
 
+def test_public_chat_ui_requires_secure_cookie_outside_development(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("ENABLE_PUBLIC_CHAT_UI", "true")
+    monkeypatch.setenv("WEB_CHAT_COOKIE_SECURE", "false")
+    monkeypatch.setenv("API_SECRET_KEY", "staging-test-secret")
+
+    with pytest.raises(ValueError, match="WEB_CHAT_COOKIE_SECURE must be true"):
+        Settings(_env_file=None)
+
+
+def test_public_chat_ui_requires_rate_limit_when_enabled(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("ENABLE_PUBLIC_CHAT_UI", "true")
+    monkeypatch.setenv("WEB_CHAT_RATE_LIMIT_PER_MINUTE", "0")
+    monkeypatch.setenv("API_SECRET_KEY", "staging-test-secret")
+
+    with pytest.raises(ValueError, match="WEB_CHAT_RATE_LIMIT_PER_MINUTE must be at least 1"):
+        Settings(_env_file=None)
+
+
+def test_public_chat_ui_defaults_cookie_secure_outside_development(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("ENABLE_PUBLIC_CHAT_UI", "true")
+    monkeypatch.setenv("API_SECRET_KEY", "staging-test-secret")
+    monkeypatch.delenv("WEB_CHAT_COOKIE_SECURE", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.web_chat_cookie_secure is True
+
+
 def test_chat_requires_api_key() -> None:
     response = client.post(
         "/chat",

@@ -1,0 +1,138 @@
+import logging
+
+from fastapi import APIRouter, HTTPException, Request, Response
+
+from app.api.schemas.feedback import FeedbackRequest, FeedbackResponse
+from app.api.schemas.web_chat import (
+    WebChatRequest,
+    WebChatResponse,
+    WebFeedbackRequest,
+)
+from app.core.config import get_settings
+from app.core.logging import log_event
+from app.core.privacy import hash_sensitive_value
+from app.core.request_context import get_request_id
+from app.core.web_session import (
+    get_or_create_public_session_id,
+    set_public_session_cookie,
+)
+from app.domain_engine.loader import DomainLoader
+from app.feedback.service import FeedbackService
+from app.orchestration.chat_flow import ChatFlowService
+
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+@router.post("/chat", response_model=WebChatResponse)
+def create_web_chat(
+    payload: WebChatRequest,
+    request: Request,
+    response: Response,
+) -> WebChatResponse:
+    request_id = get_request_id(request)
+    settings = get_settings()
+    session_id, should_set_cookie = get_or_create_public_session_id(request, settings)
+    domain = _load_default_domain(settings)
+
+    chat_response = ChatFlowService().answer(
+        domain=domain,
+        question=payload.message,
+        session_id=session_id,
+        request_id=request_id,
+        provider_api_key=None,
+    )
+    _log_web_chat_event(
+        request_id=request_id,
+        session_id=session_id,
+        chat_response=chat_response,
+    )
+
+    if should_set_cookie:
+        set_public_session_cookie(response, settings, session_id)
+
+    return WebChatResponse(
+        request_id=chat_response["request_id"],
+        answer=chat_response["answer"],
+        escalated=bool(chat_response["escalated"]),
+        handoff_reasons=list(chat_response["handoff_reasons"]),
+        references=list(chat_response["references"]),
+        support_code=chat_response["request_id"],
+        error_code=chat_response["error_code"],
+    )
+
+
+@router.post("/feedback", response_model=FeedbackResponse)
+def create_web_feedback(
+    payload: WebFeedbackRequest,
+    request: Request,
+    response: Response,
+) -> FeedbackResponse:
+    settings = get_settings()
+    session_id, should_set_cookie = get_or_create_public_session_id(request, settings)
+    feedback_payload = FeedbackRequest(
+        request_id=payload.request_id,
+        session_id=session_id,
+        helpful=payload.helpful,
+        reason=payload.reason,
+        comment=payload.comment,
+        source="web",
+    )
+    feedback_response = FeedbackService().record(feedback_payload)
+    log_event(
+        logger,
+        "feedback_recorded",
+        request_id=get_request_id(request),
+        chat_request_id=feedback_payload.request_id,
+        session_id_hash=hash_sensitive_value(session_id),
+        helpful=feedback_payload.helpful,
+        reason=feedback_payload.reason,
+        source=feedback_payload.source,
+        escalated=feedback_payload.escalated,
+        handoff_reasons=feedback_payload.handoff_reasons,
+        reference_count=len(feedback_payload.references),
+        error_code=feedback_payload.error_code,
+        storage=feedback_response.storage,
+    )
+
+    if should_set_cookie:
+        set_public_session_cookie(response, settings, session_id)
+
+    return feedback_response
+
+
+def _load_default_domain(settings):
+    domain = DomainLoader(settings.domains_path).load(settings.default_domain)
+    if domain is None:
+        raise HTTPException(status_code=404, detail="Domain not found")
+    return domain
+
+
+def _log_web_chat_event(
+    *,
+    request_id: str,
+    session_id: str,
+    chat_response: dict[str, object],
+) -> None:
+    settings = get_settings()
+    observability = chat_response.get("observability", {})
+    observability_fields = observability if isinstance(observability, dict) else {}
+    references = chat_response.get("references", [])
+    handoff_reasons = chat_response.get("handoff_reasons", [])
+    log_event(
+        logger,
+        "web_chat_completed",
+        request_id=request_id,
+        domain=chat_response["domain"],
+        session_id_hash=hash_sensitive_value(session_id),
+        confidence=chat_response["confidence"],
+        escalated=chat_response["escalated"],
+        handoff_reasons=handoff_reasons,
+        error_code=chat_response["error_code"],
+        retrieval_backend=settings.retrieval_backend,
+        references_count=len(references if isinstance(references, list) else []),
+        total_ms=observability_fields.get("total_ms"),
+        retrieval_ms=observability_fields.get("retrieval_ms"),
+        llm_ms=observability_fields.get("llm_ms"),
+    )

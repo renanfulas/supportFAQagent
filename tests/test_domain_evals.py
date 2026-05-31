@@ -1,10 +1,30 @@
 from pathlib import Path
 
+import pytest
+
+from app.core.errors import ProviderError
 from app.domain_engine.loader import DomainLoader
 from app.evals.loader import EvalSuiteLoader
 from app.evals.runner import DomainEvalRunner
 from app.orchestration.confidence import compute_confidence
 from app.retrieval.models import RetrievedChunk
+
+
+def _force_deterministic_eval_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.retrieval.service.get_settings",
+        lambda: type("Settings", (), {"retrieval_backend": "lexical"})(),
+    )
+
+    class FailingWrapper:
+        def __init__(self, provider: str, model: str, api_key: str | None = None) -> None:
+            _ = (provider, model, api_key)
+
+        def generate_answer(self, prompt: str) -> str:
+            _ = prompt
+            raise ProviderError("provider unavailable", failure_kind="provider_error")
+
+    monkeypatch.setattr("app.llm.service.LLMWrapper", FailingWrapper)
 
 
 def test_suporte_vps_whatsapp_eval_suite_loads() -> None:
@@ -18,7 +38,10 @@ def test_suporte_vps_whatsapp_eval_suite_loads() -> None:
     assert len(suite.cases) >= 6
 
 
-def test_domain_eval_runner_executes_initial_suite() -> None:
+def test_domain_eval_runner_executes_initial_suite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _force_deterministic_eval_runtime(monkeypatch)
     domain = DomainLoader(Path("domains")).load("suporte-vps-whatsapp")
     assert domain is not None
 

@@ -21,6 +21,11 @@ Rotas protegidas atualmente:
 - `POST /zoom/join`
 - `POST /zoom/webhook`
 
+Rotas publicas controladas atualmente:
+
+- `POST /web/chat`
+- `POST /web/feedback`
+
 Regra:
 
 - o cliente deve enviar `X-API-Key` com a chave configurada em `API_SECRET_KEY`
@@ -29,6 +34,7 @@ Regra:
 - em staging, quando `ENABLE_CHAT_UI=true`, `POST /chat` tambem aceita `X-LLM-API-Key` para testes pela `/chat-ui`; esse atalho nao funciona em `APP_ENV=production`
 - `GET /health` continua publica no estado atual do MVP
 - `POST /zoom/webhook` tambem aceita segredo compartilhado via query string quando `ZOOM_WEBHOOK_SECRET` estiver configurado para integracoes controladas com Recall/Zoom
+- `POST /web/chat` e `POST /web/feedback` nao aceitam nem exigem `X-API-Key` no navegador; essa superficie publica controlada usa sessao anonima por cookie e continua chamando o mesmo core do agente no backend
 
 Exemplo:
 
@@ -66,6 +72,102 @@ Regras:
 - Todas as respostas retornam `X-Request-ID`.
 - Erros HTTP tratados tambem retornam `request_id` no corpo.
 - O `request_id` do `/chat` deve ser preservado para envio posterior no `/feedback`.
+- No website, o mesmo principio vale para `/web/chat` e `/web/feedback`: a UI deve preservar `request_id` como codigo de suporte e correlacao.
+
+## `POST /web/chat`
+
+Objetivo:
+
+- expor uma fachada publica controlada para o website
+- permitir uso da V0 do chat sem enviar segredo para o navegador
+- manter o mesmo core de orquestracao do `/chat`
+
+Entrada minima:
+
+```json
+{
+  "message": "Como conectar o WhatsApp na Evolution API?"
+}
+```
+
+Validacoes:
+
+- `message`: obrigatorio, sem branco puro, maximo 4000 caracteres
+- campos extras sao rejeitados com `422`
+- `domain` nao e aceito no V0 pela superficie publica
+- `session_id` nao e aceito no payload do navegador; a sessao e resolvida pelo backend via cookie
+
+Saida atual:
+
+```json
+{
+  "request_id": "uuid",
+  "answer": "resposta ao usuario",
+  "escalated": false,
+  "handoff_reasons": [],
+  "references": ["qrcode-whatsapp.md"],
+  "support_code": "uuid",
+  "error_code": null
+}
+```
+
+Regras operacionais:
+
+- a rota usa cookie de sessao anonima `HttpOnly`
+- o browser nao envia `X-API-Key`
+- `support_code` replica `request_id` como codigo de suporte amigavel para UI
+- `confidence` e `domain` continuam internos ao backend e nao fazem parte do contrato publico V0
+- se `escalated=true`, a UI deve tratar isso como sinal de revisao humana ou necessidade de continuidade operacional, nao como falha silenciosa
+
+Fronteira de responsabilidade:
+
+- esta fachada publica nao substitui `/chat` para `n8n` ou WhatsApp
+- o contrato interno protegido continua sendo a interface oficial para consumidores servidor-servidor
+
+## `POST /web/feedback`
+
+Objetivo:
+
+- aceitar feedback do website sem expor segredo
+- preservar contexto basico da resposta original do chat publico
+
+Entrada minima:
+
+```json
+{
+  "request_id": "uuid-retornado-pelo-chat",
+  "helpful": true,
+  "reason": "resolved",
+  "comment": "A resposta ajudou."
+}
+```
+
+Validacoes:
+
+- `request_id`: obrigatorio, maximo 80 caracteres
+- `helpful`: obrigatorio
+- `reason`: opcional, maximo 120 caracteres
+- `comment`: opcional, maximo 500 caracteres
+- campos extras sao rejeitados com `422`
+- `session_id` nao vem do navegador; o backend resolve pela sessao anonima
+- `source` e fixado no backend como `web`
+
+Saida atual:
+
+```json
+{
+  "feedback_id": "uuid",
+  "accepted": true,
+  "status": "accepted",
+  "storage": "pending_persistence"
+}
+```
+
+Regras operacionais:
+
+- a rota reutiliza o contrato interno de feedback, mas restringe o shape publico
+- o browser nao envia `X-API-Key`
+- o feedback continua sem persistencia final no estado atual do MVP
 
 ## `POST /chat`
 

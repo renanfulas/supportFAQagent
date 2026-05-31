@@ -29,8 +29,25 @@ class Settings(BaseSettings):
     database_url: str | None = Field(default=None, alias="DATABASE_URL")
     retrieval_backend: str = Field(default="lexical", alias="RETRIEVAL_BACKEND")
     api_secret_key: str | None = Field(default=None, alias="API_SECRET_KEY")
-    rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE")
+    rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE", ge=1)
     enable_chat_ui: bool = Field(default=False, alias="ENABLE_CHAT_UI")
+    enable_public_chat_ui: bool = Field(
+        default=False,
+        alias="ENABLE_PUBLIC_CHAT_UI",
+    )
+    web_chat_rate_limit_per_minute: int = Field(
+        default=10,
+        alias="WEB_CHAT_RATE_LIMIT_PER_MINUTE",
+        ge=0,
+    )
+    web_chat_session_cookie: str = Field(
+        default="sfaq_web_session",
+        alias="WEB_CHAT_SESSION_COOKIE",
+    )
+    web_chat_cookie_secure: bool | None = Field(
+        default=None,
+        alias="WEB_CHAT_COOKIE_SECURE",
+    )
     project_llm_api_key_alias: str | None = Field(
         default=None,
         alias="PROJECT_LLM_API_KEY_ALIAS",
@@ -45,6 +62,20 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def require_api_secret_outside_dev(self) -> Self:
         app_env = self.app_env.lower()
+        self.web_chat_session_cookie = self.web_chat_session_cookie.strip() or "sfaq_web_session"
+        if self.web_chat_cookie_secure is None:
+            self.web_chat_cookie_secure = app_env not in DEV_ENVS
+
+        if self.enable_public_chat_ui and app_env not in DEV_ENVS:
+            if not self.web_chat_cookie_secure:
+                raise ValueError(
+                    "WEB_CHAT_COOKIE_SECURE must be true when ENABLE_PUBLIC_CHAT_UI is enabled outside development environments",
+                )
+            if self.web_chat_rate_limit_per_minute < 1:
+                raise ValueError(
+                    "WEB_CHAT_RATE_LIMIT_PER_MINUTE must be at least 1 when ENABLE_PUBLIC_CHAT_UI is enabled",
+                )
+
         if self.api_secret_key and self.api_secret_key.strip():
             self.api_secret_key = self.api_secret_key.strip()
             return self
