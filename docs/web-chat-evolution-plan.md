@@ -22,6 +22,7 @@ V3: Operacao madura com dashboard, qualidade e expansao multi-dominio.
 Detalhamento de implementacao da primeira fase:
 
 - [Plano De Implementacao V0 Do Chat Web](web-chat-v0-implementation-plan.md)
+- [Especificacao V1 De Identidade Por WhatsApp OTP](web-chat-v1-whatsapp-otp-spec.md)
 
 O ponto mais importante:
 

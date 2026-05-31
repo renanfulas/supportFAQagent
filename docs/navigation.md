@@ -42,6 +42,8 @@ Quando a mudanca for uma frente executavel ainda em aberto, use estes planos
 curtos antes de codar:
 
 - `docs/quality-plans/vector-retrieval-quality-plan.md`: embeddings, adapter vetorial e isolamento por dominio.
+- `docs/web-chat-v1-whatsapp-otp-spec.md`: contrato, threat model e fronteiras
+  da identidade de canal por WhatsApp OTP.
 
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
