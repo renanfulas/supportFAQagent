@@ -44,6 +44,8 @@ class HandoffService:
         "me passe o secret",
         "me passe o segredo",
         "envie o segredo",
+        "private key",
+        "ssh key",
         "me passe a ssh key",
         "me passe a private key",
     )
