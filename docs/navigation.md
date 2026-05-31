@@ -44,6 +44,8 @@ curtos antes de codar:
 - `docs/quality-plans/vector-retrieval-quality-plan.md`: embeddings, adapter vetorial e isolamento por dominio.
 - `docs/web-chat-v1-whatsapp-otp-spec.md`: contrato, threat model e fronteiras
   da identidade de canal por WhatsApp OTP.
+- `docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md`: evolucao persistente
+  do OTP, adapter interno n8n, workflow Evolution API e smoke privado real.
 
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
