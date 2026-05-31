@@ -55,7 +55,14 @@ Hoje o repositorio ja possui:
 Importante:
 `pgvector` ja funciona como caminho vetorial em staging quando
 `RETRIEVAL_BACKEND=pgvector` esta configurado. O padrao permanente ainda deve
-esperar calibragem de confidence, handoff e qualidade das referencias.
+esperar a rodada oficial de staging contra a `pgvector_gate.yaml`.
+
+Estado consolidado em 30/05/2026:
+
+- baseline local da gate: `74/78`
+- baseline local da curated: `179/240`
+- `pgvector_gate.yaml` foi aceita como gate forte de laboratorio para o MVP
+- o proximo passo do plano e comparar esse baseline com o staging oficial
 
 ## Responsabilidades
 
@@ -149,8 +156,9 @@ Estado validado com pgvector:
 4. O LLM real responde em uma unica chamada usando o contexto recuperado.
 
 O caminho acima ja foi validado em staging privado com dados reais do dominio
-inicial. O proximo trabalho e calibrar score, confidence e handoff antes de
-promover esse caminho como padrao permanente.
+inicial. O baseline local ja foi consolidado com `74/78` na gate e `179/240`
+na curated. O proximo trabalho agora e confirmar que o staging oficial fica
+proximo desse baseline antes de promover esse caminho como padrao permanente.
 
 ## Fora do escopo do MVP
 
@@ -220,14 +228,14 @@ Nao deve:
 ## Fase 4
 
 - preparar historico curto real quando houver persistencia de conversas
-- calibrar confidence score inicial com dados reais
-- revisar thresholds e sinais de handoff por dominio
+- consolidar `confidence_threshold` e sinais de handoff com dados reais
+- confirmar a calibragem oficial em staging usando a `pgvector_gate.yaml`
 - manter evals locais como regressao de qualidade antes de mudar prompts, retrieval ou provider
 
 ## Fase 5
 
-- documentar a configuracao operacional
-- preparar hooks para futura integracao com `n8n`
+- documentar a configuracao operacional depois da confirmacao da gate em staging
+- preparar hooks para futura integracao com `n8n` sem mover inteligencia para fora da API
 - listar backlog pos-MVP
 
 ## Riscos principais e mitigacao
@@ -281,6 +289,7 @@ O MVP desta frente sera considerado pronto quando:
 - o fluxo `/chat` responder com contexto e confidence
 - o handoff estiver sinalizado de forma consistente
 - a configuracao do dominio inicial estiver documentada
+- a `pgvector_gate.yaml` em staging ficar proxima do baseline local aceito
 
 ## Resultado esperado
 

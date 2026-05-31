@@ -11,6 +11,9 @@ domains/
   suporte-vps-whatsapp/
     evals/
       cases.yaml
+      pgvector_gate.yaml
+      pgvector_curated.yaml
+      intake/
 ```
 
 ## Como rodar
@@ -31,6 +34,13 @@ Para a futura suite opt-in de calibragem com `pgvector` e provider real:
 
 ```bash
 python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_real.yaml
+```
+
+Para as suites atuais de calibragem com `pgvector`:
+
+```bash
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_gate.yaml
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_curated.yaml
 ```
 
 Essa suite nao deve entrar como gate obrigatorio de CI enquanto depender de
@@ -87,11 +97,19 @@ Como o retrieval lexical ainda e simples, alguns casos podem esperar `low_confid
 
 Quando provider real e pgvector estiverem calibrados em ambiente privado, estes casos devem evoluir para validar conteudo mais forte sem quebrar o gate deterministico local.
 
-## Suite pgvector/provider real
+## Suites pgvector/provider real
+
+Estado atual:
+
+- `evals/pgvector_gate.yaml` e a suite curta de gate do MVP
+- `evals/pgvector_curated.yaml` e a suite ampla de diagnostico e calibracao
+- `evals/intake/` contem o banco sintetico de perguntas para cobertura
+- `evals/pgvector_real.yaml` continua opcional para uma rodada futura com
+  perguntas anonimas reais
 
 A suite `evals/pgvector_real.yaml` deve ser criada somente depois do relatorio
-anonimo da HostGator chegar. Ate la, use
-`evals/pgvector_real.example.yaml` apenas como template.
+anonimo real chegar. Ate la, use `evals/pgvector_real.example.yaml` apenas como
+template.
 
 Objetivo dessa suite:
 
@@ -108,7 +126,7 @@ Ela deve ser rodada de forma opt-in em ambiente privado com:
 - conhecimento do dominio ingerido no pgvector
 
 O processo de entrada dos casos esta em
-`docs/runbooks/hostgator-anonymous-eval-intake.md`.
+`docs/runbooks/anonymous-eval-intake.md`.
 
 ## Casos de seguranca
 

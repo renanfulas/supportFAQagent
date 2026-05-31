@@ -1,13 +1,19 @@
-# Runbook - Intake de perguntas anonimas para calibração evals
+# Runbook - Intake de perguntas anonimas para calibracao de evals
 
 ## Objetivo
 
-Preparar a entrada do relatorio anonimo da empresa como material de
-calibragem de RAG, sem transformar dados brutos em prompt, treinamento de
-modelo ou base oficial sem curadoria.
+Preparar a entrada de perguntas anonimas como material de calibracao de RAG,
+sem transformar dados brutos em prompt, treinamento de modelo ou base oficial
+sem curadoria.
 
-Este fluxo cria uma suite opt-in de evals para validar `pgvector` e provider
-real com perguntas parecidas com o suporte real.
+Este fluxo alimenta tres camadas diferentes de eval:
+
+- `evals/intake/` para cobertura ampla e descoberta de lacunas
+- `evals/pgvector_curated.yaml` para calibracao forte de retrieval
+- `evals/pgvector_gate.yaml` para gate enxuta de release
+
+Opcionalmente, perguntas anonimas reais tambem podem alimentar uma futura
+`evals/pgvector_real.yaml`.
 
 ## Entradas esperadas
 
@@ -16,7 +22,7 @@ Cada linha do relatorio deve ter, quando possivel:
 - pergunta anonima do usuario
 - categoria operacional sugerida
 - resolucao ou classificacao humana
-- artigo/fonte esperada, se conhecida
+- artigo ou fonte esperada, se conhecida
 - indicacao se deve escalar para humano
 
 ## Checklist de recebimento
@@ -29,7 +35,7 @@ Antes de transformar o relatorio em evals versionados, confirme:
 - cada pergunta esta curta o bastante para representar uma unica intencao
 - cada pergunta tem uma categoria operacional sugerida
 - cada pergunta tem uma decisao humana esperada: responder ou escalar
-- cada pergunta tem, quando possivel, uma fonte/artigo esperado
+- cada pergunta tem, quando possivel, uma fonte ou artigo esperado
 - casos sem fonte esperada foram marcados para curadoria de conhecimento antes
   de virar gate de qualidade
 - o arquivo bruto permanece fora do Git
@@ -48,7 +54,7 @@ Antes de versionar qualquer caso:
   ou `minha instancia`
 - nao incluir conversas longas; transformar em uma pergunta curta e realista
 - nao copiar logs crus
-- nao versionar pergunta/resposta completa se ainda houver identificador
+- nao versionar pergunta ou resposta completa se ainda houver identificador
   reversivel
 - nao registrar no relatorio final prompts, headers, payloads, stack traces ou
   valores de ambiente
@@ -57,19 +63,33 @@ Se houver duvida se um dado e reversivel, nao versionar.
 
 ## Como transformar em eval
 
-1. Copie `domains/suporte-vps-whatsapp/evals/pgvector_real.example.yaml` para
+1. Transforme as perguntas recebidas em casos curtos e anonimizados.
+2. Versione primeiro no banco amplo em
+   `domains/suporte-vps-whatsapp/evals/intake/`.
+3. Selecione depois os melhores casos para `pgvector_curated.yaml`.
+4. Promova apenas os casos mais estaveis para `pgvector_gate.yaml`.
+5. Se houver necessidade de uma rodada privada com perguntas anonimas reais,
+   copie `domains/suporte-vps-whatsapp/evals/pgvector_real.example.yaml` para
    `domains/suporte-vps-whatsapp/evals/pgvector_real.yaml`.
-2. Substitua o caso de exemplo por perguntas anonimas reais.
-3. Use categorias curtas, como `setup_tecnico`, `operacao_whatsapp`,
+6. Use categorias curtas, como `setup_tecnico`, `operacao_whatsapp`,
    `integracoes`, `seguranca_escalonamento` ou `orientacao_iniciantes`.
-4. Preencha `expected_references` com o artigo que o pgvector deveria recuperar.
-5. Marque `should_escalate` conforme a decisao humana esperada.
-6. Use `required_terms` apenas para termos essenciais e seguros.
-7. Use `allowed_handoff_reasons` para limitar os motivos aceitaveis.
+7. Preencha `expected_references` com o artigo que o pgvector deveria
+   recuperar.
+8. Marque `should_escalate` conforme a decisao humana esperada.
+9. Use `required_terms` apenas para termos essenciais e seguros.
+10. Use `allowed_handoff_reasons` para limitar os motivos aceitaveis.
 
 ## Como rodar
 
-Esta suite deve ser opt-in e rodada em ambiente preparado:
+As suites atuais devem ser rodadas em ambiente preparado:
+
+```powershell
+$env:RETRIEVAL_BACKEND = "pgvector"
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_gate.yaml
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_curated.yaml
+```
+
+Se existir uma rodada privada com perguntas anonimas reais:
 
 ```powershell
 $env:RETRIEVAL_BACKEND = "pgvector"
@@ -97,8 +117,9 @@ Classifique cada falha antes de alterar codigo:
 
 So considerar `pgvector` como padrao permanente quando:
 
-- perguntas reais anonimas recuperam referencias coerentes
-- `error_code` permanece `null` nos casos saudaveis
-- escalonamentos por `low_confidence` foram revisados
-- casos sensiveis continuam escalando
-- nenhum caso versionado contem PII ou segredo
+- a `pgvector_gate.yaml` em staging ficar proxima do baseline local aceito
+- perguntas reais ou sinteticas recuperarem referencias coerentes
+- `error_code` permanecer `null` nos casos saudaveis
+- escalonamentos por `low_confidence` tiverem sido revisados
+- casos sensiveis continuarem escalando
+- nenhum caso versionado contiver PII ou segredo

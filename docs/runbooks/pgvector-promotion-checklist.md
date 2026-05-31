@@ -14,7 +14,9 @@ Este checklist nao altera ambiente, schema, migrations, indices ou workflows.
 - provider de embeddings configurado
 - conhecimento do dominio ingerido no pgvector
 - seeds artificiais removidos
-- suite `evals/pgvector_real.yaml` criada com perguntas anonimas reais
+- baseline local da `pgvector_gate.yaml` consolidado
+- execucao oficial da `pgvector_gate.yaml` em staging registrada
+- `pgvector_curated.yaml` disponivel para diagnostico mais amplo
 - relatorio sanitizado da execucao em staging
 
 ## Go / No-Go
@@ -23,6 +25,7 @@ Este checklist nao altera ambiente, schema, migrations, indices ou workflows.
 
 Pode promover quando:
 
+- a `pgvector_gate.yaml` em staging ficar proxima do baseline local `74/78`
 - `/health`, `/domains` e `/chat` passam em staging
 - casos saudaveis retornam `error_code=null`
 - `references` continuam como `list[str]`
