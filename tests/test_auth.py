@@ -56,6 +56,24 @@ def test_public_chat_ui_defaults_cookie_secure_outside_development(monkeypatch) 
     assert settings.web_chat_cookie_secure is True
 
 
+def test_web_whatsapp_auth_requires_identity_hash_secret(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_WEB_WHATSAPP_AUTH", "true")
+    monkeypatch.delenv("IDENTITY_HASH_SECRET", raising=False)
+    monkeypatch.setenv("OTP_DIGEST_SECRET", "otp-secret")
+
+    with pytest.raises(ValueError, match="IDENTITY_HASH_SECRET is required"):
+        Settings(_env_file=None)
+
+
+def test_web_whatsapp_auth_requires_distinct_secrets(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_WEB_WHATSAPP_AUTH", "true")
+    monkeypatch.setenv("IDENTITY_HASH_SECRET", "same-secret")
+    monkeypatch.setenv("OTP_DIGEST_SECRET", "same-secret")
+
+    with pytest.raises(ValueError, match="must be different"):
+        Settings(_env_file=None)
+
+
 def test_chat_requires_api_key() -> None:
     response = client.post(
         "/chat",

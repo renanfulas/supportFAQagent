@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routes import chat, domains, feedback, health, ingestion, web_chat, zoom
+from app.api.routes import chat, domains, feedback, health, ingestion, web_auth, web_chat, zoom
 from app.core.config import DEV_ENVS, get_settings
 from app.core.logging import configure_logging, log_event
 from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded
@@ -18,6 +18,7 @@ from app.core.request_context import (
     resolve_request_id,
 )
 from app.core.web_session import extract_public_session_token
+from app.web_auth.runtime import create_web_auth_runtime
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
         version="0.1.0",
         description="API para agentes de atendimento por dominio com RAG.",
     )
+    application.state.web_auth_runtime = create_web_auth_runtime(settings)
 
     @application.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -136,7 +138,7 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.detail, "request_id": request_id},
-            headers={REQUEST_ID_HEADER: request_id},
+            headers={**(exc.headers or {}), REQUEST_ID_HEADER: request_id},
         )
 
     @application.exception_handler(RequestValidationError)
@@ -210,6 +212,7 @@ def create_app() -> FastAPI:
     application.include_router(chat.router, prefix="/chat", tags=["chat"])
     application.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
     application.include_router(web_chat.router, prefix="/web", tags=["web"])
+    application.include_router(web_auth.router, prefix="/web/auth", tags=["web-auth"])
     application.include_router(zoom.router, prefix="/zoom", tags=["zoom"])
     return application
 
