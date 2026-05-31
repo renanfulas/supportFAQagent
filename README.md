@@ -36,6 +36,7 @@ Este projeto resolve isso com um nucleo Python modular que:
 - fallback seguro quando credenciais ou providers falham
 - handoff estruturado por baixa confianca, pedido humano, termo sensivel ou erro tecnico
 - contrato de feedback preparado para persistencia futura
+- fachada publica `POST /web/chat` e `POST /web/feedback` para website sem expor segredo no navegador
 - adaptador para ler arquivos do GitHub pela Contents API oficial, sem scraping de HTML
 - rate limit no `/chat`
 - `X-Request-ID` em todas as respostas
@@ -44,6 +45,7 @@ Este projeto resolve isso com um nucleo Python modular que:
 ## Casos De Uso
 
 - atendimento inicial em WhatsApp
+- atendimento inicial em website com chat publico controlado
 - suporte tecnico para VPS
 - triagem de duvidas recorrentes
 - consulta a FAQs e artigos internos
@@ -181,7 +183,7 @@ Para usar o prototipo local com ChromaDB e CSV:
 pip install -e ".[chroma]"
 ```
 
-Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados. Em ambientes nao produtivos, essa superficie pode ser habilitada de forma explicita para validacao interna. Ela nao substitui integracoes externas como n8n ou WhatsApp.
+Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados. A V0 tambem pode expor a `chat-ui` como superficie publica controlada quando `ENABLE_PUBLIC_CHAT_UI=true`, usando os endpoints `POST /web/chat` e `POST /web/feedback` sem enviar `X-API-Key` ao navegador. Em staging, a tela antiga baseada em `ENABLE_CHAT_UI=true` continua disponivel apenas para validacao interna com `X-LLM-API-Key`. Nenhuma dessas superficies substitui integracoes externas como n8n ou WhatsApp.
 
 ## Testes
 

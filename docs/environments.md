@@ -33,6 +33,18 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
 - Banco: PostgreSQL oficial do `supportFAQagent` na HostGator.
 - `pgvector`: no mesmo banco da aplicacao.
 - Provisionamento: a definir com Silotto.
+- Valores recomendados para a V0 do chat publico:
+  - `ENABLE_PUBLIC_CHAT_UI=true`
+  - `ENABLE_CHAT_UI=false`
+  - `WEB_CHAT_COOKIE_SECURE=true`
+  - `WEB_CHAT_RATE_LIMIT_PER_MINUTE=10` como ponto inicial
+  - `WEB_CHAT_SESSION_COOKIE=sfaq_web_session_staging`
+  - `RATE_LIMIT_PER_MINUTE=30` para consumidores internos, salvo ajuste operacional
+- Motivo:
+  - `ENABLE_PUBLIC_CHAT_UI` expoe apenas a fachada publica `/web/*`
+  - `ENABLE_CHAT_UI=false` evita reabrir o atalho legado baseado em `X-LLM-API-Key`
+  - cookie seguro e obrigatorio protege a sessao anonima do website
+  - rate limit publico baixo reduz custo e abuso enquanto a V0 ainda nao tem antifraude mais forte
 - Status: ambiente oficial para conectar backend e validar operacao real.
 
 ### Producao HostGator
@@ -70,6 +82,26 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
   remover volumes de workflow.
 - Desabilitar temporariamente a API nao deve apagar o PostgreSQL/pgvector nem os
   dados da Evolution.
+
+### Website chat publico
+
+- Tipo: superficie publica controlada para a V0 do website.
+- Interface oficial:
+  - `POST /web/chat`
+  - `POST /web/feedback`
+- Regras:
+  - nao envia `X-API-Key` pelo navegador
+  - usa sessao anonima por cookie `HttpOnly`
+  - em staging e producao, o cookie deve sair com `Secure=true`
+  - nao escolhe `domain` livremente no V0
+  - preserva `X-Request-ID`, `request_id`, `handoff_reasons`, `references` e `error_code`
+  - deve ficar atras de rate limit publico
+  - `ENABLE_PUBLIC_CHAT_UI=true` e a flag explicita para expor a `chat-ui` fora do modo de desenvolvimento
+- Baseline recomendado de hardening:
+  - `WEB_CHAT_RATE_LIMIT_PER_MINUTE=10`
+  - nome de cookie por ambiente, por exemplo `sfaq_web_session_staging`
+  - reverse proxy com HTTPS obrigatorio antes de liberar acesso externo
+- Status: pronto para validacao controlada da V0; nao substitui integracoes WhatsApp ou atendimento humano
 
 ## Responsabilidades por frente
 
