@@ -216,6 +216,7 @@ python -m pytest
 - [Relatorio oficial do baseline local pgvector](docs/runbooks/local-pgvector-baseline-report.md)
 - [Runbook de smoke HTTP automatizado em staging](docs/runbooks/staging-http-smoke.md)
 - [Runbook de contrato n8n/WhatsApp](docs/runbooks/n8n-whatsapp-chat-contract.md)
+- [Runbook de workflows n8n versionados](docs/runbooks/n8n-versioned-workflows.md)
 - [Runbook de snapshot e restore da Fase 0](docs/runbooks/phase0-snapshot-restore.md)
 - [Checklist de promocao do pgvector](docs/runbooks/pgvector-promotion-checklist.md)
 - [Mapa oficial de ambientes](docs/environments.md)

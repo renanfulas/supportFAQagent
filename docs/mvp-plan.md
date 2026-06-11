@@ -43,7 +43,7 @@ Hoje o repositorio ja possui:
 - retrieval desacoplado por interface `VectorStore`
 - `/chat` com `request_id` e `error_code`
 - `X-Request-ID` em todas as respostas HTTP
-- `POST /feedback` como contrato aceito, ainda sem persistencia real, mas ja aceitando contexto operacional opcional
+- `POST /feedback` com persistencia confiavel quando `PERSISTENCE_BACKEND=postgres`
 - `POST /ingestion/preview` para revisar chunking por payload, sem persistir
 - contrato modular de dominio com persona, diretrizes, escopo e mensagens padrao
 - evals locais para calibrar o dominio inicial com perguntas reais recorrentes
@@ -83,19 +83,12 @@ Para este MVP, as frentes ficam organizadas assim:
 O ownership atual substitui as atribuicoes operacionais antigas a Alexandre e
 Silotto. Autoria historica de migrations e documentos permanece preservada.
 
-## Dependencias em andamento fora desta frente
+## Dependencias coordenadas entre frentes
 
-Estas entregas pertencem principalmente a outra frente e devem continuar
-coordenadas para evitar sobreposicao:
-
-- PostgreSQL
-- pgvector
-- persistencia relacional principal
-- base vetorial principal para retrieval
-
-Este plano nao substitui ownership de schema, migrations ou indices finais. Ele
-prepara e valida a aplicacao para integrar com essa base, mantendo Chroma como
-prototipo local e evitando uma segunda fonte de producao paralela.
+Renan responde por PostgreSQL, pgvector, persistencia, schema, migrations e
+indices. Juliano responde pelo runtime onde esses componentes operam. Aplicar
+migrations, promover pgvector ou alterar infraestrutura exige preflight,
+snapshot e validacao conjunta.
 
 ## Escopo do MVP desta frente
 
@@ -248,8 +241,10 @@ Status: concluida para o nucleo tecnico do MVP.
 Status: em andamento.
 
 - manter a configuracao operacional reproduzivel
-- preparar hooks para futura integracao com `n8n` sem mover inteligencia para fora da API
-- preparar persistencia de conversas e feedback
+- validar e ativar com seguranca os workflows n8n versionados, sem mover
+  inteligencia para fora da API
+- validar em staging a persistencia, migrations, sanitizacao e outbox
+  implementadas na Fase 0
 - monitorar disco, banco, containers e logs da VPS
 - listar backlog pos-MVP
 

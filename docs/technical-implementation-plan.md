@@ -36,7 +36,7 @@ O projeto ja possui algumas pecas importantes:
 - `RecursiveCharacterTextSplitter` no pipeline CSV em `app/ingestion/pipeline.py`
 - `ticket_loader.py` para CSV de chamados
 - `prompt_builder.py` em `app/orchestration/`
-- `POST /feedback` como contrato aceito, ainda sem persistencia real, mas com contexto operacional opcional
+- `POST /feedback` com persistencia confiavel quando `PERSISTENCE_BACKEND=postgres`
 - `POST /ingestion/preview` para validar chunks por payload sem persistir
 - contrato modular de dominio em `domain.yaml`, com persona, objetivo, regras, mensagens e handoff
 - evals locais em `domains/suporte-vps-whatsapp/evals/cases.yaml`
@@ -71,7 +71,10 @@ Estado consolidado do nucleo tecnico em 11/06/2026:
 - `/chat` ja retorna `request_id` e `error_code`
 - `ChromaStore` continua como prototipo local e nao e o retrieval oficial do endpoint `/chat`
 - `domain.yaml` ja aponta para `llm.provider: openai`
-- `/feedback` ainda retorna `pending_persistence`
+- `/feedback` persiste contexto confiavel quando `PERSISTENCE_BACKEND=postgres`
+- migrations forward-only, sanitizacao persistente e outbox transacional da
+  Fase 0 estao implementadas no repositorio e aguardam validacao operacional
+  em staging
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
 - a calibragem local com `pgvector` ja gerou baseline forte:
@@ -106,18 +109,18 @@ novo. As tabelas historicas permanecem como registro da execucao das Fases 1 a
 
 Regra de fronteira para esta fase:
 
-- Renan pode definir contratos HTTP, shape de payload, testes de contrato e adapters de integracao
-- Alexandre continua dono de schema SQL, migrations, persistencia real, queries pgvector e armazenamento operacional
-- Juliano pode evoluir splitter e loaders, desde que o shape exposto pelo backend permaneça estavel
-- Silotto define o provisionamento oficial da HostGator, secrets e conectividade do runtime
+- Renan define contratos HTTP, schema SQL, migrations, persistencia, pgvector,
+  testes de contrato e adapters de integracao
+- Juliano opera VPS, n8n, Evolution API, rede, secrets, logs, snapshots e
+  recuperacao
+- mudancas que atravessam aplicacao e runtime exigem revisao conjunta
 
-Contingencia:
+Coordenacao:
 
-- se Silotto estiver temporariamente indisponivel, Renan pode cobrir ambiente de
-  staging, `DATABASE_URL`, secrets privados, conectividade, runtime e logs para
-  destravar o MVP
-- essa cobertura nao transfere ownership de schema, migrations, indices, queries
-  `pgvector` ou persistencia real, que continuam com Alexandre
+- Juliano opera staging, `DATABASE_URL`, secrets privados, conectividade,
+  runtime e logs
+- Renan responde por schema, migrations, indices, queries `pgvector` e
+  persistencia
 - qualquer resultado compartilhado deve ser sanitizado, sem IPs, hostnames,
   usuarios, portas administrativas, credenciais ou logs sensiveis
 
@@ -128,7 +131,8 @@ Leitura pratica do ponto atual:
   sanitizados
 - o pendente principal agora e manter a operacao reproduzivel, controlar
   capacidade de disco e preparar integracoes externas
-- a frente de banco continua separada e nao deve ser absorvida junto com a contingencia
+- a frente de banco pertence a Renan; aplicacao de migration em staging exige
+  snapshot e revisao conjunta com Juliano
 
 ## Modelo multi-dominio
 
@@ -664,31 +668,22 @@ Nota de sequencia:
 - a gate de staging reproduziu o baseline local em `74/78`
 - esta fase agora concentra operacao, persistencia, n8n e evolucao pos-MVP
 
-## Silotto - VPS
+## Juliano - VPS, n8n e Evolution API
 
-- Preparar container ou servico do n8n quando o nucleo estiver validado.
-- Definir acesso seguro ao painel.
-- Configurar reverse proxy, TLS e logs.
+- Operar container ou servico do n8n.
+- Definir acesso seguro ao painel, reverse proxy, TLS, rede e logs.
+- Validar e ativar os workflows versionados `whatsapp-to-bot`,
+  `escalation-notify` e `web-otp-delivery`.
+- Configurar Evolution API apenas no runtime privado.
 
-## Alexandre - n8n e banco
+## Renan - Aplicacao, banco e seguranca
 
-- Criar workflow `whatsapp-to-bot`.
-- Criar workflow `escalation-notify`.
-- Preparar `POST /feedback` quando o backend expuser contrato.
-- Exportar workflows como JSON versionado, nao depender apenas de pasta runtime.
-- Consumir o backend pela API HTTP, preservando `X-Request-ID`, `request_id`, `handoff_reasons`, `references` e `error_code`.
-
-## Juliano - LangChain
-
-- Apoiar ingestao futura de formatos adicionais se os tickets entrarem no pipeline.
-
-## Renan - Arquitetura e seguranca
-
-- Manter contrato de `POST /feedback` e preparar persistencia quando banco estiver pronto.
-- Definir payload de escalonamento.
-- Criar guia de integracao n8n.
+- Manter contrato e persistencia confiavel de `POST /feedback`.
+- Manter schema, migrations, sanitizacao, outbox e dispatcher.
+- Definir payload de escalonamento e guia de integracao n8n.
 - Validar que n8n nao carrega regra central do agente.
-- Tratar domain evals como gate deterministico desta frente SQL, sem provider real bloqueando a validacao de banco.
+- Tratar domain evals como gate deterministico, sem provider real bloqueando a
+  validacao de banco.
 
 ## Seguranca e privacidade
 
