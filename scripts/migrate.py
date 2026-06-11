@@ -25,11 +25,17 @@ def main() -> int:
 
     connect_timeout = int(os.getenv("DATABASE_CONNECT_TIMEOUT_SECONDS", "5"))
     try:
-        with psycopg.connect(
+        connection = psycopg.connect(
             database_url,
             autocommit=True,
             connect_timeout=connect_timeout,
-        ) as connection:
+        )
+    except psycopg.Error:
+        print("database connection failed; no migration was applied", file=sys.stderr)
+        return 1
+
+    try:
+        with connection:
             if args.command in {"status", "verify"} and not ledger_exists(connection):
                 for path in migration_files():
                     print(f"pending: {path.name}")
@@ -38,7 +44,7 @@ def main() -> int:
             with advisory_lock(connection):
                 return run_command(connection, args.command)
     except psycopg.Error:
-        print("database connection failed; no migration was applied", file=sys.stderr)
+        print("migration command failed; no partial migration was recorded", file=sys.stderr)
         return 1
 
 
