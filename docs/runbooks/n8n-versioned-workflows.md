@@ -35,9 +35,25 @@ pela versao instalada. Nao publicar o endpoint sem essa barreira.
 O nome `Verified ... Webhook` indica que essa validacao ocorreu antes do
 workflow. O nome nao implementa a verificacao.
 
-Nao apontar `HANDOFF_WEBHOOK_URL` ou `OTP_DELIVERY_WEBHOOK_URL` diretamente
-para esses webhooks enquanto o ingress confiavel nao existir. Para validar o
-dispatcher localmente, use:
+O ingress confiavel agora existe na API e permanece opt-in. Configure o
+dispatcher para chamar:
+
+```text
+HANDOFF_WEBHOOK_URL=http://supportfaq_api:8000/internal/webhooks/outbox/handoff.requested
+WHATSAPP_MESSAGE_WEBHOOK_URL=http://supportfaq_api:8000/internal/webhooks/outbox/whatsapp.message.requested
+OTP_DELIVERY_WEBHOOK_URL=http://supportfaq_api:8000/internal/webhooks/outbox/otp.delivery.requested
+```
+
+Na API, configure os destinos finais privados:
+
+```text
+ENABLE_OUTBOX_INGRESS=true
+N8N_VERIFIED_HANDOFF_URL=<webhook-interno-n8n>
+N8N_VERIFIED_WHATSAPP_URL=<webhook-interno-n8n>
+N8N_VERIFIED_OTP_URL=<webhook-interno-n8n>
+```
+
+Para validar o dispatcher isoladamente, use:
 
 ```powershell
 $env:OUTBOX_WEBHOOK_SECRET="<segredo-local>"
@@ -81,5 +97,6 @@ HANDOFF_GROUP_ID
   `body.data.key.remoteJid` e texto em `conversation` ou
   `extendedTextMessage.text`; confirmar o contrato da instancia real antes de
   ativar;
-- o ingress HMAC persistente ainda precisa ser implementado no ambiente;
+- o ingress HMAC persistente precisa receber a migration `005` e ser validado
+  no ambiente;
 - nenhum template versionado equivale a smoke real com Evolution e WhatsApp.

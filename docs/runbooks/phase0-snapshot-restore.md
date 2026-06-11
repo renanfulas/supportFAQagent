@@ -36,6 +36,25 @@ no relatorio.
 
 Nunca publicar nome do snapshot, IP, hostname, usuario ou credencial.
 
+## Relatorio De Decisao
+
+Depois de cada rodada, gere um resumo sanitizado:
+
+```bash
+python -m scripts.phase0_operational_report \
+  --snapshot passed \
+  --preflight passed \
+  --migrations passed \
+  --postgres-concurrency passed \
+  --n8n-smoke blocked \
+  --restore blocked \
+  --pgvector-gate pending \
+  --output /tmp/supportfaq-phase0-decision.md
+```
+
+O resultado somente fica `decision: approved` quando todos os gates estiverem
+como `passed`.
+
 ## Restore Cronometrado
 
 1. Registrar horario inicial.

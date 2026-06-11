@@ -18,6 +18,11 @@ EVENT_URLS = {
     "otp.delivery.requested": "OTP_DELIVERY_WEBHOOK_URL",
 }
 MAX_ATTEMPTS = 5
+RETRYABLE_HTTP_STATUS = {408, 409, 425, 429}
+
+
+class PermanentDeliveryError(RuntimeError):
+    pass
 
 
 def main() -> int:
@@ -76,28 +81,37 @@ def dispatch_one(database_url: str) -> bool:
 
         try:
             deliver(event)
-        except Exception:
+        except Exception as exc:
             attempts = int(event["attempt_count"]) + 1
-            terminal = attempts >= MAX_ATTEMPTS
+            terminal = isinstance(exc, PermanentDeliveryError) or attempts >= MAX_ATTEMPTS
+            error_code = (
+                "permanent_delivery_failed"
+                if isinstance(exc, PermanentDeliveryError)
+                else "delivery_failed"
+            )
             with connection.transaction():
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
                         UPDATE operational_outbox
-                        SET status = %s, last_error_code = 'delivery_failed',
+                        SET status = %s, last_error_code = %s,
                             available_at = %s, locked_at = NULL
                         WHERE id = %s
                         """,
                         (
                             "dead_letter" if terminal else "retryable_failed",
+                            error_code,
                             datetime.now(UTC) + timedelta(seconds=min(300, 2**attempts)),
                             event["id"],
                         ),
                     )
             if terminal:
-                print(
-                    f"dead_letter event_type={event['event_type']} request_id={event['request_id']}",
-                    file=sys.stderr,
+                emit_operational_event(
+                    "outbox_dead_letter",
+                    event_type=event["event_type"],
+                    request_id=event["request_id"],
+                    attempt_count=attempts,
+                    error_code=error_code,
                 )
         else:
             with connection.transaction():
@@ -145,7 +159,20 @@ def deliver(event: dict) -> None:
         },
         timeout=5,
     )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        status_code = response.status_code
+        if 400 <= status_code < 500 and status_code not in RETRYABLE_HTTP_STATUS:
+            raise PermanentDeliveryError("permanent webhook rejection") from exc
+        raise
+
+
+def emit_operational_event(event: str, **fields: object) -> None:
+    print(
+        json.dumps({"event": event, **fields}, ensure_ascii=True, default=str),
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":

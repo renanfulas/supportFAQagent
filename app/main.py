@@ -9,7 +9,17 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routes import chat, domains, feedback, health, ingestion, web_auth, web_chat, zoom
+from app.api.routes import (
+    chat,
+    domains,
+    feedback,
+    health,
+    ingestion,
+    internal_webhooks,
+    web_auth,
+    web_chat,
+    zoom,
+)
 from app.core.config import DEV_ENVS, get_settings
 from app.core.logging import configure_logging, log_event
 from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded
@@ -235,6 +245,11 @@ def create_app() -> FastAPI:
     application.include_router(web_chat.router, prefix="/web", tags=["web"])
     application.include_router(web_auth.router, prefix="/web/auth", tags=["web-auth"])
     application.include_router(zoom.router, prefix="/zoom", tags=["zoom"])
+    application.include_router(
+        internal_webhooks.router,
+        prefix="/internal/webhooks",
+        tags=["internal-webhooks"],
+    )
     return application
 
 

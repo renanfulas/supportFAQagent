@@ -19,6 +19,7 @@ class DatabaseRuntime:
         return (
             self.settings.persistence_backend == "postgres"
             or self.settings.web_auth_storage_backend == "postgres"
+            or getattr(self.settings, "enable_outbox_ingress", False)
         )
 
     def open(self) -> None:

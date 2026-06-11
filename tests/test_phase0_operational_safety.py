@@ -14,7 +14,7 @@ from app.db.runtime import DatabaseRuntime
 from app.db.operational import ChatAuditInput, HANDOFF_QUEUED, OperationalRepository
 from app.api.schemas.feedback import FeedbackRequest
 from scripts.migrate import ledger_exists, verify_applied
-from scripts.dispatch_outbox import deliver
+from scripts.dispatch_outbox import PermanentDeliveryError, deliver
 
 
 def test_persistence_sanitizer_redacts_mixed_sensitive_data() -> None:
@@ -96,10 +96,15 @@ def test_phase0_migrations_define_otp_exhausted_and_unique_outbox_key() -> None:
     operational_sql = (
         root / "migrations/004_phase0_operational_foundation.sql"
     ).read_text(encoding="utf-8")
+    ingress_sql = (root / "migrations/005_phase0_webhook_ingress.sql").read_text(
+        encoding="utf-8"
+    )
 
     assert "'exhausted'" in otp_sql
     assert "idempotency_key TEXT NOT NULL UNIQUE" in operational_sql
     assert "FOR UPDATE SKIP LOCKED" not in operational_sql
+    assert "idempotency_key_hash TEXT PRIMARY KEY" in ingress_sql
+    assert "payload_hash TEXT NOT NULL" in ingress_sql
 
 
 def test_outbox_delivery_is_signed_and_idempotent(
@@ -132,6 +137,35 @@ def test_outbox_delivery_is_signed_and_idempotent(
     assert headers["X-Idempotency-Key"] == "handoff:req-1"
     assert headers["X-Webhook-Signature"].startswith("sha256=")
     assert headers["X-Webhook-Timestamp"]
+
+
+def test_outbox_treats_non_retryable_4xx_as_permanent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Response:
+        status_code = 400
+
+        def raise_for_status(self) -> None:
+            import requests
+
+            raise requests.HTTPError("bad request", response=self)
+
+    monkeypatch.setenv("HANDOFF_WEBHOOK_URL", "https://internal.example/handoff")
+    monkeypatch.setenv("OUTBOX_WEBHOOK_SECRET", "dedicated-secret")
+    monkeypatch.setattr(
+        "scripts.dispatch_outbox.requests.post",
+        lambda *args, **kwargs: Response(),
+    )
+
+    with pytest.raises(PermanentDeliveryError):
+        deliver(
+            {
+                "event_type": "handoff.requested",
+                "request_id": "req-permanent",
+                "idempotency_key": "handoff:req-permanent",
+                "payload_sanitized": {"summary": "safe"},
+            }
+        )
 
 
 class RecordingCursor:

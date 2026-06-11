@@ -50,7 +50,8 @@ def test_internal_workflow_runbook_requires_signed_ingress_before_activation() -
 
     assert "active: false" in runbook
     assert "X-Webhook-Signature" in runbook
-    assert "Nao apontar `HANDOFF_WEBHOOK_URL`" in runbook
+    assert "HANDOFF_WEBHOOK_URL=http://supportfaq_api:8000/internal/webhooks/outbox/handoff.requested" in runbook
+    assert "N8N_VERIFIED_HANDOFF_URL" in runbook
 
 
 def test_signature_verifier_rejects_replay_window_and_invalid_signature() -> None:

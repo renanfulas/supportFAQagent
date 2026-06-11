@@ -33,6 +33,20 @@ class Settings(BaseSettings):
         default=None,
         alias="PERSISTENCE_HASH_SECRET",
     )
+    enable_outbox_ingress: bool = Field(default=False, alias="ENABLE_OUTBOX_INGRESS")
+    outbox_webhook_secret: str | None = Field(default=None, alias="OUTBOX_WEBHOOK_SECRET")
+    n8n_verified_handoff_url: str | None = Field(
+        default=None,
+        alias="N8N_VERIFIED_HANDOFF_URL",
+    )
+    n8n_verified_whatsapp_url: str | None = Field(
+        default=None,
+        alias="N8N_VERIFIED_WHATSAPP_URL",
+    )
+    n8n_verified_otp_url: str | None = Field(
+        default=None,
+        alias="N8N_VERIFIED_OTP_URL",
+    )
     conversation_retention_days: int = Field(
         default=60,
         alias="CONVERSATION_RETENTION_DAYS",
@@ -155,6 +169,12 @@ class Settings(BaseSettings):
                 self.persistence_hash_secret,
                 "PERSISTENCE_HASH_SECRET",
             )
+        if self.enable_outbox_ingress:
+            self.database_url = _normalize_required_secret(self.database_url, "DATABASE_URL")
+            self.outbox_webhook_secret = _normalize_required_secret(
+                self.outbox_webhook_secret,
+                "OUTBOX_WEBHOOK_SECRET",
+            )
         if self.database_pool_min_size > self.database_pool_max_size:
             raise ValueError("DATABASE_POOL_MIN_SIZE cannot exceed DATABASE_POOL_MAX_SIZE")
 
@@ -177,4 +197,4 @@ def get_settings() -> Settings:
 def _normalize_required_secret(value: str | None, name: str) -> str:
     if value and value.strip():
         return value.strip()
-    raise ValueError(f"{name} is required when ENABLE_WEB_WHATSAPP_AUTH is enabled")
+    raise ValueError(f"{name} is required for the enabled PostgreSQL-backed feature")

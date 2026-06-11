@@ -455,6 +455,46 @@ Regra de seguranca:
 - esta rota exige `X-API-Key`
 - a previa existe para operadores autenticados e nao deve ser exposta publicamente em staging ou producao
 
+## Ingress interno assinado para outbox
+
+Endpoint:
+
+```http
+POST /internal/webhooks/outbox/{event_type}
+```
+
+Eventos aceitos:
+
+- `handoff.requested`
+- `whatsapp.message.requested`
+- `otp.delivery.requested`
+
+Headers obrigatorios:
+
+```http
+X-Idempotency-Key: <chave-estavel>
+X-Webhook-Timestamp: <unix-seconds>
+X-Webhook-Signature: sha256=<hmac>
+```
+
+Regras:
+
+- fica oculto com `404` enquanto `ENABLE_OUTBOX_INGRESS=false`;
+- valida HMAC sobre `timestamp + "." + raw_body`;
+- rejeita timestamp fora da janela de cinco minutos;
+- persiste somente hashes do payload e da chave idempotente, alem de metadados
+  de entrega;
+- duplicata ja entregue retorna `status=duplicate`;
+- mesma chave com payload diferente retorna `409`;
+- entrega concorrente em andamento retorna `425`;
+- somente depois da validacao encaminha ao webhook n8n configurado como
+  `N8N_VERIFIED_*_URL`;
+- payload, assinatura, secret e URL privada nunca entram nos logs.
+
+O dispatcher deve apontar `HANDOFF_WEBHOOK_URL`,
+`WHATSAPP_MESSAGE_WEBHOOK_URL` e `OTP_DELIVERY_WEBHOOK_URL` para essa fachada
+interna, nao diretamente para o n8n.
+
 ## `POST /zoom/webhook`
 
 Objetivo:

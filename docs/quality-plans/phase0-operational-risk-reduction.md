@@ -28,6 +28,7 @@ Silotto. Creditos historicos e autoria de migrations antigas permanecem.
 - sanitizacao versionada antes da persistencia;
 - outbox at-least-once com idempotency key e dispatcher separado;
 - assinatura HMAC obrigatoria para entregas do dispatcher;
+- ingress interno HMAC com idempotencia persistente antes do n8n;
 - `handoff_status` no contrato interno `/chat`;
 - feedback PostgreSQL enriquecido pelo contexto confiavel do servidor;
 - rede Docker privada compartilhada e limites de logs para n8n.
@@ -67,6 +68,10 @@ forward-only.
 - criar a rede `supportfaq_internal` no runtime;
 - configurar URLs privadas consumidas pelo dispatcher;
 - executar gates SQL e concorrencia contra PostgreSQL real.
+- reingerir o dominio e revalidar os quatro casos recalibrados da gate.
+
+O saneamento offline desses casos esta registrado em
+`docs/quality-plans/pgvector-gate-backlog-2026-06-11.md`.
 
 Enquanto essas evidencias nao existirem, a Fase 0 esta implementada no
 repositorio, mas nao validada operacionalmente.
