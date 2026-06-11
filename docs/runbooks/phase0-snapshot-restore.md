@@ -15,8 +15,24 @@ producao resiliente.
 2. Registrar branch, commit e migrations pendentes.
 3. Criar snapshot privado no provedor.
 4. Confirmar que o snapshot aparece como concluido.
-5. Executar `python -m scripts.migrate status`.
-6. Somente depois executar `python -m scripts.migrate apply`.
+5. Executar o preflight somente leitura:
+
+```bash
+python -m scripts.staging_phase0_preflight \
+  --snapshot-confirmed \
+  --env-file .env \
+  --output /tmp/supportfaq-phase0-preflight.md
+```
+
+6. Revisar `ready_for_migration_review: true`.
+7. Executar `python -m scripts.migrate status` novamente na mesma sessao.
+8. Somente depois executar `python -m scripts.migrate apply`.
+
+O preflight nunca executa `baseline`, `apply`, restore ou limpeza Docker. A flag
+`--snapshot-confirmed` registra apenas a confirmacao operacional; ela nao cria
+o snapshot no provedor. O arquivo privado indicado por `--env-file` e carregado
+somente para validar presenca e executar `migrate status`; valores nunca entram
+no relatorio.
 
 Nunca publicar nome do snapshot, IP, hostname, usuario ou credencial.
 

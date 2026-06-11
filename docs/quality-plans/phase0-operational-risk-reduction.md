@@ -39,6 +39,7 @@ python -m scripts.migrate status
 python -m scripts.migrate baseline
 python -m scripts.migrate apply
 python -m scripts.migrate verify
+python -m scripts.staging_phase0_preflight --snapshot-confirmed
 python -m scripts.dispatch_outbox --once
 python -m scripts.prune_operational_data
 ```
