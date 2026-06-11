@@ -59,6 +59,9 @@ N8N_EDITOR_BASE_URL=https://n8n.ordens.com.br/
 N8N_PROXY_HOPS=1
 N8N_PORT=5678
 N8N_ENCRYPTION_KEY=<openssl-rand-hex-32>
+N8N_RUNNERS_ENABLED=true
+N8N_BLOCK_ENV_ACCESS_IN_NODE=true
+N8N_GIT_NODE_DISABLE_BARE_REPOS=true
 N8N_POSTGRES_DB=n8n
 N8N_POSTGRES_USER=n8n
 N8N_POSTGRES_PASSWORD=<secret-forte>
@@ -76,11 +79,15 @@ openssl rand -base64 36
 No servidor:
 
 ```bash
+docker network inspect supportfaq_internal >/dev/null 2>&1 || docker network create supportfaq_internal
 cd /opt/supportfaq/n8n
 docker compose --env-file .env pull
 docker compose --env-file .env up -d
 docker compose --env-file .env ps
 ```
+
+A rede `supportfaq_internal` permite que o n8n alcance a API pelo nome interno
+do servico sem publicar PostgreSQL ou portas privadas.
 
 Ver logs sanitizados:
 

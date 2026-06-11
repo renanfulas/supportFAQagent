@@ -75,9 +75,9 @@ Entram nesta frente:
 
 Ficam fora desta frente:
 
-- desenhar sozinho schema SQL final
-- mover migrations sem alinhamento com Alexandre
-- assumir ownership de tabelas, indices, extensoes ou migrations PostgreSQL
+- alterar schema SQL final sem revisar contratos e impacto operacional
+- aplicar migrations sem snapshot e alinhamento com Juliano
+- alterar tabelas, indices ou extensoes sem gate SQL e rollback operacional
 - remover Chroma sem decisao explicita
 - criar fallback automatico entre multiplos bancos vetoriais
 - mudar formato publico de `references` sem versao nova

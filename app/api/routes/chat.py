@@ -8,9 +8,10 @@ from app.core.config import DEV_ENVS, Settings, get_settings
 from app.core.logging import log_event
 from app.core.privacy import hash_sensitive_value
 from app.core.request_context import get_request_id
-from app.core.security import API_KEY_HEADER_NAME, is_valid_api_key
+from app.core.security import API_KEY_HEADER_NAME, is_valid_secret
 from app.domain_engine.loader import DomainLoader
 from app.orchestration.chat_flow import ChatFlowService
+from app.db.operational import ChatAuditInput, HANDOFF_UNAVAILABLE, OperationalRepository
 
 
 router = APIRouter()
@@ -45,6 +46,30 @@ def chat(
         request_id=request_id,
         provider_api_key=provider_api_key,
     )
+    response["handoff_status"] = OperationalRepository(
+        request.app.state.database_runtime
+    ).record_chat(
+        ChatAuditInput(
+            request_id=request_id,
+            domain=str(response["domain"]),
+            session_id=payload.session_id,
+            question=payload.message,
+            answer=str(response["answer"]),
+            confidence=float(response["confidence"]),
+            escalated=bool(response["escalated"]),
+            handoff_reasons=list(response["handoff_reasons"]),
+            references=list(response["references"]),
+            error_code=response["error_code"],
+        )
+    )
+    if (
+        request.app.state.database_runtime.enabled
+        and response["handoff_status"] == HANDOFF_UNAVAILABLE
+    ):
+        response["answer"] = (
+            f"{response['answer']} O atendimento humano esta temporariamente indisponivel; "
+            "guarde o request_id para acompanhamento."
+        )
     observability = response.get("observability", {})
     observability_fields = observability if isinstance(observability, dict) else {}
     log_event(
@@ -57,6 +82,7 @@ def chat(
         escalated=response["escalated"],
         handoff_reasons=response["handoff_reasons"],
         error_code=response["error_code"],
+        handoff_status=response["handoff_status"],
         retrieval_backend=settings.retrieval_backend,
         references_count=len(response["references"]),
         total_ms=observability_fields.get("total_ms"),
@@ -71,7 +97,7 @@ def _verify_chat_access(
     settings: Settings,
     raw_provider_api_key: str | None,
 ) -> None:
-    if is_valid_api_key(request.headers.get(API_KEY_HEADER_NAME)):
+    if is_valid_secret(request.headers.get(API_KEY_HEADER_NAME), settings.api_secret_key):
         return
 
     if (

@@ -1,0 +1,88 @@
+{
+  "name": "supportfaq-whatsapp-to-bot-template",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "evolution-webhook",
+      "name": "Evolution Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "supportfaq/evolution/message",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "supportfaq-chat",
+      "name": "Call supportFAQagent Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.SUPPORTFAQ_API_URL + '/chat' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Request-ID",
+              "value": "={{ $json.request_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({domain: 'suporte-vps-whatsapp', session_id: 'whatsapp:' + $json.body.data.key.remoteJid, message: $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage?.text || ''}) }}"
+      }
+    },
+    {
+      "id": "send-answer",
+      "name": "Send Answer Through Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.EVOLUTION_API_BASE_URL + '/message/sendText/' + $vars.EVOLUTION_INSTANCE_NAME }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({number: $('Evolution Webhook').item.json.body.data.key.remoteJid, text: $json.answer}) }}"
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [780, 0],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {status: 'accepted', request_id: $('Call supportFAQagent Chat').item.json.request_id} }}"
+      }
+    }
+  ],
+  "connections": {
+    "Evolution Webhook": {
+      "main": [[{"node": "Call supportFAQagent Chat", "type": "main", "index": 0}]]
+    },
+    "Call supportFAQagent Chat": {
+      "main": [[{"node": "Send Answer Through Evolution", "type": "main", "index": 0}]]
+    },
+    "Send Answer Through Evolution": {
+      "main": [[{"node": "Respond Accepted", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

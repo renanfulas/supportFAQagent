@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hmac
 
-from fastapi import HTTPException, Security, status
+from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
 
 from app.core.config import get_settings
@@ -23,8 +23,12 @@ def is_valid_api_key(api_key: str | None) -> bool:
     return is_valid_secret(api_key, get_settings().api_secret_key)
 
 
-def verify_api_key(api_key: str | None = Security(api_key_header)) -> str:
-    if not is_valid_api_key(api_key):
+def verify_api_key(
+    request: Request,
+    api_key: str | None = Security(api_key_header),
+) -> str:
+    expected = request.app.state.settings.api_secret_key
+    if not is_valid_secret(api_key, expected):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API key",

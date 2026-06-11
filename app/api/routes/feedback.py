@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.schemas.feedback import FeedbackRequest, FeedbackResponse
 from app.core.logging import log_event
@@ -8,6 +8,7 @@ from app.core.privacy import hash_sensitive_value
 from app.core.request_context import get_request_id
 from app.core.security import verify_api_key
 from app.feedback.service import FeedbackService
+from app.core.errors import DatabaseUnavailableError
 
 
 router = APIRouter()
@@ -20,7 +21,10 @@ def create_feedback(
     request: Request,
     _: str = Depends(verify_api_key),
 ) -> FeedbackResponse:
-    response = FeedbackService().record(payload)
+    try:
+        response = FeedbackService(request.app.state.database_runtime).record(payload)
+    except DatabaseUnavailableError as exc:
+        raise HTTPException(status_code=503, detail="feedback_storage_unavailable") from exc
     log_event(
         logger,
         "feedback_recorded",

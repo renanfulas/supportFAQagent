@@ -61,7 +61,7 @@ cases:
     should_escalate: false
     required_terms: []
     expected_references:
-    - ssh-timeout-vps.md
+    - ssh-permission-denied-publickey.md
     allowed_handoff_reasons: []
 - id: vps-176
   category: acesso_ssh
@@ -609,7 +609,7 @@ cases:
     should_escalate: false
     required_terms: []
     expected_references:
-    - vps-caiu.md
+    - performance-recursos-vps.md
     allowed_handoff_reasons: []
 - id: vps-051-site-lento
   category: performance_recursos
@@ -618,7 +618,7 @@ cases:
     should_escalate: false
     required_terms: []
     expected_references:
-    - vps-caiu.md
+    - site-lento-vps.md
     allowed_handoff_reasons: []
 - id: vps-053-container-consome-memoria
   category: performance_recursos
@@ -759,7 +759,7 @@ cases:
     should_escalate: false
     required_terms: []
     expected_references:
-    - vps-caiu.md
+    - performance-recursos-vps.md
     allowed_handoff_reasons: []
 - id: vps-092-postgres-nao-inicia
   category: banco_dados

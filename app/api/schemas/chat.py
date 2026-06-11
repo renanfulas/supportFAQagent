@@ -37,3 +37,4 @@ class ChatResponse(BaseModel):
     handoff_reasons: list[str] = Field(default_factory=list)
     references: list[str]
     error_code: str | None = None
+    handoff_status: str = "handoff_not_required"

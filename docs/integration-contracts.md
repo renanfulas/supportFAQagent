@@ -231,9 +231,14 @@ Saida minima:
   "escalated": false,
   "handoff_reasons": [],
   "references": ["knowledge/faqs/qrcode-whatsapp.md"],
-  "error_code": null
+  "error_code": null,
+  "handoff_status": "handoff_not_required"
 }
 ```
+
+`handoff_status` existe somente no contrato interno protegido e pode ser
+`handoff_not_required`, `handoff_queued` ou `handoff_unavailable`. O campo
+separa a decisao de escalar da confirmacao de que a notificacao foi enfileirada.
 
 Uso esperado:
 
@@ -278,7 +283,7 @@ Contrato preparatorio para persistencia de resposta:
 Fronteira de responsabilidade:
 
 - este documento define o shape estavel que Renan pode travar por contrato
-- a forma final de armazenamento em PostgreSQL, indices e tabelas continua na frente do Alexandre
+- a forma final de armazenamento em PostgreSQL, indices e tabelas fica na frente do Renan
 - nenhuma integracao deve depender do retrieval lexical atual como implementacao permanente
 
 ## `POST /feedback`
@@ -328,8 +333,10 @@ Saida atual:
 Observacao:
 
 - O contrato ja existe para desbloquear integracoes.
-- A persistencia real entra quando a frente de banco estiver pronta.
-- Enquanto isso, a resposta indica `pending_persistence`.
+- Com `PERSISTENCE_BACKEND=postgres`, a resposta usa `storage="postgres"` e
+  `status="matched"` ou `status="orphan"` somente depois do commit.
+- Com persistencia desativada, a resposta continua indicando
+  `pending_persistence` para laboratorio.
 - esta rota tambem exige `X-API-Key`.
 
 Contrato preparatorio para persistencia:
@@ -427,7 +434,7 @@ Contrato preparatorio para retrieval e ingestao futura:
 Fronteira de responsabilidade:
 
 - Renan pode evoluir o contrato HTTP e os testes de contrato
-- Alexandre continua dono de schema, migrations, indices e persistencia final
+- Renan continua dono de schema, migrations, indices e persistencia final
   de banco
 - Juliano pode evoluir splitter e loaders sem quebrar o shape HTTP acordado aqui
 
@@ -447,6 +454,46 @@ Regra de seguranca:
 
 - esta rota exige `X-API-Key`
 - a previa existe para operadores autenticados e nao deve ser exposta publicamente em staging ou producao
+
+## Ingress interno assinado para outbox
+
+Endpoint:
+
+```http
+POST /internal/webhooks/outbox/{event_type}
+```
+
+Eventos aceitos:
+
+- `handoff.requested`
+- `whatsapp.message.requested`
+- `otp.delivery.requested`
+
+Headers obrigatorios:
+
+```http
+X-Idempotency-Key: <chave-estavel>
+X-Webhook-Timestamp: <unix-seconds>
+X-Webhook-Signature: sha256=<hmac>
+```
+
+Regras:
+
+- fica oculto com `404` enquanto `ENABLE_OUTBOX_INGRESS=false`;
+- valida HMAC sobre `timestamp + "." + raw_body`;
+- rejeita timestamp fora da janela de cinco minutos;
+- persiste somente hashes do payload e da chave idempotente, alem de metadados
+  de entrega;
+- duplicata ja entregue retorna `status=duplicate`;
+- mesma chave com payload diferente retorna `409`;
+- entrega concorrente em andamento retorna `425`;
+- somente depois da validacao encaminha ao webhook n8n configurado como
+  `N8N_VERIFIED_*_URL`;
+- payload, assinatura, secret e URL privada nunca entram nos logs.
+
+O dispatcher deve apontar `HANDOFF_WEBHOOK_URL`,
+`WHATSAPP_MESSAGE_WEBHOOK_URL` e `OTP_DELIVERY_WEBHOOK_URL` para essa fachada
+interna, nao diretamente para o n8n.
 
 ## `POST /zoom/webhook`
 

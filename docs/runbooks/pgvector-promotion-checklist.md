@@ -80,8 +80,7 @@ Para cada rodada de decisao, registrar:
 
 ## Fronteiras de ownership
 
-- Renan pode coordenar criterios, evals, contratos e qualidade.
-- Alexandre continua dono de schema, migrations, indices e persistencia final.
-- Silotto continua dono de runtime oficial, rede, proxy, TLS e logs de
-  operacao.
+- Renan coordena criterios, evals, contratos, schema, migrations, indices,
+  persistencia e qualidade.
+- Juliano responde pelo runtime oficial, rede, proxy, TLS e logs de operacao.
 - n8n deve consumir o contrato HTTP, nao redesenhar inteligencia do backend.

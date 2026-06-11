@@ -143,7 +143,7 @@ class WebAuthStore(Protocol):
 `InMemoryWebAuthStore` e `PostgresWebAuthStore` devem implementar o mesmo
 contrato.
 
-### Migration Proposta Para Revisao Do Alexandre
+### Migration Proposta Para Revisao Do Renan
 
 Criar migration nova, sem editar `001_initial_schema.sql`.
 
@@ -196,7 +196,7 @@ Regras:
 - usar `channel='whatsapp'`;
 - definir politica de retencao e limpeza de desafios expirados;
 - confirmar OTP com transacao e lock de linha para impedir consumo duplo;
-- revisar nomes, indices e constraints com Alexandre antes de aplicar.
+- revisar nomes, indices e constraints com Renan antes de aplicar.
 
 ### Concorrencia
 
@@ -406,7 +406,7 @@ Relatorio proibido:
 
 - incorporar PR V1A;
 - criar branch V1B a partir da `main` atualizada;
-- alinhar migration e workflow com Alexandre.
+- alinhar migration com Renan e workflow com Juliano.
 
 ### Etapa 1 - Backend Persistente
 
@@ -425,7 +425,7 @@ Relatorio proibido:
 
 ### Etapa 3 - Workflow
 
-- Alexandre implementa e exporta workflow sanitizado;
+- Juliano valida e opera o workflow sanitizado versionado;
 - configurar Evolution API apenas em runtime privado;
 - validar aceite idempotente e falha segura.
 
@@ -464,9 +464,9 @@ Integracao:
 | Area | Responsavel primario | Entrega |
 | --- | --- | --- |
 | contrato HTTP, adapters Python, seguranca e testes | Renan | backend V1B |
-| schema, migration, indices e PostgreSQL real | Alexandre | migration aprovada |
-| workflow n8n e Evolution API | Alexandre | export JSON sanitizado |
-| runtime, HTTPS, secrets e conectividade | Silotto | ambiente privado |
+| schema, migration, indices e PostgreSQL real | Renan | migration aprovada |
+| workflow n8n e Evolution API | Juliano | export JSON sanitizado |
+| runtime, HTTPS, secrets e conectividade | Juliano | ambiente privado |
 | telas e copy `WhatsApp verificado` | Renan | `ask-host-genius` |
 
 ## Criterio De Pronto

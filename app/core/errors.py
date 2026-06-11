@@ -17,3 +17,7 @@ class ProviderError(SupportFAQError):
 
 class RetrievalError(SupportFAQError):
     error_code = "retrieval_error"
+
+
+class DatabaseUnavailableError(SupportFAQError):
+    error_code = "database_unavailable"

@@ -36,7 +36,7 @@ O projeto ja possui algumas pecas importantes:
 - `RecursiveCharacterTextSplitter` no pipeline CSV em `app/ingestion/pipeline.py`
 - `ticket_loader.py` para CSV de chamados
 - `prompt_builder.py` em `app/orchestration/`
-- `POST /feedback` como contrato aceito, ainda sem persistencia real, mas com contexto operacional opcional
+- `POST /feedback` com persistencia confiavel quando `PERSISTENCE_BACKEND=postgres`
 - `POST /ingestion/preview` para validar chunks por payload sem persistir
 - contrato modular de dominio em `domain.yaml`, com persona, objetivo, regras, mensagens e handoff
 - evals locais em `domains/suporte-vps-whatsapp/evals/cases.yaml`
@@ -58,7 +58,7 @@ Avancos confirmados no historico entre 13/05/2026 e 16/05/2026:
 - staging privado validado com pgvector, embeddings reais e seeds artificiais
   removidos antes da calibragem
 
-Ainda nao esta promovido como padrao permanente:
+Estado consolidado do nucleo tecnico em 11/06/2026:
 
 - `/chat` continua usando retrieval lexical como padrao seguro quando
   `RETRIEVAL_BACKEND` nao aponta para `pgvector`
@@ -71,15 +71,32 @@ Ainda nao esta promovido como padrao permanente:
 - `/chat` ja retorna `request_id` e `error_code`
 - `ChromaStore` continua como prototipo local e nao e o retrieval oficial do endpoint `/chat`
 - `domain.yaml` ja aponta para `llm.provider: openai`
-- `/feedback` ainda retorna `pending_persistence`
+- `/feedback` persiste contexto confiavel quando `PERSISTENCE_BACKEND=postgres`
+- migrations forward-only, sanitizacao persistente e outbox transacional da
+  Fase 0 estao implementadas no repositorio e aguardam validacao operacional
+  em staging
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
 - a calibragem local com `pgvector` ja gerou baseline forte:
   `pgvector_gate.yaml=74/78` e `pgvector_curated.yaml=179/240`
-- falta confirmar esse baseline no staging oficial antes de promover o backend
-  como padrao permanente
+- o staging oficial reproduziu exatamente os baselines:
+  `pgvector_gate.yaml=74/78` e `pgvector_curated.yaml=179/240`
+- as Fases 1 a 4 do nucleo tecnico estao concluidas
+- a promocao do pgvector como default permanente passa a ser decisao
+  operacional da Fase 5, com rollback para lexical
 
 ## Responsaveis
+
+Ownership operacional atual da Fase 5:
+
+| Pessoa | Frente | Missao principal |
+| --- | --- | --- |
+| Juliano Barreto | VPS, runtime e automacoes | Deploy, rede, logs, n8n, Evolution API, workflows, snapshots e recuperacao |
+| Renan | Aplicacao, banco e integracao | Arquitetura, PostgreSQL, pgvector, persistencia, contratos, testes, seguranca e coordenacao |
+
+Este mapa atual substitui as atribuicoes operacionais abaixo para trabalho
+novo. As tabelas historicas permanecem como registro da execucao das Fases 1 a
+4.
 
 | Pessoa | Frente | Missao principal |
 | --- | --- | --- |
@@ -92,18 +109,18 @@ Ainda nao esta promovido como padrao permanente:
 
 Regra de fronteira para esta fase:
 
-- Renan pode definir contratos HTTP, shape de payload, testes de contrato e adapters de integracao
-- Alexandre continua dono de schema SQL, migrations, persistencia real, queries pgvector e armazenamento operacional
-- Juliano pode evoluir splitter e loaders, desde que o shape exposto pelo backend permaneça estavel
-- Silotto define o provisionamento oficial da HostGator, secrets e conectividade do runtime
+- Renan define contratos HTTP, schema SQL, migrations, persistencia, pgvector,
+  testes de contrato e adapters de integracao
+- Juliano opera VPS, n8n, Evolution API, rede, secrets, logs, snapshots e
+  recuperacao
+- mudancas que atravessam aplicacao e runtime exigem revisao conjunta
 
-Contingencia:
+Coordenacao:
 
-- se Silotto estiver temporariamente indisponivel, Renan pode cobrir ambiente de
-  staging, `DATABASE_URL`, secrets privados, conectividade, runtime e logs para
-  destravar o MVP
-- essa cobertura nao transfere ownership de schema, migrations, indices, queries
-  `pgvector` ou persistencia real, que continuam com Alexandre
+- Juliano opera staging, `DATABASE_URL`, secrets privados, conectividade,
+  runtime e logs
+- Renan responde por schema, migrations, indices, queries `pgvector` e
+  persistencia
 - qualquer resultado compartilhado deve ser sanitizado, sem IPs, hostnames,
   usuarios, portas administrativas, credenciais ou logs sensiveis
 
@@ -112,9 +129,10 @@ Leitura pratica do ponto atual:
 - a frente de VPS foi coberta em contingencia para staging privado, com
   documentacao, hardening basico, utilitarios de validacao e relatorios
   sanitizados
-- o pendente principal agora e manter a operacao reproduzivel e calibrar o
-  comportamento antes de exposicao mais ampla
-- a frente de banco continua separada e nao deve ser absorvida junto com a contingencia
+- o pendente principal agora e manter a operacao reproduzivel, controlar
+  capacidade de disco e preparar integracoes externas
+- a frente de banco pertence a Renan; aplicacao de migration em staging exige
+  snapshot e revisao conjunta com Juliano
 
 ## Modelo multi-dominio
 
@@ -252,6 +270,8 @@ Observacao:
 
 ## Fase 1 - Base de providers e contratos
 
+Status: concluida.
+
 Objetivo: ligar os wrappers ja criados ao fluxo principal, sem acoplar o core a SDKs externos.
 
 ## Silotto - VPS
@@ -311,6 +331,8 @@ Status em 16/05/2026:
 - nao retrabalhar provider real, fallback ou exigencia de segredo sem bug concreto
 
 ## Fase 2 - Ingestao e chunking
+
+Status: concluida.
 
 Objetivo: transformar artigos e FAQs em chunks consistentes, prontos para embedding.
 
@@ -427,12 +449,14 @@ Status em 16/05/2026:
 
 ## Fase 3 - Embeddings e retrieval vetorial
 
+Status: concluida para o MVP.
+
 Objetivo: consultar contexto real no pgvector usando embeddings.
 
 Nota de estado:
 `ChromaStore` ja existe e pode continuar como prototipo local. O caminho de producao deve esperar a decisao final com `pgvector`, para nao criar duas fontes de verdade.
 
-Status consolidado em 30/05/2026:
+Status consolidado em 11/06/2026:
 
 - o contrato do `PgVectorStore`, os testes Python e a validacao SQL ja existem
 - o backend real por `DATABASE_URL` ja foi conectado e validado em staging
@@ -443,8 +467,8 @@ Status consolidado em 30/05/2026:
   laboratorio com `74/78`
 - `pgvector_curated.yaml` ficou em `179/240` e segue como backlog de
   calibracao, nao como bloqueio de release
-- ainda falta confirmar em staging oficial confidence, threshold, ranking e
-  handoff antes de tornar `pgvector` o padrao permanente
+- o staging oficial reproduziu a gate em `74/78` e a curated em `179/240`
+- confidence, threshold, ranking e handoff estao aceitos para o MVP
 - evitar retrabalho reimplementando adapter, reabrindo contrato de `references`
   ou promovendo `Chroma` a fonte oficial
 
@@ -506,6 +530,8 @@ Criterio de pronto:
 - Falha do banco gera erro rastreavel e nao resposta inventada.
 
 ## Fase 4 - Prompt builder, resposta e handoff
+
+Status: concluida para o nucleo tecnico do MVP.
 
 Objetivo: responder com contexto recuperado, uma chamada ao LLM e escalonamento claro.
 
@@ -632,38 +658,32 @@ Criterio de pronto:
 
 ## Fase 5 - n8n, operacao e feedback
 
+Status: proxima fase operacional e pos-MVP, em andamento.
+
 Objetivo: preparar integracoes externas sem mover inteligencia para fora do backend.
 
 Nota de sequencia:
 
-- esta fase deve comecar depois da comparacao oficial entre staging e o
-  baseline local da `pgvector_gate.yaml`
+- a comparacao oficial foi concluida em 11/06/2026
+- a gate de staging reproduziu o baseline local em `74/78`
+- esta fase agora concentra operacao, persistencia, n8n e evolucao pos-MVP
 
-## Silotto - VPS
+## Juliano - VPS, n8n e Evolution API
 
-- Preparar container ou servico do n8n quando o nucleo estiver validado.
-- Definir acesso seguro ao painel.
-- Configurar reverse proxy, TLS e logs.
+- Operar container ou servico do n8n.
+- Definir acesso seguro ao painel, reverse proxy, TLS, rede e logs.
+- Validar e ativar os workflows versionados `whatsapp-to-bot`,
+  `escalation-notify` e `web-otp-delivery`.
+- Configurar Evolution API apenas no runtime privado.
 
-## Alexandre - n8n e banco
+## Renan - Aplicacao, banco e seguranca
 
-- Criar workflow `whatsapp-to-bot`.
-- Criar workflow `escalation-notify`.
-- Preparar `POST /feedback` quando o backend expuser contrato.
-- Exportar workflows como JSON versionado, nao depender apenas de pasta runtime.
-- Consumir o backend pela API HTTP, preservando `X-Request-ID`, `request_id`, `handoff_reasons`, `references` e `error_code`.
-
-## Juliano - LangChain
-
-- Apoiar ingestao futura de formatos adicionais se os tickets entrarem no pipeline.
-
-## Renan - Arquitetura e seguranca
-
-- Manter contrato de `POST /feedback` e preparar persistencia quando banco estiver pronto.
-- Definir payload de escalonamento.
-- Criar guia de integracao n8n.
+- Manter contrato e persistencia confiavel de `POST /feedback`.
+- Manter schema, migrations, sanitizacao, outbox e dispatcher.
+- Definir payload de escalonamento e guia de integracao n8n.
 - Validar que n8n nao carrega regra central do agente.
-- Tratar domain evals como gate deterministico desta frente SQL, sem provider real bloqueando a validacao de banco.
+- Tratar domain evals como gate deterministico, sem provider real bloqueando a
+  validacao de banco.
 
 ## Seguranca e privacidade
 
@@ -675,6 +695,7 @@ Nota de sequencia:
 - Cross-domain retrieval por ausencia de filtro.
 - Endpoint sem rate limit.
 - Resposta inventada quando o contexto e fraco.
+- Filesystem raiz da VPS sem espaco por crescimento de cache de build Docker.
 
 ## Controles minimos do MVP
 
@@ -685,6 +706,16 @@ Nota de sequencia:
 - Timeout em providers externos.
 - Rate limit nos endpoints publicos antes de expor na internet.
 - Auditoria de eventos de escalonamento e falha de provider.
+- Alerta de uso de disco e limpeza controlada de cache de build Docker.
+
+Risco operacional observado em 11/06/2026:
+
+- o filesystem raiz do staging chegou a `100%`
+- o PostgreSQL nao iniciou porque nao conseguiu criar `postmaster.pid`
+- a limpeza exclusiva de cache de build Docker liberou `8.35 GB`
+- o ambiente terminou a rodada ainda em `90%`, com aproximadamente `1.8 GB`
+  livres
+- volumes e dados do PostgreSQL nao devem ser removidos durante manutencao
 
 Checklist de hardening:
 

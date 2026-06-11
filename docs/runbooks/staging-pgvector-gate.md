@@ -14,6 +14,21 @@ Este runbook existe para responder uma pergunta operacional simples:
 Se a resposta for sim, a gate pode ser tratada como estavel para o MVP. A
 suite `curated` fica como backlog de calibracao, nao como bloqueio de avanco.
 
+## Resultado oficial
+
+Rodada executada em 11/06/2026:
+
+- `pgvector_gate.yaml`: `74/78`, igual ao baseline local
+- `pgvector_curated.yaml`: `179/240`, igual ao baseline local
+- ingestao: `11` artigos, `21` chunks e `21` embeddings
+- smoke HTTP de `/health` e `/chat`: aprovado
+- decisao: gate estavel e aceita para o MVP
+
+Durante a rodada, o filesystem raiz chegou a `100%` por cache de build Docker
+e impediu o PostgreSQL de iniciar. A limpeza exclusiva desse cache liberou
+`8.35 GB`, mas o ambiente terminou em `90%`. Manter alerta e limpeza
+controlada de cache antes de producao.
+
 ## Pre-requisitos
 
 - staging privado atualizado na `main`

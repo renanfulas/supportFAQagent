@@ -54,10 +54,10 @@ Use this map to decide what to read.
 
 ## Ownership Boundaries
 
-- Renan: architecture, orchestration, tests, security, contracts, quality, docs.
-- Alexandre: n8n, PostgreSQL, pgvector, persistence, workflows.
-- Juliano: LangChain utilities, splitter/loaders, RAG support without overcoupling.
-- Silotto: VPS, deploy, runtime environment, networking, logs.
+- Renan: architecture, orchestration, tests, security, contracts, quality,
+  docs, PostgreSQL, pgvector and persistence.
+- Juliano: VPS, deploy, runtime environment, networking, logs, n8n, Evolution
+  API and workflows. Juliano also supports LangChain utilities when needed.
 
 If a task touches another person's primary area, prefer creating a contract, doc, adapter, or test seam instead of implementing their full responsibility.
 

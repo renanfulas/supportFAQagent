@@ -22,7 +22,7 @@ Documento pai:
 - Respostas publicas nao devem revelar se um telefone ja existe na base.
 - `n8n` e o transporte externo do WhatsApp, nao o nucleo de autenticacao.
 - A identidade verificada e uma identidade de canal, nao uma conta HostGator.
-- Persistencia, migrations e indices finais devem ser alinhados com Alexandre.
+- Persistencia, migrations e indices finais devem ser alinhados com Renan.
 
 ## Fora Do Escopo
 
@@ -316,8 +316,8 @@ Campos proibidos:
 
 ### V1A - Contrato E Adapter
 
-- alinhar schema com Alexandre
-- definir adapter de entrega WhatsApp com Alexandre
+- alinhar schema com Renan
+- definir adapter de entrega WhatsApp entre Renan e Juliano
 - criar schemas HTTP e testes de validacao
 - criar interface de storage para sessoes, identidades e desafios
 - criar interface de entrega sem acoplar FastAPI ao `n8n`
@@ -342,9 +342,9 @@ Campos proibidos:
 | Area | Responsavel primario |
 | --- | --- |
 | contratos HTTP, threat model e testes de seguranca | Renan |
-| schema, migration, storage PostgreSQL e indices | Alexandre |
-| workflow n8n e transporte WhatsApp | Alexandre |
-| runtime, secrets, HTTPS e logs do ambiente | Silotto |
+| schema, migration, storage PostgreSQL e indices | Renan |
+| workflow n8n e transporte WhatsApp | Juliano |
+| runtime, secrets, HTTPS e logs do ambiente | Juliano |
 | UI web para inicio e confirmacao do desafio | Renan |
 
 ## Gate Antes De Implementar

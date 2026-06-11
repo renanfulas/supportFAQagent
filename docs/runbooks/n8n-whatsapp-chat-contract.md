@@ -6,8 +6,10 @@ Definir como uma automacao externa, como n8n ou WhatsApp, deve consumir o
 backend sem mover inteligencia, ranking, seguranca ou regras de dominio para o
 workflow.
 
-Este runbook prepara a integracao. Ele nao implementa workflow n8n, nao define
-schema SQL e nao substitui a calibragem do `pgvector`.
+Este runbook define o contrato da integracao. Os templates n8n versionados
+ficam em `deploy/n8n/workflows/` e sua ativacao segura esta documentada em
+`docs/runbooks/n8n-versioned-workflows.md`. Eles nao substituem a calibragem
+do `pgvector`.
 
 ## Coexistencia Docker com a API
 

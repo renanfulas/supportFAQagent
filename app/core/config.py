@@ -28,6 +28,42 @@ class Settings(BaseSettings):
     )
     database_url: str | None = Field(default=None, alias="DATABASE_URL")
     retrieval_backend: str = Field(default="lexical", alias="RETRIEVAL_BACKEND")
+    persistence_backend: str = Field(default="disabled", alias="PERSISTENCE_BACKEND")
+    persistence_hash_secret: str | None = Field(
+        default=None,
+        alias="PERSISTENCE_HASH_SECRET",
+    )
+    enable_outbox_ingress: bool = Field(default=False, alias="ENABLE_OUTBOX_INGRESS")
+    outbox_webhook_secret: str | None = Field(default=None, alias="OUTBOX_WEBHOOK_SECRET")
+    n8n_verified_handoff_url: str | None = Field(
+        default=None,
+        alias="N8N_VERIFIED_HANDOFF_URL",
+    )
+    n8n_verified_whatsapp_url: str | None = Field(
+        default=None,
+        alias="N8N_VERIFIED_WHATSAPP_URL",
+    )
+    n8n_verified_otp_url: str | None = Field(
+        default=None,
+        alias="N8N_VERIFIED_OTP_URL",
+    )
+    conversation_retention_days: int = Field(
+        default=60,
+        alias="CONVERSATION_RETENTION_DAYS",
+        ge=1,
+    )
+    database_connect_timeout_seconds: int = Field(
+        default=5,
+        alias="DATABASE_CONNECT_TIMEOUT_SECONDS",
+        ge=1,
+    )
+    database_query_timeout_seconds: int = Field(
+        default=10,
+        alias="DATABASE_QUERY_TIMEOUT_SECONDS",
+        ge=1,
+    )
+    database_pool_min_size: int = Field(default=1, alias="DATABASE_POOL_MIN_SIZE", ge=0)
+    database_pool_max_size: int = Field(default=5, alias="DATABASE_POOL_MAX_SIZE", ge=1)
     api_secret_key: str | None = Field(default=None, alias="API_SECRET_KEY")
     rate_limit_per_minute: int = Field(default=30, alias="RATE_LIMIT_PER_MINUTE", ge=1)
     enable_chat_ui: bool = Field(default=False, alias="ENABLE_CHAT_UI")
@@ -55,6 +91,10 @@ class Settings(BaseSettings):
     enable_web_whatsapp_auth: bool = Field(
         default=False,
         alias="ENABLE_WEB_WHATSAPP_AUTH",
+    )
+    web_auth_storage_backend: str = Field(
+        default="memory",
+        alias="WEB_AUTH_STORAGE_BACKEND",
     )
     otp_code_ttl_seconds: int = Field(default=300, alias="OTP_CODE_TTL_SECONDS", ge=1)
     otp_resend_cooldown_seconds: int = Field(
@@ -99,6 +139,12 @@ class Settings(BaseSettings):
                     "WEB_CHAT_RATE_LIMIT_PER_MINUTE must be at least 1 when ENABLE_PUBLIC_CHAT_UI is enabled",
                 )
 
+        self.web_auth_storage_backend = self.web_auth_storage_backend.strip().lower()
+        if self.web_auth_storage_backend not in {"memory", "postgres"}:
+            raise ValueError("WEB_AUTH_STORAGE_BACKEND must be memory or postgres")
+        if self.web_auth_storage_backend == "postgres":
+            self.database_url = _normalize_required_secret(self.database_url, "DATABASE_URL")
+
         if self.enable_web_whatsapp_auth:
             self.identity_hash_secret = _normalize_required_secret(
                 self.identity_hash_secret,
@@ -112,6 +158,25 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "IDENTITY_HASH_SECRET and OTP_DIGEST_SECRET must be different",
                 )
+
+        persistence_backend = self.persistence_backend.strip().lower()
+        if persistence_backend not in {"disabled", "postgres"}:
+            raise ValueError("PERSISTENCE_BACKEND must be disabled or postgres")
+        self.persistence_backend = persistence_backend
+        if persistence_backend == "postgres":
+            self.database_url = _normalize_required_secret(self.database_url, "DATABASE_URL")
+            self.persistence_hash_secret = _normalize_required_secret(
+                self.persistence_hash_secret,
+                "PERSISTENCE_HASH_SECRET",
+            )
+        if self.enable_outbox_ingress:
+            self.database_url = _normalize_required_secret(self.database_url, "DATABASE_URL")
+            self.outbox_webhook_secret = _normalize_required_secret(
+                self.outbox_webhook_secret,
+                "OUTBOX_WEBHOOK_SECRET",
+            )
+        if self.database_pool_min_size > self.database_pool_max_size:
+            raise ValueError("DATABASE_POOL_MIN_SIZE cannot exceed DATABASE_POOL_MAX_SIZE")
 
         if self.api_secret_key and self.api_secret_key.strip():
             self.api_secret_key = self.api_secret_key.strip()
@@ -132,4 +197,4 @@ def get_settings() -> Settings:
 def _normalize_required_secret(value: str | None, name: str) -> str:
     if value and value.strip():
         return value.strip()
-    raise ValueError(f"{name} is required when ENABLE_WEB_WHATSAPP_AUTH is enabled")
+    raise ValueError(f"{name} is required for the enabled PostgreSQL-backed feature")

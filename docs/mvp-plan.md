@@ -43,7 +43,7 @@ Hoje o repositorio ja possui:
 - retrieval desacoplado por interface `VectorStore`
 - `/chat` com `request_id` e `error_code`
 - `X-Request-ID` em todas as respostas HTTP
-- `POST /feedback` como contrato aceito, ainda sem persistencia real, mas ja aceitando contexto operacional opcional
+- `POST /feedback` com persistencia confiavel quando `PERSISTENCE_BACKEND=postgres`
 - `POST /ingestion/preview` para revisar chunking por payload, sem persistir
 - contrato modular de dominio com persona, diretrizes, escopo e mensagens padrao
 - evals locais para calibrar o dominio inicial com perguntas reais recorrentes
@@ -54,45 +54,41 @@ Hoje o repositorio ja possui:
 
 Importante:
 `pgvector` ja funciona como caminho vetorial em staging quando
-`RETRIEVAL_BACKEND=pgvector` esta configurado. O padrao permanente ainda deve
-esperar a rodada oficial de staging contra a `pgvector_gate.yaml`.
+`RETRIEVAL_BACKEND=pgvector` esta configurado. A gate oficial de staging foi
+validada; tornar esse backend o default permanente continua sendo uma decisao
+operacional com rollback documentado.
 
-Estado consolidado em 30/05/2026:
+Estado consolidado em 11/06/2026:
 
 - baseline local da gate: `74/78`
 - baseline local da curated: `179/240`
-- `pgvector_gate.yaml` foi aceita como gate forte de laboratorio para o MVP
-- o proximo passo do plano e comparar esse baseline com o staging oficial
+- staging real da gate: `74/78`
+- staging real da curated: `179/240`
+- `pgvector_gate.yaml` foi aceita como gate estavel do MVP
+- as Fases 1 a 4 do nucleo tecnico estao concluidas
+- a Fase 5 passa a ser a proxima fase operacional e pos-MVP
 
 ## Responsabilidades
 
 Para este MVP, as frentes ficam organizadas assim:
 
-- `Silotto - TekZoom HG`
-  Responsavel pela VPS e infraestrutura base. Se houver necessidade de ajuda operacional ou custo extra de ambiente, essa frente sinaliza para o time.
-
-- `Alexandre Madeira`
-  Responsavel pelo `n8n` e pelo banco de dados. Isso inclui a camada de automacao externa e a frente de persistencia em andamento com `PostgreSQL + pgvector`.
-
 - `Juliano Barreto`
-  Responsavel pelo LangChain e componentes relacionados. Essa frente deve manter o uso de LangChain enxuto e alinhado ao escopo do MVP.
+  Responsavel pela VPS, deploy, runtime, rede, logs, `n8n`, Evolution API,
+  workflows e apoio pontual em LangChain.
 
 - `Renan`
-  Responsavel por arquitetura, orquestracao, organizacao do projeto, testes, seguranca e apoio transversal ao restante do time.
+  Responsavel por arquitetura, orquestracao, PostgreSQL, pgvector,
+  persistencia, contratos, testes, seguranca, documentacao e integracao final.
 
-## Dependencias em andamento fora desta frente
+O ownership atual substitui as atribuicoes operacionais antigas a Alexandre e
+Silotto. Autoria historica de migrations e documentos permanece preservada.
 
-Estas entregas pertencem principalmente a outra frente e devem continuar
-coordenadas para evitar sobreposicao:
+## Dependencias coordenadas entre frentes
 
-- PostgreSQL
-- pgvector
-- persistencia relacional principal
-- base vetorial principal para retrieval
-
-Este plano nao substitui ownership de schema, migrations ou indices finais. Ele
-prepara e valida a aplicacao para integrar com essa base, mantendo Chroma como
-prototipo local e evitando uma segunda fonte de producao paralela.
+Renan responde por PostgreSQL, pgvector, persistencia, schema, migrations e
+indices. Juliano responde pelo runtime onde esses componentes operam. Aplicar
+migrations, promover pgvector ou alterar infraestrutura exige preflight,
+snapshot e validacao conjunta.
 
 ## Escopo do MVP desta frente
 
@@ -156,9 +152,9 @@ Estado validado com pgvector:
 4. O LLM real responde em uma unica chamada usando o contexto recuperado.
 
 O caminho acima ja foi validado em staging privado com dados reais do dominio
-inicial. O baseline local ja foi consolidado com `74/78` na gate e `179/240`
-na curated. O proximo trabalho agora e confirmar que o staging oficial fica
-proximo desse baseline antes de promover esse caminho como padrao permanente.
+inicial. O staging oficial reproduziu o baseline local com `74/78` na gate e
+`179/240` na curated. A promocao desse caminho como default permanente passa a
+ser uma decisao operacional da Fase 5, preservando rollback para lexical.
 
 ## Fora do escopo do MVP
 
@@ -206,11 +202,15 @@ Nao deve:
 
 ## Fase 1
 
+Status: concluida.
+
 - estabilizar o uso do provider real com credenciais de ambiente e observabilidade de falhas
 - integrar o wrapper de embeddings ao retrieval principal
 - atualizar `domain.yaml` com configuracoes reais de LLM, embedding e retrieval
 
 ## Fase 2
+
+Status: concluida.
 
 - consolidar chunking com `RecursiveCharacterTextSplitter` na ingestao oficial
 - unificar ingestao de artigos/FAQs com pipeline CSV curado
@@ -218,6 +218,8 @@ Nao deve:
 - evoluir `POST /ingestion/preview` para job persistente apenas quando banco estiver pronto
 
 ## Fase 3
+
+Status: concluida para o MVP.
 
 - integrar retrieval vetorial com a entrega de `pgvector`
 - implementar adapter `pgvector` seguindo o contrato `VectorStore`
@@ -227,15 +229,23 @@ Nao deve:
 
 ## Fase 4
 
+Status: concluida para o nucleo tecnico do MVP.
+
 - preparar historico curto real quando houver persistencia de conversas
 - consolidar `confidence_threshold` e sinais de handoff com dados reais
-- confirmar a calibragem oficial em staging usando a `pgvector_gate.yaml`
+- manter a `pgvector_gate.yaml` como regressao oficial do MVP
 - manter evals locais como regressao de qualidade antes de mudar prompts, retrieval ou provider
 
-## Fase 5
+## Fase 5 - Proxima fase operacional e pos-MVP
 
-- documentar a configuracao operacional depois da confirmacao da gate em staging
-- preparar hooks para futura integracao com `n8n` sem mover inteligencia para fora da API
+Status: em andamento.
+
+- manter a configuracao operacional reproduzivel
+- validar e ativar com seguranca os workflows n8n versionados, sem mover
+  inteligencia para fora da API
+- validar em staging a persistencia, migrations, sanitizacao e outbox
+  implementadas na Fase 0
+- monitorar disco, banco, containers e logs da VPS
 - listar backlog pos-MVP
 
 ## Riscos principais e mitigacao
@@ -277,6 +287,18 @@ Mitigacao:
 - threshold configuravel por dominio
 - observacao manual no inicio
 - ajuste iterativo apos testes reais
+
+## Capacidade de disco da VPS
+
+Risco:
+O staging chegou a `100%` de uso do filesystem raiz por cache de build Docker,
+impedindo o PostgreSQL de iniciar.
+
+Mitigacao:
+- manter alerta de uso de disco
+- definir limpeza periodica de cache de build Docker
+- preservar volumes e dados do PostgreSQL durante limpezas
+- revisar capacidade antes de promover o ambiente para producao
 
 ## Criterios de pronto do MVP
 

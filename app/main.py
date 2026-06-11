@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -8,7 +9,17 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routes import chat, domains, feedback, health, ingestion, web_auth, web_chat, zoom
+from app.api.routes import (
+    chat,
+    domains,
+    feedback,
+    health,
+    ingestion,
+    internal_webhooks,
+    web_auth,
+    web_chat,
+    zoom,
+)
 from app.core.config import DEV_ENVS, get_settings
 from app.core.logging import configure_logging, log_event
 from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded
@@ -19,6 +30,8 @@ from app.core.request_context import (
 )
 from app.core.web_session import extract_public_session_token
 from app.web_auth.runtime import create_web_auth_runtime
+from app.db.runtime import DatabaseRuntime
+from app.core.errors import DatabaseUnavailableError
 
 
 logger = logging.getLogger(__name__)
@@ -33,12 +46,30 @@ def create_app() -> FastAPI:
         max_requests=settings.web_chat_rate_limit_per_minute,
     )
 
+    database_runtime = DatabaseRuntime(settings)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        if database_runtime.enabled:
+            try:
+                database_runtime.open()
+            except DatabaseUnavailableError:
+                log_event(logger, "database_pool_unavailable", error_code="database_unavailable")
+        yield
+        database_runtime.close()
+
     application = FastAPI(
         title=settings.app_name,
         version="0.1.0",
         description="API para agentes de atendimento por dominio com RAG.",
+        lifespan=lifespan,
     )
-    application.state.web_auth_runtime = create_web_auth_runtime(settings)
+    application.state.settings = settings
+    application.state.database_runtime = database_runtime
+    application.state.web_auth_runtime = create_web_auth_runtime(
+        settings,
+        application.state.database_runtime,
+    )
 
     @application.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -214,6 +245,11 @@ def create_app() -> FastAPI:
     application.include_router(web_chat.router, prefix="/web", tags=["web"])
     application.include_router(web_auth.router, prefix="/web/auth", tags=["web-auth"])
     application.include_router(zoom.router, prefix="/zoom", tags=["zoom"])
+    application.include_router(
+        internal_webhooks.router,
+        prefix="/internal/webhooks",
+        tags=["internal-webhooks"],
+    )
     return application
 
 
