@@ -18,6 +18,11 @@ Nao substitui os runbooks de:
 - n8n
 - WhatsApp
 
+Se a UI publica for o `ask-host-genius`, use tambem
+`docs/runbooks/chat-ordens-frontend-proxy.md`. Nesse modelo, o Nginx sobrepoe
+`/chat-ui` com o frontend separado e mantem `/web/*` apontando para este
+backend.
+
 ## Escopo
 
 Usar este runbook quando o objetivo for:
