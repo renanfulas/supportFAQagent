@@ -21,6 +21,10 @@ Modelo recomendado:
 - `n8n`: automacao externa que consome a API HTTP.
 - Evolution API: servico externo de WhatsApp, com banco proprio separado.
 
+Para subir o container do `n8n` na VPS, use
+`docs/runbooks/n8n-vps-docker-deploy.md`. Esse runbook mantem o `n8n` em
+Docker separado, com PostgreSQL proprio e porta exposta apenas em loopback.
+
 Regras:
 
 - o `n8n` deve chamar `supportfaq_api` por HTTP usando `/chat` e `/feedback`;
