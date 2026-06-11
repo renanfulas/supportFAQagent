@@ -105,10 +105,10 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
 
 ## Responsabilidades por frente
 
-- Alexandre: schema SQL, migrations, query vetorial, persistencia real, validacao PostgreSQL.
-- Renan: contratos, adapter Python, testes do backend, documentacao de ambiente, seguranca e integracao com `/chat`.
-- Silotto: provisionamento oficial na HostGator, runtime, secrets e conectividade.
-- Juliano: fora desta frente, salvo impacto indireto em embeddings ou splitter.
+- Renan: schema SQL, migrations, query vetorial, persistencia real, contratos,
+  testes do backend, seguranca e integracao com `/chat`.
+- Juliano: provisionamento oficial, runtime, secrets, conectividade, n8n,
+  Evolution API, snapshots e recuperacao.
 
 ## Validacao esperada
 
@@ -135,6 +135,6 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 
 Depois deste alinhamento:
 
-1. Alexandre fecha banco oficial, migrations e query vetorial.
+1. Renan fecha banco oficial, migrations e query vetorial.
 2. Renan conecta o backend ao PostgreSQL/pgvector pelo contrato `PgVectorStore`.
-3. `n8n` entra depois, consumindo a API HTTP em vez do banco do agente.
+3. Juliano conecta `n8n` consumindo a API HTTP em vez do banco do agente.

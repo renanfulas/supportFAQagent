@@ -35,7 +35,7 @@ Este projeto resolve isso com um nucleo Python modular que:
 - provider real de LLM com OpenAI/Anthropic
 - fallback seguro quando credenciais ou providers falham
 - handoff estruturado por baixa confianca, pedido humano, termo sensivel ou erro tecnico
-- contrato de feedback preparado para persistencia futura
+- feedback persistente e confiavel quando `PERSISTENCE_BACKEND=postgres`
 - fachada publica `POST /web/chat` e `POST /web/feedback` para website sem expor segredo no navegador
 - adaptador para ler arquivos do GitHub pela Contents API oficial, sem scraping de HTML
 - rate limit no `/chat`
@@ -114,21 +114,27 @@ Pronto no MVP atual:
 - resposta com fallback seguro
 - handoff estruturado
 - retrieval lexical
-- pgvector validado por feature flag
+- pgvector validado em staging real por feature flag
+- `pgvector_gate.yaml` validada em staging com `74/78`
 - testes e documentacao base
 
-Em validacao:
-
-- execucao da `pgvector_gate.yaml` no staging oficial
-- comparacao do staging com o baseline local `74/78`
-- promocao do pgvector como padrao permanente depois da validacao oficial
-
-Roadmap:
+Proxima fase operacional:
 
 - persistencia de conversas e feedback
 - integracao n8n/WhatsApp
+- operacao reproduzivel e monitoramento da VPS
+- decisao operacional sobre promocao do pgvector como default
+
+Roadmap:
+
 - calibragem com perguntas reais
 - expansao para novos dominios
+
+Risco operacional conhecido:
+
+- o staging chegou a `100%` de uso do disco por cache de build Docker; depois
+  da limpeza ficou em `90%`, portanto precisa de alerta e politica de limpeza
+  antes de producao
 
 ## Estrutura
 
@@ -202,6 +208,7 @@ python -m pytest
 - [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
 - [Planos de qualidade por frente](docs/quality-plans/README.md)
 - [Plano de qualidade de retrieval vetorial](docs/quality-plans/vector-retrieval-quality-plan.md)
+- [Fase 0 de reducao de risco operacional](docs/quality-plans/phase0-operational-risk-reduction.md)
 - [Revisao da base de conhecimento](docs/quality-plans/knowledge-base-review-2026-05-17.md)
 - [Runbook de intake anonimo para evals](docs/runbooks/anonymous-eval-intake.md)
 - [Runbook da gate pgvector em staging](docs/runbooks/staging-pgvector-gate.md)
@@ -209,6 +216,7 @@ python -m pytest
 - [Relatorio oficial do baseline local pgvector](docs/runbooks/local-pgvector-baseline-report.md)
 - [Runbook de smoke HTTP automatizado em staging](docs/runbooks/staging-http-smoke.md)
 - [Runbook de contrato n8n/WhatsApp](docs/runbooks/n8n-whatsapp-chat-contract.md)
+- [Runbook de snapshot e restore da Fase 0](docs/runbooks/phase0-snapshot-restore.md)
 - [Checklist de promocao do pgvector](docs/runbooks/pgvector-promotion-checklist.md)
 - [Mapa oficial de ambientes](docs/environments.md)
 - [Observabilidade minima](docs/observability.md)

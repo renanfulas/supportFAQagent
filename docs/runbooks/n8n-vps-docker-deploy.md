@@ -79,11 +79,15 @@ openssl rand -base64 36
 No servidor:
 
 ```bash
+docker network inspect supportfaq_internal >/dev/null 2>&1 || docker network create supportfaq_internal
 cd /opt/supportfaq/n8n
 docker compose --env-file .env pull
 docker compose --env-file .env up -d
 docker compose --env-file .env ps
 ```
+
+A rede `supportfaq_internal` permite que o n8n alcance a API pelo nome interno
+do servico sem publicar PostgreSQL ou portas privadas.
 
 Ver logs sanitizados:
 

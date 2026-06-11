@@ -19,6 +19,8 @@ from app.core.web_session import (
 from app.domain_engine.loader import DomainLoader
 from app.feedback.service import FeedbackService
 from app.orchestration.chat_flow import ChatFlowService
+from app.core.errors import DatabaseUnavailableError
+from app.db.operational import ChatAuditInput, HANDOFF_UNAVAILABLE, OperationalRepository
 
 
 router = APIRouter()
@@ -43,6 +45,30 @@ def create_web_chat(
         request_id=request_id,
         provider_api_key=None,
     )
+    chat_response["handoff_status"] = OperationalRepository(
+        request.app.state.database_runtime
+    ).record_chat(
+        ChatAuditInput(
+            request_id=request_id,
+            domain=str(chat_response["domain"]),
+            session_id=session_id,
+            question=payload.message,
+            answer=str(chat_response["answer"]),
+            confidence=float(chat_response["confidence"]),
+            escalated=bool(chat_response["escalated"]),
+            handoff_reasons=list(chat_response["handoff_reasons"]),
+            references=list(chat_response["references"]),
+            error_code=chat_response["error_code"],
+        )
+    )
+    if (
+        request.app.state.database_runtime.enabled
+        and chat_response["handoff_status"] == HANDOFF_UNAVAILABLE
+    ):
+        chat_response["answer"] = (
+            f"{chat_response['answer']} O atendimento humano esta temporariamente indisponivel; "
+            "guarde o codigo de suporte."
+        )
     _log_web_chat_event(
         request_id=request_id,
         session_id=session_id,
@@ -79,7 +105,12 @@ def create_web_feedback(
         comment=payload.comment,
         source="web",
     )
-    feedback_response = FeedbackService().record(feedback_payload)
+    try:
+        feedback_response = FeedbackService(request.app.state.database_runtime).record(
+            feedback_payload
+        )
+    except DatabaseUnavailableError as exc:
+        raise HTTPException(status_code=503, detail="feedback_storage_unavailable") from exc
     log_event(
         logger,
         "feedback_recorded",

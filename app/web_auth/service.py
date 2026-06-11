@@ -13,7 +13,7 @@ from app.core.config import Settings
 from app.core.rate_limit import InMemoryRateLimiter
 from app.web_auth.delivery import OtpDeliveryAdapter, OtpDeliveryUnavailable
 from app.web_auth.models import OtpChallenge, OtpDeliveryRequest, VerifiedIdentity
-from app.web_auth.storage import InMemoryWebAuthStore
+from app.web_auth.storage import WebAuthStore
 
 
 E164_PHONE_PATTERN = re.compile(r"^\+[1-9]\d{7,14}$")
@@ -34,7 +34,7 @@ class WebWhatsAppAuthService:
         self,
         *,
         settings: Settings,
-        store: InMemoryWebAuthStore,
+        store: WebAuthStore,
         delivery: OtpDeliveryAdapter,
         now: Callable[[], datetime] | None = None,
     ) -> None:
@@ -101,28 +101,13 @@ class WebWhatsAppAuthService:
         code: str,
         session_id: str,
     ) -> VerifiedIdentity:
-        with self._challenge_lock:
-            challenge = self.store.get_challenge(challenge_id)
-            if (
-                not challenge
-                or challenge.status != "pending"
-                or challenge.expires_at <= self._now()
-                or challenge.attempts_remaining <= 0
-            ):
-                raise InvalidOrExpiredCode
-
-            if not hmac.compare_digest(
-                challenge.code_digest,
-                self._digest_code(challenge.id, code),
-            ):
-                challenge.attempts_remaining -= 1
-                if challenge.attempts_remaining <= 0:
-                    challenge.status = "exhausted"
-                self.store.save_challenge(challenge)
-                raise InvalidOrExpiredCode
-
-            challenge.status = "consumed"
-            self.store.save_challenge(challenge)
+        challenge = self.store.consume_challenge(
+            challenge_id,
+            self._digest_code(challenge_id, code),
+            self._now(),
+        )
+        if challenge is None:
+            raise InvalidOrExpiredCode
         identity = self.store.get_identity_for_phone(challenge.phone_hash)
         if identity is None:
             identity = VerifiedIdentity(
@@ -131,7 +116,7 @@ class WebWhatsAppAuthService:
                 phone_last4=challenge.phone_last4,
                 verified_at=self._now(),
             )
-            self.store.save_identity(identity)
+            identity = self.store.save_identity(identity)
         self.store.bind_session(self._digest_identity(session_id), identity)
         return identity
 

@@ -84,10 +84,8 @@ Use this map to detect overlap:
 
 | Person | Primary responsibility |
 | --- | --- |
-| Silotto - TekZoom HG | VPS, deploy, environment, networking, logs, runtime operation |
-| Alexandre Madeira | n8n, PostgreSQL, pgvector, persistence, workflows, integrations |
-| Juliano Barreto | LangChain utilities, splitter, loaders, RAG support without overcoupling |
-| Renan | Architecture, orchestration, tests, security, contracts, quality, docs, coordination |
+| Juliano Barreto | VPS, deploy, networking, logs, n8n, Evolution API, workflows and LangChain support |
+| Renan | Architecture, orchestration, PostgreSQL, pgvector, persistence, tests, security, contracts, quality, docs and coordination |
 
 If the intended work crosses another person's area, recommend one of:
 
@@ -131,10 +129,10 @@ Keep the answer practical. Do not write a long architecture essay unless asked.
 ## Decision Heuristics
 
 - If the task is about contracts, tests, docs, evals, safety, or orchestration, Renan can usually proceed.
-- If the task requires tables, migrations, pgvector queries, persistence, or workflow storage, involve Alexandre.
+- If the task requires tables, migrations, pgvector queries or application persistence, involve Renan.
 - If the task changes LangChain dependency strategy, splitter behavior, or loaders, involve Juliano.
 - If the task changes the GitHub Contents API loader, dependency strategy, install commands, or audit gates, treat it as shared quality/architecture work and validate the contracts.
-- If the task assumes deploy, VPS logs, TLS, reverse proxy, environment variables, or runtime networking, involve Silotto.
+- If the task assumes deploy, VPS logs, TLS, reverse proxy, environment variables, runtime networking, n8n or Evolution API, involve Juliano.
 - If the task touches public exposure, security, secrets, PII, or logs, require hardening and tests.
 
 ## What Not To Do

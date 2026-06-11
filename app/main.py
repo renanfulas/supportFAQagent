@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -19,6 +20,8 @@ from app.core.request_context import (
 )
 from app.core.web_session import extract_public_session_token
 from app.web_auth.runtime import create_web_auth_runtime
+from app.db.runtime import DatabaseRuntime
+from app.core.errors import DatabaseUnavailableError
 
 
 logger = logging.getLogger(__name__)
@@ -33,12 +36,30 @@ def create_app() -> FastAPI:
         max_requests=settings.web_chat_rate_limit_per_minute,
     )
 
+    database_runtime = DatabaseRuntime(settings)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        if database_runtime.enabled:
+            try:
+                database_runtime.open()
+            except DatabaseUnavailableError:
+                log_event(logger, "database_pool_unavailable", error_code="database_unavailable")
+        yield
+        database_runtime.close()
+
     application = FastAPI(
         title=settings.app_name,
         version="0.1.0",
         description="API para agentes de atendimento por dominio com RAG.",
+        lifespan=lifespan,
     )
-    application.state.web_auth_runtime = create_web_auth_runtime(settings)
+    application.state.settings = settings
+    application.state.database_runtime = database_runtime
+    application.state.web_auth_runtime = create_web_auth_runtime(
+        settings,
+        application.state.database_runtime,
+    )
 
     @application.middleware("http")
     async def request_id_middleware(request: Request, call_next):

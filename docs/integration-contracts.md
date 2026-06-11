@@ -231,9 +231,14 @@ Saida minima:
   "escalated": false,
   "handoff_reasons": [],
   "references": ["knowledge/faqs/qrcode-whatsapp.md"],
-  "error_code": null
+  "error_code": null,
+  "handoff_status": "handoff_not_required"
 }
 ```
+
+`handoff_status` existe somente no contrato interno protegido e pode ser
+`handoff_not_required`, `handoff_queued` ou `handoff_unavailable`. O campo
+separa a decisao de escalar da confirmacao de que a notificacao foi enfileirada.
 
 Uso esperado:
 
@@ -278,7 +283,7 @@ Contrato preparatorio para persistencia de resposta:
 Fronteira de responsabilidade:
 
 - este documento define o shape estavel que Renan pode travar por contrato
-- a forma final de armazenamento em PostgreSQL, indices e tabelas continua na frente do Alexandre
+- a forma final de armazenamento em PostgreSQL, indices e tabelas fica na frente do Renan
 - nenhuma integracao deve depender do retrieval lexical atual como implementacao permanente
 
 ## `POST /feedback`
@@ -328,8 +333,10 @@ Saida atual:
 Observacao:
 
 - O contrato ja existe para desbloquear integracoes.
-- A persistencia real entra quando a frente de banco estiver pronta.
-- Enquanto isso, a resposta indica `pending_persistence`.
+- Com `PERSISTENCE_BACKEND=postgres`, a resposta usa `storage="postgres"` e
+  `status="matched"` ou `status="orphan"` somente depois do commit.
+- Com persistencia desativada, a resposta continua indicando
+  `pending_persistence` para laboratorio.
 - esta rota tambem exige `X-API-Key`.
 
 Contrato preparatorio para persistencia:
@@ -427,7 +434,7 @@ Contrato preparatorio para retrieval e ingestao futura:
 Fronteira de responsabilidade:
 
 - Renan pode evoluir o contrato HTTP e os testes de contrato
-- Alexandre continua dono de schema, migrations, indices e persistencia final
+- Renan continua dono de schema, migrations, indices e persistencia final
   de banco
 - Juliano pode evoluir splitter e loaders sem quebrar o shape HTTP acordado aqui
 

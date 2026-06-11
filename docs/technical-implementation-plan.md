@@ -58,7 +58,7 @@ Avancos confirmados no historico entre 13/05/2026 e 16/05/2026:
 - staging privado validado com pgvector, embeddings reais e seeds artificiais
   removidos antes da calibragem
 
-Ainda nao esta promovido como padrao permanente:
+Estado consolidado do nucleo tecnico em 11/06/2026:
 
 - `/chat` continua usando retrieval lexical como padrao seguro quando
   `RETRIEVAL_BACKEND` nao aponta para `pgvector`
@@ -76,10 +76,24 @@ Ainda nao esta promovido como padrao permanente:
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
 - a calibragem local com `pgvector` ja gerou baseline forte:
   `pgvector_gate.yaml=74/78` e `pgvector_curated.yaml=179/240`
-- falta confirmar esse baseline no staging oficial antes de promover o backend
-  como padrao permanente
+- o staging oficial reproduziu exatamente os baselines:
+  `pgvector_gate.yaml=74/78` e `pgvector_curated.yaml=179/240`
+- as Fases 1 a 4 do nucleo tecnico estao concluidas
+- a promocao do pgvector como default permanente passa a ser decisao
+  operacional da Fase 5, com rollback para lexical
 
 ## Responsaveis
+
+Ownership operacional atual da Fase 5:
+
+| Pessoa | Frente | Missao principal |
+| --- | --- | --- |
+| Juliano Barreto | VPS, runtime e automacoes | Deploy, rede, logs, n8n, Evolution API, workflows, snapshots e recuperacao |
+| Renan | Aplicacao, banco e integracao | Arquitetura, PostgreSQL, pgvector, persistencia, contratos, testes, seguranca e coordenacao |
+
+Este mapa atual substitui as atribuicoes operacionais abaixo para trabalho
+novo. As tabelas historicas permanecem como registro da execucao das Fases 1 a
+4.
 
 | Pessoa | Frente | Missao principal |
 | --- | --- | --- |
@@ -112,8 +126,8 @@ Leitura pratica do ponto atual:
 - a frente de VPS foi coberta em contingencia para staging privado, com
   documentacao, hardening basico, utilitarios de validacao e relatorios
   sanitizados
-- o pendente principal agora e manter a operacao reproduzivel e calibrar o
-  comportamento antes de exposicao mais ampla
+- o pendente principal agora e manter a operacao reproduzivel, controlar
+  capacidade de disco e preparar integracoes externas
 - a frente de banco continua separada e nao deve ser absorvida junto com a contingencia
 
 ## Modelo multi-dominio
@@ -252,6 +266,8 @@ Observacao:
 
 ## Fase 1 - Base de providers e contratos
 
+Status: concluida.
+
 Objetivo: ligar os wrappers ja criados ao fluxo principal, sem acoplar o core a SDKs externos.
 
 ## Silotto - VPS
@@ -311,6 +327,8 @@ Status em 16/05/2026:
 - nao retrabalhar provider real, fallback ou exigencia de segredo sem bug concreto
 
 ## Fase 2 - Ingestao e chunking
+
+Status: concluida.
 
 Objetivo: transformar artigos e FAQs em chunks consistentes, prontos para embedding.
 
@@ -427,12 +445,14 @@ Status em 16/05/2026:
 
 ## Fase 3 - Embeddings e retrieval vetorial
 
+Status: concluida para o MVP.
+
 Objetivo: consultar contexto real no pgvector usando embeddings.
 
 Nota de estado:
 `ChromaStore` ja existe e pode continuar como prototipo local. O caminho de producao deve esperar a decisao final com `pgvector`, para nao criar duas fontes de verdade.
 
-Status consolidado em 30/05/2026:
+Status consolidado em 11/06/2026:
 
 - o contrato do `PgVectorStore`, os testes Python e a validacao SQL ja existem
 - o backend real por `DATABASE_URL` ja foi conectado e validado em staging
@@ -443,8 +463,8 @@ Status consolidado em 30/05/2026:
   laboratorio com `74/78`
 - `pgvector_curated.yaml` ficou em `179/240` e segue como backlog de
   calibracao, nao como bloqueio de release
-- ainda falta confirmar em staging oficial confidence, threshold, ranking e
-  handoff antes de tornar `pgvector` o padrao permanente
+- o staging oficial reproduziu a gate em `74/78` e a curated em `179/240`
+- confidence, threshold, ranking e handoff estao aceitos para o MVP
 - evitar retrabalho reimplementando adapter, reabrindo contrato de `references`
   ou promovendo `Chroma` a fonte oficial
 
@@ -506,6 +526,8 @@ Criterio de pronto:
 - Falha do banco gera erro rastreavel e nao resposta inventada.
 
 ## Fase 4 - Prompt builder, resposta e handoff
+
+Status: concluida para o nucleo tecnico do MVP.
 
 Objetivo: responder com contexto recuperado, uma chamada ao LLM e escalonamento claro.
 
@@ -632,12 +654,15 @@ Criterio de pronto:
 
 ## Fase 5 - n8n, operacao e feedback
 
+Status: proxima fase operacional e pos-MVP, em andamento.
+
 Objetivo: preparar integracoes externas sem mover inteligencia para fora do backend.
 
 Nota de sequencia:
 
-- esta fase deve comecar depois da comparacao oficial entre staging e o
-  baseline local da `pgvector_gate.yaml`
+- a comparacao oficial foi concluida em 11/06/2026
+- a gate de staging reproduziu o baseline local em `74/78`
+- esta fase agora concentra operacao, persistencia, n8n e evolucao pos-MVP
 
 ## Silotto - VPS
 
@@ -675,6 +700,7 @@ Nota de sequencia:
 - Cross-domain retrieval por ausencia de filtro.
 - Endpoint sem rate limit.
 - Resposta inventada quando o contexto e fraco.
+- Filesystem raiz da VPS sem espaco por crescimento de cache de build Docker.
 
 ## Controles minimos do MVP
 
@@ -685,6 +711,16 @@ Nota de sequencia:
 - Timeout em providers externos.
 - Rate limit nos endpoints publicos antes de expor na internet.
 - Auditoria de eventos de escalonamento e falha de provider.
+- Alerta de uso de disco e limpeza controlada de cache de build Docker.
+
+Risco operacional observado em 11/06/2026:
+
+- o filesystem raiz do staging chegou a `100%`
+- o PostgreSQL nao iniciou porque nao conseguiu criar `postmaster.pid`
+- a limpeza exclusiva de cache de build Docker liberou `8.35 GB`
+- o ambiente terminou a rodada ainda em `90%`, com aproximadamente `1.8 GB`
+  livres
+- volumes e dados do PostgreSQL nao devem ser removidos durante manutencao
 
 Checklist de hardening:
 
