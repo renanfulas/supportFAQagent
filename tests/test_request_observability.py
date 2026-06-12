@@ -71,3 +71,11 @@ def test_oversized_inbound_request_id_is_replaced() -> None:
     assert response.status_code == 200
     assert response.headers[REQUEST_ID_HEADER] != "x" * 81
     assert response.headers[REQUEST_ID_HEADER]
+
+
+def test_sensitive_or_free_text_request_id_is_replaced() -> None:
+    for unsafe in ("sk-example-secret", "email=user@example.com", "texto livre"):
+        response = client.get("/health", headers={REQUEST_ID_HEADER: unsafe})
+
+        assert response.status_code == 200
+        assert response.headers[REQUEST_ID_HEADER] != unsafe

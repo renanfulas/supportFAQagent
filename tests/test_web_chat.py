@@ -32,12 +32,14 @@ def test_web_chat_accepts_valid_payload_without_api_key_and_returns_public_contr
         session_id: str | None = None,
         request_id: str | None = None,
         provider_api_key: str | None = None,
+        channel: str = "api",
     ) -> dict[str, object]:
         captured["domain"] = domain.name
         captured["question"] = question
         captured["session_id"] = session_id
         captured["request_id"] = request_id
         captured["provider_api_key"] = provider_api_key
+        captured["channel"] = channel
         return {
             "request_id": request_id or "",
             "domain": domain.name,
@@ -80,6 +82,7 @@ def test_web_chat_accepts_valid_payload_without_api_key_and_returns_public_contr
     assert isinstance(captured["session_id"], str)
     assert str(captured["session_id"]).startswith("web:")
     assert captured["provider_api_key"] is None
+    assert captured["channel"] == "web"
 
 
 def test_web_chat_rejects_domain_extra_field(web_client: TestClient) -> None:
@@ -125,8 +128,9 @@ def test_web_chat_reuses_valid_anonymous_session_cookie(
         session_id: str | None = None,
         request_id: str | None = None,
         provider_api_key: str | None = None,
+        channel: str = "api",
     ) -> dict[str, object]:
-        _ = (domain, question, provider_api_key)
+        _ = (domain, question, provider_api_key, channel)
         captured.append(session_id)
         return {
             "request_id": request_id or "",
@@ -168,8 +172,9 @@ def test_web_chat_rate_limit_returns_429_with_retry_after(
         session_id: str | None = None,
         request_id: str | None = None,
         provider_api_key: str | None = None,
+        channel: str = "api",
     ) -> dict[str, object]:
-        _ = (domain, question, session_id, provider_api_key)
+        _ = (domain, question, session_id, provider_api_key, channel)
         return {
             "request_id": request_id or "",
             "domain": "suporte-vps-whatsapp",

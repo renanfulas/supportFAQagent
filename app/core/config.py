@@ -52,6 +52,16 @@ class Settings(BaseSettings):
         alias="CONVERSATION_RETENTION_DAYS",
         ge=1,
     )
+    conversation_history_messages: int = Field(
+        default=4,
+        alias="CONVERSATION_HISTORY_MESSAGES",
+        ge=0,
+        le=20,
+    )
+    persistence_hash_version: str = Field(
+        default="hmac-sha256-v1",
+        alias="PERSISTENCE_HASH_VERSION",
+    )
     database_connect_timeout_seconds: int = Field(
         default=5,
         alias="DATABASE_CONNECT_TIMEOUT_SECONDS",
@@ -169,6 +179,14 @@ class Settings(BaseSettings):
                 self.persistence_hash_secret,
                 "PERSISTENCE_HASH_SECRET",
             )
+            self.persistence_hash_version = (
+                self.persistence_hash_version.strip() or "hmac-sha256-v1"
+            )
+        self.retrieval_backend = self.retrieval_backend.strip().lower()
+        if self.retrieval_backend not in {"lexical", "pgvector"}:
+            raise ValueError("RETRIEVAL_BACKEND must be lexical or pgvector")
+        if self.retrieval_backend == "pgvector":
+            self.database_url = _normalize_required_secret(self.database_url, "DATABASE_URL")
         if self.enable_outbox_ingress:
             self.database_url = _normalize_required_secret(self.database_url, "DATABASE_URL")
             self.outbox_webhook_secret = _normalize_required_secret(

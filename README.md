@@ -113,6 +113,10 @@ Pronto no MVP atual:
 - dominio inicial
 - resposta com fallback seguro
 - handoff estruturado
+- persistencia PostgreSQL de feedback, conversas e mensagens sanitizadas por
+  feature flag
+- historico curto real isolado por dominio, canal e hash de sessao
+- readiness separado para banco, migrations, retrieval e outbox
 - retrieval lexical
 - pgvector validado em staging real por feature flag
 - `pgvector_gate.yaml` validada em staging com `74/78`
@@ -120,8 +124,8 @@ Pronto no MVP atual:
 
 Proxima fase operacional:
 
-- persistencia de conversas e feedback
-- integracao n8n/WhatsApp
+- validar operacionalmente persistencia e migrations em staging
+- ativar integracao n8n/WhatsApp autenticada
 - operacao reproduzivel e monitoramento da VPS
 - decisao operacional sobre promocao do pgvector como default
 
@@ -218,6 +222,9 @@ python -m pytest
 - [Runbook de contrato n8n/WhatsApp](docs/runbooks/n8n-whatsapp-chat-contract.md)
 - [Runbook de workflows n8n versionados](docs/runbooks/n8n-versioned-workflows.md)
 - [Runbook de snapshot e restore da Fase 0](docs/runbooks/phase0-snapshot-restore.md)
+- [Checklist de evidencias para promocao da Fase 0](docs/runbooks/phase0-staging-promotion-evidence.md)
+- [Relatorio local da Fase 0 em 12/06/2026](docs/runbooks/local-phase0-validation-report-2026-06-12.md)
+- [Runbook pgvector local em WSL1](docs/runbooks/local-wsl1-pgvector-phase0.md)
 - [Checklist de promocao do pgvector](docs/runbooks/pgvector-promotion-checklist.md)
 - [Mapa oficial de ambientes](docs/environments.md)
 - [Observabilidade minima](docs/observability.md)

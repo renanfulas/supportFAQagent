@@ -126,7 +126,8 @@ def test_chat_accepts_provider_key_when_chat_ui_is_enabled(
     )
 
     assert response.status_code == 200
-    assert response.json()["answer"] == "Resposta com chave de teste."
+    assert response.json()["answer"].startswith("Resposta com chave de teste.")
+    assert "temporariamente indisponivel" in response.json()["answer"]
     assert captured["api_key"] == "sk-user-test"
     get_settings.cache_clear()
 
@@ -167,7 +168,8 @@ def test_chat_alias_uses_environment_provider_key(monkeypatch) -> None:
     )
 
     assert response.status_code == 200
-    assert response.json()["answer"] == "Resposta com alias do projeto."
+    assert response.json()["answer"].startswith("Resposta com alias do projeto.")
+    assert "temporariamente indisponivel" in response.json()["answer"]
     assert captured["api_key"] is None
     get_settings.cache_clear()
 

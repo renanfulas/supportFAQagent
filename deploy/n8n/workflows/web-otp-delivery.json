@@ -28,6 +28,15 @@
         "url": "={{ $vars.EVOLUTION_API_BASE_URL + '/message/sendText/' + $vars.EVOLUTION_INSTANCE_NAME }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Idempotency-Key",
+              "value": "={{ $('Verified OTP Webhook').item.json.headers['x-idempotency-key'] || $json.delivery_id }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",

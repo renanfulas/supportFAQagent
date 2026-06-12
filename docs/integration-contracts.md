@@ -13,6 +13,7 @@ Regra de modelagem:
 
 Rotas protegidas atualmente:
 
+- `GET /health/ready`
 - `GET /domains`
 - `POST /chat`
 - `POST /feedback`
@@ -37,6 +38,7 @@ Regra:
 - chamadas sem chave valida retornam `403`
 - em staging, quando `ENABLE_CHAT_UI=true`, `POST /chat` tambem aceita `X-LLM-API-Key` para testes pela `/chat-ui`; esse atalho nao funciona em `APP_ENV=production`
 - `GET /health` continua publica no estado atual do MVP
+- `GET /health/ready` exige `X-API-Key` porque inclui diagnosticos operacionais
 - `POST /zoom/webhook` tambem aceita segredo compartilhado via query string quando `ZOOM_WEBHOOK_SECRET` estiver configurado para integracoes controladas com Recall/Zoom
 - `POST /web/chat` e `POST /web/feedback` nao aceitam nem exigem `X-API-Key` no navegador; essa superficie publica controlada usa sessao anonima por cookie e continua chamando o mesmo core do agente no backend
 - as rotas `/web/auth/*` ficam ocultas com `404` enquanto `ENABLE_WEB_WHATSAPP_AUTH=false`
@@ -99,6 +101,8 @@ Regras:
 
 - Se enviado, o valor e reaproveitado quando tiver ate 80 caracteres.
 - Se ausente, vazio ou grande demais, a API gera um novo UUID.
+- O valor deve usar apenas letras, numeros, `.`, `_`, `:`, `-` e nao pode
+  parecer segredo, token, cookie, senha ou texto livre.
 - Todas as respostas retornam `X-Request-ID`.
 - Erros HTTP tratados tambem retornam `request_id` no corpo.
 - O `request_id` do `/chat` deve ser preservado para envio posterior no `/feedback`.
@@ -174,7 +178,7 @@ Entrada minima:
 
 Validacoes:
 
-- `request_id`: obrigatorio, maximo 80 caracteres
+- `request_id`: obrigatorio, maximo 80 caracteres e formato seguro de correlacao
 - `helpful`: obrigatorio
 - `reason`: opcional, maximo 120 caracteres
 - `comment`: opcional, maximo 500 caracteres
@@ -197,7 +201,8 @@ Regras operacionais:
 
 - a rota reutiliza o contrato interno de feedback, mas restringe o shape publico
 - o browser nao envia `X-API-Key`
-- o feedback continua sem persistencia final no estado atual do MVP
+- com `PERSISTENCE_BACKEND=postgres`, o feedback publico recebe confirmacao
+  somente depois do commit; sem PostgreSQL, retorna `pending_persistence`
 
 ## `POST /chat`
 
@@ -207,6 +212,7 @@ Entrada minima:
 {
   "domain": "suporte-vps-whatsapp",
   "session_id": "whatsapp:+5511999999999",
+  "channel": "whatsapp",
   "message": "Como conectar o WhatsApp na Evolution API?"
 }
 ```
@@ -216,6 +222,7 @@ Validacoes:
 - `message`: obrigatorio, sem branco puro, maximo 4000 caracteres.
 - `session_id`: opcional, maximo 160 caracteres, branco vira `null`.
 - `domain`: opcional, maximo 80 caracteres, branco vira `null`.
+- `channel`: opcional, somente `api` ou `whatsapp`; padrao `api`.
 - campos extras sao rejeitados com `422`.
 - o canal atual e texto-only; arquivos, anexos, uploads, imagens, PDFs ou metadados de arquivo nao fazem parte deste contrato.
 - caracteres de controle no `message` sao removidos antes do fluxo de chat, sem alterar a defesa principal de seguranca do prompt e handoff.
@@ -232,7 +239,8 @@ Saida minima:
   "handoff_reasons": [],
   "references": ["knowledge/faqs/qrcode-whatsapp.md"],
   "error_code": null,
-  "handoff_status": "handoff_not_required"
+  "handoff_status": "handoff_not_required",
+  "persistence_status": "persisted"
 }
 ```
 
@@ -240,12 +248,19 @@ Saida minima:
 `handoff_not_required`, `handoff_queued` ou `handoff_unavailable`. O campo
 separa a decisao de escalar da confirmacao de que a notificacao foi enfileirada.
 
+`persistence_status` pode ser `persisted`, `persistence_disabled` ou
+`persistence_unavailable`. Se um handoff nao puder ser gravado na outbox,
+`handoff_status=handoff_unavailable` e a resposta informa que o atendimento
+humano esta temporariamente indisponivel.
+
 Uso esperado:
 
 - `n8n` envia mensagens externas para este endpoint.
 - `n8n` deve enviar tambem `X-API-Key` quando consumir esta rota.
 - a `/chat-ui` pode enviar `X-LLM-API-Key` em staging para permitir que cada pessoa teste com a propria chave do provider ou com o alias do projeto.
-- Se `escalated=true`, `n8n` deve rotear para humano.
+- Se `escalated=true`, o consumidor deve preservar a decisao, mas nao duplicar
+  a notificacao humana: a outbox e o workflow `escalation-notify` formam o
+  caminho autoritativo.
 - `request_id` deve ser preservado em logs e feedback.
 - A API retorna `references`; na persistencia PostgreSQL, este campo deve ser salvo em `messages.message_references`.
 
@@ -259,7 +274,7 @@ Contrato atual de `references`:
 - com `RETRIEVAL_BACKEND=pgvector`, essas fontes continuam serializadas como
   caminhos rastreaveis de conhecimento versionado, preservando o contrato
   publico mesmo quando a busca vem do PostgreSQL
-- quando a persistencia relacional estiver pronta, esse mesmo campo deve continuar sendo serializavel em JSON sem quebrar consumidores
+- na persistencia relacional, esse mesmo campo continua serializavel em JSON sem quebrar consumidores
 - o contrato que outras frentes devem assumir hoje e `list[str]`
 - se no futuro o backend passar a carregar metadados mais ricos de retrieval, isso deve entrar em um campo novo ou versao nova de contrato, sem quebrar `references`
 
@@ -269,7 +284,7 @@ Contrato atual de `handoff_reasons`:
 - integracoes externas nao devem inferir regra propria de negocio a partir do texto da resposta quando esse campo ja existir
 - se `escalated=true`, o consumidor deve priorizar `handoff_reasons` para roteamento operacional
 
-Contrato preparatorio para persistencia de resposta:
+Contrato de persistencia de resposta:
 
 - `request_id`: identificador tecnico da resposta, obrigatorio para correlacao
 - `domain`: dominio resolvido pelo backend, obrigatorio
@@ -283,7 +298,7 @@ Contrato preparatorio para persistencia de resposta:
 Fronteira de responsabilidade:
 
 - este documento define o shape estavel que Renan pode travar por contrato
-- a forma final de armazenamento em PostgreSQL, indices e tabelas fica na frente do Renan
+- o armazenamento em PostgreSQL, indices e tabelas fica na frente do Renan
 - nenhuma integracao deve depender do retrieval lexical atual como implementacao permanente
 
 ## `POST /feedback`
@@ -318,6 +333,10 @@ Validacoes:
 - `handoff_reasons`: opcional, lista com ate 10 strings nao vazias.
 - `references`: opcional, lista com ate 20 strings nao vazias.
 - `error_code`: opcional, maximo 80 caracteres, branco vira `null`.
+- `request_id` e `message_id` aceitam somente identificadores de correlacao
+  seguros; PII, IP, texto livre e prefixos reconheciveis de segredo sao
+  rejeitados.
+- `source` fora da allowlist `web`, `api`, `n8n` e `integration` vira `other`.
 
 Saida atual:
 
@@ -336,23 +355,28 @@ Observacao:
 - Com `PERSISTENCE_BACKEND=postgres`, a resposta usa `storage="postgres"` e
   `status="matched"` ou `status="orphan"` somente depois do commit.
 - Com persistencia desativada, a resposta continua indicando
-  `pending_persistence` para laboratorio.
+  `pending_persistence` para laboratorio. Esse estado nao representa commit.
 - esta rota tambem exige `X-API-Key`.
 
-Contrato preparatorio para persistencia:
+Contrato de persistencia:
 
 - `request_id` deve apontar para a resposta original do `/chat` quando existir
+- se o mesmo `request_id` apontar para mais de um turno, o feedback fica
+  `orphan` em vez de assumir silenciosamente um contexto incorreto
 - `session_id` deve ser tratado como dado sensivel fora da API
-- `message_id` continua opcional para permitir integracoes que ainda nao tenham ID interno de mensagem
+- `message_id` continua opcional para permitir integracoes que ainda nao tenham
+  ID interno de mensagem; quando enviado, torna retries do mesmo feedback
+  idempotentes
 - `helpful`, `reason`, `comment` e `source` devem continuar serializaveis sem conversao especial
-- `escalated`, `handoff_reasons`, `references` e `error_code` podem ser reenviados
-  pelo consumidor para preservar o contexto operacional da resposta avaliada
-  sem exigir persistencia final imediata
+- `escalated`, `handoff_reasons`, `references` e `error_code` podem ser
+  reenviados apenas para comparacao; a persistencia recupera esses campos da
+  resposta original no servidor e registra divergencia sem aceitar o cliente
+  como fonte confiavel
 
-Shape minimo recomendado para armazenamento futuro:
+Shape minimo persistido:
 
 - `request_id`
-- `session_id`
+- `session_hash` HMAC versionado, nunca `session_id` bruto
 - `message_id`
 - `helpful`
 - `reason`
@@ -512,3 +536,6 @@ Regras:
 - chamadas sem `X-API-Key` valida ou sem `token` valido retornam `403`
 - quando `ZOOM_WEBHOOK_SECRET` estiver configurado, `POST /zoom/join` anexa esse segredo ao `webhook_url` enviado ao Recall/Zoom
 - o backend nao deve logar payload bruto do webhook, mensagem completa, nomes reais de participantes ou segredos
+- falhas do provider em `POST /zoom/join` retornam apenas
+  `zoom_provider_unavailable` ou `zoom_provider_rejected_request`, nunca o
+  corpo bruto do provider

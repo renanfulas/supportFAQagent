@@ -30,17 +30,33 @@ def test_internal_workflow_templates_require_verified_ingress_names() -> None:
 
     assert escalation["nodes"][0]["name"] == "Verified Handoff Webhook"
     assert otp["nodes"][0]["name"] == "Verified OTP Webhook"
+    assert "X-Idempotency-Key" in json.dumps(escalation)
+    assert "X-Idempotency-Key" in json.dumps(otp)
 
 
 def test_whatsapp_workflow_calls_chat_and_sends_answer_back() -> None:
     workflow = json.loads((WORKFLOWS / "whatsapp-to-bot.json").read_text())
     names = {node["name"] for node in workflow["nodes"]}
+    raw = (WORKFLOWS / "whatsapp-to-bot.json").read_text(encoding="utf-8")
 
     assert "Call supportFAQagent Chat" in names
     assert "Send Answer Through Evolution" in names
     assert workflow["connections"]["Call supportFAQagent Chat"]["main"][0][0]["node"] == (
         "Send Answer Through Evolution"
     )
+    assert "channel: 'whatsapp'" in raw
+    assert "'evolution:' + $json.body.data.key.id" in raw
+    assert "X-Idempotency-Key" in raw
+    assert "'answer:' + $('Call supportFAQagent Chat').item.json.request_id" in raw
+
+
+def test_whatsapp_workflow_requires_authenticated_ingress_before_activation() -> None:
+    workflow = json.loads((WORKFLOWS / "whatsapp-to-bot.json").read_text())
+    inbound = workflow["nodes"][0]
+
+    assert inbound["name"] == "Authenticated Evolution Webhook"
+    assert inbound["parameters"]["authentication"] == "headerAuth"
+    assert workflow["active"] is False
 
 
 def test_internal_workflow_runbook_requires_signed_ingress_before_activation() -> None:
@@ -52,6 +68,31 @@ def test_internal_workflow_runbook_requires_signed_ingress_before_activation() -
     assert "X-Webhook-Signature" in runbook
     assert "HANDOFF_WEBHOOK_URL=http://supportfaq_api:8000/internal/webhooks/outbox/handoff.requested" in runbook
     assert "N8N_VERIFIED_HANDOFF_URL" in runbook
+
+
+def test_n8n_runtime_does_not_persist_raw_execution_payloads() -> None:
+    compose = Path("deploy/n8n/docker-compose.yml").read_text(encoding="utf-8")
+    env_example = Path("deploy/n8n/.env.example").read_text(encoding="utf-8")
+
+    expected = "EXECUTIONS_DATA_SAVE_ON_ERROR=none"
+    assert expected in env_example
+    assert "EXECUTIONS_DATA_SAVE_ON_SUCCESS=none" in env_example
+    assert "EXECUTIONS_DATA_SAVE_ON_ERROR:-none" in compose
+    assert "EXECUTIONS_DATA_SAVE_ON_SUCCESS:-none" in compose
+
+
+def test_n8n_postgres_is_not_attached_to_shared_api_network() -> None:
+    import yaml
+
+    compose = yaml.safe_load(
+        Path("deploy/n8n/docker-compose.yml").read_text(encoding="utf-8")
+    )
+
+    assert compose["services"]["n8n"]["networks"] == [
+        "n8n_internal",
+        "supportfaq_internal",
+    ]
+    assert compose["services"]["n8n_postgres"]["networks"] == ["n8n_internal"]
 
 
 def test_signature_verifier_rejects_replay_window_and_invalid_signature() -> None:

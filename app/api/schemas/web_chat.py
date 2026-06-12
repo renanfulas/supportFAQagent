@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.api.schemas.feedback import safe_feedback_identifier
 from app.core.sanitize import sanitize_user_input
 
 
@@ -38,8 +39,8 @@ class WebFeedbackRequest(BaseModel):
     @field_validator("request_id")
     @classmethod
     def normalize_request_id(cls, value: str) -> str:
-        normalized = value.strip()
-        if not normalized:
+        normalized = safe_feedback_identifier(value, field_name="request_id")
+        if normalized is None:
             raise ValueError("request_id cannot be blank")
         return normalized
 

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.sanitize import sanitize_user_input
@@ -9,6 +11,7 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     session_id: str | None = Field(default=None, max_length=160)
     domain: str | None = Field(default=None, max_length=80)
+    channel: Literal["api", "whatsapp"] = "api"
 
     @field_validator("message")
     @classmethod
@@ -38,3 +41,4 @@ class ChatResponse(BaseModel):
     references: list[str]
     error_code: str | None = None
     handoff_status: str = "handoff_not_required"
+    persistence_status: str = "persistence_disabled"

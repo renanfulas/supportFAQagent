@@ -62,6 +62,9 @@ N8N_ENCRYPTION_KEY=<openssl-rand-hex-32>
 N8N_RUNNERS_ENABLED=true
 N8N_BLOCK_ENV_ACCESS_IN_NODE=true
 N8N_GIT_NODE_DISABLE_BARE_REPOS=true
+EXECUTIONS_DATA_SAVE_ON_SUCCESS=none
+EXECUTIONS_DATA_SAVE_ON_ERROR=none
+EXECUTIONS_DATA_PRUNE=true
 N8N_POSTGRES_DB=n8n
 N8N_POSTGRES_USER=n8n
 N8N_POSTGRES_PASSWORD=<secret-forte>
@@ -73,6 +76,10 @@ Gerar secrets no servidor:
 openssl rand -hex 32
 openssl rand -base64 36
 ```
+
+O runtime nao salva payload de execucao nem em sucesso nem em erro, porque
+falhas podem conter telefone e mensagem bruta do WhatsApp. Diagnostico deve
+usar `request_id`, status HTTP e codigos sanitizados da API.
 
 ## Subir O Stack
 
@@ -87,7 +94,8 @@ docker compose --env-file .env ps
 ```
 
 A rede `supportfaq_internal` permite que o n8n alcance a API pelo nome interno
-do servico sem publicar PostgreSQL ou portas privadas.
+do servico sem publicar portas privadas. Somente o container `n8n` participa
+dessa rede compartilhada; `n8n_postgres` permanece isolado em `n8n_internal`.
 
 Ver logs sanitizados:
 
@@ -168,7 +176,7 @@ Headers obrigatorios para `/chat`:
 ```http
 Content-Type: application/json
 X-API-Key: <api-secret-privado>
-X-Request-ID: <id-estavel>
+X-Request-ID: <id-unico-e-estavel-da-mensagem>
 ```
 
 O workflow deve preservar:

@@ -17,6 +17,13 @@ from app.core.security import (
     verify_api_key,
 )
 from app.domain_engine.loader import DomainLoader
+from app.conversations.service import ConversationHistoryService
+from app.db.operational import (
+    ChatAuditInput,
+    HANDOFF_UNAVAILABLE,
+    OperationalRepository,
+)
+from app.db.runtime import DatabaseRuntime
 from app.orchestration.chat_flow import ChatFlowService
 
 
@@ -63,6 +70,7 @@ def process_and_reply(
     bot_id: str,
     domain_name: Optional[str],
     request_id: str,
+    database_runtime: DatabaseRuntime,
 ) -> None:
     settings = get_settings()
     domain_to_load = domain_name or settings.default_domain
@@ -80,16 +88,39 @@ def process_and_reply(
         return
 
     try:
-        response = ChatFlowService().answer(
+        response = ChatFlowService(
+            history_service=ConversationHistoryService(database_runtime),
+        ).answer(
             domain=domain,
             question=question,
             session_id=bot_id,
             request_id=request_id,
+            channel="zoom",
+        )
+        persistence_result = OperationalRepository(database_runtime).record_chat(
+            ChatAuditInput(
+                request_id=request_id,
+                domain=str(response["domain"]),
+                session_id=bot_id,
+                question=question,
+                answer=str(response["answer"]),
+                confidence=float(response["confidence"]),
+                escalated=bool(response["escalated"]),
+                handoff_reasons=list(response["handoff_reasons"]),
+                references=list(response["references"]),
+                error_code=response["error_code"],
+                channel="zoom",
+            )
         )
         answer_text = response.get(
             "answer",
             "Desculpe, nao consegui processar sua duvida.",
         )
+        if persistence_result.handoff_status == HANDOFF_UNAVAILABLE:
+            answer_text = (
+                f"{answer_text} O atendimento humano esta temporariamente "
+                "indisponivel; guarde o request_id para acompanhamento."
+            )
         send_chat_to_zoom(bot_id, answer_text)
     except Exception as exc:
         log_event(
@@ -142,7 +173,7 @@ def join_meeting(
 
     settings = get_settings()
     if not settings.recall_api_key:
-        raise HTTPException(status_code=500, detail="RECALL_API_KEY nao configurada no servidor.")
+        raise HTTPException(status_code=503, detail="zoom_provider_unavailable")
 
     try:
         webhook_url = _append_webhook_token(
@@ -175,25 +206,26 @@ def join_meeting(
             "meeting_url": payload.meeting_url,
         }
     except requests.exceptions.HTTPError as exc:
-        error_msg = exc.response.text if exc.response else str(exc)
         log_event(
             logger,
             "zoom_join_failed",
             request_id=request_id,
             error_type=type(exc).__name__,
+            error_code="zoom_provider_rejected_request",
         )
-        raise HTTPException(status_code=500, detail=f"Erro do Recall.ai: {error_msg}")
+        raise HTTPException(status_code=502, detail="zoom_provider_rejected_request") from exc
     except Exception as exc:
         log_event(
             logger,
             "zoom_join_failed",
             request_id=request_id,
             error_type=type(exc).__name__,
+            error_code="zoom_provider_unavailable",
         )
         raise HTTPException(
-            status_code=500,
-            detail=f"Falha ao acionar bot no Recall.ai: {str(exc)}",
-        )
+            status_code=502,
+            detail="zoom_provider_unavailable",
+        ) from exc
 
 
 @router.post("/webhook", summary="Recebe os eventos do bot fantasma")
@@ -254,6 +286,7 @@ def zoom_webhook(
                 bot_id,
                 domain_name,
                 request_id,
+                request.app.state.database_runtime,
             )
             return {"status": "processing"}
 

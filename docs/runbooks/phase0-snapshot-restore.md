@@ -26,9 +26,33 @@ python -m scripts.staging_phase0_preflight \
 
 6. Revisar `ready_for_migration_review: true`.
 7. Executar `python -m scripts.migrate status` novamente na mesma sessao.
-8. Somente depois executar `python -m scripts.migrate apply`.
+8. Se `006` e `007` estiverem pendentes, aplicar somente a fase expand:
 
-O preflight nunca executa `baseline`, `apply`, restore ou limpeza Docker. A flag
+```bash
+python -m scripts.migrate apply --target 006_conversations_messages.sql
+```
+
+9. Publicar e validar o writer novo, ainda compativel com a fase expandida.
+10. Executar o backfill ate zerar pendencias:
+
+```bash
+python -m scripts.backfill_conversation_privacy
+```
+
+11. Confirmar que writers legados foram drenados e marcar o contrato pronto:
+
+```bash
+python -m scripts.backfill_conversation_privacy --verify-contract-ready
+```
+
+12. Somente depois executar `python -m scripts.migrate apply` e
+    `python -m scripts.migrate verify`.
+
+Para migrations que nao atravessam o contrato `006`/`007`, o operador pode
+aplicar normalmente depois do snapshot, preflight e revisao do `status`.
+
+O preflight nunca executa `baseline`, `apply`, backfill, restore ou limpeza
+Docker. A flag
 `--snapshot-confirmed` registra apenas a confirmacao operacional; ela nao cria
 o snapshot no provedor. O arquivo privado indicado por `--env-file` e carregado
 somente para validar presenca e executar `migrate status`; valores nunca entram

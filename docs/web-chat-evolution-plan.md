@@ -56,10 +56,12 @@ O projeto ja possui:
 
 Limites atuais importantes:
 
-- Persistencia real de conversas ainda esta no roadmap.
-- `/feedback` ainda retorna `pending_persistence`.
-- Historico curto no core esta preparado como contrato, mas ainda nao possui
-  armazenamento real de conversas.
+- Persistencia de conversas e feedback existe por
+  `PERSISTENCE_BACKEND=postgres`, mas ainda exige validacao operacional do
+  ambiente e migrations.
+- `/feedback` retorna `pending_persistence` somente quando a persistencia esta
+  desativada.
+- Historico curto real depende de sessao e PostgreSQL disponivel.
 - WhatsApp e `n8n` devem continuar como consumidores de contrato, nao como
   nucleo de inteligencia.
 

@@ -154,7 +154,9 @@ Esperado:
 
 - `200`
 - body com `accepted=true`
-- `storage=pending_persistence`
+- `storage=postgres` quando `PERSISTENCE_BACKEND=postgres`
+- `storage=pending_persistence` apenas quando a persistencia estiver
+  intencionalmente desativada
 
 ## O Que Verificar No Browser
 

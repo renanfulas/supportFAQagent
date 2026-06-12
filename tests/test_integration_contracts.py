@@ -26,6 +26,7 @@ def test_chat_response_contract_fields_remain_serializable() -> None:
     assert all(isinstance(item, str) for item in payload["references"])
     assert payload["error_code"] == "retrieval_error"
     assert payload["handoff_status"] == "handoff_not_required"
+    assert payload["persistence_status"] == "persistence_disabled"
 
 
 def test_feedback_request_contract_normalizes_optional_fields() -> None:

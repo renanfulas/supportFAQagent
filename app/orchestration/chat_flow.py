@@ -7,6 +7,7 @@ from app.llm.service import LLMService
 from app.orchestration.confidence import compute_confidence
 from app.orchestration.prompt_builder import build_prompt
 from app.retrieval.service import RetrievalService
+from app.conversations.service import ConversationHistoryService
 
 
 class ChatFlowService:
@@ -17,10 +18,15 @@ class ChatFlowService:
         "secret_request",
     }
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        history_service: ConversationHistoryService | None = None,
+    ) -> None:
         self.retrieval_service = RetrievalService()
         self.llm_service = LLMService()
         self.handoff_service = HandoffService()
+        self.history_service = history_service
 
     def answer(
         self,
@@ -29,6 +35,7 @@ class ChatFlowService:
         session_id: str | None = None,
         request_id: str | None = None,
         provider_api_key: str | None = None,
+        channel: str = "api",
     ) -> dict[str, object]:
         total_started_at = perf_counter()
         retrieval_ms = 0.0
@@ -97,7 +104,12 @@ class ChatFlowService:
             answer = domain.response.no_context_message
         else:
             try:
-                history = self._build_history(session_id)
+                history = self._build_history(
+                    domain=domain,
+                    session_id=session_id,
+                    request_id=request_id,
+                    channel=channel,
+                )
                 prompt = build_prompt(
                     domain=domain,
                     question=question,
@@ -134,9 +146,22 @@ class ChatFlowService:
             ),
         }
 
-    def _build_history(self, session_id: str | None) -> list[dict[str, str]]:
-        _ = session_id
-        return []
+    def _build_history(
+        self,
+        *,
+        domain: DomainConfig,
+        session_id: str | None,
+        request_id: str | None,
+        channel: str,
+    ) -> list[dict[str, str]]:
+        if self.history_service is None:
+            return []
+        return self.history_service.load_recent(
+            domain=domain.name,
+            channel=channel,
+            session_id=session_id,
+            request_id=request_id,
+        )
 
     def _should_block_automated_response(self, reasons: list[str]) -> bool:
         return any(reason in self.BLOCKING_REASONS for reason in reasons)

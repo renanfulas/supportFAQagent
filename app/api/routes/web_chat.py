@@ -17,10 +17,16 @@ from app.core.web_session import (
     set_public_session_cookie,
 )
 from app.domain_engine.loader import DomainLoader
+from app.conversations.service import ConversationHistoryService
 from app.feedback.service import FeedbackService
 from app.orchestration.chat_flow import ChatFlowService
 from app.core.errors import DatabaseUnavailableError
-from app.db.operational import ChatAuditInput, HANDOFF_UNAVAILABLE, OperationalRepository
+from app.db.operational import (
+    ChatAuditInput,
+    FeedbackIntegrityConflictError,
+    HANDOFF_UNAVAILABLE,
+    OperationalRepository,
+)
 
 
 router = APIRouter()
@@ -38,16 +44,18 @@ def create_web_chat(
     session_id, should_set_cookie = get_or_create_public_session_id(request, settings)
     domain = _load_default_domain(settings)
 
-    chat_response = ChatFlowService().answer(
+    database_runtime = request.app.state.database_runtime
+    chat_response = ChatFlowService(
+        history_service=ConversationHistoryService(database_runtime),
+    ).answer(
         domain=domain,
         question=payload.message,
         session_id=session_id,
         request_id=request_id,
         provider_api_key=None,
+        channel="web",
     )
-    chat_response["handoff_status"] = OperationalRepository(
-        request.app.state.database_runtime
-    ).record_chat(
+    persistence_result = OperationalRepository(database_runtime).record_chat(
         ChatAuditInput(
             request_id=request_id,
             domain=str(chat_response["domain"]),
@@ -59,12 +67,12 @@ def create_web_chat(
             handoff_reasons=list(chat_response["handoff_reasons"]),
             references=list(chat_response["references"]),
             error_code=chat_response["error_code"],
+            channel="web",
         )
     )
-    if (
-        request.app.state.database_runtime.enabled
-        and chat_response["handoff_status"] == HANDOFF_UNAVAILABLE
-    ):
+    chat_response["handoff_status"] = persistence_result.handoff_status
+    chat_response["persistence_status"] = persistence_result.persistence_status
+    if chat_response["handoff_status"] == HANDOFF_UNAVAILABLE:
         chat_response["answer"] = (
             f"{chat_response['answer']} O atendimento humano esta temporariamente indisponivel; "
             "guarde o codigo de suporte."
@@ -73,6 +81,7 @@ def create_web_chat(
         request_id=request_id,
         session_id=session_id,
         chat_response=chat_response,
+        request_id_reused=persistence_result.request_id_reused,
     )
 
     if should_set_cookie:
@@ -109,6 +118,8 @@ def create_web_feedback(
         feedback_response = FeedbackService(request.app.state.database_runtime).record(
             feedback_payload
         )
+    except FeedbackIntegrityConflictError as exc:
+        raise HTTPException(status_code=409, detail="feedback_idempotency_conflict") from exc
     except DatabaseUnavailableError as exc:
         raise HTTPException(status_code=503, detail="feedback_storage_unavailable") from exc
     log_event(
@@ -116,15 +127,20 @@ def create_web_feedback(
         "feedback_recorded",
         request_id=get_request_id(request),
         chat_request_id=feedback_payload.request_id,
-        session_id_hash=hash_sensitive_value(session_id),
+        session_id_hash=hash_sensitive_value(
+            session_id,
+            secret=settings.persistence_hash_secret,
+        ),
         helpful=feedback_payload.helpful,
-        reason=feedback_payload.reason,
+        reason_present=feedback_payload.reason is not None,
+        comment_present=feedback_payload.comment is not None,
         source=feedback_payload.source,
         escalated=feedback_payload.escalated,
-        handoff_reasons=feedback_payload.handoff_reasons,
+        handoff_reason_count=len(feedback_payload.handoff_reasons),
         reference_count=len(feedback_payload.references),
-        error_code=feedback_payload.error_code,
+        error_code_present=feedback_payload.error_code is not None,
         storage=feedback_response.storage,
+        context_status=feedback_response.status,
     )
 
     if should_set_cookie:
@@ -145,6 +161,7 @@ def _log_web_chat_event(
     request_id: str,
     session_id: str,
     chat_response: dict[str, object],
+    request_id_reused: bool,
 ) -> None:
     settings = get_settings()
     observability = chat_response.get("observability", {})
@@ -156,11 +173,18 @@ def _log_web_chat_event(
         "web_chat_completed",
         request_id=request_id,
         domain=chat_response["domain"],
-        session_id_hash=hash_sensitive_value(session_id),
+        session_id_hash=hash_sensitive_value(
+            session_id,
+            secret=settings.persistence_hash_secret,
+        ),
         confidence=chat_response["confidence"],
         escalated=chat_response["escalated"],
         handoff_reasons=handoff_reasons,
         error_code=chat_response["error_code"],
+        handoff_status=chat_response["handoff_status"],
+        persistence_status=chat_response["persistence_status"],
+        request_id_reused=request_id_reused,
+        channel="web",
         retrieval_backend=settings.retrieval_backend,
         references_count=len(references if isinstance(references, list) else []),
         total_ms=observability_fields.get("total_ms"),
