@@ -19,6 +19,7 @@ EVENT_URLS = {
 }
 MAX_ATTEMPTS = 5
 RETRYABLE_HTTP_STATUS = {408, 409, 425, 429}
+DEFAULT_PROCESSING_STALE_SECONDS = 300
 
 
 class PermanentDeliveryError(RuntimeError):
@@ -48,7 +49,18 @@ def dispatch_one(database_url: str) -> bool:
     import psycopg
     from psycopg.rows import dict_row
 
-    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+    connect_timeout = _positive_int_env("DATABASE_CONNECT_TIMEOUT_SECONDS", 5)
+    query_timeout = _positive_int_env("DATABASE_QUERY_TIMEOUT_SECONDS", 10)
+    processing_stale_seconds = _positive_int_env(
+        "OUTBOX_PROCESSING_STALE_SECONDS",
+        DEFAULT_PROCESSING_STALE_SECONDS,
+    )
+    with psycopg.connect(
+        database_url,
+        row_factory=dict_row,
+        connect_timeout=connect_timeout,
+        options=f"-c statement_timeout={query_timeout * 1000}",
+    ) as connection:
         with connection.transaction():
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -59,12 +71,16 @@ def dispatch_one(database_url: str) -> bool:
                       AND available_at <= now()
                     ) OR (
                       status = 'processing'
-                      AND locked_at < now() - INTERVAL '5 minutes'
+                      AND (
+                        locked_at IS NULL
+                        OR locked_at < now() - (%s * INTERVAL '1 second')
+                      )
                     )
                     ORDER BY created_at
                     FOR UPDATE SKIP LOCKED
                     LIMIT 1
-                    """
+                    """,
+                    (processing_stale_seconds,),
                 )
                 event = cursor.fetchone()
                 if event is None:
@@ -173,6 +189,19 @@ def emit_operational_event(event: str, **fields: object) -> None:
         json.dumps({"event": event, **fields}, ensure_ascii=True, default=str),
         file=sys.stderr,
     )
+
+
+def _positive_int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a positive integer") from exc
+    if value <= 0:
+        raise ValueError(f"{name} must be a positive integer")
+    return value
 
 
 if __name__ == "__main__":

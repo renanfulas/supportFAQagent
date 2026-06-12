@@ -75,7 +75,7 @@ Feedback publico:
 Browser
   -> POST /web/feedback
   -> FeedbackService
-  -> storage atual: pending_persistence
+  -> storage: postgres quando habilitado; pending_persistence em laboratorio
 ```
 
 ## Configuracao
@@ -242,6 +242,9 @@ Pode reutilizar `FeedbackResponse`:
   "storage": "pending_persistence"
 }
 ```
+
+O exemplo acima representa o modo laboratorio sem PostgreSQL. Com
+`PERSISTENCE_BACKEND=postgres`, o storage esperado e `postgres`.
 
 ## Rota E Modulos
 

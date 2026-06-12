@@ -69,7 +69,7 @@ Headers obrigatorios:
 ```http
 Content-Type: application/json
 X-API-Key: <api-secret-privado>
-X-Request-ID: <id-estavel-da-mensagem-ou-conversa>
+X-Request-ID: <id-unico-e-estavel-da-mensagem>
 ```
 
 Payload minimo:
@@ -77,6 +77,7 @@ Payload minimo:
 ```json
 {
   "domain": "suporte-vps-whatsapp",
+  "channel": "whatsapp",
   "session_id": "whatsapp:<identificador-sanitizado-ou-interno>",
   "message": "Mensagem do usuario"
 }
@@ -85,7 +86,10 @@ Payload minimo:
 Regras:
 
 - `domain` deve ser enviado quando a automacao souber o dominio.
+- `channel` deve ser `whatsapp` para isolar corretamente o historico.
 - `session_id` deve ser tratado como sensivel fora da API.
+- `X-Request-ID` deve ser unico por mensagem recebida; reutilizar o mesmo valor
+  para uma conversa inteira torna auditoria e feedback ambiguos.
 - `message` deve ser texto puro, sem anexos, arquivos, imagens ou metadados.
 - O workflow nao deve enviar senhas, tokens, headers privados ou logs crus como
   parte da mensagem.
@@ -101,6 +105,8 @@ Preservar em memoria operacional, log sanitizado ou persistencia futura:
 - `handoff_reasons`
 - `references`
 - `error_code`
+- `handoff_status`
+- `persistence_status`
 
 O texto em `answer` e para o usuario final. Nao use o texto como unica fonte
 para decidir roteamento quando `escalated` e `handoff_reasons` ja existem.
@@ -108,7 +114,12 @@ para decidir roteamento quando `escalated` e `handoff_reasons` ja existem.
 ## Roteamento recomendado
 
 - Se `error_code` nao for `null`, tratar como falha tecnica observavel.
-- Se `escalated=true`, rotear para humano.
+- Se `escalated=true`, preservar os motivos e o status, mas nao criar uma
+  segunda notificacao no workflow de entrada; a outbox do backend e o caminho
+  autoritativo para `escalation-notify`.
+- `handoff_status=handoff_queued` confirma que a notificacao entrou na outbox.
+- `handoff_status=handoff_unavailable` significa que o workflow nao deve
+  afirmar que uma pessoa foi notificada.
 - Se `handoff_reasons` tiver `explicit_human_request`, priorizar atendimento.
 - Se `handoff_reasons` tiver `sensitive_topic`, `secret_request` ou
   `prompt_injection_attempt`, nao tentar resolver no workflow.
@@ -154,12 +165,14 @@ Campos recomendados:
 Antes de ligar canal real:
 
 - `/health` responde `200`
+- `/health/ready` responde `200` com `X-API-Key` antes de ativar o canal
 - `/domains` responde `200` apenas com `X-API-Key` valida
 - `/chat` responde `200` com `request_id`
 - `X-Request-ID` enviado aparece no header e no corpo
 - `references` e `handoff_reasons` sao arrays
 - `error_code` e preservado
-- se `escalated=true`, o workflow segue rota humana
+- se `escalated=true`, a resposta preserva `handoff_status` e a notificacao
+  humana ocorre uma unica vez pelo caminho outbox + `escalation-notify`
 
 ## Observabilidade
 

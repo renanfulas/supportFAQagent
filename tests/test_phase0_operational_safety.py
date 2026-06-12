@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -11,7 +12,13 @@ from app.core.persistence_sanitize import (
     sanitize_payload,
 )
 from app.db.runtime import DatabaseRuntime
-from app.db.operational import ChatAuditInput, HANDOFF_QUEUED, OperationalRepository
+from app.db.operational import (
+    ChatAuditInput,
+    HANDOFF_QUEUED,
+    HANDOFF_UNAVAILABLE,
+    PERSISTENCE_PERSISTED,
+    OperationalRepository,
+)
 from app.api.schemas.feedback import FeedbackRequest
 from scripts.migrate import ledger_exists, verify_applied
 from scripts.dispatch_outbox import PermanentDeliveryError, deliver
@@ -66,6 +73,45 @@ def test_database_runtime_maps_pool_failure_to_stable_error() -> None:
             pass
 
 
+def test_database_runtime_closes_pool_when_initial_wait_fails(monkeypatch) -> None:
+    created = []
+
+    class FailingOpeningPool:
+        def __init__(self, **kwargs) -> None:
+            self.closed = False
+            created.append(self)
+
+        def wait(self, **kwargs) -> None:
+            raise RuntimeError("private startup failure")
+
+        def close(self) -> None:
+            self.closed = True
+
+    monkeypatch.setitem(
+        sys.modules,
+        "psycopg_pool",
+        SimpleNamespace(ConnectionPool=FailingOpeningPool),
+    )
+    settings = SimpleNamespace(
+        persistence_backend="postgres",
+        web_auth_storage_backend="memory",
+        enable_outbox_ingress=False,
+        retrieval_backend="lexical",
+        database_url="postgresql://private",
+        database_pool_min_size=1,
+        database_pool_max_size=2,
+        database_connect_timeout_seconds=1,
+        database_query_timeout_seconds=1,
+    )
+    runtime = DatabaseRuntime(settings)
+
+    with pytest.raises(DatabaseUnavailableError, match="database pool unavailable"):
+        runtime.open()
+
+    assert created[0].closed is True
+    assert runtime._pool is None
+
+
 def test_migration_verification_rejects_checksum_drift(tmp_path: Path) -> None:
     migration = tmp_path / "001_example.sql"
     migration.write_text("SELECT 1;", encoding="utf-8")
@@ -76,7 +122,7 @@ def test_migration_verification_rejects_checksum_drift(tmp_path: Path) -> None:
 
 
 def test_migration_status_can_check_missing_ledger_without_creating_it() -> None:
-    cursor = RecordingCursor(rows=[(None,)])
+    cursor = RecordingCursor(rows=[("public",), (None,)])
     connection = RecordingConnection(cursor)
 
     assert ledger_exists(connection) is False
@@ -90,6 +136,16 @@ def test_migration_runner_has_bounded_connection_timeout() -> None:
     assert "connect_timeout=connect_timeout" in source
 
 
+def test_outbox_dispatcher_has_bounded_database_timeouts_and_shared_stale_window() -> None:
+    source = Path("scripts/dispatch_outbox.py").read_text(encoding="utf-8")
+
+    assert "DATABASE_CONNECT_TIMEOUT_SECONDS" in source
+    assert "DATABASE_QUERY_TIMEOUT_SECONDS" in source
+    assert "OUTBOX_PROCESSING_STALE_SECONDS" in source
+    assert "connect_timeout=connect_timeout" in source
+    assert "statement_timeout" in source
+
+
 def test_phase0_migrations_define_otp_exhausted_and_unique_outbox_key() -> None:
     root = Path(__file__).resolve().parents[1]
     otp_sql = (root / "migrations/003_phase0_otp_status.sql").read_text(encoding="utf-8")
@@ -99,12 +155,23 @@ def test_phase0_migrations_define_otp_exhausted_and_unique_outbox_key() -> None:
     ingress_sql = (root / "migrations/005_phase0_webhook_ingress.sql").read_text(
         encoding="utf-8"
     )
+    feedback_integrity_sql = (
+        root / "migrations/008_feedback_integrity.sql"
+    ).read_text(encoding="utf-8")
 
     assert "'exhausted'" in otp_sql
     assert "idempotency_key TEXT NOT NULL UNIQUE" in operational_sql
     assert "FOR UPDATE SKIP LOCKED" not in operational_sql
     assert "idempotency_key_hash TEXT PRIMARY KEY" in ingress_sql
     assert "payload_hash TEXT NOT NULL" in ingress_sql
+    assert "session_hash_version TEXT" in feedback_integrity_sql
+    assert "message_id TEXT" in feedback_integrity_sql
+    assert "feedback_fingerprint TEXT" in feedback_integrity_sql
+    assert "set_legacy_session_hash_version" in feedback_integrity_sql
+    assert "chat_audits_legacy_hash_version" in feedback_integrity_sql
+    assert "feedback_legacy_hash_version" in feedback_integrity_sql
+    assert "idx_chat_audits_feedback_context" in feedback_integrity_sql
+    assert "idx_feedback_idempotency_key" in feedback_integrity_sql
 
 
 def test_outbox_delivery_is_signed_and_idempotent(
@@ -170,8 +237,10 @@ def test_outbox_treats_non_retryable_4xx_as_permanent(
 
 class RecordingCursor:
     def __init__(self, rows: list[object]) -> None:
-        self.rows = iter(rows)
+        self.rows = list(rows)
         self.calls: list[tuple[str, tuple | None]] = []
+        self.last_sql = ""
+        self.last_params: tuple | None = None
 
     def __enter__(self):
         return self
@@ -181,9 +250,16 @@ class RecordingCursor:
 
     def execute(self, sql: str, params: tuple | None = None) -> None:
         self.calls.append((sql, params))
+        self.last_sql = sql
+        self.last_params = params
 
     def fetchone(self):
-        return next(self.rows, None)
+        if self.rows:
+            return self.rows.pop(0)
+        if "RETURNING id, context_status, feedback_fingerprint" in self.last_sql:
+            assert self.last_params is not None
+            return ("feedback-id", self.last_params[9], self.last_params[13])
+        return None
 
 
 class RecordingConnection:
@@ -196,9 +272,13 @@ class RecordingConnection:
 
 class RecordingRuntime:
     enabled = True
+    persistence_enabled = True
 
     def __init__(self, rows: list[object]) -> None:
-        self.settings = SimpleNamespace(persistence_hash_secret="persistence-secret")
+        self.settings = SimpleNamespace(
+            persistence_hash_secret="persistence-secret",
+            persistence_hash_version="hmac-sha256-v1",
+        )
         self.cursor = RecordingCursor(rows)
         self.connection = RecordingConnection(self.cursor)
 
@@ -208,7 +288,15 @@ class RecordingRuntime:
 
 
 def test_escalated_chat_is_recorded_with_idempotent_outbox_key() -> None:
-    runtime = RecordingRuntime(rows=[("domain-id",)])
+    runtime = RecordingRuntime(
+        rows=[
+            ("domain-id",),
+            (False,),
+            ("audit-id", "turn-id"),
+            ("conversation-id",),
+            ("pending",),
+        ]
+    )
     repository = OperationalRepository(runtime)
 
     status = repository.record_chat(
@@ -221,16 +309,54 @@ def test_escalated_chat_is_recorded_with_idempotent_outbox_key() -> None:
             confidence=0.2,
             escalated=True,
             handoff_reasons=["low_confidence"],
-            references=["safe.md"],
+            references=["https://example.com/help?token=reference-secret"],
+            error_code="ghp_abcdefghijklmnopqrstuvwxyz0123456789AB",
+        )
+    )
+
+    assert status.handoff_status == HANDOFF_QUEUED
+    assert status.persistence_status == PERSISTENCE_PERSISTED
+    assert status.turn_id == "turn-id"
+    outbox_params = runtime.cursor.calls[-1][1]
+    assert outbox_params is not None
+    assert outbox_params[0] == "handoff:turn-id"
+    assert "user@example.com" not in str(runtime.cursor.calls)
+    assert "reference-secret" not in str(runtime.cursor.calls)
+    assert "ghp_" not in str(runtime.cursor.calls)
+
+
+@pytest.mark.parametrize("outbox_row", [("dead_letter",), None])
+def test_escalated_chat_is_unavailable_when_outbox_is_dead_or_missing(
+    outbox_row: tuple[str] | None,
+) -> None:
+    rows: list[object] = [
+        ("domain-id",),
+        (False,),
+        ("audit-id", "turn-id"),
+        ("conversation-id",),
+    ]
+    if outbox_row is not None:
+        rows.append(outbox_row)
+    runtime = RecordingRuntime(rows=rows)
+    repository = OperationalRepository(runtime)
+
+    status = repository.record_chat(
+        ChatAuditInput(
+            request_id="req-dead-letter",
+            domain="suporte-vps-whatsapp",
+            session_id="raw-session",
+            question="preciso de ajuda",
+            answer="vou escalar",
+            confidence=0.2,
+            escalated=True,
+            handoff_reasons=["low_confidence"],
+            references=[],
             error_code=None,
         )
     )
 
-    assert status == HANDOFF_QUEUED
-    outbox_params = runtime.cursor.calls[-1][1]
-    assert outbox_params is not None
-    assert outbox_params[0] == "handoff:req-1"
-    assert "user@example.com" not in str(runtime.cursor.calls)
+    assert status.handoff_status == HANDOFF_UNAVAILABLE
+    assert status.persistence_status == PERSISTENCE_PERSISTED
 
 
 def test_feedback_uses_server_context_instead_of_client_references() -> None:
@@ -255,4 +381,35 @@ def test_feedback_uses_server_context_instead_of_client_references() -> None:
     insert_params = runtime.cursor.calls[-1][1]
     assert insert_params is not None
     assert "forged.md" not in str(insert_params)
-    assert insert_params[-2] is True
+    assert insert_params[10] is True
+
+
+def test_request_fingerprint_distinguishes_redacted_secrets_without_storing_them() -> None:
+    runtime = RecordingRuntime(rows=[])
+    repository = OperationalRepository(runtime)
+    common = dict(
+        request_id="req-shared",
+        domain="suporte-vps-whatsapp",
+        session_id="session",
+        answer="safe",
+        confidence=0.8,
+        escalated=False,
+        handoff_reasons=[],
+        references=[],
+        error_code=None,
+    )
+    first = ChatAuditInput(question="password=first-secret", **common)
+    second = ChatAuditInput(question="password=second-secret", **common)
+
+    first_fingerprint = repository._request_fingerprint(
+        audit=first,
+        session_hash=repository._hash(first.session_id),
+    )
+    second_fingerprint = repository._request_fingerprint(
+        audit=second,
+        session_hash=repository._hash(second.session_id),
+    )
+
+    assert first_fingerprint != second_fingerprint
+    assert "first-secret" not in first_fingerprint
+    assert "second-secret" not in second_fingerprint

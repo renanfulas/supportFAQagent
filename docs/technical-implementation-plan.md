@@ -72,6 +72,10 @@ Estado consolidado do nucleo tecnico em 11/06/2026:
 - `ChromaStore` continua como prototipo local e nao e o retrieval oficial do endpoint `/chat`
 - `domain.yaml` ja aponta para `llm.provider: openai`
 - `/feedback` persiste contexto confiavel quando `PERSISTENCE_BACKEND=postgres`
+- conversas e mensagens sanitizadas persistem por dominio, canal e hash de
+  sessao quando `PERSISTENCE_BACKEND=postgres`
+- historico curto real entra no prompt como dado nao confiavel
+- `/health/ready` separa banco, migrations, retrieval e outbox sem chamar LLM
 - migrations forward-only, sanitizacao persistente e outbox transacional da
   Fase 0 estao implementadas no repositorio e aguardam validacao operacional
   em staging
@@ -266,7 +270,11 @@ embedding:
 Observacao:
 
 - O provider padrao do dominio inicial ja foi movido para `openai`, mas o ambiente ainda depende de `OPENAI_API_KEY` valida para resposta automatica completa.
-- Campos como `rag.history_turns`, `chunk_overlap` e politicas de seguranca mais detalhadas podem entrar depois, mas ainda nao sao contrato implementado.
+- O historico curto ja usa `CONVERSATION_HISTORY_MESSAGES`; configuracao
+  especifica por dominio, como `rag.history_turns`, pode entrar depois sem
+  substituir o isolamento atual por dominio, canal e hash de sessao.
+- Campos como `chunk_overlap` e politicas de seguranca mais detalhadas podem
+  entrar depois, mas ainda nao sao contrato implementado.
 
 ## Fase 1 - Base de providers e contratos
 
@@ -597,9 +605,11 @@ CREATE TABLE conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   domain_id UUID NOT NULL REFERENCES domains(id),
   channel TEXT NOT NULL DEFAULT 'api',
-  session_id TEXT NOT NULL,
+  session_hash TEXT NOT NULL,
+  session_hash_version TEXT NOT NULL,
   external_conversation_id TEXT,
   status TEXT NOT NULL DEFAULT 'bot',
+  last_message_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -607,6 +617,9 @@ CREATE TABLE conversations (
 CREATE TABLE messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  turn_id UUID NOT NULL,
+  request_id TEXT NOT NULL,
+  channel TEXT NOT NULL,
   role TEXT NOT NULL,
   content TEXT NOT NULL,
   provider TEXT,
@@ -615,12 +628,14 @@ CREATE TABLE messages (
   message_references JSONB NOT NULL DEFAULT '[]'::jsonb,
   error_code TEXT,
   latency_ms INT,
+  redaction_version TEXT NOT NULL,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_conversations_session_domain
-ON conversations(session_id, domain_id, updated_at DESC);
+CREATE UNIQUE INDEX idx_conversations_active_session
+ON conversations(domain_id, channel, session_hash)
+WHERE status IN ('bot', 'handoff_pending', 'human_active');
 
 CREATE INDEX idx_conversations_domain_channel_external
 ON conversations(domain_id, channel, external_conversation_id);
@@ -631,7 +646,9 @@ ON messages(conversation_id, created_at);
 
 Observacao:
 
-- `channel` e `external_conversation_id` preparam a plataforma para WhatsApp, web, CRM, email ou outros canais sem criar tabelas por setor.
+- `channel` e `external_conversation_id` preparam a plataforma para WhatsApp,
+  web, Zoom, CRM, email ou outros canais sem criar tabelas por setor.
+- `session_id` bruto nao deve ser persistido; somente HMAC versionado.
 - `provider`, `error_code` e `latency_ms` permitem observabilidade e auditoria sem depender de campos especificos do primeiro dominio.
 
 ## Juliano - LangChain
@@ -774,6 +791,8 @@ Campos recomendados de log:
 Regras de debug:
 
 - Logs nao podem vazar prompt completo com PII em producao.
+- `session_id_hash` deve usar HMAC com segredo privado; sem segredo persistente,
+  usar chave efemera por processo em vez de produzir hash simples enumeravel.
 - Erros devem ter codigo interno estavel.
 - Smoke tests devem cobrir health, domains, ingestion preview e chat.
 
@@ -810,5 +829,6 @@ O MVP esta tecnicamente saudavel quando:
 - dados vetoriais sempre respeitam dominio
 - o agente sabe dizer "nao tenho contexto suficiente"
 - falhas externas sao observaveis e nao viram resposta inventada
-- o plano de SQL permite rollback e evolucao incremental
+- o plano de SQL permite evolucao incremental forward-only e recuperacao por
+  snapshot; nao existe rollback SQL automatico
 - a seguranca minima esta pronta antes de expor canais publicos

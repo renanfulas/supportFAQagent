@@ -9,7 +9,7 @@ autenticacao real.
 Templates disponiveis:
 
 - `whatsapp-to-bot.json`: recebe mensagem da Evolution API, chama `/chat` e
-  envia a resposta pelo WhatsApp;
+  envia a resposta pelo WhatsApp, sem duplicar notificacao de handoff;
 - `escalation-notify.json`: envia notificacao sanitizada de handoff ao grupo
   operacional;
 - `web-otp-delivery.json`: transporta OTP criado pelo backend ate a Evolution
@@ -28,9 +28,10 @@ ingress confiavel que valide:
 - `X-Idempotency-Key` ou `delivery_id` contra repeticao;
 - tamanho e formato do payload.
 
-O webhook de entrada da Evolution tambem deve ficar restrito a origem
-confiavel por rede privada, allowlist ou mecanismo de autenticacao suportado
-pela versao instalada. Nao publicar o endpoint sem essa barreira.
+O webhook de entrada da Evolution usa `headerAuth` no template e tambem deve
+ficar restrito a origem confiavel por rede privada ou allowlist. A credencial
+nao e versionada e precisa ser associada no n8n antes da ativacao. Nao
+publicar o endpoint sem essas barreiras.
 
 O nome `Verified ... Webhook` indica que essa validacao ocorreu antes do
 workflow. O nome nao implementa a verificacao.
@@ -63,11 +64,22 @@ python -m scripts.mock_outbox_webhook --port 8765
 O mock valida assinatura e janela temporal, mas guarda idempotencia somente em
 memoria. Ele nao e componente de staging ou producao.
 
+Para validar o contrato de saida da Evolution sem WhatsApp real:
+
+```powershell
+$env:EVOLUTION_API_KEY="<segredo-local>"
+python -m scripts.mock_evolution_api --port 8770
+```
+
+O mock valida `apikey`, rota `message/sendText/<instancia>` e payload
+`number/text`. `EVOLUTION_MOCK_FORCE_STATUS=429` ou `500` simula falha.
+
 ## Importacao segura
 
 1. Importe os JSONs no n8n privado.
 2. Crie credenciais `HTTP Header Auth` separadas para a API e para a Evolution.
-3. Configure variables do n8n, sem valores no Git:
+3. Associe uma credencial `HTTP Header Auth` ao `Authenticated Evolution Webhook`.
+4. Configure variables do n8n, sem valores no Git:
 
 ```text
 SUPPORTFAQ_API_URL
@@ -76,10 +88,10 @@ EVOLUTION_INSTANCE_NAME
 HANDOFF_GROUP_ID
 ```
 
-4. Confirme que `SUPPORTFAQ_API_URL` usa o nome interno do servico Docker.
-5. Ajuste o mapeamento do payload da Evolution para a versao instalada.
-6. Valide com dados anonimizados e workflow ainda inativo.
-7. Ative apenas depois dos smokes e da verificacao do ingress.
+5. Confirme que `SUPPORTFAQ_API_URL` usa o nome interno do servico Docker.
+6. Ajuste o mapeamento do payload da Evolution para a versao instalada.
+7. Valide com dados anonimizados e workflow ainda inativo.
+8. Ative apenas depois dos smokes e da verificacao do ingress.
 
 ## Smokes obrigatorios
 
@@ -89,7 +101,15 @@ HANDOFF_GROUP_ID
 - falha da API ou Evolution fica observavel e nao gera falso aceite;
 - handoff e OTP sem assinatura valida sao rejeitados antes do n8n;
 - retry com mesma chave nao cria segunda acao logica;
+- a chave `X-Idempotency-Key` recebida e propagada ate a chamada da Evolution;
+  o provider ou proxy final precisa honrar essa chave para eliminar a janela
+  residual de duplicacao apos timeout incerto;
+- `whatsapp-to-bot` nao envia notificacao humana paralela quando a API ja
+  retornou `handoff_status=handoff_queued`;
 - execucoes e logs nao persistem telefone, OTP, mensagem bruta ou secrets.
+- `EXECUTIONS_DATA_SAVE_ON_SUCCESS=none` e
+  `EXECUTIONS_DATA_SAVE_ON_ERROR=none` permanecem ativos enquanto os workflows
+  recebem payload bruto de canais externos.
 
 ## Limites atuais
 
@@ -100,3 +120,6 @@ HANDOFF_GROUP_ID
 - o ingress HMAC persistente precisa receber a migration `005` e ser validado
   no ambiente;
 - nenhum template versionado equivale a smoke real com Evolution e WhatsApp.
+- sem suporte de idempotencia na Evolution ou no proxy final, entrega continua
+  at-least-once e um timeout depois do side effect ainda exige reconciliacao
+  operacional; nao declarar exactly-once.

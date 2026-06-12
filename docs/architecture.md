@@ -157,9 +157,26 @@ Responsabilidades:
 - calcular confianca
 - decidir escalonamento
 
-O `ChatFlowService` usa `prompt_builder.py` como ponto unico de montagem de prompt. Historico curto ainda esta preparado como contrato, mas permanece vazio ate existir persistencia de conversas.
+O `ChatFlowService` usa `prompt_builder.py` como ponto unico de montagem de
+prompt. Quando `PERSISTENCE_BACKEND=postgres` e existe `session_id`, o fluxo
+carrega historico curto sanitizado e isolado por dominio, canal e hash de
+sessao. O historico entra no prompt como dado nao confiavel e nunca como
+instrucao.
 
 O fluxo tambem retorna `request_id` e `error_code` quando ha falha observavel de retrieval ou provider.
+
+## `app/conversations`
+
+Persistencia e leitura de historico curto.
+
+Responsabilidades:
+
+- persistir mensagens sanitizadas de usuario e agente na mesma transacao do
+  audit e da outbox;
+- associar turnos por `turn_id`, `request_id`, dominio, canal e hash de sessao;
+- nunca persistir `session_id` bruto;
+- carregar apenas mensagens verificadas pela versao de redacao atual;
+- falhar aberto na leitura de historico sem derrubar o `/chat`.
 
 ## `app/handoff`
 
@@ -227,8 +244,8 @@ Curto prazo:
 
 Medio prazo:
 
-- historico de conversas
-- feedback estruturado
+- ampliar historico de conversas somente quando houver evidencia de necessidade
+- usar feedback estruturado persistido para calibracao e backlog
 - calibragem de thresholds e termos sensiveis de handoff
 - roteamento entre dominios
 - automacao com `n8n`

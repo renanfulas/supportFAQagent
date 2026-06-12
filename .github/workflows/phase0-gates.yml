@@ -38,7 +38,7 @@ jobs:
 
       - name: Run Phase 0 contract gates
         run: |
-          python -m pytest tests/test_phase0_operational_safety.py tests/test_n8n_workflow_contracts.py tests/test_webhook_ingress.py tests/test_privacy.py -q
+          python -m pytest tests/test_phase0_operational_safety.py tests/test_migration_rollout_safety.py tests/test_n8n_workflow_contracts.py tests/test_evolution_contracts.py tests/test_webhook_ingress.py tests/test_privacy.py tests/test_feedback_privacy_integrity.py tests/test_conversation_history.py tests/test_health_readiness.py tests/test_prune_operational_data.py tests/test_request_observability.py tests/test_zoom_security.py -q
 
   postgres:
     name: PostgreSQL migration and concurrency
@@ -62,6 +62,8 @@ jobs:
     env:
       PHASE0_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/supportfaq_phase0
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/supportfaq_phase0
+      PERSISTENCE_HASH_SECRET: phase0-ci-persistence-secret
+      PERSISTENCE_HASH_VERSION: hmac-sha256-v1
 
     steps:
       - name: Checkout
@@ -81,7 +83,9 @@ jobs:
       - name: Run migration and concurrency gates
         run: |
           python -m scripts.migrate status
+          python -m scripts.migrate apply --target 006_conversations_messages.sql
+          python -m scripts.backfill_conversation_privacy --verify-contract-ready --quiet-period-seconds 0
           python -m scripts.migrate apply
           python -m scripts.migrate apply
           python -m scripts.migrate verify
-          python -m pytest tests/integration/test_phase0_postgres.py -q
+          python -m pytest tests/integration/test_phase0_postgres.py tests/integration/test_conversation_migration_upgrade.py tests/integration/test_feedback_privacy_integrity_postgres.py -q

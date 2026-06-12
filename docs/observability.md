@@ -15,6 +15,8 @@ Regras:
 - Se o cliente enviar `X-Request-ID`, a API reaproveita o valor.
 - Se o cliente nao enviar, a API gera um UUID.
 - Se o valor vier em branco ou maior que 80 caracteres, a API gera um novo UUID.
+- Se o valor contiver texto livre, caracteres fora do formato seguro ou
+  prefixo reconhecivel de segredo, a API gera um novo UUID.
 - O mesmo `request_id` aparece no corpo do `POST /chat`.
 - Erros HTTP tratados e erros inesperados retornam `request_id` no corpo e no header.
 
@@ -38,8 +40,13 @@ Eventos atuais:
 - `validation_error`: erro de validacao com `request_id`.
 - `unexpected_error`: erro inesperado com status 500, tipo do erro e `request_id`.
 - `chat_completed`: dominio, `session_id_hash`, confianca, escalonamento,
-  motivos, erro, backend de retrieval, quantidade de referencias e tempos
+  motivos, erro, canal, `handoff_status`, `persistence_status`, reutilizacao de
+  `request_id`, backend de retrieval, quantidade de referencias e tempos
   agregados do fluxo.
+- `chat_persistence_unavailable`: falha sanitizada ao gravar audit, conversa
+  ou outbox, sem pergunta, resposta, sessao ou detalhe privado do banco.
+- `conversation_history_unavailable`: historico indisponivel; o chat continua
+  sem historico.
 - `feedback_recorded`: feedback recebido, origem, `session_id_hash` e armazenamento atual.
 - `webhook_ingress_rejected`: assinatura interna invalida, sem registrar payload.
 - `webhook_ingress_delivery_failed`: encaminhamento ao n8n verificado falhou.
@@ -57,7 +64,9 @@ Eventos e sinais importantes para a trilha de seguranca:
 - `request_id`: correlacao da chamada HTTP atual.
 - `chat_request_id`: usado no feedback para apontar qual resposta do chat esta sendo avaliada.
 - `domain`: dominio executado.
-- `session_id_hash`: hash curto do identificador externo da conversa, quando existir.
+- `session_id_hash`: HMAC curto do identificador externo da conversa. Usa
+  `PERSISTENCE_HASH_SECRET` quando configurado; sem ele, usa chave efemera por
+  processo para evitar hash enumeravel, sem prometer correlacao entre restarts.
 - `error_code`: erro observavel, como `provider_error` ou `retrieval_error`.
 - `handoff_reasons`: motivos de escalonamento para humano.
 - `retrieval_backend`: backend configurado no runtime, como `lexical` ou
@@ -67,6 +76,31 @@ Eventos e sinais importantes para a trilha de seguranca:
 - `total_ms`: tempo total aproximado do fluxo de chat dentro da aplicacao.
 - `retrieval_ms`: tempo aproximado gasto em retrieval.
 - `llm_ms`: tempo aproximado gasto com inicializacao/chamada do provider LLM.
+- `persistence_status`: confirma commit, persistencia desativada ou falha.
+- `handoff_status`: diferencia decisao de escalar de handoff realmente
+  enfileirado.
+- `request_id_reused`: sinaliza reutilizacao do identificador para payload
+  diferente.
+
+## Health
+
+- `GET /health` permanece liveness simples e retorna apenas `{"status":"ok"}`.
+- `GET /health/ready` exige `X-API-Key` e separa banco, migrations, retrieval e
+  outbox.
+- banco, migration, pgvector indisponivel ou dominio ativo sem o minimo
+  configurado de embeddings retornam `503`.
+- dead letters ou backlog antigo deixam readiness `degraded`, mas nao derrubam
+  a liveness nem produzem `503`.
+- eventos `processing` sem lock ou acima de `OUTBOX_PROCESSING_STALE_SECONDS`
+  tambem deixam a outbox `degraded`.
+- tabelas essenciais ausentes para qualquer feature PostgreSQL habilitada
+  deixam readiness indisponivel.
+- o health detalhado nao chama LLM, embedding provider ou servico externo.
+- thresholds de readiness podem ser ajustados por
+  `HEALTH_PGVECTOR_MIN_DOMAIN_EMBEDDINGS`,
+  `HEALTH_OUTBOX_READY_DEGRADED_COUNT` e
+  `HEALTH_OUTBOX_OLDEST_READY_DEGRADED_SECONDS`; o dispatcher e o readiness
+  compartilham `OUTBOX_PROCESSING_STALE_SECONDS`.
 
 Campos que integracoes externas devem preservar:
 

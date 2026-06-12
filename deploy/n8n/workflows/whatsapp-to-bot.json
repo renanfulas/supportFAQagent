@@ -7,13 +7,14 @@
   "nodes": [
     {
       "id": "evolution-webhook",
-      "name": "Evolution Webhook",
+      "name": "Authenticated Evolution Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [0, 0],
       "parameters": {
         "httpMethod": "POST",
         "path": "supportfaq/evolution/message",
+        "authentication": "headerAuth",
         "responseMode": "responseNode"
       }
     },
@@ -33,14 +34,14 @@
           "parameters": [
             {
               "name": "X-Request-ID",
-              "value": "={{ $json.request_id }}"
+              "value": "={{ $json.body?.data?.key?.id ? 'evolution:' + $json.body.data.key.id : $json.request_id }}"
             }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({domain: 'suporte-vps-whatsapp', session_id: 'whatsapp:' + $json.body.data.key.remoteJid, message: $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage?.text || ''}) }}"
+        "body": "={{ JSON.stringify({domain: 'suporte-vps-whatsapp', channel: 'whatsapp', session_id: 'whatsapp:' + $json.body.data.key.remoteJid, message: $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage?.text || ''}) }}"
       }
     },
     {
@@ -54,10 +55,19 @@
         "url": "={{ $vars.EVOLUTION_API_BASE_URL + '/message/sendText/' + $vars.EVOLUTION_INSTANCE_NAME }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Idempotency-Key",
+              "value": "={{ 'answer:' + $('Call supportFAQagent Chat').item.json.request_id }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({number: $('Evolution Webhook').item.json.body.data.key.remoteJid, text: $json.answer}) }}"
+        "body": "={{ JSON.stringify({number: $('Authenticated Evolution Webhook').item.json.body.data.key.remoteJid, text: $json.answer}) }}"
       }
     },
     {
@@ -73,7 +83,7 @@
     }
   ],
   "connections": {
-    "Evolution Webhook": {
+    "Authenticated Evolution Webhook": {
       "main": [[{"node": "Call supportFAQagent Chat", "type": "main", "index": 0}]]
     },
     "Call supportFAQagent Chat": {

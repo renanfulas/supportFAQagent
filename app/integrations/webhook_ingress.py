@@ -74,12 +74,12 @@ class WebhookIngressRepository:
                 cursor.execute(
                     """
                     SELECT event_type, payload_hash, status, attempt_count,
-                           updated_at < now() - INTERVAL '5 minutes'
+                           updated_at < now() - (%s * INTERVAL '1 second')
                     FROM webhook_ingress_receipts
                     WHERE idempotency_key_hash = %s
                     FOR UPDATE
                     """,
-                    (key_hash,),
+                    (PROCESSING_STALE_SECONDS, key_hash),
                 )
                 row = cursor.fetchone()
                 if row is None:

@@ -3,9 +3,12 @@ __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
+.pytest-tmp*/
+.pip-audit-cache/
 .venv/
 venv/
 .venv312/
+.claude/
 
 .env
 .env.*

@@ -10,6 +10,7 @@ from app.core.privacy import hash_sensitive_value
 from app.core.request_context import get_request_id
 from app.core.security import API_KEY_HEADER_NAME, is_valid_secret
 from app.domain_engine.loader import DomainLoader
+from app.conversations.service import ConversationHistoryService
 from app.orchestration.chat_flow import ChatFlowService
 from app.db.operational import ChatAuditInput, HANDOFF_UNAVAILABLE, OperationalRepository
 
@@ -39,16 +40,18 @@ def chat(
     if domain is None:
         raise HTTPException(status_code=404, detail="Domain not found")
 
-    response = ChatFlowService().answer(
+    database_runtime = request.app.state.database_runtime
+    response = ChatFlowService(
+        history_service=ConversationHistoryService(database_runtime),
+    ).answer(
         domain=domain,
         question=payload.message,
         session_id=payload.session_id,
         request_id=request_id,
         provider_api_key=provider_api_key,
+        channel=payload.channel,
     )
-    response["handoff_status"] = OperationalRepository(
-        request.app.state.database_runtime
-    ).record_chat(
+    persistence_result = OperationalRepository(database_runtime).record_chat(
         ChatAuditInput(
             request_id=request_id,
             domain=str(response["domain"]),
@@ -60,12 +63,12 @@ def chat(
             handoff_reasons=list(response["handoff_reasons"]),
             references=list(response["references"]),
             error_code=response["error_code"],
+            channel=payload.channel,
         )
     )
-    if (
-        request.app.state.database_runtime.enabled
-        and response["handoff_status"] == HANDOFF_UNAVAILABLE
-    ):
+    response["handoff_status"] = persistence_result.handoff_status
+    response["persistence_status"] = persistence_result.persistence_status
+    if response["handoff_status"] == HANDOFF_UNAVAILABLE:
         response["answer"] = (
             f"{response['answer']} O atendimento humano esta temporariamente indisponivel; "
             "guarde o request_id para acompanhamento."
@@ -83,6 +86,9 @@ def chat(
         handoff_reasons=response["handoff_reasons"],
         error_code=response["error_code"],
         handoff_status=response["handoff_status"],
+        persistence_status=response["persistence_status"],
+        request_id_reused=persistence_result.request_id_reused,
+        channel=payload.channel,
         retrieval_backend=settings.retrieval_backend,
         references_count=len(response["references"]),
         total_ms=observability_fields.get("total_ms"),
