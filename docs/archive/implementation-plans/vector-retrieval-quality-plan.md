@@ -1,5 +1,8 @@
 # Plano tecnico - Qualidade de retrieval vetorial
 
+Archive: incorporado ao MVP. Este documento preserva decisoes e criterios da
+frente; o trabalho ativo esta nas fontes atuais de promocao e calibragem.
+
 ## Objetivo
 
 Preparar a qualidade do retrieval vetorial oficial usando o contrato
@@ -46,13 +49,13 @@ Entregas ja concluidas nesta frente:
   persistente apenas quando `DATABASE_URL` e chave de embeddings estiverem
   configurados no ambiente privado
 
-Lacunas principais desta fase:
+Backlog continuo desta frente:
 
 - transformar a validacao operacional em uma rotina reproduzivel de release
 - preservar `references` como `list[str]`
 - retornar score e fonte rastreaveis internamente
-- validar a query oficial contra dados reais do dominio no ambiente definido
-- definir fallback quando banco ou embedding falhar no runtime real
+- repetir a query oficial e os gates em cada promocao relevante
+- manter o fallback lexical testado quando banco ou embedding falhar
 - evitar Chroma como segunda fonte de verdade em producao
 - calibrar thresholds com conteudo real, nao apenas seeds sinteticos
 - manter o formato publico do `/chat` estavel: `request_id`, `domain`,
@@ -253,10 +256,7 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 - A fronteira com PostgreSQL fica clara: esta frente valida contrato e adapter;
   a frente de banco define schema, migrations, indices, extensoes e operacao.
 
-## Estimativa da fase atual
+## Proximo Uso
 
-- alinhar backend real com schema de banco: 45 a 90 minutos
-- conectar `PgVectorStore` a um backend PostgreSQL real: 2 a 4 horas
-- validar isolamento, falhas, scripts SQL e evals: 1,5 a 3 horas
-
-Total esperado: 4 a 8,5 horas.
+Nao reimplementar adapter ou conexao. Use este plano para revisar regressao,
+isolamento entre dominios e qualidade antes de promover mudancas em retrieval.

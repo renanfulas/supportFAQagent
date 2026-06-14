@@ -65,8 +65,12 @@ Regras:
 - erros de confirmacao usam apenas `invalid_or_expired_code`, sem revelar se o desafio existe
 - telefone bruto, OTP e cookie nao entram em logs
 - `IDENTITY_HASH_SECRET` e `OTP_DIGEST_SECRET` sao obrigatorios, privados e diferentes quando a feature flag estiver ativa
-- V1A usa armazenamento em memoria e adapter local de captura apenas para laboratorio privado; reiniciar a API perde os vinculos verificados
-- PostgreSQL e entrega real por webhook interno `n8n` entram na proxima integracao sem alterar o contrato HTTP publico
+- `WEB_AUTH_STORAGE_BACKEND=memory` permanece apenas para laboratorio e perde
+  vinculos ao reiniciar; `WEB_AUTH_STORAGE_BACKEND=postgres` preserva o estado
+  por restart
+- PostgreSQL, outbox e ingress assinado estao implementados sem alterar o
+  contrato HTTP publico; entrega real por `n8n`/Evolution ainda exige ativacao
+  e smoke privado
 
 Exemplo:
 

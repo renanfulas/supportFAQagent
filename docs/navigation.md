@@ -19,29 +19,29 @@ Se voce esta chegando agora, leia nesta ordem:
 1. `README.md`
 2. `docs/product-positioning.md`
 3. `docs/architecture.md`
-4. `docs/mvp-plan.md`
-5. `docs/domain-contract.md`
-6. `docs/domain-evals.md`
-7. `docs/knowledge-authoring.md`
-8. `docs/agent-skills.md`
-9. `docs/observability.md`
-10. `docs/technical-implementation-plan.md`
-11. `docs/integration-contracts.md`
-12. `domains/suporte-vps-whatsapp/domain.yaml`
-13. `app/main.py`
-14. `app/api/routes/`
-15. `app/orchestration/chat_flow.py`
-16. `app/retrieval/service.py`
-17. `app/ingestion/service.py`
-18. `app/ingestion/github_loader.py`
-19. `scripts/`
+4. `docs/documentation-status.md`
+5. `docs/mvp-plan.md`
+6. `docs/domain-contract.md`
+7. `docs/domain-evals.md`
+8. `docs/knowledge-authoring.md`
+9. `docs/agent-skills.md`
+10. `docs/observability.md`
+11. `docs/technical-implementation-plan.md`
+12. `docs/integration-contracts.md`
+13. `domains/suporte-vps-whatsapp/domain.yaml`
+14. `app/main.py`
+15. `app/api/routes/`
+16. `app/orchestration/chat_flow.py`
+17. `app/retrieval/service.py`
+18. `app/ingestion/service.py`
+19. `app/ingestion/github_loader.py`
+20. `scripts/`
 
 ## Planos por frente
 
 Quando a mudanca for uma frente executavel ainda em aberto, use estes planos
 curtos antes de codar:
 
-- `docs/quality-plans/vector-retrieval-quality-plan.md`: embeddings, adapter vetorial e isolamento por dominio.
 - `docs/web-chat-v1-whatsapp-otp-spec.md`: contrato, threat model e fronteiras
   da identidade de canal por WhatsApp OTP.
 - `docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md`: evolucao persistente
@@ -51,6 +51,10 @@ Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
 feedback/n8n, devem ser entendidas pelo estado atual do codigo e pelos docs
 principais, nao por planos de execucao antigos.
+
+Planos concluidos, relatorios substituidos e roadmaps historicos ficam em
+`docs/archive/`. Consulte `docs/archive/README.md` para localizar o substituto
+ativo antes de usar qualquer documento arquivado.
 
 ## O que procurar em cada pasta
 
@@ -102,7 +106,20 @@ Concentra regras de escalonamento humano reutilizaveis, como baixa confianca, pe
 
 ## `app/feedback/`
 
-Concentra servico e contrato interno de feedback enquanto a persistencia real ainda nao e definitiva.
+Concentra o servico e o contrato interno de feedback. Quando
+`PERSISTENCE_BACKEND=postgres`, o contexto confiavel vem da resposta original
+persistida e o cliente nao pode substituir referencias ou motivos de handoff.
+
+## `app/conversations/`
+
+Concentra persistencia sanitizada de conversas e mensagens, isolamento por
+dominio, canal e hash de sessao, alem da leitura do historico curto real.
+
+## `app/health/`
+
+Concentra readiness operacional separado para banco, migrations, retrieval e
+outbox. `GET /health` continua sendo liveness simples; `GET /health/ready` e o
+gate autenticado para promover runtime.
 
 ## `app/evals/`
 
@@ -111,6 +128,11 @@ Ferramentas locais para rodar calibragem de dominio contra casos reais versionad
 ## `app/db/` e `migrations/`
 
 Guardam modelos, conexao e artefatos SQL. Mudancas de schema, indices, migrations e queries finais de pgvector devem respeitar ownership de banco.
+
+O fluxo atual usa migrations SQL forward-only com ledger, checksum e runner em
+`python -m scripts.migrate`. Nunca aplique `006` e `007` juntas em banco
+existente sem executar o backfill e confirmar que writers legados foram
+drenados.
 
 ## `app/static/`
 

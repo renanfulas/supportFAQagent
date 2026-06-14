@@ -120,11 +120,15 @@ Pronto no MVP atual:
 - retrieval lexical
 - pgvector validado em staging real por feature flag
 - `pgvector_gate.yaml` validada em staging com `74/78`
+- Fase 0 implementada e validada localmente com PostgreSQL/pgvector real,
+  migrations `001-008` e `348` testes verdes
 - testes e documentacao base
 
 Proxima fase operacional:
 
-- validar operacionalmente persistencia e migrations em staging
+- fechar os hardenings locais restantes da Fase 0
+- validar operacionalmente persistencia, migrations, readiness e restore em
+  staging
 - ativar integracao n8n/WhatsApp autenticada
 - operacao reproduzivel e monitoramento da VPS
 - decisao operacional sobre promocao do pgvector como default
@@ -162,6 +166,7 @@ domains/
     knowledge/
     prompts/
 docs/                # arquitetura, produto, contratos, runbooks e seguranca
+  archive/           # planos concluidos, relatorios substituidos e roadmaps historicos
 migrations/          # scripts SQL e artefatos de evolucao do banco
 scripts/             # comandos operacionais
 tests/               # testes unitarios e de integracao
@@ -204,14 +209,19 @@ python -m pytest
 
 ## Documentacao
 
+A documentacao ativa fica nas pastas principais de `docs/`. Planos concluidos,
+relatorios substituidos e roadmaps antigos ficam preservados em
+[`docs/archive/`](docs/archive/README.md) e nao devem ser usados como runbooks
+atuais.
+
 - [Posicionamento do produto](docs/product-positioning.md)
 - [Arquitetura](docs/architecture.md)
 - [Plano unico do MVP](docs/mvp-plan.md)
+- [Estado e fontes ativas da documentacao](docs/documentation-status.md)
 - [Contrato de dominio](docs/domain-contract.md)
 - [Calibragem de dominio](docs/domain-evals.md)
 - [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
 - [Planos de qualidade por frente](docs/quality-plans/README.md)
-- [Plano de qualidade de retrieval vetorial](docs/quality-plans/vector-retrieval-quality-plan.md)
 - [Fase 0 de reducao de risco operacional](docs/quality-plans/phase0-operational-risk-reduction.md)
 - [Revisao da base de conhecimento](docs/quality-plans/knowledge-base-review-2026-05-17.md)
 - [Runbook de intake anonimo para evals](docs/runbooks/anonymous-eval-intake.md)
@@ -231,8 +241,7 @@ python -m pytest
 - [Politica publica de seguranca](SECURITY.md)
 - [Plano de seguranca da VPS](docs/security/vps-security-plan.md)
 - [Confinamento por design para LLM e RAG](docs/security/llm-confinement.md)
-- [Acompanhamento de implementacao de seguranca](docs/security/implementation-tracking.md)
-- [Guia de Git para seguranca](docs/security/git-commit-guide.md)
+- [Archive de planos e documentos historicos](docs/archive/README.md)
 - [Agent skills universais](docs/agent-skills.md)
 - [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
 - [Contratos de integracao](docs/integration-contracts.md)

@@ -5,9 +5,9 @@ Baseado em `docs/environments.md`, `docs/runbooks/vps-controlled-runtime.md`,
 `docs/runbooks/hostgator-staging-web-chat-v0.md` e
 `docs/security/vps-security-plan.md`.
 
-Ownership de VPS, deploy e runtime: Silotto.
-Ownership de banco, migrations e pgvector: Alexandre.
-Ownership de contratos, backend e testes: Renan.
+Ownership de VPS, deploy, runtime, rede, logs, n8n e Evolution: Juliano.
+Ownership de banco, migrations, pgvector, contratos, backend e testes: Renan.
+Rollout de migration, restore e promocao exigem revisao conjunta.
 
 ---
 
@@ -74,6 +74,20 @@ PROJECT_LLM_API_KEY_ALIAS=
 # Banco
 DATABASE_URL=<database-url-privada-do-postgres>
 RETRIEVAL_BACKEND=pgvector
+PERSISTENCE_BACKEND=postgres
+PERSISTENCE_HASH_SECRET=<secret-dedicado>
+PERSISTENCE_HASH_VERSION=hmac-sha256-v1
+OUTBOX_WEBHOOK_SECRET=<secret-dedicado>
+ENABLE_OUTBOX_INGRESS=true
+N8N_VERIFIED_HANDOFF_URL=<url-interna>
+N8N_VERIFIED_WHATSAPP_URL=<url-interna>
+N8N_VERIFIED_OTP_URL=<url-interna>
+HANDOFF_WEBHOOK_URL=<url-interna-do-ingress-assinado>
+WHATSAPP_MESSAGE_WEBHOOK_URL=<url-interna-do-ingress-assinado>
+OTP_DELIVERY_WEBHOOK_URL=<url-interna-do-ingress-assinado>
+HEALTH_OUTBOX_READY_DEGRADED_COUNT=100
+HEALTH_OUTBOX_OLDEST_READY_DEGRADED_SECONDS=300
+OUTBOX_PROCESSING_STALE_SECONDS=300
 
 # Rate limits
 RATE_LIMIT_PER_MINUTE=30
@@ -126,17 +140,30 @@ Nunca abrir `5432` diretamente para a internet.
 
 ## 6. Aplicar as migrations
 
-Aplicar em ordem. Nao pular nenhuma.
+Antes de qualquer migration em staging, criar snapshot e executar o preflight
+da Fase 0. Aplicar pelo runner auditavel; nao executar migrations novas
+manualmente com `psql`.
 
 ```bash
-# Schema principal: dominios, artigos, chunks, embeddings, conversas, mensagens
-psql "$DATABASE_URL" -f migrations/001_initial_schema.sql
+python -m scripts.staging_phase0_preflight \
+  --snapshot-confirmed \
+  --env-file .env \
+  --output /tmp/supportfaq-phase0-preflight.md
 
-# Web auth OTP V1B: verified_identities, web_sessions, otp_challenges
-psql "$DATABASE_URL" -f migrations/002_web_auth.sql
+python -m scripts.migrate status
+python -m scripts.migrate apply --target 006_conversations_messages.sql
+python -m scripts.backfill_conversation_privacy
+python -m scripts.backfill_conversation_privacy --verify-contract-ready
+python -m scripts.migrate apply
+python -m scripts.migrate apply
+python -m scripts.migrate verify
 ```
 
-Validar com os testes SQL do repositorio:
+Em banco novo, a confirmacao do backfill continua obrigatoria antes da fase
+contract. Em banco onde `001` e `002` foram aplicadas manualmente, use
+`baseline` somente depois da validacao exigida pelo runner.
+
+Os testes SQL abaixo continuam validos para o contrato pgvector:
 
 ```bash
 psql "$DATABASE_URL" -f tests/db/test_01_extensions.sql
@@ -195,15 +222,25 @@ Em outra sessao SSH:
 # Saude
 curl -i http://127.0.0.1:8000/health
 
+# Readiness operacional
+curl -i \
+  -H "X-API-Key: $API_SECRET_KEY" \
+  http://127.0.0.1:8000/health/ready
+
 # Dominios carregados
-curl -i http://127.0.0.1:8000/domains
+curl -i \
+  -H "X-API-Key: $API_SECRET_KEY" \
+  http://127.0.0.1:8000/domains
 
 # Preview de ingestao
-curl -i http://127.0.0.1:8000/ingestion/suporte-vps-whatsapp/preview
+curl -i \
+  -H "X-API-Key: $API_SECRET_KEY" \
+  http://127.0.0.1:8000/ingestion/suporte-vps-whatsapp/preview
 
 # Chat
 curl -i \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: $API_SECRET_KEY" \
   -H "X-Request-ID: smoke-001" \
   -d '{"domain":"suporte-vps-whatsapp","session_id":"smoke","message":"Como instalar a Evolution API na VPS?"}' \
   http://127.0.0.1:8000/chat
@@ -242,10 +279,14 @@ curl -i \
 ### Criterios de sucesso
 
 - `/health` responde `200` com `X-Request-ID`
+- `/health/ready` responde `200` com banco, migrations, retrieval e outbox
+  saudaveis
 - `/domains` lista `suporte-vps-whatsapp`
 - `/ingestion/suporte-vps-whatsapp/preview` retorna `document_count >= 1`
 - `/chat` responde com `error_code: null` quando provider e banco estiverem ok
 - Fallback seguro com `error_code: provider_error` quando provider ausente
+- feedback confirma `storage=postgres` depois do commit
+- handoff enfileirado retorna `handoff_status=handoff_queued`
 
 ---
 
@@ -253,7 +294,9 @@ curl -i \
 
 - [ ] `API_SECRET_KEY` definido com valor forte e unico
 - [ ] `DATABASE_URL` apontando para o novo PostgreSQL
-- [ ] Migrations `001` e `002` aplicadas e testes SQL passando
+- [ ] Snapshot e preflight concluidos
+- [ ] Migrations `001-008` verificadas pelo runner
+- [ ] `/health/ready` aprovado com banco, migrations, retrieval e outbox
 - [ ] Dominio ingerido no pgvector
 - [ ] `/health`, `/domains`, `/chat` respondendo no loopback
 - [ ] HTTPS ativo antes de abrir para fora
@@ -292,5 +335,6 @@ Parar e registrar bloqueio privado se ocorrer:
 - [Smoke HTTP automatizado](staging-http-smoke.md)
 - [Web chat V0 HostGator staging](hostgator-staging-web-chat-v0.md)
 - [Plano de seguranca da VPS](../security/vps-security-plan.md)
-- [Relatorio de validacao anterior](staging-runtime-validation-report.md)
+- [Relatorio historico de validacao anterior](../archive/historical-reports/staging-runtime-validation-report.md)
 - [Plano V1B WhatsApp OTP](../quality-plans/web-chat-v1b-postgres-n8n-plan.md)
+- [Checklist de promocao da Fase 0](phase0-staging-promotion-evidence.md)

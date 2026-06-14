@@ -96,7 +96,7 @@ Regras:
 
 ## Campos da resposta que o n8n deve preservar
 
-Preservar em memoria operacional, log sanitizado ou persistencia futura:
+Preservar em memoria operacional, log sanitizado ou persistencia operacional:
 
 - `request_id`
 - `domain`

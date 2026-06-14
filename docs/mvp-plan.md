@@ -68,6 +68,19 @@ Estado consolidado em 11/06/2026:
 - as Fases 1 a 4 do nucleo tecnico estao concluidas
 - a Fase 5 passa a ser a proxima fase operacional e pos-MVP
 
+Avanco integrado pelo PR `#64` em 12/06/2026:
+
+- conversas, mensagens e feedback persistem de forma sanitizada quando
+  `PERSISTENCE_BACKEND=postgres`
+- historico curto real entra no prompt isolado por dominio, canal e hash de
+  sessao
+- migrations `001-008`, outbox transacional, retencao e readiness separado
+  estao implementados
+- PostgreSQL/pgvector real local passou pelo rollout expand/contract e pela
+  suite completa com `348 passed`
+- a Fase 0 continua `not_approved` ate fechar hardenings locais restantes e
+  provar snapshot, restore, rede privada e integracoes em staging
+
 ## Responsabilidades
 
 Para este MVP, as frentes ficam organizadas assim:
@@ -215,7 +228,8 @@ Status: concluida.
 - consolidar chunking com `RecursiveCharacterTextSplitter` na ingestao oficial
 - unificar ingestao de artigos/FAQs com pipeline CSV curado
 - manter suporte simples aos formatos atuais sem acoplar o core ao Chroma
-- evoluir `POST /ingestion/preview` para job persistente apenas quando banco estiver pronto
+- manter `POST /ingestion/preview` nao persistente por contrato; usar o writer
+  operacional separado para ingestao pgvector
 
 ## Fase 3
 
@@ -231,7 +245,7 @@ Status: concluida para o MVP.
 
 Status: concluida para o nucleo tecnico do MVP.
 
-- preparar historico curto real quando houver persistencia de conversas
+- manter o historico curto real e sua sanitizacao como regressao coberta
 - consolidar `confidence_threshold` e sinais de handoff com dados reais
 - manter a `pgvector_gate.yaml` como regressao oficial do MVP
 - manter evals locais como regressao de qualidade antes de mudar prompts, retrieval ou provider
@@ -241,6 +255,7 @@ Status: concluida para o nucleo tecnico do MVP.
 Status: em andamento.
 
 - manter a configuracao operacional reproduzivel
+- fechar os hardenings locais bloqueantes registrados na Fase 0
 - validar e ativar com seguranca os workflows n8n versionados, sem mover
   inteligencia para fora da API
 - validar em staging a persistencia, migrations, sanitizacao e outbox

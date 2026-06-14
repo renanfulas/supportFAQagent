@@ -5,10 +5,9 @@ ainda seguem abertas ou parcialmente abertas. Cada plano segue o mesmo formato
 basico: objetivo, escopo, arquivos alvo, validacao, criterios de pronto e
 riscos de fronteira.
 
-Use estes documentos antes de abrir codigo novo em uma frente especifica:
-
-- [Retrieval vetorial](vector-retrieval-quality-plan.md) - fase atual da
-  integracao oficial com PostgreSQL + pgvector
+Use os planos ainda presentes nesta pasta antes de abrir codigo novo em uma
+frente especifica. O plano concluido de retrieval vetorial foi movido para
+[`docs/archive/implementation-plans/`](../archive/implementation-plans/vector-retrieval-quality-plan.md).
 
 Quando uma parte da frente ja tiver sido implementada e mergeada, o plano deve:
 
@@ -17,7 +16,8 @@ Quando uma parte da frente ja tiver sido implementada e mergeada, o plano deve:
 - apontar para os testes, evals e docs que ja viraram fonte de verdade
 
 Frentes totalmente encerradas devem sair desta pasta quando o plano virar
-historico obsoleto. Nesses casos, a fonte de verdade passa a ser:
+historico. Nesses casos, o plano vai para `docs/archive/` e a fonte de verdade
+passa a ser:
 
 - o estado atual do codigo
 - os docs principais do projeto

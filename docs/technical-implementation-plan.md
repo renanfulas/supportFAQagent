@@ -58,7 +58,7 @@ Avancos confirmados no historico entre 13/05/2026 e 16/05/2026:
 - staging privado validado com pgvector, embeddings reais e seeds artificiais
   removidos antes da calibragem
 
-Estado consolidado do nucleo tecnico em 11/06/2026:
+Estado consolidado do nucleo tecnico em 14/06/2026:
 
 - `/chat` continua usando retrieval lexical como padrao seguro quando
   `RETRIEVAL_BACKEND` nao aponta para `pgvector`
@@ -77,8 +77,10 @@ Estado consolidado do nucleo tecnico em 11/06/2026:
 - historico curto real entra no prompt como dado nao confiavel
 - `/health/ready` separa banco, migrations, retrieval e outbox sem chamar LLM
 - migrations forward-only, sanitizacao persistente e outbox transacional da
-  Fase 0 estao implementadas no repositorio e aguardam validacao operacional
-  em staging
+  Fase 0 estao implementadas no repositorio
+- o rollout local real aplicou migrations `001-008`, confirmou expand/contract
+  e terminou com `348 passed`; a aprovacao operacional ainda depende de
+  hardenings locais restantes e provas em staging
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
 - a calibragem local com `pgvector` ja gerou baseline forte:
@@ -200,7 +202,8 @@ Resposta minima:
 }
 ```
 
-Campos que devem permanecer estaveis para integracoes e persistencia futura:
+Campos que devem permanecer estaveis para integracoes e persistencia
+operacional:
 
 - `request_id`
 - `domain`
@@ -660,7 +663,8 @@ Observacao:
 ## Renan - Orquestracao, testes e seguranca
 
 - Manter `prompt_builder.py` integrado ao `ChatFlowService`.
-- Adicionar historico curto real por `history_turns` quando houver persistencia de conversas.
+- Manter historico curto real, sanitizado e isolado por dominio, canal e hash
+  de sessao.
 - Implementar confidence score inicial.
 - Manter regras de handoff por threshold, pedido humano e termos sensiveis.
 - Calibrar os termos com dados reais antes de expor canal publico.
@@ -803,12 +807,12 @@ Regras de debug:
 | Provider real de LLM | API key e contrato de provider | Renan |
 | Wrapper de embeddings | Modelo escolhido e secret configurado | Renan |
 | Text splitter | Consolidar pipeline atual com ingestion oficial | Juliano |
-| Schema de artigos/chunks | PostgreSQL + pgvector | Alexandre |
-| Retrieval vetorial | Schema pgvector ou adapter Chroma temporario | Alexandre + Renan |
-| Deploy do backend | VPS pronta | Silotto |
-| Workflow WhatsApp | API `/chat` estavel | Alexandre |
-| Handoff | Confidence e payload de resposta | Renan + Alexandre |
-| Hardening | Deploy e endpoints expostos | Renan + Silotto |
+| Schema, migrations e persistencia | PostgreSQL + pgvector | Renan |
+| Retrieval vetorial | Schema pgvector e adapter oficial | Renan |
+| Deploy do backend | VPS pronta | Juliano |
+| Workflow WhatsApp | API `/chat` estavel e ingress assinado | Juliano |
+| Handoff | Confidence, outbox e payload estavel | Renan + Juliano |
+| Hardening | Aplicacao, deploy e endpoints expostos | Renan + Juliano |
 | Evals do dominio | Casos reais e criterios de qualidade | Renan |
 
 ## Backlog pos-MVP

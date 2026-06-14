@@ -1,5 +1,8 @@
 # Plano V1B - Persistencia OTP E Entrega WhatsApp Real
 
+Status: backend PostgreSQL, contratos e workflow versionado implementados; a
+ativacao n8n/Evolution e o smoke privado real continuam pendentes.
+
 ## Objetivo
 
 Evoluir a V1A de laboratorio para um fluxo integrado privado:
@@ -27,12 +30,13 @@ A V1A ja entrega:
 - `InMemoryWebAuthStore`;
 - `InMemoryOtpDeliveryAdapter`.
 
-Limites atuais:
+Pendencias operacionais atuais:
 
-- reiniciar a API perde desafios, identidades verificadas e vinculos de sessao;
-- o adapter local captura a entrega, mas nao envia mensagem real;
 - os rate limits por IP e telefone ainda vivem em memoria;
-- nao existe workflow OTP versionado no `n8n`.
+- o workflow versionado ainda precisa ser ativado e validado no runtime
+  privado;
+- entrega real, restart completo e idempotencia da Evolution ainda precisam de
+  smoke.
 
 ## Principios De Arquitetura
 

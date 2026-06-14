@@ -1,15 +1,18 @@
 # Plano De Implementacao V0 Do Chat Web
 
+Archive: concluido e incorporado. Este documento preserva o registro da
+implementacao e nao deve ser usado como backlog ou runbook atual.
+
 Este documento detalha a implementacao da V0 do chat web do
 `supportFAQagent`.
 
-A V0 deve entregar uma experiencia estilo ChatGPT para o website, mas sem
-autenticacao por WhatsApp, sem historico persistente e sem expor segredos no
-navegador.
+A V0 entregou uma experiencia de chat para o website sem autenticacao por
+WhatsApp e sem expor segredos no navegador. Persistencia sanitizada e historico
+curto foram adicionados posteriormente por feature flag.
 
 Documento pai:
 
-- [Plano De Evolucao Do Chat Web](web-chat-evolution-plan.md)
+- [Plano De Evolucao Do Chat Web](../../web-chat-evolution-plan.md)
 
 ## Decisao De Escopo
 
@@ -19,8 +22,8 @@ Ela nao substitui o contrato interno atual:
 
 - `POST /chat` continua protegido por `X-API-Key`.
 - `POST /feedback` continua protegido por `X-API-Key`.
-- `POST /web/chat` sera o contrato publico controlado para o browser.
-- `POST /web/feedback` sera o contrato publico controlado para feedback do
+- `POST /web/chat` e o contrato publico controlado para o browser.
+- `POST /web/feedback` e o contrato publico controlado para feedback do
   browser.
 
 Regra de ouro:

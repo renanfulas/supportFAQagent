@@ -169,7 +169,11 @@ O `n8n` deve consumir o backend por HTTP, sem acessar tabelas internas:
 
 - `POST /chat`
 - `POST /feedback`
-- futuros endpoints internos de OTP quando aprovados
+- ingress interno assinado para `otp.delivery.requested`,
+  `handoff.requested` e `whatsapp.message.requested`
+
+Antes de ativar canais, exigir `/health/ready=200`, migrations `001-008`
+verificadas e smoke privado dos workflows.
 
 Headers obrigatorios para `/chat`:
 

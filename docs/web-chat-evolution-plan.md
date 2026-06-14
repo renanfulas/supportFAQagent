@@ -1,5 +1,9 @@
 # Plano De Evolucao Do Chat Web
 
+Status: V0 e parte persistente da V2 foram incorporadas. Este documento
+permanece como roadmap; as entregas ainda abertas sao identidade/WhatsApp real,
+continuidade omnichannel e operacao humana.
+
 Este documento define o plano tecnico para evoluir a interface web do
 `supportFAQagent` de uma experiencia V0 estilo ChatGPT ate um fluxo
 omnichannel com WhatsApp, identidade verificada, historico e operacao humana.
@@ -21,7 +25,7 @@ V3: Operacao madura com dashboard, qualidade e expansao multi-dominio.
 
 Detalhamento de implementacao da primeira fase:
 
-- [Plano De Implementacao V0 Do Chat Web](web-chat-v0-implementation-plan.md)
+- [Plano arquivado de implementacao V0](archive/implementation-plans/web-chat-v0-implementation-plan.md)
 - [Especificacao V1 De Identidade Por WhatsApp OTP](web-chat-v1-whatsapp-otp-spec.md)
 
 O ponto mais importante:
@@ -122,10 +126,10 @@ n8n / WhatsApp / automacoes
   -> mesmo core de orquestracao
 ```
 
-Entregas tecnicas:
+Entregas tecnicas incorporadas:
 
-- Criar uma rota web publica controlada, por exemplo `POST /web/chat`.
-- Criar uma rota web publica controlada para feedback, por exemplo
+- Rota web publica controlada `POST /web/chat`.
+- Rota web publica controlada para feedback
   `POST /web/feedback`.
 - Manter `POST /chat` e `POST /feedback` protegidos por `X-API-Key`.
 - Gerar sessao anonima web com identificador nao reversivel.
@@ -202,8 +206,8 @@ Entregas tecnicas:
 - Enviar codigo via WhatsApp por integracao externa controlada.
 - Confirmar codigo no backend.
 - Vincular sessao web anonima ao telefone verificado.
-- Iniciar persistencia de conversas e mensagens se a frente de banco estiver
-  pronta.
+- Reutilizar a persistencia sanitizada de conversas e mensagens ja disponivel
+  quando `PERSISTENCE_BACKEND=postgres`.
 - Manter `session_id` tratado como dado sensivel.
 - Criar protecoes contra abuso: cooldown, limite por IP, limite por telefone e
   bloqueio temporario por excesso de tentativas.
@@ -274,11 +278,11 @@ Handoff humano
   -> responde ou assume atendimento
 ```
 
-Entregas tecnicas:
+Entregas tecnicas restantes e incorporadas:
 
-- Persistir conversas.
-- Persistir mensagens.
-- Registrar canal da mensagem: `web`, `whatsapp`, `human`, `system`.
+- Persistencia de conversas e mensagens ja incorporada.
+- Ampliar canais persistidos para `web`, `whatsapp`, `human` e `system`
+  conforme a operacao omnichannel for ativada.
 - Registrar status da conversa: `bot`, `handoff_pending`, `human_active`,
   `resolved`, `closed`.
 - Preservar `request_id`, `references`, `confidence`, `handoff_reasons` e
@@ -504,6 +508,9 @@ Mitigacao:
 
 ## Ordem Recomendada De Implementacao
 
+> Ordem historica da V0, ja incorporada. Para trabalho novo, seguir a Fase 0 e
+> a Fase 5 nos planos ativos.
+
 1. Criar contrato e testes de `/web/chat`.
 2. Implementar resolucao de sessao anonima.
 3. Implementar rate limit especifico da web.
@@ -550,6 +557,9 @@ Validacoes de seguranca:
   segredo.
 
 ## Prompt De Execucao Para Agente
+
+> Prompt arquivado da implementacao V0. Nao executar novamente contra o estado
+> atual do repositorio.
 
 ```text
 Voce e um engenheiro full-stack senior no projeto supportFAQagent.

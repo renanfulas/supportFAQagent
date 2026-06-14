@@ -196,4 +196,4 @@ Interrompa a exposicao da V0 publica se ocorrer qualquer um destes:
 - [Mapa oficial de ambientes](../environments.md)
 - [Contratos de integracao](../integration-contracts.md)
 - [Smoke HTTP automatizado em staging](staging-http-smoke.md)
-- [Plano V0 do chat web](../web-chat-v0-implementation-plan.md)
+- [Plano arquivado V0 do chat web](../archive/implementation-plans/web-chat-v0-implementation-plan.md)

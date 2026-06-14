@@ -19,12 +19,13 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
 ### Local dev
 
 - Tipo: laboratorio de desenvolvimento e validacao tecnica.
-- Banco: Docker com `pgvector/pgvector:pg16`.
+- Banco: Docker com `pgvector/pgvector:pg16` ou PostgreSQL/pgvector
+  descartavel em WSL1 quando virtualizacao nao estiver disponivel.
 - Uso esperado:
-  - validar migration `001_initial_schema.sql`
+  - validar o runner e migrations `001-008`
   - validar extensoes `vector` e `pgcrypto`
-  - validar inserts e query top-k
-  - validar scripts em `tests/db/`
+  - validar expand/contract, concorrencia, privacidade e readiness
+  - validar inserts, query top-k e scripts em `tests/db/`
 - Status: descartavel, pode ser recriado sem impacto operacional.
 
 ### Staging HostGator
@@ -32,7 +33,8 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
 - Tipo: ambiente oficial de staging do projeto.
 - Banco: PostgreSQL oficial do `supportFAQagent` na HostGator.
 - `pgvector`: no mesmo banco da aplicacao.
-- Provisionamento: a definir com Silotto.
+- Provisionamento e operacao: Juliano, coordenado com Renan para banco,
+  migrations e contratos.
 - Valores recomendados para a V0 do chat publico:
   - `ENABLE_PUBLIC_CHAT_UI=true`
   - `ENABLE_CHAT_UI=false`
@@ -112,10 +114,16 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
 
 ## Validacao esperada
 
-Para gate de SQL e pgvector, usar ambiente deterministico sem depender de provider real.
+Para gate de SQL e pgvector, usar ambiente deterministico sem depender de
+provider real. Migrations novas devem ser aplicadas pelo runner, nao por
+execucao manual isolada:
 
 ```powershell
-psql $env:DATABASE_URL -f migrations/001_initial_schema.sql
+python -m scripts.migrate status
+python -m scripts.migrate apply --target 006_conversations_messages.sql
+python -m scripts.backfill_conversation_privacy --verify-contract-ready
+python -m scripts.migrate apply
+python -m scripts.migrate verify
 psql $env:DATABASE_URL -f tests/db/test_01_extensions.sql
 psql $env:DATABASE_URL -f tests/db/test_02_schema.sql
 psql $env:DATABASE_URL -f tests/db/test_03_idempotency.sql
@@ -133,8 +141,8 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 
 ## Proximo encaixe
 
-Depois deste alinhamento:
-
-1. Renan fecha banco oficial, migrations e query vetorial.
-2. Renan conecta o backend ao PostgreSQL/pgvector pelo contrato `PgVectorStore`.
-3. Juliano conecta `n8n` consumindo a API HTTP em vez do banco do agente.
+1. Renan fecha os hardenings locais bloqueantes da Fase 0.
+2. Juliano cria snapshot e prepara rede, logs, alertas e runtime privado.
+3. Renan e Juliano executam rollout, readiness, smokes e restore em staging.
+4. Juliano ativa `n8n` e Evolution consumindo a API HTTP, nunca o banco do
+   agente.

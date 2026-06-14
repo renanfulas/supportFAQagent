@@ -2,6 +2,11 @@
 **supportFAQagent | Open Source**
 **Atualizado em: Maio/2026**
 
+> Archive: snapshot historico do roadmap inicial. Para status e ownership atuais, use
+> `docs/technical-implementation-plan.md` e
+> `docs/quality-plans/phase0-operational-risk-reduction.md`. Itens marcados
+> abaixo nao devem ser usados como prova atual de conclusao ou pendencia.
+
 Este documento publico registra o roadmap de seguranca do projeto sem expor IPs reais, nomes de usuarios internos, credenciais, hostnames ou detalhes operacionais do ambiente.
 
 ## Estrutura de milestones

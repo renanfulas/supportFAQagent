@@ -117,8 +117,9 @@ HANDOFF_GROUP_ID
   `body.data.key.remoteJid` e texto em `conversation` ou
   `extendedTextMessage.text`; confirmar o contrato da instancia real antes de
   ativar;
-- o ingress HMAC persistente precisa receber a migration `005` e ser validado
-  no ambiente;
+- o ingress HMAC persistente e a migration `005` estao implementados; o
+  ambiente precisa ter migrations `001-008` verificadas e o ingress validado
+  por smoke privado;
 - nenhum template versionado equivale a smoke real com Evolution e WhatsApp.
 - sem suporte de idempotencia na Evolution ou no proxy final, entrega continua
   at-least-once e um timeout depois do side effect ainda exige reconciliacao

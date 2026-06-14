@@ -58,6 +58,8 @@ LIMIT :top_k;
 
 ## Fronteira de responsabilidade
 
-- Alexandre: schema SQL, migrations, query vetorial, validacao PostgreSQL.
-- Renan: adapter Python, contrato do backend, testes do app e integracao com `/chat`.
-- Silotto: runtime oficial e `DATABASE_URL` do ambiente HostGator.
+- Renan: schema SQL, migrations, query vetorial, adapter Python, testes do app
+  e integracao com `/chat`.
+- Juliano: runtime oficial, secrets e conectividade privada do ambiente de
+  staging.
+- Aplicacao de migration e promocao exigem snapshot e revisao conjunta.

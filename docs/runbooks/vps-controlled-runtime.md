@@ -17,7 +17,7 @@ Ja preparado no repositorio:
 - smoke tests automatizados no codigo
 - preflight de runtime via PowerShell sem imprimir valores de segredo
 - relatorio sanitizado da validacao real em
-  [staging-runtime-validation-report.md](staging-runtime-validation-report.md)
+  [relatorio historico de staging](../archive/historical-reports/staging-runtime-validation-report.md)
 
 Ainda nao comprovado neste runbook:
 
@@ -277,11 +277,15 @@ Depois da execucao real deste runbook, registrar um relatorio curto com tres blo
 - o que ainda ficou pendente por dependencia de ambiente ou banco
 - o que nao deve ser retrabalhado porque ja estava coberto no codigo ou na documentacao
 
-Se `DATABASE_URL` estiver disponivel, executar a validacao SQL em uma sessao
-privada e registrar somente o resultado sanitizado:
+Se `DATABASE_URL` estiver disponivel, nao aplique migration neste runbook.
+Migrations em staging exigem snapshot, preflight, ledger e o fluxo
+expand/contract documentado em `phase0-snapshot-restore.md` e
+`phase0-staging-promotion-evidence.md`.
+
+Depois de o runner confirmar as migrations, os scripts SQL abaixo podem ser
+usados somente como validacao adicional do contrato pgvector:
 
 ```bash
-psql "$DATABASE_URL" -f migrations/001_initial_schema.sql
 psql "$DATABASE_URL" -f tests/db/test_01_extensions.sql
 psql "$DATABASE_URL" -f tests/db/test_02_schema.sql
 psql "$DATABASE_URL" -f tests/db/test_03_idempotency.sql

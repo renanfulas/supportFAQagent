@@ -1,6 +1,11 @@
 # 🔀 Guia de Git — Implementação de Segurança
 **supportFAQagent | Para o time: Renan, Alexandre, Juliano, Silotto**
 
+> Archive: guia historico do primeiro roadmap de seguranca. Para contribuicoes atuais,
+> use `.agents/skills/supportfaq-git-flow/SKILL.md` e o ownership Renan/Juliano
+> definido no plano tecnico. Os nomes abaixo preservam apenas a divisao
+> original.
+
 ---
 
 ## Convenção de branches para segurança
@@ -252,7 +257,8 @@ git push origin v0.1.0-security-baseline
 Criar release no GitHub com:
 - **Tag:** `v0.1.0-security-baseline`
 - **Título:** `v0.1.0 — Security Baseline`
-- **Notas:** link para `docs/security/implementation-tracking.md`
+- **Notas:** link historico para
+  `docs/archive/security-roadmaps/implementation-tracking.md`
 
 ---
 

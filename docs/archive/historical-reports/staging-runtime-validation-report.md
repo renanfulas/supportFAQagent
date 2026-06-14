@@ -1,5 +1,9 @@
 # Staging Runtime Validation Report
 
+> Archive: relatorio historico de 16/05/2026. Nao use seus proximos passos para uma
+> promocao atual. O fluxo vigente esta em
+> `docs/runbooks/phase0-staging-promotion-evidence.md`.
+
 Data: 2026-05-16
 
 ## Status
@@ -69,7 +73,7 @@ segredo.
 Configurar `DATABASE_URL` privado e executar, em sessao privada, as validacoes:
 
 ```bash
-psql "$DATABASE_URL" -f migrations/001_initial_schema.sql
+# Comando historico removido: use o runner e o checklist atual da Fase 0.
 psql "$DATABASE_URL" -f tests/db/test_01_extensions.sql
 psql "$DATABASE_URL" -f tests/db/test_02_schema.sql
 psql "$DATABASE_URL" -f tests/db/test_03_idempotency.sql

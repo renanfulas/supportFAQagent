@@ -9,8 +9,8 @@ Guia rapido para entender o papel de cada documento do pacote de seguranca e o c
 | `SECURITY.md` | raiz do repositorio | comunidade e contribuidores externos |
 | `docs/security/vps-security-plan.md` | `docs/security/` | time tecnico |
 | `docs/security/llm-confinement.md` | `docs/security/` | arquitetura do agente |
-| `docs/security/implementation-tracking.md` | `docs/security/` | todo o time |
-| `docs/security/git-commit-guide.md` | `docs/security/` | todo o time |
+| `docs/archive/security-roadmaps/implementation-tracking.md` | `docs/archive/security-roadmaps/` | consulta historica |
+| `docs/archive/security-roadmaps/git-commit-guide.md` | `docs/archive/security-roadmaps/` | consulta historica |
 | `.github/ISSUE_TEMPLATE/security-incident.md` | `.github/ISSUE_TEMPLATE/` | qualquer pessoa que encontre uma falha |
 
 ## Como usar cada documento
@@ -29,11 +29,13 @@ Registra a decisao arquitetural de confinamento por design. Use antes de mexer e
 
 ### `implementation-tracking.md`
 
-Transforma o plano em milestones, issues e responsaveis. E o quadro de execucao do time.
+Snapshot historico dos milestones, issues e responsaveis originais. Para
+execucao atual, use o plano tecnico e a Fase 0.
 
 ### `git-commit-guide.md`
 
-Padroniza branches, commits, PRs e labels da trilha de seguranca.
+Registro historico da trilha inicial. Para contribuicao atual, use
+`.agents/skills/supportfaq-git-flow/SKILL.md`.
 
 ### `security-incident.md`
 
