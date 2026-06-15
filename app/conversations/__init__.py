@@ -1,1 +1,1 @@
-"""Conversation history services and persistence contracts."""
+"""Sanitized conversation persistence and short-history retrieval services."""

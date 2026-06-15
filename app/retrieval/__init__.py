@@ -1,1 +1,1 @@
-"""Retrieval and vector search services."""
+"""Provider-neutral lexical and vector knowledge retrieval services."""

@@ -1,1 +1,1 @@
-"""LLM providers and interfaces."""
+"""Provider-neutral LLM interfaces, adapters, and safe fallbacks."""

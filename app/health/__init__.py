@@ -1,1 +1,1 @@
-"""Operational health checks."""
+"""Liveness and readiness checks for operational dependencies."""

@@ -1,1 +1,1 @@
-"""Domain configuration and policy loading."""
+"""Load versioned domain configuration, prompts, and operational policies."""

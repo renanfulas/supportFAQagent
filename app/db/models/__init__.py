@@ -1,1 +1,1 @@
-"""Database models package."""
+"""Typed persistence models shared by PostgreSQL repositories."""

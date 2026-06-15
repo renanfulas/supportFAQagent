@@ -1,1 +1,1 @@
-"""Feedback collection services."""
+"""Persist sanitized feedback against server-trusted response context."""

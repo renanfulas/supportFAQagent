@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 import tomllib
 
@@ -24,3 +25,14 @@ def test_active_contributor_guidance_does_not_reference_requirements_file() -> N
 
     for path in guidance:
         assert "requirements.txt" not in path.read_text(encoding="utf-8"), path
+
+
+def test_application_packages_have_meaningful_docstrings() -> None:
+    initializers = (ROOT / "app").rglob("__init__.py")
+
+    for path in initializers:
+        docstring = ast.get_docstring(
+            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        )
+        assert docstring, path
+        assert "placeholder" not in docstring.lower(), path

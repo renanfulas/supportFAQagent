@@ -1,1 +1,1 @@
-"""WhatsApp OTP authentication seam for the public web chat."""
+"""WhatsApp OTP authentication boundary for the public web chat."""

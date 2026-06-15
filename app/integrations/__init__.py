@@ -1,1 +1,1 @@
-"""Internal integration boundaries."""
+"""Authenticated boundaries for internal and external service integrations."""
