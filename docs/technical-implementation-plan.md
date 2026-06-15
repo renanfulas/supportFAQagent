@@ -79,8 +79,8 @@ Estado consolidado do nucleo tecnico em 14/06/2026:
 - migrations forward-only, sanitizacao persistente e outbox transacional da
   Fase 0 estao implementadas no repositorio
 - o rollout local real aplicou migrations `001-008`, confirmou expand/contract
-  e terminou com `348 passed`; a aprovacao operacional ainda depende de
-  hardenings locais restantes e provas em staging
+  e terminou com `356 passed`; os hardenings locais foram concluidos em
+  15/06/2026 e a aprovacao operacional ainda depende de provas em staging
 - `POST /ingestion/preview` nao persiste artigos, chunks ou embeddings
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
 - a calibragem local com `pgvector` ja gerou baseline forte:

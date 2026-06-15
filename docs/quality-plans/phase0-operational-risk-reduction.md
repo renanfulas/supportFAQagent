@@ -120,19 +120,16 @@ As evidencias e bloqueios do host local estao registrados em
 Enquanto essas evidencias nao existirem, a Fase 0 esta implementada no
 repositorio, mas nao validada operacionalmente.
 
-## Hardening Local Restante
+## Hardening Local Concluido
 
-Estes itens foram encontrados na revisao posterior ao PR `#64` e devem ser
-fechados antes da promocao:
+Os quatro hardenings encontrados depois do PR `#64` foram fechados e validados
+em 15/06/2026:
 
-- impedir que testes PostgreSQL opt-in executem `TRUNCATE` em banco
-  compartilhado ou oficial por erro de configuracao;
-- fazer `/health/ready` falhar fechado em staging quando os componentes
-  PostgreSQL obrigatorios estiverem desabilitados;
-- ampliar `migrate verify` e readiness para detectar drift estrutural de
-  colunas, constraints, triggers e indices criticos das migrations recentes;
-- executar readiness real contra PostgreSQL no job de CI, nao apenas testes
-  simulados.
+- trava contra testes PostgreSQL destrutivos em banco nao descartavel;
+- readiness fail-closed em staging e producao sem PostgreSQL;
+- deteccao de drift estrutural em `migrate verify` e readiness;
+- readiness real contra PostgreSQL no job de CI.
 
-Esses itens sao bloqueantes de promocao, mas nao invalidam a prova local ja
-registrada de migrations, expand/contract e concorrencia.
+A evidencia esta em
+`docs/runbooks/local-phase0-hardening-report-2026-06-15.md`. Esses controles
+nao substituem snapshot, restore, rede privada ou smokes do staging oficial.

@@ -61,7 +61,15 @@ jobs:
 
     env:
       PHASE0_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/supportfaq_phase0
+      PHASE0_TEST_DATABASE_DISPOSABLE: "true"
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/supportfaq_phase0
+      APP_ENV: staging
+      API_SECRET_KEY: phase0-ci-api-key
+      PERSISTENCE_BACKEND: postgres
+      WEB_AUTH_STORAGE_BACKEND: postgres
+      ENABLE_OUTBOX_INGRESS: "true"
+      OUTBOX_WEBHOOK_SECRET: phase0-ci-outbox-secret
+      RETRIEVAL_BACKEND: lexical
       PERSISTENCE_HASH_SECRET: phase0-ci-persistence-secret
       PERSISTENCE_HASH_VERSION: hmac-sha256-v1
 
@@ -88,4 +96,5 @@ jobs:
           python -m scripts.migrate apply
           python -m scripts.migrate apply
           python -m scripts.migrate verify
+          python -m scripts.check_readiness
           python -m pytest tests/integration/test_phase0_postgres.py tests/integration/test_conversation_migration_upgrade.py tests/integration/test_feedback_privacy_integrity_postgres.py -q

@@ -7,6 +7,7 @@ from typing import Any
 from app.core.errors import DatabaseUnavailableError
 from app.core.migration_checksum import migration_checksum_variants
 from app.db.runtime import DatabaseRuntime
+from app.db.schema_contract import CONTRACT_MIGRATION, structural_drift
 
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
@@ -38,6 +39,12 @@ class HealthService:
             "outbox": {"status": "disabled"},
         }
         if not self.runtime.pool_enabled:
+            if getattr(self.runtime, "postgres_required", False):
+                unavailable = {"status": "unavailable", "reason": "postgres_required"}
+                components["database"] = unavailable
+                components["migrations"] = unavailable
+                components["outbox"] = unavailable
+                return {"status": "unavailable", "components": components}
             return {"status": "ok", "components": components}
 
         try:
@@ -162,6 +169,14 @@ class HealthService:
                 "unexpected_count": len(unexpected),
                 "checksum_mismatch_count": len(mismatched),
             }
+        if CONTRACT_MIGRATION in applied:
+            drift = structural_drift(cursor, schema.get("schema_name", "public"))
+            if drift:
+                return {
+                    "status": "unavailable",
+                    "reason": "structural_drift",
+                    "drift_count": len(drift),
+                }
         return {"status": "ok", "applied_count": len(applied)}
 
     def _retrieval_status(self, cursor: Any, schema: dict[str, Any]) -> dict[str, Any]:

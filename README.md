@@ -121,12 +121,11 @@ Pronto no MVP atual:
 - pgvector validado em staging real por feature flag
 - `pgvector_gate.yaml` validada em staging com `74/78`
 - Fase 0 implementada e validada localmente com PostgreSQL/pgvector real,
-  migrations `001-008` e `348` testes verdes
+  migrations `001-008` e `356` testes verdes
 - testes e documentacao base
 
 Proxima fase operacional:
 
-- fechar os hardenings locais restantes da Fase 0
 - validar operacionalmente persistencia, migrations, readiness e restore em
   staging
 - ativar integracao n8n/WhatsApp autenticada

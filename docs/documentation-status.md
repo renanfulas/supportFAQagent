@@ -20,20 +20,15 @@ Use estes documentos para tomar decisoes atuais:
 
 - Fases 1-4 do nucleo tecnico: concluidas para o MVP;
 - Fase 0: implementada, integrada pelo PR `#64` e validada localmente com
-  PostgreSQL/pgvector real e `348 passed`;
-- Fase 0 operacional: `not_approved` ate fechar hardenings locais restantes e
-  provar snapshot, restore, rede privada, alertas e integracoes em staging;
+  PostgreSQL/pgvector real e `356 passed`;
+- Fase 0 operacional: `not_approved` ate provar snapshot, restore, rede
+  privada, alertas e integracoes em staging;
 - Fase 5: em andamento, concentrada em operacao, n8n, Evolution e promocao
   controlada.
 
 ## Proxima Ordem Tecnica
 
-1. Fechar os quatro hardenings locais bloqueantes:
-   - trava de banco descartavel nos testes PostgreSQL opt-in;
-   - readiness fail-closed em staging quando PostgreSQL obrigatorio estiver
-     desabilitado;
-   - deteccao de drift estrutural em migrations/readiness;
-   - readiness real contra PostgreSQL no CI.
+1. Restaurar acesso ao staging oficial.
 2. Criar snapshot no provedor e executar o preflight de staging.
 3. Aplicar o rollout expand/backfill/contract e verificar migrations
    `001-008`.
@@ -41,6 +36,10 @@ Use estes documentos para tomar decisoes atuais:
 5. Reiniciar o stack e comprovar persistencia.
 6. Executar restore cronometrado e medir RPO/RTO.
 7. Executar a gate pgvector e decidir promocao operacional.
+
+Os quatro hardenings locais anteriormente bloqueantes foram concluidos e
+validados em 15/06/2026. Consulte
+`docs/runbooks/local-phase0-hardening-report-2026-06-15.md`.
 
 ## Documentos Historicos
 

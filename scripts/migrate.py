@@ -13,6 +13,7 @@ from app.core.migration_checksum import (
     migration_checksum,
     migration_checksum_variants,
 )
+from app.db.schema_contract import CONTRACT_MIGRATION, structural_drift
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "migrations"
 LOCK_KEY = 734_291_005
@@ -360,6 +361,12 @@ def run_command(connection: Any, command: str, *, target: str | None = None) -> 
             for path in pending:
                 print(f"pending: {path.name}", file=sys.stderr)
             return 1
+        if CONTRACT_MIGRATION in applied:
+            with connection.cursor() as cursor:
+                drift = structural_drift(cursor, current_schema_name(connection))
+            if drift:
+                print("\n".join(drift), file=sys.stderr)
+                return 1
         print(f"verified: {len(applied)} applied migration(s)")
         return 0
     if command == "baseline":

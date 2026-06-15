@@ -51,3 +51,20 @@ def test_main_ci_covers_linux_runtime_and_windows_development() -> None:
         "ubuntu-latest",
         "windows-latest",
     }
+
+
+def test_phase0_ci_marks_database_disposable_and_runs_real_readiness() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "phase0-gates.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    job = workflow["jobs"]["postgres"]
+    commands = "\n".join(
+        str(step.get("run", "")) for step in job["steps"]
+    )
+
+    assert job["env"]["PHASE0_TEST_DATABASE_DISPOSABLE"] == "true"
+    assert job["env"]["APP_ENV"] == "staging"
+    assert job["env"]["PERSISTENCE_BACKEND"] == "postgres"
+    assert "python -m scripts.check_readiness" in commands

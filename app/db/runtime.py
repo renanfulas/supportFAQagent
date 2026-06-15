@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator
 
 from app.core.config import Settings
+from app.core.config import DEV_ENVS
 from app.core.errors import DatabaseUnavailableError
 
 
@@ -43,6 +44,10 @@ class DatabaseRuntime:
     @property
     def retrieval_enabled(self) -> bool:
         return getattr(self.settings, "retrieval_backend", "lexical") == "pgvector"
+
+    @property
+    def postgres_required(self) -> bool:
+        return getattr(self.settings, "app_env", "development").lower() not in DEV_ENVS
 
     def open(self) -> None:
         if not self.pool_enabled or self._pool is not None:

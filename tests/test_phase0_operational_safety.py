@@ -22,6 +22,7 @@ from app.db.operational import (
 from app.api.schemas.feedback import FeedbackRequest
 from scripts.migrate import ledger_exists, verify_applied
 from scripts.dispatch_outbox import PermanentDeliveryError, deliver
+from scripts.check_readiness import main as check_readiness
 
 
 def test_persistence_sanitizer_redacts_mixed_sensitive_data() -> None:
@@ -134,6 +135,21 @@ def test_migration_runner_has_bounded_connection_timeout() -> None:
 
     assert "DATABASE_CONNECT_TIMEOUT_SECONDS" in source
     assert "connect_timeout=connect_timeout" in source
+
+
+def test_readiness_command_sanitizes_configuration_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(
+        "scripts.check_readiness.get_settings",
+        lambda: (_ for _ in ()).throw(ValueError("private-secret")),
+    )
+
+    assert check_readiness() == 1
+    output = capsys.readouterr()
+    assert "private-secret" not in output.err
+    assert "readiness check failed" in output.err
 
 
 def test_outbox_dispatcher_has_bounded_database_timeouts_and_shared_stale_window() -> None:

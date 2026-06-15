@@ -77,9 +77,9 @@ Avanco integrado pelo PR `#64` em 12/06/2026:
 - migrations `001-008`, outbox transacional, retencao e readiness separado
   estao implementados
 - PostgreSQL/pgvector real local passou pelo rollout expand/contract e pela
-  suite completa com `348 passed`
-- a Fase 0 continua `not_approved` ate fechar hardenings locais restantes e
-  provar snapshot, restore, rede privada e integracoes em staging
+  suite completa com `356 passed`
+- a Fase 0 continua `not_approved` ate provar snapshot, restore, rede privada e
+  integracoes em staging
 
 ## Responsabilidades
 
@@ -255,7 +255,6 @@ Status: concluida para o nucleo tecnico do MVP.
 Status: em andamento.
 
 - manter a configuracao operacional reproduzivel
-- fechar os hardenings locais bloqueantes registrados na Fase 0
 - validar e ativar com seguranca os workflows n8n versionados, sem mover
   inteligencia para fora da API
 - validar em staging a persistencia, migrations, sanitizacao e outbox

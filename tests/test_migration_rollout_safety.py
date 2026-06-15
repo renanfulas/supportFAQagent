@@ -21,6 +21,7 @@ from scripts.migrate import (
     run_command,
     verify_applied,
 )
+from app.db.schema_contract import structural_drift
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +65,28 @@ def test_checksum_is_portable_between_lf_and_crlf(tmp_path: Path) -> None:
     assert checksum(lf) == checksum(crlf)
     assert verify_applied([lf], {lf.name: checksum(lf)}) == []
     assert hashlib_sha256(crlf.read_bytes()) in checksum_variants(lf)
+
+
+def test_structural_contract_reports_missing_and_obsolete_objects() -> None:
+    cursor = ContractCursor(
+        rows=[
+            [
+                ("chat_audits", "request_id"),
+                ("conversations", "session_id"),
+            ],
+            [("idx_outbox_dispatch",)],
+            [("conversations_legacy_writer_guard",)],
+            [("otp_challenges_status_check",)],
+        ]
+    )
+
+    drift = structural_drift(cursor, "public")
+
+    assert "obsolete column: conversations.session_id" in drift
+    assert "obsolete trigger: conversations_legacy_writer_guard" in drift
+    assert any(item.startswith("missing column: feedback.") for item in drift)
+    assert "missing trigger: feedback_legacy_hash_version" in drift
+    assert "missing constraint: feedback_idempotency_fingerprint_check" in drift
 
 
 def test_apply_target_resolves_version_or_full_filename(tmp_path: Path) -> None:
@@ -270,3 +293,15 @@ class BatchCursor:
 
     def fetchall(self) -> list[tuple[str, str]]:
         return self.rows
+
+
+class ContractCursor:
+    def __init__(self, rows: list[list[tuple]]) -> None:
+        self.rows = rows
+        self.calls: list[tuple[str, tuple | None]] = []
+
+    def execute(self, sql: str, params: tuple | None = None) -> None:
+        self.calls.append((sql, params))
+
+    def fetchall(self) -> list[tuple]:
+        return self.rows.pop(0)

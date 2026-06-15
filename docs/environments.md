@@ -141,8 +141,8 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 
 ## Proximo encaixe
 
-1. Renan fecha os hardenings locais bloqueantes da Fase 0.
-2. Juliano cria snapshot e prepara rede, logs, alertas e runtime privado.
-3. Renan e Juliano executam rollout, readiness, smokes e restore em staging.
-4. Juliano ativa `n8n` e Evolution consumindo a API HTTP, nunca o banco do
+1. Juliano restaura o acesso ao staging, cria snapshot e prepara rede, logs,
+   alertas e runtime privado.
+2. Renan e Juliano executam rollout, readiness, smokes e restore em staging.
+3. Juliano ativa `n8n` e Evolution consumindo a API HTTP, nunca o banco do
    agente.

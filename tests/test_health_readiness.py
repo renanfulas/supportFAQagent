@@ -80,6 +80,19 @@ def test_readiness_preserves_disabled_local_mode_as_ready() -> None:
     }
 
 
+def test_readiness_fails_closed_when_postgres_is_required_but_disabled() -> None:
+    runtime = DisabledRuntime()
+    runtime.postgres_required = True
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["status"] == "unavailable"
+    assert snapshot["components"]["database"] == {
+        "status": "unavailable",
+        "reason": "postgres_required",
+    }
+
+
 def test_readiness_reports_database_failure_without_private_detail() -> None:
     snapshot = HealthService(FailingRuntime()).readiness()
 
