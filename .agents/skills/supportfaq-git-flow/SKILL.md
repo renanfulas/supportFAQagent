@@ -44,17 +44,17 @@ Also run evals when the change touches:
 - handoff
 - LLM response behavior
 
-Also run dependency/security checks when the change touches `pyproject.toml`, `requirements.txt`, install docs, or audit workflows:
+Also run dependency/security checks when the change touches `pyproject.toml`, install docs, or audit workflows:
 
 ```bash
 python -m pip check
 python -m pip_audit .
 ```
 
-If `requirements.txt` or optional extras change, also validate the compatibility wrapper or affected extras, for example:
+If optional extras change, also validate installation and audit of the affected
+extra, for example:
 
 ```bash
-python -m pip_audit -r requirements.txt
 python -m pip install --dry-run -e ".[chroma]"
 ```
 

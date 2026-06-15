@@ -1,3 +1,0 @@
-# Compatibility wrapper for legacy `pip install -r requirements.txt`.
-# Keep package names and version bounds in pyproject.toml.
--e .

@@ -12,30 +12,31 @@ Se a mudanca so faz sentido para um setor, ela provavelmente mora em `domains/`.
 
 Antes de escrever texto publico, README, descricao de PR ou material para agentes, leia tambem `docs/product-positioning.md`. O projeto deve soar como produto tecnico operacional: util, rastreavel e seguro, sem prometer autonomia total.
 
-## Caminho mais comum para leitura
+## Comece Em 10 Minutos
 
-Se voce esta chegando agora, leia nesta ordem:
+Novos contribuidores nao precisam ler toda a documentacao. Para formar o mapa
+mental minimo:
 
-1. `README.md`
-2. `docs/product-positioning.md`
-3. `docs/architecture.md`
-4. `docs/documentation-status.md`
-5. `docs/mvp-plan.md`
-6. `docs/domain-contract.md`
-7. `docs/domain-evals.md`
-8. `docs/knowledge-authoring.md`
-9. `docs/agent-skills.md`
-10. `docs/observability.md`
-11. `docs/technical-implementation-plan.md`
-12. `docs/integration-contracts.md`
-13. `domains/suporte-vps-whatsapp/domain.yaml`
-14. `app/main.py`
-15. `app/api/routes/`
-16. `app/orchestration/chat_flow.py`
-17. `app/retrieval/service.py`
-18. `app/ingestion/service.py`
-19. `app/ingestion/github_loader.py`
-20. `scripts/`
+1. Leia `README.md` para entender produto e status.
+2. Leia `docs/architecture.md` para entender o fluxo e os limites.
+3. Leia `CONTRIBUTING.md` para preparar e validar uma mudanca.
+4. Escolha sua tarefa na tabela abaixo e leia apenas as fontes indicadas.
+
+## Leitura Por Tarefa
+
+| Quero mudar | Leia primeiro | Onde trabalhar |
+| --- | --- | --- |
+| API ou contrato externo | `docs/integration-contracts.md` | `app/api/`, `tests/` |
+| Fluxo de resposta, LLM ou handoff | `docs/domain-contract.md`, `docs/technical-implementation-plan.md` | `app/orchestration/`, `app/llm/`, `app/handoff/` |
+| Artigos, FAQs ou calibragem | `docs/knowledge-authoring.md`, `docs/domain-evals.md` | `domains/`, `app/evals/` |
+| Banco, migrations ou pgvector | `docs/technical-implementation-plan.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `migrations/`, `app/retrieval/` |
+| Staging, VPS, n8n ou operacao | `docs/environments.md`, runbook especifico em `docs/runbooks/` | `scripts/`, configuracao de runtime |
+| Seguranca ou observabilidade | `SECURITY.md`, `docs/observability.md` | `app/core/`, `app/api/`, `tests/security/` |
+| Planejamento ou status do MVP | `docs/documentation-status.md`, `docs/mvp-plan.md` | documentos ativos indicados por eles |
+| Contribuicao com agente de IA | `docs/agent-skills.md` | `.agents/skills/` |
+
+Se um documento estiver em `docs/archive/`, ele e contexto historico, nao uma
+instrucao operacional atual.
 
 ## Planos por frente
 

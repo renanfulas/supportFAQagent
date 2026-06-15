@@ -55,7 +55,7 @@ Do not load every doc by default.
 | n8n integration | `docs/integration-contracts.md`, `docs/observability.md`, `docs/technical-implementation-plan.md` | docs first; do not move intelligence into n8n |
 | PostgreSQL/pgvector | `docs/technical-implementation-plan.md`, `docs/architecture.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `app/retrieval/`, `app/ingestion/pgvector_writer.py`, `migrations/`, `scripts/ingest_domain_pgvector.py` |
 | VPS/deploy/runtime | `docs/environments.md`, `docs/technical-implementation-plan.md`, `docs/observability.md`, `docs/runbooks/` | `scripts/`, config/docs |
-| Dependency management or security audit | `pyproject.toml`, `requirements.txt`, `CONTRIBUTING.md`, `.github/workflows/security.yml` | `pyproject.toml`, `requirements.txt`, `.github/workflows/` |
+| Dependency management or security audit | `pyproject.toml`, `CONTRIBUTING.md`, `.github/workflows/security.yml` | `pyproject.toml`, `.github/workflows/` |
 | Local chat UI or static assets | `README.md`, `docs/environments.md`, `docs/technical-implementation-plan.md` | `app/static/`, `app/main.py`, `app/core/config.py` |
 
 ### Ownership Boundaries
@@ -76,7 +76,7 @@ If a task touches another person's primary area, prefer creating a contract, doc
 - Keep n8n as automation/orchestration outside the intelligence core.
 - Treat PostgreSQL + pgvector as the planned production vector store.
 - Treat Chroma as local/prototype unless the team explicitly decides otherwise.
-- Treat `pyproject.toml` as the dependency source of truth; `requirements.txt` is only a compatibility wrapper.
+- Treat `pyproject.toml` as the only dependency source of truth; do not create parallel dependency lists.
 - Use the official GitHub Contents API for GitHub document ingestion; do not scrape GitHub HTML.
 - Keep public communication commercial-technical: explain business value, traceability, safe fallback, and human handoff without promising full autonomy.
 - Do not log raw PII, tokens, secrets, prompts with sensitive data, or raw `session_id`.
@@ -139,7 +139,7 @@ Also run evals when the change touches domain behavior, knowledge base, prompt b
 python -m app.evals.run_domain_eval suporte-vps-whatsapp
 ```
 
-Dependency/security checks when `pyproject.toml` or `requirements.txt` change:
+Dependency/security checks when `pyproject.toml` changes:
 
 ```bash
 python -m pip check

@@ -9,9 +9,8 @@ Este projeto foi desenhado para crescer por dominios. Antes de abrir codigo novo
 3. Copie `.env.example` para `.env`
 4. Rode a API com `uvicorn app.main:app --reload`
 
-Ao adicionar ou remover pacotes, atualize o `pyproject.toml`. O
-`requirements.txt` nao deve voltar a listar dependencias manualmente; ele e
-apenas um wrapper de compatibilidade.
+Ao adicionar ou remover pacotes, atualize somente o `pyproject.toml`. Ele e a
+fonte unica de dependencias e extras do projeto; nao crie listas paralelas.
 
 Ao escrever README, docs, issues ou PRs, preserve o posicionamento em
 `docs/product-positioning.md`: produto tecnico operacional, seguro,
@@ -50,6 +49,9 @@ rastreavel e honesto sobre limites do MVP.
 Antes de adicionar artigos ou FAQs, leia `docs/knowledge-authoring.md`.
 
 Se estiver usando um agente de IA para ajudar no projeto, leia `docs/agent-skills.md` e use as instrucoes em `.agents/skills/`.
+
+Para qualquer outra tarefa, use `docs/navigation.md` como roteador. Nao e
+necessario ler toda a documentacao antes de contribuir.
 
 ## Testes e validacao
 

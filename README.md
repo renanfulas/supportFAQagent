@@ -188,9 +188,8 @@ pip install -e ".[dev]"
 uvicorn app.main:app --reload
 ```
 
-O `pyproject.toml` e a fonte unica de dependencias. O `requirements.txt`
-existe apenas como wrapper de compatibilidade para comandos antigos baseados em
-`pip install -r requirements.txt`.
+O `pyproject.toml` e a unica fonte de dependencias. Instale o projeto e seus
+extras diretamente por ele; nao mantenha listas paralelas de pacotes.
 
 Para usar o prototipo local com ChromaDB e CSV:
 
@@ -209,45 +208,15 @@ python -m pytest
 
 ## Documentacao
 
-A documentacao ativa fica nas pastas principais de `docs/`. Planos concluidos,
-relatorios substituidos e roadmaps antigos ficam preservados em
-[`docs/archive/`](docs/archive/README.md) e nao devem ser usados como runbooks
-atuais.
+Comece por [Como navegar no projeto](docs/navigation.md). Ele apresenta um
+percurso inicial curto e direciona cada tipo de tarefa para os documentos
+necessarios, sem exigir a leitura de toda a base.
 
-- [Posicionamento do produto](docs/product-positioning.md)
-- [Arquitetura](docs/architecture.md)
-- [Plano unico do MVP](docs/mvp-plan.md)
-- [Estado e fontes ativas da documentacao](docs/documentation-status.md)
-- [Contrato de dominio](docs/domain-contract.md)
-- [Calibragem de dominio](docs/domain-evals.md)
-- [Como escrever artigos bons para RAG](docs/knowledge-authoring.md)
-- [Planos de qualidade por frente](docs/quality-plans/README.md)
-- [Fase 0 de reducao de risco operacional](docs/quality-plans/phase0-operational-risk-reduction.md)
-- [Revisao da base de conhecimento](docs/quality-plans/knowledge-base-review-2026-05-17.md)
-- [Runbook de intake anonimo para evals](docs/runbooks/anonymous-eval-intake.md)
-- [Runbook da gate pgvector em staging](docs/runbooks/staging-pgvector-gate.md)
-- [Runbook de eval pgvector real em staging](docs/runbooks/staging-pgvector-real-eval.md)
-- [Relatorio oficial do baseline local pgvector](docs/runbooks/local-pgvector-baseline-report.md)
-- [Runbook de smoke HTTP automatizado em staging](docs/runbooks/staging-http-smoke.md)
-- [Runbook de contrato n8n/WhatsApp](docs/runbooks/n8n-whatsapp-chat-contract.md)
-- [Runbook de workflows n8n versionados](docs/runbooks/n8n-versioned-workflows.md)
-- [Runbook de snapshot e restore da Fase 0](docs/runbooks/phase0-snapshot-restore.md)
-- [Checklist de evidencias para promocao da Fase 0](docs/runbooks/phase0-staging-promotion-evidence.md)
-- [Relatorio local da Fase 0 em 12/06/2026](docs/runbooks/local-phase0-validation-report-2026-06-12.md)
-- [Runbook pgvector local em WSL1](docs/runbooks/local-wsl1-pgvector-phase0.md)
-- [Checklist de promocao do pgvector](docs/runbooks/pgvector-promotion-checklist.md)
-- [Mapa oficial de ambientes](docs/environments.md)
-- [Observabilidade minima](docs/observability.md)
-- [Politica publica de seguranca](SECURITY.md)
-- [Plano de seguranca da VPS](docs/security/vps-security-plan.md)
-- [Confinamento por design para LLM e RAG](docs/security/llm-confinement.md)
-- [Archive de planos e documentos historicos](docs/archive/README.md)
-- [Agent skills universais](docs/agent-skills.md)
-- [Plano tecnico de implementacao](docs/technical-implementation-plan.md)
-- [Contratos de integracao](docs/integration-contracts.md)
-- [Como navegar no projeto](docs/navigation.md)
-- [Regras simples do codigo](docs/code-standards.md)
-- [Como contribuir](CONTRIBUTING.md)
+- [Como contribuir](CONTRIBUTING.md): setup, regras e validacoes.
+- [Arquitetura](docs/architecture.md): limites e fluxo do sistema.
+- [Estado da documentacao](docs/documentation-status.md): fontes ativas de verdade.
+- [Plano unico do MVP](docs/mvp-plan.md): status e proxima fase.
+- [Archive](docs/archive/README.md): planos concluidos e registros historicos.
 
 ## Contribuicao
 

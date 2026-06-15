@@ -75,7 +75,7 @@ Then read only the task-specific docs:
 | Observability/security | `docs/observability.md`, `docs/code-standards.md` |
 | PostgreSQL/pgvector | `docs/technical-implementation-plan.md` SQL sections |
 | LangChain/splitters/loaders | `docs/technical-implementation-plan.md`, ingestion sections |
-| Dependency management/security audit | `pyproject.toml`, `requirements.txt`, `.github/workflows/security.yml`, `CONTRIBUTING.md` |
+| Dependency management/security audit | `pyproject.toml`, `.github/workflows/security.yml`, `CONTRIBUTING.md` |
 | Contribution/commit/PR | `CONTRIBUTING.md`, `.agents/skills/supportfaq-git-flow/SKILL.md` |
 
 ## Responsibility Map
