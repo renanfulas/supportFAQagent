@@ -2,6 +2,8 @@ import ast
 from pathlib import Path
 import tomllib
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -36,3 +38,16 @@ def test_application_packages_have_meaningful_docstrings() -> None:
         )
         assert docstring, path
         assert "placeholder" not in docstring.lower(), path
+
+
+def test_main_ci_covers_linux_runtime_and_windows_development() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    )
+    job = workflow["jobs"]["test"]
+
+    assert job["runs-on"] == "${{ matrix.os }}"
+    assert set(job["strategy"]["matrix"]["os"]) == {
+        "ubuntu-latest",
+        "windows-latest",
+    }

@@ -63,6 +63,10 @@ Antes de abrir PR ou compartilhar uma mudanca:
 4. Se mexeu em resposta, retrieval, prompt ou handoff, rode os evals do dominio afetado
 5. Atualize a documentacao quando mudar arquitetura, fluxo ou convencoes
 
+A CI principal executa compilacao e testes em `ubuntu-latest` e
+`windows-latest`. Linux protege compatibilidade com o runtime oficial; Windows
+protege o ambiente local usado pelo time. Uma mudanca precisa passar nos dois.
+
 ## Commits e push
 
 Nao precisa burocratizar. A ideia aqui e manter o historico legivel e o projeto facil de acompanhar.
