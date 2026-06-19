@@ -80,16 +80,26 @@ como `passed`.
 
 ## Restore Cronometrado
 
-1. Registrar horario inicial.
-2. Restaurar o snapshot em ambiente isolado.
-3. Confirmar filesystem e containers.
-4. Executar `python -m scripts.migrate verify`.
-5. Validar PostgreSQL, API, pgvector, outbox e volumes do agente.
-6. Executar smoke HTTP sanitizado.
-7. Confirmar eventos pendentes da outbox.
-8. Registrar horario final e calcular RTO.
-9. Comparar o dado mais recente restaurado com o horario do snapshot para
+1. Registrar `snapshot_timestamp` e confirmar que a restauracao sera em VPS
+   isolada, sem DNS publico apontando para ela.
+2. Registrar `restore_started_at`.
+3. Restaurar o snapshot em ambiente isolado.
+4. Confirmar filesystem, containers e capacidade com:
+
+```bash
+python -m scripts.check_runtime_capacity --path / --warning 75 --critical 85 --min-free-gb 2
+```
+
+5. Executar `python -m scripts.migrate verify`.
+6. Validar PostgreSQL, API, pgvector, outbox e volumes do agente.
+7. Executar smoke HTTP sanitizado.
+8. Confirmar eventos pendentes da outbox.
+9. Registrar `restore_finished_at` e calcular RTO.
+10. Comparar o dado mais recente restaurado com o horario do snapshot para
    medir RPO.
+
+O relatorio deve confirmar explicitamente que o host validado e uma VPS
+restaurada isolada, nao o staging oficial.
 
 ## Criterio
 

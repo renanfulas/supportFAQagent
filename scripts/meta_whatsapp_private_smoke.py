@@ -369,7 +369,7 @@ def smoke_hermes_otp_delivery(
     timestamp = str(int(datetime.now(UTC).timestamp()))
     signature = hmac.new(
         webhook_secret.encode("utf-8"),
-        timestamp.encode("ascii") + b"." + body,
+        body,
         hashlib.sha256,
     ).hexdigest()
     status, response, error = request_json(
@@ -379,7 +379,7 @@ def smoke_hermes_otp_delivery(
             "Content-Type": "application/json",
             "X-Delivery-ID": "private-smoke-delivery",
             "X-Webhook-Timestamp": timestamp,
-            "X-Webhook-Signature": f"sha256={signature}",
+            "X-Webhook-Signature": signature,
         },
         body=body,
     )

@@ -699,7 +699,7 @@ Headers:
 ```http
 X-Delivery-ID: <challenge-id>
 X-Webhook-Timestamp: <unix-seconds>
-X-Webhook-Signature: sha256=<hmac>
+X-Webhook-Signature: <hex-hmac-sha256-body>
 ```
 
 Regras:
@@ -713,6 +713,8 @@ Regras:
 - erro externo vira `otp_delivery_unavailable` no contrato publico;
 - telefone bruto e OTP circulam somente no canal servidor-servidor protegido e
   nao devem aparecer em logs.
+- a assinatura generica do Hermes usa HMAC SHA-256 do corpo bruto no header
+  `X-Webhook-Signature`, sem prefixo `sha256=`.
 
 ## `POST /zoom/webhook`
 

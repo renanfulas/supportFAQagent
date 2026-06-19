@@ -54,6 +54,9 @@ curtos antes de codar:
   validar webhook Meta e Hermes sem imprimir secrets ou payload bruto. Use
   `scripts/meta_whatsapp_activation_suite.py` para gerar preflight, smoke opt-in
   e evidencia em um diretorio unico sem enviar WhatsApp por padrao.
+- `docs/runbooks/vps-capacity-and-docker-cleanup.md`: alerta de disco, politica
+  de limpeza Docker/cache, protecao de volumes PostgreSQL/pgvector e evidencia
+  minima de restore cronometrado isolado.
 
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
