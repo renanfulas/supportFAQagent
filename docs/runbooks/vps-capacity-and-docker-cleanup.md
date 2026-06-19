@@ -16,6 +16,13 @@ Thresholds operacionais:
 - `85%`: critical; pausar mudancas, limpar cache seguro ou aumentar disco.
 - menos de `2 GiB` livres: critical mesmo se o percentual ainda parecer menor.
 
+Destino operacional aprovado para staging:
+
+- WhatsApp via Hermes, rota `supportfaq-alerts`;
+- acionar WhatsApp somente em `critical` por padrao;
+- usar `warning` apenas como log/arquivo local, salvo decisao explicita de
+  elevar ruido operacional.
+
 Comando de capacidade:
 
 ```bash
@@ -36,6 +43,90 @@ Exemplo de cron local, ajustando o destino privado do alerta:
 
 O destino do alerta pode ser email, webhook interno ou painel do provedor, mas
 nao deve publicar IP, hostname, usuario, portas administrativas ou secrets.
+
+## Contrato Hermes `supportfaq-alerts`
+
+Rota Hermes separada de OTP:
+
+```yaml
+supportfaq-alerts:
+  events: []
+  secret: <private>
+  deliver: "whatsapp"
+  deliver_only: true
+  prompt: "{variables.message}"
+  deliver_extra:
+    chat_id: "{chat_id}"
+```
+
+Payload enviado pelo script:
+
+```json
+{
+  "delivery_id": "supportfaq-capacity-...",
+  "channel": "whatsapp",
+  "phone_e164": "+5511937350535",
+  "chat_id": "5511937350535@s.whatsapp.net",
+  "template": "runtime_capacity_alert",
+  "variables": {
+    "message": "supportFAQ capacity alert: status=critical used_percent=86.2 free_gb=1.4 path=/ action=check_vps_capacity"
+  }
+}
+```
+
+Headers:
+
+```http
+X-Delivery-ID: <delivery-id>
+X-Webhook-Timestamp: <unix-seconds>
+X-Webhook-Signature: <hex-hmac-sha256-body>
+```
+
+Variaveis privadas recomendadas no runtime:
+
+```bash
+HERMES_ALERT_RECIPIENTS=+5511937350535,+554198060000
+HERMES_ALERT_DELIVERY_PATH=/webhooks/supportfaq-alerts
+HERMES_ALERT_WEBHOOK_SECRET=<private>
+```
+
+Se `HERMES_ALERT_WEBHOOK_SECRET` nao estiver definido, o script aceita
+`HERMES_WEBHOOK_SECRET` como fallback para staging. Em producao, prefira segredo
+dedicado por rota.
+
+Comando de envio:
+
+```bash
+python -m scripts.send_runtime_capacity_alert \
+  --path / \
+  --warning 75 \
+  --critical 85 \
+  --min-free-gb 2 \
+  --alert-on critical \
+  --output /var/log/supportfaq-capacity-alert.md
+```
+
+Teste controlado:
+
+```bash
+python -m scripts.send_runtime_capacity_alert \
+  --path / \
+  --force-test \
+  --output /var/log/supportfaq-capacity-alert-test.md
+```
+
+Mensagem permitida:
+
+```text
+supportFAQ capacity alert: status=critical used_percent=86.2 free_gb=1.4 path=/ action=check_vps_capacity
+```
+
+Dados proibidos no WhatsApp:
+
+- IP, hostname, usuario ou porta administrativa;
+- secrets, tokens, cookies ou `DATABASE_URL`;
+- logs brutos, stack trace ou payload completo;
+- nomes internos sensiveis alem do identificador operacional `supportFAQ`.
 
 ## Politica De Limpeza Docker
 

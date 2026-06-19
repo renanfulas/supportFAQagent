@@ -137,7 +137,7 @@ def test_hermes_otp_smoke_sends_whatsapp_chat_id(monkeypatch) -> None:
     assert captured["url"] == "https://hermes.example.test/webhooks/supportfaq-otp"
     assert payload["phone_e164"] == "+5541996565511"
     assert payload["chat_id"] == "5541996565511@s.whatsapp.net"
-    assert captured["headers"]["X-Webhook-Signature"].startswith("sha256=")
+    assert not captured["headers"]["X-Webhook-Signature"].startswith("sha256=")
 
 
 def test_main_refuses_without_target(monkeypatch, capsys) -> None:

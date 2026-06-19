@@ -45,15 +45,15 @@ def test_hermes_client_signs_otp_delivery(monkeypatch: pytest.MonkeyPatch) -> No
     assert captured["timeout"] == 7
     headers = captured["headers"]
     assert headers["X-Delivery-ID"] == "challenge-id"
-    assert headers["X-Webhook-Signature"].startswith("sha256=")
+    assert not headers["X-Webhook-Signature"].startswith("sha256=")
     body = captured["data"]
     timestamp = headers["X-Webhook-Timestamp"]
     expected = hmac.new(
         b"hermes-secret",
-        timestamp.encode("ascii") + b"." + body,
+        body,
         hashlib.sha256,
     ).hexdigest()
-    assert headers["X-Webhook-Signature"] == f"sha256={expected}"
+    assert headers["X-Webhook-Signature"] == expected
 
 
 def test_hermes_otp_delivery_adapter_sends_only_transport_payload() -> None:

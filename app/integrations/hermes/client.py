@@ -37,12 +37,12 @@ class HermesClient:
 
     def deliver_otp(self, payload: dict[str, Any], *, delivery_id: str) -> None:
         body = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
-        timestamp = str(int(datetime.now(UTC).timestamp()))
         signature = hmac.new(
             self.webhook_secret.encode("utf-8"),
-            timestamp.encode("ascii") + b"." + body,
+            body,
             hashlib.sha256,
         ).hexdigest()
+        timestamp = str(int(datetime.now(UTC).timestamp()))
         try:
             response = requests.post(
                 f"{self.base_url.rstrip('/')}{self.otp_delivery_path}",
@@ -51,7 +51,7 @@ class HermesClient:
                     "Content-Type": "application/json",
                     "X-Delivery-ID": delivery_id,
                     "X-Webhook-Timestamp": timestamp,
-                    "X-Webhook-Signature": f"sha256={signature}",
+                    "X-Webhook-Signature": signature,
                 },
                 timeout=self.timeout_seconds,
             )
