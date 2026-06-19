@@ -11,7 +11,6 @@ REQUIRED_GATES = (
     "preflight",
     "migrations",
     "postgres_concurrency",
-    "n8n_smoke",
     "restore",
     "pgvector_gate",
 )

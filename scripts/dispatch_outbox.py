@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 import hashlib
 import hmac
@@ -11,12 +12,43 @@ import time
 
 import requests
 
+from app.integrations.meta_whatsapp.client import (
+    MetaWhatsAppClient,
+    MetaWhatsAppRequestError,
+)
 
-EVENT_URLS = {
-    "handoff.requested": "HANDOFF_WEBHOOK_URL",
-    "whatsapp.message.requested": "WHATSAPP_MESSAGE_WEBHOOK_URL",
-    "otp.delivery.requested": "OTP_DELIVERY_WEBHOOK_URL",
+
+@dataclass(frozen=True)
+class DeliveryRoute:
+    name: str
+    url_env: str
+    transport_env: str
+
+
+EVENT_DELIVERY_ROUTES = {
+    "handoff.requested": "handoff",
+    "whatsapp.message.requested": "whatsapp_message",
+    "otp.delivery.requested": "otp_delivery",
 }
+DELIVERY_ROUTES = {
+    "handoff": DeliveryRoute(
+        name="handoff",
+        url_env="HANDOFF_WEBHOOK_URL",
+        transport_env="OUTBOX_HANDOFF_DELIVERY_TRANSPORT",
+    ),
+    "whatsapp_message": DeliveryRoute(
+        name="whatsapp_message",
+        url_env="WHATSAPP_MESSAGE_WEBHOOK_URL",
+        transport_env="OUTBOX_WHATSAPP_MESSAGE_DELIVERY_TRANSPORT",
+    ),
+    "otp_delivery": DeliveryRoute(
+        name="otp_delivery",
+        url_env="OTP_DELIVERY_WEBHOOK_URL",
+        transport_env="OUTBOX_OTP_DELIVERY_TRANSPORT",
+    ),
+}
+SUPPORTED_DELIVERY_TRANSPORTS = {"internal_webhook", "meta_whatsapp", "disabled"}
+META_WHATSAPP_ROUTES = {"whatsapp_message"}
 MAX_ATTEMPTS = 5
 RETRYABLE_HTTP_STATUS = {408, 409, 425, 429}
 DEFAULT_PROCESSING_STALE_SECONDS = 300
@@ -145,10 +177,20 @@ def dispatch_one(database_url: str) -> bool:
 
 
 def deliver(event: dict) -> None:
-    env_name = EVENT_URLS.get(event["event_type"])
-    url = os.getenv(env_name or "")
+    route = resolve_delivery_route(str(event["event_type"]))
+    transport = resolve_delivery_transport(route)
+    if transport == "disabled":
+        raise PermanentDeliveryError(f"delivery route is disabled: {route.name}")
+    if transport == "meta_whatsapp":
+        deliver_meta_whatsapp(event=event, route=route)
+        return
+    deliver_internal_webhook(event=event, route=route)
+
+
+def deliver_internal_webhook(*, event: dict, route: DeliveryRoute) -> None:
+    url = os.getenv(route.url_env)
     if not url:
-        raise RuntimeError("event delivery URL is not configured")
+        raise RuntimeError(f"event delivery URL is not configured: {route.url_env}")
     secret = os.getenv("OUTBOX_WEBHOOK_SECRET")
     if not secret:
         raise RuntimeError("OUTBOX_WEBHOOK_SECRET is not configured")
@@ -182,6 +224,60 @@ def deliver(event: dict) -> None:
         if 400 <= status_code < 500 and status_code not in RETRYABLE_HTTP_STATUS:
             raise PermanentDeliveryError("permanent webhook rejection") from exc
         raise
+
+
+def deliver_meta_whatsapp(*, event: dict, route: DeliveryRoute) -> None:
+    if route.name not in META_WHATSAPP_ROUTES:
+        raise PermanentDeliveryError(
+            f"meta_whatsapp transport is not supported for route: {route.name}",
+        )
+    payload = event["payload_sanitized"]
+    if not isinstance(payload, dict):
+        raise PermanentDeliveryError("meta_whatsapp payload must be an object")
+    recipient = _required_text(payload, "to")
+    text = _required_text(payload, "text")
+    client = MetaWhatsAppClient(
+        access_token=_required_env("META_WHATSAPP_ACCESS_TOKEN"),
+        phone_number_id=_required_env("META_WHATSAPP_PHONE_NUMBER_ID"),
+        graph_api_version=os.getenv("META_WHATSAPP_GRAPH_API_VERSION", "v25.0"),
+        timeout_seconds=_positive_int_env("META_WHATSAPP_REQUEST_TIMEOUT_SECONDS", 5),
+    )
+    try:
+        client.send_text(to=recipient, text=text)
+    except MetaWhatsAppRequestError as exc:
+        if exc.status_code is not None and 400 <= exc.status_code < 500:
+            if exc.status_code not in RETRYABLE_HTTP_STATUS:
+                raise PermanentDeliveryError("permanent meta whatsapp rejection") from exc
+        raise
+
+
+def resolve_delivery_route(event_type: str) -> DeliveryRoute:
+    route_name = EVENT_DELIVERY_ROUTES.get(event_type)
+    if route_name is None:
+        raise PermanentDeliveryError(f"unsupported event type: {event_type}")
+    return DELIVERY_ROUTES[route_name]
+
+
+def resolve_delivery_transport(route: DeliveryRoute) -> str:
+    transport = os.getenv(route.transport_env, "internal_webhook").strip().lower()
+    transport = transport or "internal_webhook"
+    if transport not in SUPPORTED_DELIVERY_TRANSPORTS:
+        raise PermanentDeliveryError(f"unsupported delivery transport: {transport}")
+    return transport
+
+
+def _required_env(name: str) -> str:
+    value = os.getenv(name)
+    if value and value.strip():
+        return value.strip()
+    raise RuntimeError(f"{name} is not configured")
+
+
+def _required_text(payload: dict, name: str) -> str:
+    value = payload.get(name)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    raise PermanentDeliveryError(f"meta_whatsapp payload field is required: {name}")
 
 
 def emit_operational_event(event: str, **fields: object) -> None:

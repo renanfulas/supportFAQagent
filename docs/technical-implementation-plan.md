@@ -677,32 +677,36 @@ Criterio de pronto:
 - Resposta inclui references.
 - Baixa confianca marca `escalated=true`.
 
-## Fase 5 - n8n, operacao e feedback
+## Fase 5 - Operacao, capacidade e feedback
 
 Status: proxima fase operacional e pos-MVP, em andamento.
 
-Objetivo: preparar integracoes externas sem mover inteligencia para fora do backend.
+Objetivo: preparar operacao, capacidade, feedback e consumidores externos
+futuros sem mover inteligencia para fora do backend.
 
 Nota de sequencia:
 
 - a comparacao oficial foi concluida em 11/06/2026
 - a gate de staging reproduziu o baseline local em `74/78`
-- esta fase agora concentra operacao, persistencia, n8n e evolucao pos-MVP
+- esta fase agora concentra operacao, persistencia, recuperacao e evolucao
+  pos-MVP
+- `n8n` nao faz mais parte do plano operacional atual
 
-## Juliano - VPS, n8n e Evolution API
+## Juliano - VPS e runtime
 
-- Operar container ou servico do n8n.
-- Definir acesso seguro ao painel, reverse proxy, TLS, rede e logs.
-- Validar e ativar os workflows versionados `whatsapp-to-bot`,
-  `escalation-notify` e `web-otp-delivery`.
-- Configurar Evolution API apenas no runtime privado.
+- Operar VPS, runtime, disco, logs e alertas.
+- Definir reverse proxy, TLS, rede e limites de logs quando houver servicos
+  externos ativos.
+- Executar snapshot e restore cronometrado em ambiente isolado.
+- Garantir que consumidores externos futuros nunca acessem o banco do agente.
 
 ## Renan - Aplicacao, banco e seguranca
 
 - Manter contrato e persistencia confiavel de `POST /feedback`.
 - Manter schema, migrations, sanitizacao, outbox e dispatcher.
-- Definir payload de escalonamento e guia de integracao n8n.
-- Validar que n8n nao carrega regra central do agente.
+- Definir payload de escalonamento e guia de integracao HTTP para consumidores
+  externos futuros.
+- Validar que consumidores externos nao carregam regra central do agente.
 - Tratar domain evals como gate deterministico, sem provider real bloqueando a
   validacao de banco.
 
@@ -821,7 +825,6 @@ Regras de debug:
 - PII scrubber mais robusto.
 - Feedback loop com avaliacao humana.
 - Dashboard simples de qualidade.
-- n8n para canais adicionais.
 - Reavaliar memoria conversacional.
 - Reavaliar `ConversationalRetrievalChain` apenas com evidencias de necessidade.
 

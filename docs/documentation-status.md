@@ -21,25 +21,30 @@ Use estes documentos para tomar decisoes atuais:
 - Fases 1-4 do nucleo tecnico: concluidas para o MVP;
 - Fase 0: implementada, integrada pelo PR `#64` e validada localmente com
   PostgreSQL/pgvector real e `356 passed`;
-- Fase 0 operacional: `not_approved` ate provar snapshot, restore, rede
-  privada, alertas e integracoes em staging;
-- Fase 5: em andamento, concentrada em operacao, n8n, Evolution e promocao
-  controlada.
+- Fase 0 operacional: `not_approved` ate executar restore cronometrado em
+  ambiente isolado e medir `RPO <= 24h` / `RTO <= 4h`;
+- Fase 5: em andamento, concentrada em operacao, capacidade, observabilidade e
+  promocao controlada. `n8n` nao e mais parte do plano operacional atual.
 
 ## Proxima Ordem Tecnica
 
-1. Restaurar acesso ao staging oficial.
-2. Criar snapshot no provedor e executar o preflight de staging.
-3. Aplicar o rollout expand/backfill/contract e verificar migrations
-   `001-008`.
-4. Validar rede privada, n8n, Evolution, outbox e idempotencia externa.
-5. Reiniciar o stack e comprovar persistencia.
-6. Executar restore cronometrado e medir RPO/RTO.
-7. Executar a gate pgvector e decidir promocao operacional.
+1. Executar restore cronometrado em ambiente isolado a partir do snapshot.
+2. Validar PostgreSQL, API, migrations, readiness, pgvector, outbox e volumes
+   do agente no ambiente restaurado.
+3. Medir `RPO <= 24h` e `RTO <= 4h`.
+4. Gerar o relatorio operacional final e decidir promocao da Fase 0.
 
 Os quatro hardenings locais anteriormente bloqueantes foram concluidos e
 validados em 15/06/2026. Consulte
 `docs/runbooks/local-phase0-hardening-report-2026-06-15.md`.
+
+Em 18/06/2026, o acesso SSH ao staging voltou, o disco foi reduzido de `100%`
+para `81%`, o checkout remoto foi promovido para `61ea039`, as migrations
+`001-008` foram verificadas, readiness passou, os testes PostgreSQL opt-in
+passaram em banco descartavel e a `pgvector_gate.yaml` fechou em `76/78`.
+A promocao operacional continua `not_approved` somente porque o restore
+cronometrado em ambiente isolado ainda nao foi executado. Consulte
+`docs/runbooks/phase0-staging-promotion-evidence.md`.
 
 ## Documentos Historicos
 

@@ -47,6 +47,13 @@ curtos antes de codar:
   da identidade de canal por WhatsApp OTP.
 - `docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md`: evolucao persistente
   do OTP, adapter interno n8n, workflow Evolution API e smoke privado real.
+- `docs/quality-plans/meta-whatsapp-native-integration-plan.md`: plano tecnico
+  para refatorar a entrega externa, preparar Meta WhatsApp Cloud API nativa e
+  limitar Hermes a adapter temporario.
+- `docs/runbooks/meta-whatsapp-private-smoke.md`: smoke privado sanitizado para
+  validar webhook Meta e Hermes sem imprimir secrets ou payload bruto. Use
+  `scripts/meta_whatsapp_activation_suite.py` para gerar preflight, smoke opt-in
+  e evidencia em um diretorio unico sem enviar WhatsApp por padrao.
 
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de

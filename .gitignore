@@ -16,6 +16,15 @@ venv/
 
 data/chroma/
 gitleaks-report.json
+.tmp-meta*/
+.tmp-meta-*.json
+.tmp-meta-*.md
+supportfaq-meta-*.json
+supportfaq-meta-*.md
+supportfaq-hermes-*.md
+meta-whatsapp-preflight.json
+meta-whatsapp-smoke.md
+meta-whatsapp-activation-evidence.md
 
 *.pem
 *.key

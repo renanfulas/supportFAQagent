@@ -16,6 +16,7 @@ from app.api.routes import (
     health,
     ingestion,
     internal_webhooks,
+    meta_whatsapp,
     web_auth,
     web_chat,
     zoom,
@@ -245,6 +246,11 @@ def create_app() -> FastAPI:
     application.include_router(web_chat.router, prefix="/web", tags=["web"])
     application.include_router(web_auth.router, prefix="/web/auth", tags=["web-auth"])
     application.include_router(zoom.router, prefix="/zoom", tags=["zoom"])
+    application.include_router(
+        meta_whatsapp.router,
+        prefix="/integrations/meta/whatsapp",
+        tags=["meta-whatsapp"],
+    )
     application.include_router(
         internal_webhooks.router,
         prefix="/internal/webhooks",

@@ -44,7 +44,7 @@ def ingress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("ENABLE_OUTBOX_INGRESS", "true")
     monkeypatch.setenv("DATABASE_URL", "postgresql://unused")
     monkeypatch.setenv("OUTBOX_WEBHOOK_SECRET", SECRET)
-    monkeypatch.setenv("N8N_VERIFIED_HANDOFF_URL", "https://n8n.internal/handoff")
+    monkeypatch.setenv("VERIFIED_HANDOFF_WEBHOOK_URL", "https://delivery.internal/handoff")
     monkeypatch.setattr("app.db.runtime.DatabaseRuntime.open", lambda self: None)
     get_settings.cache_clear()
     client = TestClient(create_app())
@@ -132,6 +132,7 @@ def test_ingress_forwards_claimed_payload_and_marks_delivered(
     assert response.status_code == 200
     assert response.json()["status"] == "delivered"
     assert delivered == ["handoff:req-1"]
+    assert forwarded["url"] == "https://delivery.internal/handoff"
     assert forwarded["json"] == {"summary": "safe"}
     assert "X-Webhook-Signature" not in forwarded["headers"]
 

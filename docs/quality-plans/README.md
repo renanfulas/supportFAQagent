@@ -9,6 +9,12 @@ Use os planos ainda presentes nesta pasta antes de abrir codigo novo em uma
 frente especifica. O plano concluido de retrieval vetorial foi movido para
 [`docs/archive/implementation-plans/`](../archive/implementation-plans/vector-retrieval-quality-plan.md).
 
+Planos ativos:
+
+- [`meta-whatsapp-native-integration-plan.md`](meta-whatsapp-native-integration-plan.md):
+  refatoracao de entrega externa para Meta WhatsApp Cloud API nativa, com
+  Hermes apenas como adapter temporario.
+
 Quando uma parte da frente ja tiver sido implementada e mergeada, o plano deve:
 
 - marcar claramente o que ja foi entregue
