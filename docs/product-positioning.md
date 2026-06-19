@@ -71,8 +71,8 @@ O `supportFAQagent` transforma conhecimento tecnico versionado em respostas cons
 - FastAPI como contrato HTTP
 - dominios versionados em `domains/`
 - loader GitHub baseado na Contents API oficial para fontes versionadas
-- retrieval lexical seguro por padrao
-- pgvector disponivel por feature flag
+- retrieval lexical seguro para local/CI e rollback
+- pgvector como default operacional do staging
 - fundacao nativa para Meta WhatsApp Cloud API por feature flag
 - Hermes documentado apenas como adapter temporario de entrega
 - LLM real com fallback seguro

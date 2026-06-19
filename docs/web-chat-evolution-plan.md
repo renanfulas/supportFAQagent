@@ -56,7 +56,8 @@ O projeto ja possui:
 - UI local em `app/static/chat`.
 - Handoff estruturado.
 - Rate limit no `/chat`.
-- Retrieval lexical seguro por padrao e `pgvector` disponivel por feature flag.
+- Retrieval lexical seguro para local/CI e rollback; `pgvector` e default
+  operacional do staging.
 
 Limites atuais importantes:
 

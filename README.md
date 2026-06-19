@@ -31,8 +31,9 @@ Este projeto resolve isso com um nucleo Python modular que:
 
 - API HTTP com FastAPI
 - dominio inicial para suporte de VPS, WhatsApp e automacoes
-- retrieval lexical como padrao seguro
-- retrieval PostgreSQL/pgvector disponivel por `RETRIEVAL_BACKEND=pgvector`
+- retrieval lexical como padrao seguro para local/CI
+- retrieval PostgreSQL/pgvector como default operacional do staging por
+  `RETRIEVAL_BACKEND=pgvector`
 - provider real de LLM com OpenAI/Anthropic
 - fallback seguro quando credenciais ou providers falham
 - handoff estruturado por baixa confianca, pedido humano, termo sensivel ou erro tecnico
@@ -119,8 +120,8 @@ Pronto no MVP atual:
   feature flag
 - historico curto real isolado por dominio, canal e hash de sessao
 - readiness separado para banco, migrations, retrieval e outbox
-- retrieval lexical
-- pgvector validado em staging real por feature flag
+- retrieval lexical preservado como fallback local e rollback operacional
+- pgvector promovido como default operacional do staging real
 - `pgvector_gate.yaml` validada em staging com `76/78`
 - Fase 0 implementada e validada localmente com PostgreSQL/pgvector real,
   migrations `001-008` e `356` testes verdes
@@ -137,7 +138,8 @@ Proxima fase operacional:
   real
 - manter Hermes como ponte temporaria somente se reduzir risco operacional
 - operacao reproduzivel e monitoramento da VPS
-- decisao operacional sobre promocao do pgvector como default
+- acompanhar pgvector como default do staging com rollback documentado para
+  lexical
 
 Roadmap:
 
