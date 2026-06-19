@@ -35,6 +35,18 @@ class Settings(BaseSettings):
     )
     enable_outbox_ingress: bool = Field(default=False, alias="ENABLE_OUTBOX_INGRESS")
     outbox_webhook_secret: str | None = Field(default=None, alias="OUTBOX_WEBHOOK_SECRET")
+    verified_handoff_webhook_url: str | None = Field(
+        default=None,
+        alias="VERIFIED_HANDOFF_WEBHOOK_URL",
+    )
+    verified_whatsapp_webhook_url: str | None = Field(
+        default=None,
+        alias="VERIFIED_WHATSAPP_WEBHOOK_URL",
+    )
+    verified_otp_webhook_url: str | None = Field(
+        default=None,
+        alias="VERIFIED_OTP_WEBHOOK_URL",
+    )
     n8n_verified_handoff_url: str | None = Field(
         default=None,
         alias="N8N_VERIFIED_HANDOFF_URL",
@@ -125,6 +137,63 @@ class Settings(BaseSettings):
     )
     identity_hash_secret: str | None = Field(default=None, alias="IDENTITY_HASH_SECRET")
     otp_digest_secret: str | None = Field(default=None, alias="OTP_DIGEST_SECRET")
+    web_auth_otp_delivery_transport: str = Field(
+        default="memory",
+        alias="WEB_AUTH_OTP_DELIVERY_TRANSPORT",
+    )
+    enable_meta_whatsapp_webhook: bool = Field(
+        default=False,
+        alias="ENABLE_META_WHATSAPP_WEBHOOK",
+    )
+    enable_meta_whatsapp_chat: bool = Field(
+        default=False,
+        alias="ENABLE_META_WHATSAPP_CHAT",
+    )
+    meta_whatsapp_access_token: str | None = Field(
+        default=None,
+        alias="META_WHATSAPP_ACCESS_TOKEN",
+    )
+    meta_whatsapp_app_secret: str | None = Field(
+        default=None,
+        alias="META_WHATSAPP_APP_SECRET",
+    )
+    meta_whatsapp_webhook_verify_token: str | None = Field(
+        default=None,
+        alias="META_WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+    )
+    meta_whatsapp_waba_id: str | None = Field(default=None, alias="META_WHATSAPP_WABA_ID")
+    meta_whatsapp_phone_number_id: str | None = Field(
+        default=None,
+        alias="META_WHATSAPP_PHONE_NUMBER_ID",
+    )
+    meta_whatsapp_graph_api_version: str = Field(
+        default="v25.0",
+        alias="META_WHATSAPP_GRAPH_API_VERSION",
+    )
+    meta_whatsapp_request_timeout_seconds: int = Field(
+        default=5,
+        alias="META_WHATSAPP_REQUEST_TIMEOUT_SECONDS",
+        ge=1,
+    )
+    meta_whatsapp_otp_template_name: str | None = Field(
+        default=None,
+        alias="META_WHATSAPP_OTP_TEMPLATE_NAME",
+    )
+    meta_whatsapp_otp_template_language: str = Field(
+        default="pt_BR",
+        alias="META_WHATSAPP_OTP_TEMPLATE_LANGUAGE",
+    )
+    hermes_base_url: str | None = Field(default=None, alias="HERMES_BASE_URL")
+    hermes_webhook_secret: str | None = Field(default=None, alias="HERMES_WEBHOOK_SECRET")
+    hermes_request_timeout_seconds: int = Field(
+        default=5,
+        alias="HERMES_REQUEST_TIMEOUT_SECONDS",
+        ge=1,
+    )
+    hermes_otp_delivery_path: str = Field(
+        default="/otp-delivery",
+        alias="HERMES_OTP_DELIVERY_PATH",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -154,6 +223,11 @@ class Settings(BaseSettings):
             raise ValueError("WEB_AUTH_STORAGE_BACKEND must be memory or postgres")
         if self.web_auth_storage_backend == "postgres":
             self.database_url = _normalize_required_secret(self.database_url, "DATABASE_URL")
+        self.web_auth_otp_delivery_transport = (
+            self.web_auth_otp_delivery_transport.strip().lower() or "memory"
+        )
+        if self.web_auth_otp_delivery_transport not in {"memory", "meta", "hermes"}:
+            raise ValueError("WEB_AUTH_OTP_DELIVERY_TRANSPORT must be memory, meta or hermes")
 
         if self.enable_web_whatsapp_auth:
             self.identity_hash_secret = _normalize_required_secret(
@@ -168,6 +242,56 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "IDENTITY_HASH_SECRET and OTP_DIGEST_SECRET must be different",
                 )
+            if self.web_auth_otp_delivery_transport == "meta":
+                self.meta_whatsapp_access_token = _normalize_required_secret(
+                    self.meta_whatsapp_access_token,
+                    "META_WHATSAPP_ACCESS_TOKEN",
+                )
+                self.meta_whatsapp_phone_number_id = _normalize_required_secret(
+                    self.meta_whatsapp_phone_number_id,
+                    "META_WHATSAPP_PHONE_NUMBER_ID",
+                )
+                self.meta_whatsapp_otp_template_name = _normalize_required_secret(
+                    self.meta_whatsapp_otp_template_name,
+                    "META_WHATSAPP_OTP_TEMPLATE_NAME",
+                )
+            if self.web_auth_otp_delivery_transport == "hermes":
+                self.hermes_base_url = _normalize_required_secret(
+                    self.hermes_base_url,
+                    "HERMES_BASE_URL",
+                )
+                self.hermes_webhook_secret = _normalize_required_secret(
+                    self.hermes_webhook_secret,
+                    "HERMES_WEBHOOK_SECRET",
+                )
+
+        self.meta_whatsapp_graph_api_version = (
+            self.meta_whatsapp_graph_api_version.strip() or "v25.0"
+        )
+        self.meta_whatsapp_otp_template_language = (
+            self.meta_whatsapp_otp_template_language.strip() or "pt_BR"
+        )
+        self.hermes_otp_delivery_path = self.hermes_otp_delivery_path.strip() or "/otp-delivery"
+        if not self.hermes_otp_delivery_path.startswith("/"):
+            raise ValueError("HERMES_OTP_DELIVERY_PATH must start with /")
+        if self.enable_meta_whatsapp_webhook:
+            self.meta_whatsapp_app_secret = _normalize_required_secret(
+                self.meta_whatsapp_app_secret,
+                "META_WHATSAPP_APP_SECRET",
+            )
+            self.meta_whatsapp_webhook_verify_token = _normalize_required_secret(
+                self.meta_whatsapp_webhook_verify_token,
+                "META_WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+            )
+        if self.enable_meta_whatsapp_chat:
+            self.meta_whatsapp_access_token = _normalize_required_secret(
+                self.meta_whatsapp_access_token,
+                "META_WHATSAPP_ACCESS_TOKEN",
+            )
+            self.meta_whatsapp_phone_number_id = _normalize_required_secret(
+                self.meta_whatsapp_phone_number_id,
+                "META_WHATSAPP_PHONE_NUMBER_ID",
+            )
 
         persistence_backend = self.persistence_backend.strip().lower()
         if persistence_backend not in {"disabled", "postgres"}:
@@ -193,6 +317,27 @@ class Settings(BaseSettings):
                 self.outbox_webhook_secret,
                 "OUTBOX_WEBHOOK_SECRET",
             )
+        self.verified_handoff_webhook_url = _resolve_delivery_url_alias(
+            generic_value=self.verified_handoff_webhook_url,
+            legacy_value=self.n8n_verified_handoff_url,
+            generic_name="VERIFIED_HANDOFF_WEBHOOK_URL",
+            legacy_name="N8N_VERIFIED_HANDOFF_URL",
+            app_env=app_env,
+        )
+        self.verified_whatsapp_webhook_url = _resolve_delivery_url_alias(
+            generic_value=self.verified_whatsapp_webhook_url,
+            legacy_value=self.n8n_verified_whatsapp_url,
+            generic_name="VERIFIED_WHATSAPP_WEBHOOK_URL",
+            legacy_name="N8N_VERIFIED_WHATSAPP_URL",
+            app_env=app_env,
+        )
+        self.verified_otp_webhook_url = _resolve_delivery_url_alias(
+            generic_value=self.verified_otp_webhook_url,
+            legacy_value=self.n8n_verified_otp_url,
+            generic_name="VERIFIED_OTP_WEBHOOK_URL",
+            legacy_name="N8N_VERIFIED_OTP_URL",
+            app_env=app_env,
+        )
         if self.database_pool_min_size > self.database_pool_max_size:
             raise ValueError("DATABASE_POOL_MIN_SIZE cannot exceed DATABASE_POOL_MAX_SIZE")
 
@@ -216,3 +361,26 @@ def _normalize_required_secret(value: str | None, name: str) -> str:
     if value and value.strip():
         return value.strip()
     raise ValueError(f"{name} is required for the enabled PostgreSQL-backed feature")
+
+
+def _normalize_optional_text(value: str | None) -> str | None:
+    if value and value.strip():
+        return value.strip()
+    return None
+
+
+def _resolve_delivery_url_alias(
+    *,
+    generic_value: str | None,
+    legacy_value: str | None,
+    generic_name: str,
+    legacy_name: str,
+    app_env: str,
+) -> str | None:
+    generic = _normalize_optional_text(generic_value)
+    legacy = _normalize_optional_text(legacy_value)
+    if generic and legacy and generic != legacy and app_env not in DEV_ENVS:
+        raise ValueError(
+            f"{generic_name} conflicts with legacy {legacy_name}; use only the generic delivery URL",
+        )
+    return generic or legacy

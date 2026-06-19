@@ -515,13 +515,192 @@ Regras:
 - duplicata ja entregue retorna `status=duplicate`;
 - mesma chave com payload diferente retorna `409`;
 - entrega concorrente em andamento retorna `425`;
-- somente depois da validacao encaminha ao webhook n8n configurado como
-  `N8N_VERIFIED_*_URL`;
+- somente depois da validacao encaminha ao destino verificado configurado como
+  `VERIFIED_*_WEBHOOK_URL`;
+- `N8N_VERIFIED_*_URL` permanece como alias legado temporario para runtimes
+  privados existentes;
 - payload, assinatura, secret e URL privada nunca entram nos logs.
 
 O dispatcher deve apontar `HANDOFF_WEBHOOK_URL`,
 `WHATSAPP_MESSAGE_WEBHOOK_URL` e `OTP_DELIVERY_WEBHOOK_URL` para essa fachada
 interna, nao diretamente para o n8n.
+
+O dispatcher separa evento interno de rota de entrega:
+
+- `handoff.requested` usa a rota `handoff`;
+- `whatsapp.message.requested` usa a rota `whatsapp_message`;
+- `otp.delivery.requested` usa a rota `otp_delivery`;
+- as variaveis `OUTBOX_*_DELIVERY_TRANSPORT` controlam o transporte da rota;
+- `internal_webhook` preserva o caminho atual assinado;
+- `meta_whatsapp` entrega `whatsapp.message.requested` diretamente pela Meta
+  Cloud API usando `META_WHATSAPP_ACCESS_TOKEN`,
+  `META_WHATSAPP_PHONE_NUMBER_ID` e `META_WHATSAPP_GRAPH_API_VERSION`;
+- `meta_whatsapp` e permitido somente para a rota `whatsapp_message`; handoff
+  e OTP continuam por adapters/rotas proprias para evitar provedor errado;
+- `disabled` desliga a rota de forma explicita e permanente, sem retry cego.
+
+Payload minimo para `whatsapp.message.requested` com
+`OUTBOX_WHATSAPP_MESSAGE_DELIVERY_TRANSPORT=meta_whatsapp`:
+
+```json
+{
+  "to": "5511999999999",
+  "text": "Resposta segura."
+}
+```
+
+Regras:
+
+- `to` e `text` sao obrigatorios e devem ser strings nao vazias;
+- o dispatcher nao aceita aliases ambiguos como `body` ou `phone`;
+- o preflight `meta-outbox-message` valida a configuracao minima para este
+  caminho sem imprimir token, phone number ID ou payload;
+- erro 4xx definitivo da Meta vira dead letter, exceto status retryable como
+  `408`, `409`, `425` e `429`;
+- token, telefone e corpo da mensagem nao devem aparecer em log operacional.
+
+## Webhook Meta WhatsApp Cloud API
+
+Status: fundacao nativa implementada por feature flag, sem ativacao operacional
+real nesta etapa.
+
+Endpoint:
+
+```http
+GET /integrations/meta/whatsapp/webhook
+POST /integrations/meta/whatsapp/webhook
+```
+
+Feature flag:
+
+- fica oculto com `404` enquanto `ENABLE_META_WHATSAPP_WEBHOOK=false`.
+
+Verificacao `GET`:
+
+- aceita `hub.mode=subscribe`;
+- compara `hub.verify_token` com `META_WHATSAPP_WEBHOOK_VERIFY_TOKEN`;
+- devolve `hub.challenge` em texto puro quando a verificacao e valida;
+- token incorreto retorna `403 meta_webhook_verification_failed`.
+
+Recebimento `POST`:
+
+- exige `X-Hub-Signature-256`;
+- valida HMAC SHA-256 usando `META_WHATSAPP_APP_SECRET`;
+- rejeita assinatura invalida com `401 invalid_meta_webhook_signature`;
+- rejeita payload vazio, grande demais ou JSON invalido sem logar o corpo;
+- parseia apenas mensagens de texto e status de mensagem;
+- responde `{"status":"accepted"}` quando a assinatura e o payload minimo sao
+  aceitos.
+
+Eventos normalizados nesta fundacao:
+
+- `messages[].type="text"` vira mensagem inbound normalizada;
+- `statuses[]` vira status normalizado de mensagem outbound;
+- anexos, imagens, audio, documentos, contatos e localizacao ainda nao fazem
+  parte do contrato interno.
+
+Campos e dados proibidos em log:
+
+- telefone bruto;
+- `wa_id` bruto;
+- corpo da mensagem;
+- payload completo;
+- token de acesso;
+- app secret;
+- verify token.
+
+Proxima etapa:
+
+- ativar mensagens inbound pelo `MetaWhatsAppChatTransport` em smoke privado;
+- ativar OTP por `MetaWhatsAppOtpDeliveryAdapter` em smoke privado;
+- manter o core RAG sem conhecer payload bruto da Meta.
+
+## Chat WhatsApp Por Meta
+
+Status: transport implementado e desativado por padrao.
+
+Feature/config:
+
+- `ENABLE_META_WHATSAPP_CHAT=false` preserva o webhook Meta apenas como
+  recebimento/parsing;
+- `ENABLE_META_WHATSAPP_CHAT=true` conecta mensagens inbound de texto ao core de
+  chat e envia a resposta pela Meta;
+- quando `ENABLE_META_WHATSAPP_CHAT=true`, `META_WHATSAPP_ACCESS_TOKEN` e
+  `META_WHATSAPP_PHONE_NUMBER_ID` sao obrigatorios.
+
+Regras:
+
+- somente mensagens de texto entram no fluxo inicial;
+- payload bruto da Meta nao e passado para o core;
+- `wa_id` bruto nao e usado como `session_id` persistido;
+- `channel` continua `whatsapp`;
+- handoff, confidence, references e `error_code` continuam decididos pelo core;
+- falhas de dominio ou envio externo retornam erro tecnico rastreavel sem
+  expor payload ou token.
+
+## Entrega OTP Por Meta WhatsApp
+
+Status: adapter implementado e desativado por padrao.
+
+Feature/config:
+
+- `WEB_AUTH_OTP_DELIVERY_TRANSPORT=memory` preserva o laboratorio local;
+- `WEB_AUTH_OTP_DELIVERY_TRANSPORT=meta` ativa o adapter Meta para o fluxo
+  `/web/auth/whatsapp/start`;
+- quando `ENABLE_WEB_WHATSAPP_AUTH=true` e o transporte e `meta`, os campos
+  `META_WHATSAPP_ACCESS_TOKEN`, `META_WHATSAPP_PHONE_NUMBER_ID` e
+  `META_WHATSAPP_OTP_TEMPLATE_NAME` sao obrigatorios.
+
+Regras:
+
+- o backend continua dono do OTP, TTL, cooldown, tentativas e validacao;
+- o adapter apenas entrega o template aprovado pela Meta;
+- falha externa retorna `otp_delivery_unavailable` no contrato publico;
+- erro bruto da Meta, telefone bruto, OTP e token nao entram em log.
+
+## Entrega OTP Por Hermes
+
+Status: adapter temporario implementado e desativado por padrao.
+
+Feature/config:
+
+- `WEB_AUTH_OTP_DELIVERY_TRANSPORT=hermes` ativa Hermes apenas para entrega de
+  OTP do fluxo `/web/auth/whatsapp/start`;
+- `HERMES_BASE_URL`, `HERMES_WEBHOOK_SECRET`, `HERMES_REQUEST_TIMEOUT_SECONDS`
+  e `HERMES_OTP_DELIVERY_PATH` configuram o transporte;
+- o default continua `WEB_AUTH_OTP_DELIVERY_TRANSPORT=memory`.
+
+Contrato enviado ao Hermes:
+
+```json
+{
+  "delivery_id": "challenge-id",
+  "channel": "whatsapp",
+  "phone_e164": "+5511999999999",
+  "template": "web_login_otp",
+  "variables": {
+    "code": "123456",
+    "expires_in_minutes": 5
+  }
+}
+```
+
+Headers:
+
+```http
+X-Delivery-ID: <challenge-id>
+X-Webhook-Timestamp: <unix-seconds>
+X-Webhook-Signature: sha256=<hmac>
+```
+
+Regras:
+
+- Hermes apenas transporta mensagem;
+- backend continua dono do OTP, TTL, cooldown, tentativas e validacao;
+- Hermes nao acessa banco, prompt, RAG, handoff ou regras de dominio;
+- erro externo vira `otp_delivery_unavailable` no contrato publico;
+- telefone bruto e OTP circulam somente no canal servidor-servidor protegido e
+  nao devem aparecer em logs.
 
 ## `POST /zoom/webhook`
 

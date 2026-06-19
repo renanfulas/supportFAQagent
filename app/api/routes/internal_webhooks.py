@@ -23,10 +23,10 @@ from app.integrations.webhook_ingress import (
 router = APIRouter()
 logger = logging.getLogger(__name__)
 MAX_BODY_BYTES = 65_536
-EVENT_URL_FIELDS = {
-    "handoff.requested": "n8n_verified_handoff_url",
-    "whatsapp.message.requested": "n8n_verified_whatsapp_url",
-    "otp.delivery.requested": "n8n_verified_otp_url",
+EVENT_DELIVERY_TARGET_FIELDS = {
+    "handoff.requested": "verified_handoff_webhook_url",
+    "whatsapp.message.requested": "verified_whatsapp_webhook_url",
+    "otp.delivery.requested": "verified_otp_webhook_url",
 }
 
 
@@ -42,7 +42,7 @@ async def receive_outbox_event(
     request_id = get_request_id(request)
     if not settings.enable_outbox_ingress:
         raise HTTPException(status_code=404, detail="Not found")
-    if event_type not in EVENT_URL_FIELDS:
+    if event_type not in EVENT_DELIVERY_TARGET_FIELDS:
         raise HTTPException(status_code=404, detail="unknown_event_type")
     if not idempotency_key or len(idempotency_key) > 200:
         raise HTTPException(status_code=400, detail="invalid_idempotency_key")
@@ -88,7 +88,7 @@ async def receive_outbox_event(
     if claim.status == DUPLICATE:
         return {"status": "duplicate", "request_id": request_id}
 
-    target_url = getattr(settings, EVENT_URL_FIELDS[event_type])
+    target_url = getattr(settings, EVENT_DELIVERY_TARGET_FIELDS[event_type])
     if not target_url:
         _mark_failed(repository, idempotency_key, "verified_webhook_not_configured")
         raise HTTPException(status_code=503, detail="verified_webhook_not_configured")

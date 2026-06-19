@@ -21,7 +21,13 @@ from app.db.operational import (
 )
 from app.api.schemas.feedback import FeedbackRequest
 from scripts.migrate import ledger_exists, verify_applied
-from scripts.dispatch_outbox import PermanentDeliveryError, deliver
+from scripts.dispatch_outbox import (
+    PermanentDeliveryError,
+    deliver,
+    deliver_meta_whatsapp,
+    resolve_delivery_route,
+    resolve_delivery_transport,
+)
 from scripts.check_readiness import main as check_readiness
 
 
@@ -220,6 +226,135 @@ def test_outbox_delivery_is_signed_and_idempotent(
     assert headers["X-Idempotency-Key"] == "handoff:req-1"
     assert headers["X-Webhook-Signature"].startswith("sha256=")
     assert headers["X-Webhook-Timestamp"]
+
+
+def test_outbox_event_resolves_to_delivery_route() -> None:
+    route = resolve_delivery_route("handoff.requested")
+
+    assert route.name == "handoff"
+    assert route.url_env == "HANDOFF_WEBHOOK_URL"
+    assert route.transport_env == "OUTBOX_HANDOFF_DELIVERY_TRANSPORT"
+
+
+def test_outbox_rejects_unknown_event_without_default_delivery(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    def fake_post(*args, **kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setenv("HANDOFF_WEBHOOK_URL", "https://internal.example/handoff")
+    monkeypatch.setenv("OUTBOX_WEBHOOK_SECRET", "dedicated-secret")
+    monkeypatch.setattr("scripts.dispatch_outbox.requests.post", fake_post)
+
+    with pytest.raises(PermanentDeliveryError, match="unsupported event type"):
+        deliver(
+            {
+                "event_type": "unknown.event",
+                "request_id": "req-unknown",
+                "idempotency_key": "unknown:req",
+                "payload_sanitized": {"summary": "safe"},
+            }
+        )
+
+    assert called is False
+
+
+def test_outbox_disabled_delivery_transport_is_permanent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    route = resolve_delivery_route("handoff.requested")
+    monkeypatch.setenv(route.transport_env, "disabled")
+
+    assert resolve_delivery_transport(route) == "disabled"
+    with pytest.raises(PermanentDeliveryError, match="delivery route is disabled"):
+        deliver(
+            {
+                "event_type": "handoff.requested",
+                "request_id": "req-disabled",
+                "idempotency_key": "handoff:req-disabled",
+                "payload_sanitized": {"summary": "safe"},
+            }
+        )
+
+
+def test_outbox_unsupported_delivery_transport_is_permanent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    route = resolve_delivery_route("handoff.requested")
+    monkeypatch.setenv(route.transport_env, "unknown_transport")
+
+    with pytest.raises(PermanentDeliveryError, match="unsupported delivery transport"):
+        resolve_delivery_transport(route)
+
+
+def test_outbox_rejects_meta_whatsapp_transport_outside_message_route(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    route = resolve_delivery_route("handoff.requested")
+    monkeypatch.setenv(route.transport_env, "meta_whatsapp")
+
+    with pytest.raises(PermanentDeliveryError, match="not supported for route"):
+        deliver(
+            {
+                "event_type": "handoff.requested",
+                "request_id": "req-meta-handoff",
+                "idempotency_key": "handoff:req-meta-handoff",
+                "payload_sanitized": {"summary": "safe"},
+            }
+        )
+
+
+def test_outbox_meta_whatsapp_delivery_sends_text_without_webhook_secret(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeClient:
+        def __init__(self, **kwargs) -> None:
+            captured["client_kwargs"] = kwargs
+
+        def send_text(self, *, to: str, text: str) -> None:
+            captured["to"] = to
+            captured["text"] = text
+
+    monkeypatch.setenv("OUTBOX_WHATSAPP_MESSAGE_DELIVERY_TRANSPORT", "meta_whatsapp")
+    monkeypatch.setenv("META_WHATSAPP_ACCESS_TOKEN", "meta-token")
+    monkeypatch.setenv("META_WHATSAPP_PHONE_NUMBER_ID", "phone-id")
+    monkeypatch.setenv("META_WHATSAPP_GRAPH_API_VERSION", "v25.0")
+    monkeypatch.delenv("OUTBOX_WEBHOOK_SECRET", raising=False)
+    monkeypatch.setattr("scripts.dispatch_outbox.MetaWhatsAppClient", FakeClient)
+
+    deliver(
+        {
+            "event_type": "whatsapp.message.requested",
+            "request_id": "req-meta-message",
+            "idempotency_key": "whatsapp:req-meta-message",
+            "payload_sanitized": {"to": "5511999999999", "text": "Resposta segura."},
+        }
+    )
+
+    assert captured["client_kwargs"]["access_token"] == "meta-token"
+    assert captured["client_kwargs"]["phone_number_id"] == "phone-id"
+    assert captured["to"] == "5511999999999"
+    assert captured["text"] == "Resposta segura."
+
+
+def test_outbox_meta_whatsapp_requires_explicit_payload_shape() -> None:
+    route = resolve_delivery_route("whatsapp.message.requested")
+
+    with pytest.raises(PermanentDeliveryError, match="field is required: text"):
+        deliver_meta_whatsapp(
+            event={
+                "event_type": "whatsapp.message.requested",
+                "request_id": "req-meta-missing-text",
+                "idempotency_key": "whatsapp:req-meta-missing-text",
+                "payload_sanitized": {"to": "5511999999999", "body": "ambiguous"},
+            },
+            route=route,
+        )
 
 
 def test_outbox_treats_non_retryable_4xx_as_permanent(

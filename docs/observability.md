@@ -49,8 +49,11 @@ Eventos atuais:
   sem historico.
 - `feedback_recorded`: feedback recebido, origem, `session_id_hash` e armazenamento atual.
 - `webhook_ingress_rejected`: assinatura interna invalida, sem registrar payload.
-- `webhook_ingress_delivery_failed`: encaminhamento ao n8n verificado falhou.
-- `webhook_ingress_delivered`: evento assinado entregue ao webhook verificado.
+- `webhook_ingress_delivery_failed`: encaminhamento ao destino verificado falhou.
+- `webhook_ingress_delivered`: evento assinado entregue ao destino verificado.
+- `meta_whatsapp_webhook_rejected`: assinatura Meta invalida, sem registrar payload.
+- `meta_whatsapp_webhook_received`: webhook Meta aceito, registrando apenas contagem
+  de mensagens e status.
 - `outbox_dead_letter`: evento externo esgotou tentativas ou recebeu rejeicao definitiva.
 
 Eventos e sinais importantes para a trilha de seguranca:
