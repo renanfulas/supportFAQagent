@@ -70,7 +70,6 @@ python -m scripts.phase0_operational_report \
   --preflight passed \
   --migrations passed \
   --postgres-concurrency passed \
-  --n8n-smoke blocked \
   --restore blocked \
   --pgvector-gate pending \
   --output /tmp/supportfaq-phase0-decision.md
@@ -85,7 +84,7 @@ como `passed`.
 2. Restaurar o snapshot em ambiente isolado.
 3. Confirmar filesystem e containers.
 4. Executar `python -m scripts.migrate verify`.
-5. Validar PostgreSQL, API, n8n e volumes.
+5. Validar PostgreSQL, API, pgvector, outbox e volumes do agente.
 6. Executar smoke HTTP sanitizado.
 7. Confirmar eventos pendentes da outbox.
 8. Registrar horario final e calcular RTO.

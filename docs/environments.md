@@ -67,9 +67,9 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
   - referencia oficial de nomes de banco, URL, Adminer, credenciais ou topologia
 - Status: nao oficial.
 
-### n8n
+### Integracoes externas futuras
 
-- Tipo: consumidor externo da API do backend.
+- Tipo: consumidores externos opcionais da API do backend.
 - Interface oficial:
   - `POST /chat`
   - `POST /feedback`
@@ -80,10 +80,9 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
   - nao deve carregar regra central de inteligencia
 - Pode coexistir em Docker com `supportfaq_api`, desde que seja um servico
   separado e reversivel.
-- Desabilitar temporariamente o `n8n` nao deve derrubar a API, apagar banco ou
-  remover volumes de workflow.
+- `n8n` nao faz mais parte do plano operacional atual do MVP.
 - Desabilitar temporariamente a API nao deve apagar o PostgreSQL/pgvector nem os
-  dados da Evolution.
+  dados de qualquer consumidor externo futuro.
 
 ### Website chat publico
 
@@ -109,8 +108,8 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
 
 - Renan: schema SQL, migrations, query vetorial, persistencia real, contratos,
   testes do backend, seguranca e integracao com `/chat`.
-- Juliano: provisionamento oficial, runtime, secrets, conectividade, n8n,
-  Evolution API, snapshots e recuperacao.
+- Juliano: provisionamento oficial, runtime, secrets, conectividade, snapshots
+  e recuperacao.
 
 ## Validacao esperada
 
@@ -141,8 +140,9 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 
 ## Proximo encaixe
 
-1. Juliano restaura o acesso ao staging, cria snapshot e prepara rede, logs,
-   alertas e runtime privado.
-2. Renan e Juliano executam rollout, readiness, smokes e restore em staging.
-3. Juliano ativa `n8n` e Evolution consumindo a API HTTP, nunca o banco do
+1. Juliano restaura o acesso ao staging, cria snapshot e prepara logs, alertas
+   e runtime privado.
+2. Renan e Juliano executam rollout, readiness, gate pgvector e restore em
+   staging.
+3. Consumidores externos futuros devem consumir a API HTTP, nunca o banco do
    agente.

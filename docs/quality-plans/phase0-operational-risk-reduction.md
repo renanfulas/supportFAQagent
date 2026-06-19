@@ -10,8 +10,7 @@ migration manual sem rastreio e persistencia de dados sensiveis.
 
 - Renan: aplicacao, arquitetura, PostgreSQL, migrations, persistencia,
   contratos, seguranca, testes e integracao final.
-- Juliano: VPS, Docker, rede, n8n, Evolution API, snapshots, alertas e
-  recuperacao.
+- Juliano: VPS, Docker, rede, snapshots, alertas e recuperacao.
 - Trabalho conjunto: migration em staging, teste de concorrencia, restore e
   aprovacao dos gates.
 
@@ -28,10 +27,11 @@ Silotto. Creditos historicos e autoria de migrations antigas permanecem.
 - sanitizacao versionada antes da persistencia;
 - outbox at-least-once com idempotency key e dispatcher separado;
 - assinatura HMAC obrigatoria para entregas do dispatcher;
-- ingress interno HMAC com idempotencia persistente antes do n8n;
+- ingress interno HMAC com idempotencia persistente para consumidores HTTP
+  internos;
 - `handoff_status` no contrato interno `/chat`;
 - feedback PostgreSQL enriquecido pelo contexto confiavel do servidor;
-- rede Docker privada compartilhada e limites de logs para n8n.
+- rede Docker privada compartilhada e limites de logs do runtime.
 
 ## Comandos
 
@@ -103,14 +103,17 @@ por feedback ainda retido nunca e apagada.
 - criar e testar snapshots no provedor;
 - executar restore cronometrado em ambiente isolado;
 - configurar alertas reais de disco;
-- criar a rede `supportfaq_internal` no runtime;
-- configurar URLs privadas consumidas pelo dispatcher;
+- criar ou validar a rede `supportfaq_internal` no runtime quando houver mais
+  de um servico privado ativo;
+- configurar URLs privadas consumidas pelo dispatcher quando houver consumidor
+  HTTP ativo;
 - repetir os gates SQL e concorrencia no PostgreSQL de staging depois do
   snapshot; a prova local real ja passou com `20 passed`;
 - reingerir o dominio e revalidar os quatro casos recalibrados da gate.
-- confirmar em smoke privado se a Evolution ou o proxy final honra
+- confirmar em smoke privado se o consumidor HTTP final honra
   `X-Idempotency-Key`; sem isso, timeout incerto continua exigindo
-  reconciliacao manual por causa da semantica at-least-once.
+  reconciliacao manual por causa da semantica at-least-once. Este item nao
+  bloqueia a Fase 0 enquanto nao houver consumidor externo ativo.
 
 O saneamento offline desses casos esta registrado em
 `docs/quality-plans/pgvector-gate-backlog-2026-06-11.md`.
