@@ -29,7 +29,7 @@ Ele nao substitui snapshot, restore, rede privada ou integracoes externas.
 | Handoff | simular outbox indisponivel e entrega falha | chat continua disponivel, retry e `dead_letter` observaveis | sim |
 | Idempotencia externa | repetir chamada com mesma chave | dispatcher ou consumidor HTTP nao produz segunda acao logica | sim |
 | Restart | reiniciar stack completo | dados, migrations e outbox preservados | sim |
-| Disco | configurar alertas | alertas de 75% e 85% comprovados | sim |
+| Disco | configurar alertas e politica de limpeza | `scripts.check_runtime_capacity` com 75%/85%, protecao de volumes PostgreSQL e runbook de limpeza Docker comprovados | sim |
 | Restore | restaurar snapshot isolado e cronometrar | `RPO <= 24h`, `RTO <= 4h` e servicos validados | sim |
 | Pgvector | executar gate oficial | resultado `>=74/78`, ou aprovacao documentada para `70-73` | sim |
 
@@ -107,6 +107,8 @@ Evidencias sanitizadas:
 Proxima decisao operacional:
 
 - executar restore cronometrado em ambiente isolado;
+- configurar alerta de disco e politica de limpeza Docker/cache conforme
+  [runbook de capacidade da VPS](vps-capacity-and-docker-cleanup.md);
 - somente depois mudar a decisao operacional para `approved`.
 
 ## Execucao De Staging 2026-06-18 - Promocao Parcial
