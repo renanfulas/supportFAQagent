@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 
@@ -113,6 +114,30 @@ def test_meta_chat_inbound_smoke_posts_signed_text_without_reporting_body(monkey
     assert b"Mensagem inbound segura" in captured["body"]
     assert "+5511999999999" not in report
     assert "Mensagem inbound segura" not in report
+
+
+def test_hermes_otp_smoke_sends_whatsapp_chat_id(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_request_json(method, url, headers=None, body=None):
+        captured.update(method=method, url=url, headers=headers, body=body)
+        return 200, {"status": "delivered"}, None
+
+    monkeypatch.setattr(smoke, "request_json", fake_request_json)
+
+    result = smoke.smoke_hermes_otp_delivery(
+        base_url="https://hermes.example.test",
+        webhook_secret="hermes-secret",
+        path="/webhooks/supportfaq-otp",
+        phone="+5541996565511",
+    )
+
+    payload = json.loads(captured["body"].decode("utf-8"))
+    assert result.ok is True
+    assert captured["url"] == "https://hermes.example.test/webhooks/supportfaq-otp"
+    assert payload["phone_e164"] == "+5541996565511"
+    assert payload["chat_id"] == "5541996565511@s.whatsapp.net"
+    assert captured["headers"]["X-Webhook-Signature"].startswith("sha256=")
 
 
 def test_main_refuses_without_target(monkeypatch, capsys) -> None:

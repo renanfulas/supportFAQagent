@@ -84,6 +84,7 @@ def test_hermes_otp_delivery_adapter_sends_only_transport_payload() -> None:
         "delivery_id": "challenge-id",
         "channel": "whatsapp",
         "phone_e164": "+5511999999999",
+        "chat_id": "5511999999999@s.whatsapp.net",
         "template": "web_login_otp",
         "variables": {"code": "123456", "expires_in_minutes": 5},
     }
