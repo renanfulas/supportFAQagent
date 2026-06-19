@@ -685,6 +685,7 @@ Contrato enviado ao Hermes:
   "delivery_id": "challenge-id",
   "channel": "whatsapp",
   "phone_e164": "+5511999999999",
+  "chat_id": "5511999999999@s.whatsapp.net",
   "template": "web_login_otp",
   "variables": {
     "code": "123456",
@@ -705,6 +706,9 @@ Regras:
 
 - Hermes apenas transporta mensagem;
 - backend continua dono do OTP, TTL, cooldown, tentativas e validacao;
+- `chat_id` e enviado para compatibilidade com bridges que exigem o
+  identificador interno de entrega do WhatsApp; `phone_e164` continua sendo o
+  telefone canonico do contrato e deve permanecer em formato E.164;
 - Hermes nao acessa banco, prompt, RAG, handoff ou regras de dominio;
 - erro externo vira `otp_delivery_unavailable` no contrato publico;
 - telefone bruto e OTP circulam somente no canal servidor-servidor protegido e

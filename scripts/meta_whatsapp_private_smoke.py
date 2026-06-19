@@ -356,10 +356,12 @@ def smoke_hermes_otp_delivery(
     phone: str,
 ) -> CheckResult:
     started_at = time.perf_counter()
+    chat_id = f"{''.join(char for char in phone if char.isdigit())}@s.whatsapp.net"
     payload = {
         "delivery_id": "private-smoke-delivery",
         "channel": "whatsapp",
         "phone_e164": phone,
+        "chat_id": chat_id,
         "template": "web_login_otp",
         "variables": {"code": "000000", "expires_in_minutes": 5},
     }
