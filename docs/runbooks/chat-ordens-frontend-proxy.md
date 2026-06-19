@@ -96,7 +96,7 @@ curl -i https://chat.ordens.com.br/chat-ui
 
 curl -i \
   -H "Content-Type: application/json" \
-  -d '{"message":"Como conectar o WhatsApp na Evolution API?"}' \
+-d '{"message":"Como conectar o WhatsApp pela Meta API oficial?"}' \
   https://chat.ordens.com.br/web/chat
 ```
 

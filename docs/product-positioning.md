@@ -9,7 +9,8 @@ Ele nao tenta substituir suporte especializado. O produto reduz repeticao, aumen
 ## Publico
 
 - equipes de suporte tecnico que lidam com perguntas recorrentes
-- operacoes que usam WhatsApp, n8n ou canais externos para atendimento
+- operacoes que usam WhatsApp, Meta WhatsApp Cloud API ou outros canais
+  externos para atendimento
 - times que precisam auditar respostas, referencias e falhas
 - projetos que querem reaproveitar o mesmo nucleo de agente em varios dominios
 
@@ -72,6 +73,8 @@ O `supportFAQagent` transforma conhecimento tecnico versionado em respostas cons
 - loader GitHub baseado na Contents API oficial para fontes versionadas
 - retrieval lexical seguro por padrao
 - pgvector disponivel por feature flag
+- fundacao nativa para Meta WhatsApp Cloud API por feature flag
+- Hermes documentado apenas como adapter temporario de entrega
 - LLM real com fallback seguro
 - handoff estruturado
 - rate limit no `/chat`

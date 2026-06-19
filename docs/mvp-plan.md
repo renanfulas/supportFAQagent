@@ -22,7 +22,8 @@ O detalhamento tecnico por fase e por responsavel esta em [Plano Tecnico de Impl
 - A comunicacao do projeto deve seguir `docs/product-positioning.md`: comercial tecnica, honesta sobre limites e focada em seguranca operacional.
 - O fluxo do MVP sera RAG simples, linear e previsivel.
 - O MVP nao usara `ConversationalRetrievalChain`.
-- O `n8n` continua sendo camada de automacao externa, nao parte do nucleo de inteligencia.
+- A direcao atual de WhatsApp e Meta WhatsApp Cloud API nativa; `n8n` e
+  Evolution permanecem apenas como legado/ponte operacional, sem gate ativo.
 - LangChain, se usado, entra apenas como apoio pontual e nao como espinha dorsal do sistema.
 
 ## Estado atual do projeto
@@ -78,16 +79,17 @@ Avanco integrado pelo PR `#64` em 12/06/2026:
   estao implementados
 - PostgreSQL/pgvector real local passou pelo rollout expand/contract e pela
   suite completa com `356 passed`
-- a Fase 0 continua `not_approved` ate provar snapshot, restore, rede privada e
-  integracoes em staging
+- a Fase 0 continua `not_approved` ate provar restore cronometrado em ambiente
+  isolado; `n8n` nao e mais gate ativo do MVP
 
 ## Responsabilidades
 
 Para este MVP, as frentes ficam organizadas assim:
 
 - `Juliano Barreto`
-  Responsavel pela VPS, deploy, runtime, rede, logs, `n8n`, Evolution API,
-  workflows e apoio pontual em LangChain.
+  Responsavel pela VPS, deploy, runtime, rede, logs, secrets, restore,
+  conectividade e apoio pontual em LangChain. Qualquer legado `n8n`/Evolution
+  fica sob responsabilidade operacional, nao como plano ativo do MVP.
 
 - `Renan`
   Responsavel por arquitetura, orquestracao, PostgreSQL, pgvector,
@@ -179,7 +181,7 @@ Para manter a entrega enxuta, estes itens ficam fora do MVP:
 - pipeline automatico completo de anonimizacao de PII
 - fallback entre multiplos vector stores
 - coexistencia de `Chroma` e `pgvector` no mesmo MVP
-- automacao completa com `n8n` para todos os canais
+- automacao completa por canais externos antes da Meta nativa ser validada
 - fine-tuning de modelos
 - feedback loop automatico para retreinamento
 
@@ -196,20 +198,24 @@ Por isso:
 - o endpoint `/chat` nao deve depender de Chroma ate a decisao de vector store estar fechada
 - o codigo deve ficar desacoplado o suficiente para trocar `Chroma` por `pgvector` sem reescrever orquestracao
 
-## Papel do n8n
+## Papel das integracoes WhatsApp
 
-O `n8n` continua valido, mas como fase posterior do MVP funcional do nucleo.
+A direcao atual e tratar WhatsApp como canal externo com Meta WhatsApp Cloud
+API nativa. `n8n` e Evolution deixam de ser plano operacional ativo do MVP e
+permanecem apenas como legado ou ponte temporaria ate decisao explicita.
 
-Uso previsto:
+Uso previsto para a fundacao atual:
 
-- integrar WhatsApp e outros canais externos
-- acionar `/chat`, `/ingestion/preview` e `/feedback`
-- lidar com notificacoes e roteamento operacional
+- receber webhooks da Meta por rota propria e validacao de assinatura
+- enviar mensagens pela Graph API usando adapter isolado
+- entregar OTP por Meta quando o template estiver aprovado
+- usar Hermes apenas como adapter temporario de entrega OTP quando necessario
 
 Nao deve:
 
 - carregar regras centrais de inteligencia
 - substituir a logica principal do backend Python
+- acessar banco, prompt, RAG ou regras de dominio
 
 ## Sequencia recomendada de implementacao
 
@@ -255,8 +261,8 @@ Status: concluida para o nucleo tecnico do MVP.
 Status: em andamento.
 
 - manter a configuracao operacional reproduzivel
-- validar e ativar com seguranca os workflows n8n versionados, sem mover
-  inteligencia para fora da API
+- executar restore cronometrado em ambiente isolado
+- validar a fundacao Meta WhatsApp em smoke privado antes de ativacao real
 - validar em staging a persistencia, migrations, sanitizacao e outbox
   implementadas na Fase 0
 - monitorar disco, banco, containers e logs da VPS
@@ -334,4 +340,5 @@ Ao final deste plano, o projeto tera:
 - um fluxo RAG de MVP simples e funcional
 - integracao com a base vetorial principal do time
 - uma arquitetura que continua desacoplada por dominio
-- espaco limpo para evoluir depois com `n8n`, historico mais sofisticado e automacoes adicionais
+- espaco limpo para evoluir depois com Meta WhatsApp nativa, historico mais
+  sofisticado e automacoes adicionais

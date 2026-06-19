@@ -20,7 +20,8 @@ Documento pai:
 - Telefone bruto e codigo OTP nao devem aparecer em logs.
 - Codigo OTP nao deve ser persistido em texto puro.
 - Respostas publicas nao devem revelar se um telefone ja existe na base.
-- `n8n` e o transporte externo do WhatsApp, nao o nucleo de autenticacao.
+- o transporte externo do WhatsApp e adapter isolado; na direcao atual, Meta
+  WhatsApp Cloud API e o caminho nativo e Hermes pode ser ponte temporaria.
 - A identidade verificada e uma identidade de canal, nao uma conta HostGator.
 - Persistencia, migrations e indices finais devem ser alinhados com Renan.
 
@@ -41,7 +42,7 @@ Browser com cookie anonimo HttpOnly
   -> POST /web/auth/whatsapp/start
   -> backend normaliza telefone e cria desafio
   -> adapter de entrega solicita envio do OTP
-  -> n8n envia mensagem pelo canal WhatsApp aprovado
+  -> adapter externo envia mensagem pelo canal WhatsApp aprovado
   -> usuario informa codigo no website
   -> POST /web/auth/whatsapp/confirm
   -> backend valida digest, expiracao e tentativas
@@ -230,7 +231,7 @@ Regras:
 - nunca reutilizar `API_SECRET_KEY` como segredo de hash
 - ativar a feature somente depois da persistencia e do transporte aprovados
 
-## Fronteira Com n8n E WhatsApp
+## Fronteira Com Transporte WhatsApp
 
 Contrato sugerido entre backend e adapter de entrega:
 
@@ -250,9 +251,10 @@ Contrato sugerido entre backend e adapter de entrega:
 Regras:
 
 - este payload circula apenas em canal servidor-servidor protegido
-- `n8n` nao decide validade, expiracao ou tentativas
-- logs do backend e do workflow nao devem registrar telefone ou codigo brutos
-- exportar workflow como JSON versionado quando a integracao for implementada
+- o adapter externo nao decide validade, expiracao ou tentativas
+- logs do backend e do transporte nao devem registrar telefone ou codigo brutos
+- quando o transporte for Meta, usar template aprovado e validar smoke privado
+- quando o transporte for Hermes, tratar como ponte temporaria removivel
 
 ## Rate Limit Inicial
 
@@ -320,7 +322,7 @@ Campos proibidos:
 - definir adapter de entrega WhatsApp entre Renan e Juliano
 - criar schemas HTTP e testes de validacao
 - criar interface de storage para sessoes, identidades e desafios
-- criar interface de entrega sem acoplar FastAPI ao `n8n`
+- criar interface de entrega sem acoplar FastAPI a um provedor especifico
 
 ### V1B - Persistencia E Seguranca
 
@@ -343,7 +345,7 @@ Campos proibidos:
 | --- | --- |
 | contratos HTTP, threat model e testes de seguranca | Renan |
 | schema, migration, storage PostgreSQL e indices | Renan |
-| workflow n8n e transporte WhatsApp | Juliano |
+| transporte externo WhatsApp, secrets e conectividade | Juliano |
 | runtime, secrets, HTTPS e logs do ambiente | Juliano |
 | UI web para inicio e confirmacao do desafio | Renan |
 
@@ -352,7 +354,7 @@ Campos proibidos:
 Responder com o time:
 
 1. Qual transporte WhatsApp sera usado para entregar OTP?
-2. O backend chama um webhook n8n interno ou um adapter direto?
+2. O backend usa Meta nativa, Hermes temporario ou outro adapter direto?
 3. O produto precisa recuperar telefone bruto ou apenas reconhecer o mesmo
    telefone por hash?
 4. Conversa anonima continua disponivel depois que V1 entrar?

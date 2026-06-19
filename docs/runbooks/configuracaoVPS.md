@@ -5,7 +5,9 @@ Baseado em `docs/environments.md`, `docs/runbooks/vps-controlled-runtime.md`,
 `docs/runbooks/hostgator-staging-web-chat-v0.md` e
 `docs/security/vps-security-plan.md`.
 
-Ownership de VPS, deploy, runtime, rede, logs, n8n e Evolution: Juliano.
+Ownership de VPS, deploy, runtime, rede, logs, secrets, restore e
+conectividade externa: Juliano. `n8n` e Evolution permanecem apenas como
+legado/ponte operacional, nao como plano ativo do MVP.
 Ownership de banco, migrations, pgvector, contratos, backend e testes: Renan.
 Rollout de migration, restore e promocao exigem revisao conjunta.
 
@@ -242,7 +244,7 @@ curl -i \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $API_SECRET_KEY" \
   -H "X-Request-ID: smoke-001" \
-  -d '{"domain":"suporte-vps-whatsapp","session_id":"smoke","message":"Como instalar a Evolution API na VPS?"}' \
+-d '{"domain":"suporte-vps-whatsapp","session_id":"smoke","message":"Como conectar o WhatsApp pela Meta API oficial?"}' \
   http://127.0.0.1:8000/chat
 ```
 
@@ -264,7 +266,7 @@ curl -i http://127.0.0.1:8000/chat-ui
 
 curl -i \
   -H "Content-Type: application/json" \
-  -d '{"message":"Como conectar o WhatsApp na Evolution API?"}' \
+-d '{"message":"Como conectar o WhatsApp pela Meta API oficial?"}' \
   http://127.0.0.1:8000/web/chat
 ```
 

@@ -9,7 +9,7 @@ Para comunicacao publica, README, PRs e tarefas de agentes, use tambem o
 comercial tecnica: reduzir repeticao no suporte, responder com conhecimento
 versionado, preservar rastreabilidade e escalar quando faltar contexto.
 
-Consulte tambem o runbook de staging e os contratos SQL do repositorio para a definicao de ambiente oficial, papel do `DATABASE_URL` e fronteira entre backend, banco e `n8n`.
+Consulte tambem o runbook de staging e os contratos SQL do repositorio para a definicao de ambiente oficial, papel do `DATABASE_URL` e fronteira entre backend, banco e integracoes externas como Meta WhatsApp, Hermes temporario ou legados.
 
 ## Principios de execucao
 
@@ -97,7 +97,7 @@ Ownership operacional atual da Fase 5:
 
 | Pessoa | Frente | Missao principal |
 | --- | --- | --- |
-| Juliano Barreto | VPS, runtime e automacoes | Deploy, rede, logs, n8n, Evolution API, workflows, snapshots e recuperacao |
+| Juliano Barreto | VPS, runtime e operacao | Deploy, rede, logs, secrets, snapshots, restore e conectividade de integracoes externas |
 | Renan | Aplicacao, banco e integracao | Arquitetura, PostgreSQL, pgvector, persistencia, contratos, testes, seguranca e coordenacao |
 
 Este mapa atual substitui as atribuicoes operacionais abaixo para trabalho
@@ -117,8 +117,8 @@ Regra de fronteira para esta fase:
 
 - Renan define contratos HTTP, schema SQL, migrations, persistencia, pgvector,
   testes de contrato e adapters de integracao
-- Juliano opera VPS, n8n, Evolution API, rede, secrets, logs, snapshots e
-  recuperacao
+- Juliano opera VPS, rede, secrets, logs, snapshots, recuperacao e
+  conectividade externa quando houver smoke aprovado
 - mudancas que atravessam aplicacao e runtime exigem revisao conjunta
 
 Coordenacao:
@@ -157,7 +157,7 @@ O que deve ficar fora do schema central:
 - regras especificas de suporte VPS
 - logica especifica de vendas
 - handoff especifico de onboarding
-- detalhes operacionais de `n8n` ou canais externos
+- detalhes operacionais de Meta, Hermes, `n8n` legado ou canais externos
 
 Direcao pratica:
 
@@ -181,7 +181,7 @@ Contrato minimo de `POST /chat`:
 
 ```json
 {
-  "message": "Como conectar o WhatsApp na Evolution API?",
+  "message": "Como conectar o WhatsApp pela Meta API oficial?",
   "session_id": "whatsapp:+5511999999999",
   "domain": "suporte-vps-whatsapp"
 }
@@ -291,7 +291,7 @@ Objetivo: ligar os wrappers ja criados ao fluxo principal, sem acoplar o core a 
 - Definir como variaveis serao injetadas no deploy.
 - Preparar `.env` de ambiente com placeholders seguros.
 - Confirmar acesso a logs do backend.
-- Definir URL interna do backend para n8n.
+- Definir URL interna do backend para consumidores servidor-servidor.
 
 Criterio de pronto:
 
@@ -814,7 +814,8 @@ Regras de debug:
 | Schema, migrations e persistencia | PostgreSQL + pgvector | Renan |
 | Retrieval vetorial | Schema pgvector e adapter oficial | Renan |
 | Deploy do backend | VPS pronta | Juliano |
-| Workflow WhatsApp | API `/chat` estavel e ingress assinado | Juliano |
+| Meta WhatsApp smoke privado | Meta config, secrets e numero de teste | Juliano |
+| Transporte WhatsApp nativo | adapters Meta, webhook e contrato de chat | Renan + Juliano |
 | Handoff | Confidence, outbox e payload estavel | Renan + Juliano |
 | Hardening | Aplicacao, deploy e endpoints expostos | Renan + Juliano |
 | Evals do dominio | Casos reais e criterios de qualidade | Renan |

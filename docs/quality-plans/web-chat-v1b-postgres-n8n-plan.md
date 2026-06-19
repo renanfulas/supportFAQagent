@@ -1,7 +1,10 @@
 # Plano V1B - Persistencia OTP E Entrega WhatsApp Real
 
-Status: backend PostgreSQL, contratos e workflow versionado implementados; a
-ativacao n8n/Evolution e o smoke privado real continuam pendentes.
+Status: plano historico/superseded para a ponte n8n/Evolution. Backend
+PostgreSQL e contratos foram incorporados, mas a direcao operacional atual
+substituiu a ativacao n8n/Evolution por Meta WhatsApp Cloud API nativa com
+Hermes apenas como adapter temporario. Use este documento somente como contexto
+legado, nao como proximo passo ativo.
 
 ## Objetivo
 

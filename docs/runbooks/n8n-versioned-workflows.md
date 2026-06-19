@@ -1,5 +1,10 @@
 # Runbook - Workflows n8n versionados
 
+Status: legado. `n8n` nao e mais gate ativo nem proximo passo operacional do
+MVP. Use este runbook apenas para recuperar ou auditar workflows historicos. A
+direcao atual de WhatsApp esta em `docs/quality-plans/meta-whatsapp-native-integration-plan.md`
+e `docs/runbooks/meta-whatsapp-private-smoke.md`.
+
 ## Objetivo
 
 Operacionalizar os templates versionados em `deploy/n8n/workflows/` sem

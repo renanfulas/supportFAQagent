@@ -197,7 +197,7 @@ Esperado:
 curl -i \
   -H "Content-Type: application/json" \
   -H "X-Request-ID: runtime-smoke-001" \
-  -d '{"domain":"suporte-vps-whatsapp","session_id":"runtime-smoke","message":"Como instalar a Evolution API na VPS?"}' \
+-d '{"domain":"suporte-vps-whatsapp","session_id":"runtime-smoke","message":"Como conectar o WhatsApp pela Meta API oficial?"}' \
   http://127.0.0.1:8000/chat
 ```
 

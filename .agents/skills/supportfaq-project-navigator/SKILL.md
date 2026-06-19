@@ -1,6 +1,6 @@
 ---
 name: supportfaq-project-navigator
-description: Use when an AI agent needs to understand, navigate, plan, or modify the supportFAQagent project without guessing architecture. Helps choose the right docs, folders, tests, and ownership boundaries for changes involving product positioning, FastAPI, domains, ingestion, GitHub loaders, retrieval, LLM, evals, n8n, PostgreSQL/pgvector, VPS, observability, dependency management, or knowledge base content.
+description: Use when an AI agent needs to understand, navigate, plan, or modify the supportFAQagent project without guessing architecture. Helps choose the right docs, folders, tests, and ownership boundaries for changes involving product positioning, FastAPI, domains, ingestion, GitHub loaders, retrieval, LLM, evals, Meta WhatsApp, Hermes, legacy n8n, PostgreSQL/pgvector, VPS, observability, dependency management, or knowledge base content.
 ---
 
 # supportFAQagent Project Navigator
@@ -46,7 +46,7 @@ Use this map to decide what to read.
 | Handoff or escalation | `docs/domain-contract.md`, `docs/integration-contracts.md`, `docs/domain-evals.md` | `app/handoff/`, `app/orchestration/`, `domains/<domain>/domain.yaml`, `tests/` |
 | Observability/logging | `docs/observability.md`, `docs/technical-implementation-plan.md` | `app/core/`, `app/main.py`, route files |
 | Security or public surface hardening | `SECURITY.md`, `docs/security/`, `docs/observability.md`, `docs/code-standards.md` | `app/core/`, `app/api/`, `tests/security/`, `.github/workflows/` |
-| n8n integration | `docs/integration-contracts.md`, `docs/observability.md`, `docs/technical-implementation-plan.md` | docs first; do not move intelligence into n8n |
+| Meta WhatsApp, Hermes or legacy n8n integration | `docs/integration-contracts.md`, `docs/observability.md`, `docs/technical-implementation-plan.md` | docs first; do not move intelligence into any external transport |
 | PostgreSQL/pgvector | `docs/technical-implementation-plan.md`, `docs/architecture.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `app/retrieval/`, `app/ingestion/pgvector_writer.py`, `migrations/`, `scripts/ingest_domain_pgvector.py`; coordinate with database owner |
 | VPS/deploy/runtime | `docs/environments.md`, `docs/technical-implementation-plan.md`, `docs/observability.md`, `docs/runbooks/` | `scripts/runtime_preflight.ps1`, `scripts/staging_smoke.py`, config/docs; coordinate with infrastructure owner |
 | Dependency management or security audit | `pyproject.toml`, `CONTRIBUTING.md`, `.github/workflows/security.yml` | `pyproject.toml`, `.github/workflows/`, docs that mention install commands |
@@ -56,8 +56,9 @@ Use this map to decide what to read.
 
 - Renan: architecture, orchestration, tests, security, contracts, quality,
   docs, PostgreSQL, pgvector and persistence.
-- Juliano: VPS, deploy, runtime environment, networking, logs, n8n, Evolution
-  API and workflows. Juliano also supports LangChain utilities when needed.
+- Juliano: VPS, deploy, runtime environment, networking, logs, secrets,
+  restore, external connectivity and LangChain utilities when needed. Legacy
+  n8n/Evolution work is operational context, not the active MVP path.
 
 If a task touches another person's primary area, prefer creating a contract, doc, adapter, or test seam instead of implementing their full responsibility.
 
@@ -67,7 +68,8 @@ If a task touches another person's primary area, prefer creating a contract, doc
 - Put domain-specific behavior in `domains/`, not hardcoded in `app/`.
 - Routes should validate and orchestrate, not hold business logic.
 - Prefer small adapters and interfaces over heavy framework coupling.
-- Keep n8n as automation/orchestration outside the intelligence core.
+- Keep Meta, Hermes, n8n legacy and any external transport outside the
+  intelligence core.
 - Treat PostgreSQL + pgvector as the planned production vector store.
 - Treat Chroma as local/prototype unless the team explicitly decides otherwise.
 - Treat `pyproject.toml` as the only dependency source of truth; do not create parallel dependency lists.

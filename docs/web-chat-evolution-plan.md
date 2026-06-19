@@ -31,7 +31,7 @@ Detalhamento de implementacao da primeira fase:
 O ponto mais importante:
 
 - `POST /chat` continua protegido por `X-API-Key` para integracoes internas,
-  `n8n`, WhatsApp e consumidores servidor-servidor.
+  Meta WhatsApp, legados e consumidores servidor-servidor.
 - O browser nao deve receber `API_SECRET_KEY`, `OPENAI_API_KEY`,
   `X-LLM-API-Key` ou qualquer segredo.
 - A interface publica deve chamar uma fachada web controlada pelo backend,
@@ -66,8 +66,8 @@ Limites atuais importantes:
 - `/feedback` retorna `pending_persistence` somente quando a persistencia esta
   desativada.
 - Historico curto real depende de sessao e PostgreSQL disponivel.
-- WhatsApp e `n8n` devem continuar como consumidores de contrato, nao como
-  nucleo de inteligencia.
+- WhatsApp, Meta e qualquer legado devem continuar como consumidores/adapters de
+  contrato, nao como nucleo de inteligencia.
 
 ## Objetivos Do Produto
 
@@ -121,7 +121,7 @@ Browser
 Contratos internos preservados:
 
 ```text
-n8n / WhatsApp / automacoes
+Meta WhatsApp / legados / automacoes
   -> POST /chat com X-API-Key
   -> mesmo core de orquestracao
 ```
@@ -321,7 +321,7 @@ messages
 
 Regras importantes:
 
-- `n8n` continua como consumidor e automacao externa.
+- Meta WhatsApp e outros consumidores continuam como adapters externos.
 - O backend continua sendo o nucleo de inteligencia.
 - O WhatsApp nao deve conter regra propria para decidir resposta tecnica.
 - Handoff deve usar `handoff_reasons`, nao inferir pelo texto livre.
@@ -373,7 +373,7 @@ Entrada minima:
 
 ```json
 {
-  "message": "Como conectar o WhatsApp na Evolution API?"
+  "message": "Como conectar o WhatsApp pela Meta API oficial?"
 }
 ```
 

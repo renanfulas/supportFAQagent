@@ -1,6 +1,8 @@
 # Contratos de Integracao
 
-Este documento registra os contratos HTTP que outras frentes podem consumir, especialmente `n8n`, banco e futuros canais externos.
+Este documento registra os contratos HTTP que outras frentes podem consumir,
+especialmente Meta WhatsApp, Hermes temporario, banco, consumidores legados e
+futuros canais externos.
 
 Regra de modelagem:
 
@@ -49,7 +51,7 @@ Objetivo:
 
 - permitir que o usuario vincule a sessao web anonima a uma identidade verificada por WhatsApp
 - preservar o chat anonimo V0 enquanto a autenticacao evolui em paralelo
-- testar o contrato localmente antes de acoplar o adapter de entrega ao webhook interno do `n8n`
+- testar o contrato localmente antes de ativar adapter real de entrega
 
 Rotas:
 
@@ -69,8 +71,8 @@ Regras:
   vinculos ao reiniciar; `WEB_AUTH_STORAGE_BACKEND=postgres` preserva o estado
   por restart
 - PostgreSQL, outbox e ingress assinado estao implementados sem alterar o
-  contrato HTTP publico; entrega real por `n8n`/Evolution ainda exige ativacao
-  e smoke privado
+  contrato HTTP publico; entrega real por Meta ou Hermes ainda exige ativacao
+  opt-in e smoke privado
 
 Exemplo:
 
@@ -124,7 +126,7 @@ Entrada minima:
 
 ```json
 {
-  "message": "Como conectar o WhatsApp na Evolution API?"
+  "message": "Como conectar o WhatsApp pela Meta API oficial?"
 }
 ```
 
@@ -159,7 +161,8 @@ Regras operacionais:
 
 Fronteira de responsabilidade:
 
-- esta fachada publica nao substitui `/chat` para `n8n` ou WhatsApp
+- esta fachada publica nao substitui `/chat` ou webhooks dedicados para Meta
+  WhatsApp e outros consumidores servidor-servidor
 - o contrato interno protegido continua sendo a interface oficial para consumidores servidor-servidor
 
 ## `POST /web/feedback`
@@ -217,7 +220,7 @@ Entrada minima:
   "domain": "suporte-vps-whatsapp",
   "session_id": "whatsapp:+5511999999999",
   "channel": "whatsapp",
-  "message": "Como conectar o WhatsApp na Evolution API?"
+  "message": "Como conectar o WhatsApp pela Meta API oficial?"
 }
 ```
 
@@ -259,8 +262,10 @@ humano esta temporariamente indisponivel.
 
 Uso esperado:
 
-- `n8n` envia mensagens externas para este endpoint.
-- `n8n` deve enviar tambem `X-API-Key` quando consumir esta rota.
+- consumidores servidor-servidor legados ou internos podem enviar mensagens
+  externas para este endpoint.
+- esses consumidores devem enviar tambem `X-API-Key` quando consumirem esta
+  rota.
 - a `/chat-ui` pode enviar `X-LLM-API-Key` em staging para permitir que cada pessoa teste com a propria chave do provider ou com o alias do projeto.
 - Se `escalated=true`, o consumidor deve preservar a decisao, mas nao duplicar
   a notificacao humana: a outbox e o workflow `escalation-notify` formam o
@@ -268,8 +273,10 @@ Uso esperado:
 - `request_id` deve ser preservado em logs e feedback.
 - A API retorna `references`; na persistencia PostgreSQL, este campo deve ser salvo em `messages.message_references`.
 
-Para detalhes operacionais do consumidor n8n/WhatsApp, use
-`docs/runbooks/n8n-whatsapp-chat-contract.md`.
+Para detalhes operacionais da fundacao Meta, use
+`docs/runbooks/meta-whatsapp-private-smoke.md`. O runbook
+`docs/runbooks/n8n-whatsapp-chat-contract.md` permanece apenas como referencia
+legada.
 
 Contrato atual de `references`:
 
@@ -316,7 +323,7 @@ Entrada minima:
   "helpful": true,
   "reason": "resolved",
   "comment": "Resposta resolveu o caso",
-  "source": "n8n",
+  "source": "integration",
   "escalated": true,
   "handoff_reasons": ["low_confidence"],
   "references": ["domains/suporte-vps-whatsapp/knowledge/faqs/qrcode-whatsapp.md"],
@@ -340,7 +347,8 @@ Validacoes:
 - `request_id` e `message_id` aceitam somente identificadores de correlacao
   seguros; PII, IP, texto livre e prefixos reconheciveis de segredo sao
   rejeitados.
-- `source` fora da allowlist `web`, `api`, `n8n` e `integration` vira `other`.
+- `source` fora da allowlist `web`, `api`, `n8n` e `integration` vira `other`;
+  `n8n` permanece aceito apenas por compatibilidade de eventos historicos.
 
 Saida atual:
 

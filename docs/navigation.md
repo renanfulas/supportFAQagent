@@ -30,7 +30,7 @@ mental minimo:
 | Fluxo de resposta, LLM ou handoff | `docs/domain-contract.md`, `docs/technical-implementation-plan.md` | `app/orchestration/`, `app/llm/`, `app/handoff/` |
 | Artigos, FAQs ou calibragem | `docs/knowledge-authoring.md`, `docs/domain-evals.md` | `domains/`, `app/evals/` |
 | Banco, migrations ou pgvector | `docs/technical-implementation-plan.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `migrations/`, `app/retrieval/` |
-| Staging, VPS, n8n ou operacao | `docs/environments.md`, runbook especifico em `docs/runbooks/` | `scripts/`, configuracao de runtime |
+| Staging, VPS, Meta WhatsApp, Hermes ou operacao | `docs/environments.md`, `docs/integration-contracts.md`, runbook especifico em `docs/runbooks/` | `scripts/`, configuracao de runtime |
 | Seguranca ou observabilidade | `SECURITY.md`, `docs/observability.md` | `app/core/`, `app/api/`, `tests/security/` |
 | Planejamento ou status do MVP | `docs/documentation-status.md`, `docs/mvp-plan.md` | documentos ativos indicados por eles |
 | Contribuicao com agente de IA | `docs/agent-skills.md` | `.agents/skills/` |
@@ -45,8 +45,8 @@ curtos antes de codar:
 
 - `docs/web-chat-v1-whatsapp-otp-spec.md`: contrato, threat model e fronteiras
   da identidade de canal por WhatsApp OTP.
-- `docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md`: evolucao persistente
-  do OTP, adapter interno n8n, workflow Evolution API e smoke privado real.
+- `docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md`: plano historico da
+  ponte OTP por n8n/Evolution; use apenas para contexto legado.
 - `docs/quality-plans/meta-whatsapp-native-integration-plan.md`: plano tecnico
   para refatorar a entrega externa, preparar Meta WhatsApp Cloud API nativa e
   limitar Hermes a adapter temporario.
@@ -57,7 +57,7 @@ curtos antes de codar:
 
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
-feedback/n8n, devem ser entendidas pelo estado atual do codigo e pelos docs
+feedback/outbox, devem ser entendidas pelo estado atual do codigo e pelos docs
 principais, nao por planos de execucao antigos.
 
 Planos concluidos, relatorios substituidos e roadmaps historicos ficam em
@@ -144,7 +144,7 @@ drenados.
 
 ## `app/static/`
 
-Chat UI local/staging para validacao controlada. Nao substitui integracoes externas como WhatsApp ou n8n.
+Chat UI local/staging para validacao controlada. Nao substitui integracoes externas como Meta WhatsApp, Hermes ou outros consumidores servidor-servidor.
 
 ## `scripts/`
 

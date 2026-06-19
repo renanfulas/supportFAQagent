@@ -67,7 +67,7 @@ Then read only the task-specific docs:
 | Intended area | Additional docs |
 | --- | --- |
 | README/docs/product narrative | `docs/product-positioning.md`, `docs/agent-skills.md` |
-| API/n8n/contracts | `docs/integration-contracts.md`, `docs/observability.md` |
+| API/Meta WhatsApp/Hermes/contracts | `docs/integration-contracts.md`, `docs/observability.md` |
 | Domain config | `docs/domain-contract.md` |
 | Knowledge/RAG content | `docs/knowledge-authoring.md`, `docs/domain-evals.md` |
 | GitHub document loader or external source loading | `docs/knowledge-authoring.md`, `docs/technical-implementation-plan.md`, `app/ingestion/github_loader.py`, `scripts/fetch_github_document.py` |
@@ -84,7 +84,7 @@ Use this map to detect overlap:
 
 | Person | Primary responsibility |
 | --- | --- |
-| Juliano Barreto | VPS, deploy, networking, logs, n8n, Evolution API, workflows and LangChain support |
+| Juliano Barreto | VPS, deploy, networking, logs, secrets, restore, external connectivity and LangChain support |
 | Renan | Architecture, orchestration, PostgreSQL, pgvector, persistence, tests, security, contracts, quality, docs and coordination |
 
 If the intended work crosses another person's area, recommend one of:
@@ -132,14 +132,14 @@ Keep the answer practical. Do not write a long architecture essay unless asked.
 - If the task requires tables, migrations, pgvector queries or application persistence, involve Renan.
 - If the task changes LangChain dependency strategy, splitter behavior, or loaders, involve Juliano.
 - If the task changes the GitHub Contents API loader, dependency strategy, install commands, or audit gates, treat it as shared quality/architecture work and validate the contracts.
-- If the task assumes deploy, VPS logs, TLS, reverse proxy, environment variables, runtime networking, n8n or Evolution API, involve Juliano.
+- If the task assumes deploy, VPS logs, TLS, reverse proxy, environment variables, runtime networking, Meta WhatsApp activation, Hermes, n8n legacy or external connectivity, involve Juliano.
 - If the task touches public exposure, security, secrets, PII, or logs, require hardening and tests.
 
 ## What Not To Do
 
 - Do not implement before asking intent and name when missing.
 - Do not recommend rewriting the architecture from scratch.
-- Do not move intelligence rules into n8n.
+- Do not move intelligence rules into Meta, Hermes, n8n legacy or any external transport.
 - Do not make Chroma the production source of truth unless the team explicitly decides.
 - Do not bypass pgvector ownership by creating a parallel production vector store.
 - Do not tell someone to edit files before pointing them to the relevant docs.

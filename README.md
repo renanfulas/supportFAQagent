@@ -24,7 +24,8 @@ Este projeto resolve isso com um nucleo Python modular que:
 - evita inventar respostas quando falta contexto
 - registra `request_id`, referencias e motivos de escalonamento
 - permite evoluir de um dominio inicial para varios setores
-- prepara integracao com WhatsApp, n8n e PostgreSQL/pgvector
+- prepara integracao nativa com Meta WhatsApp Cloud API, adapters temporarios
+  como Hermes e PostgreSQL/pgvector
 
 ## O Que Ja Funciona
 
@@ -49,7 +50,8 @@ Este projeto resolve isso com um nucleo Python modular que:
 - suporte tecnico para VPS
 - triagem de duvidas recorrentes
 - consulta a FAQs e artigos internos
-- automacoes com n8n consumindo uma API estavel
+- canais externos consumindo uma API estavel, sem mover inteligencia para fora
+  do backend
 - base para agentes reutilizaveis em outros dominios
 
 ## Como Funciona
@@ -72,7 +74,7 @@ Request:
 
 ```json
 {
-  "message": "Como conectar o WhatsApp na Evolution API?",
+  "message": "Como conectar o WhatsApp pela Meta API oficial?",
   "session_id": "whatsapp:+5511999999999",
   "domain": "suporte-vps-whatsapp"
 }
@@ -119,16 +121,21 @@ Pronto no MVP atual:
 - readiness separado para banco, migrations, retrieval e outbox
 - retrieval lexical
 - pgvector validado em staging real por feature flag
-- `pgvector_gate.yaml` validada em staging com `74/78`
+- `pgvector_gate.yaml` validada em staging com `76/78`
 - Fase 0 implementada e validada localmente com PostgreSQL/pgvector real,
   migrations `001-008` e `356` testes verdes
+- fundacao Meta WhatsApp Cloud API implementada por feature flag, com webhook,
+  parser, cliente HTTP, entrega OTP e transporte de chat desativados por padrao
+- Hermes disponivel apenas como adapter temporario para entrega OTP
 - testes e documentacao base
 
 Proxima fase operacional:
 
-- validar operacionalmente persistencia, migrations, readiness e restore em
-  staging
-- ativar integracao n8n/WhatsApp autenticada
+- executar restore cronometrado em ambiente isolado e medir `RPO <= 24h` /
+  `RTO <= 4h`
+- executar smoke privado da Meta WhatsApp Cloud API antes de qualquer ativacao
+  real
+- manter Hermes como ponte temporaria somente se reduzir risco operacional
 - operacao reproduzivel e monitoramento da VPS
 - decisao operacional sobre promocao do pgvector como default
 
@@ -140,8 +147,10 @@ Roadmap:
 Risco operacional conhecido:
 
 - o staging chegou a `100%` de uso do disco por cache de build Docker; depois
-  da limpeza ficou em `90%`, portanto precisa de alerta e politica de limpeza
-  antes de producao
+  da limpeza e promocao parcial ficou em `81%`, portanto precisa de alerta e
+  politica de limpeza antes de producao
+- a Fase 0 operacional continua `not_approved` ate o restore isolado passar;
+  `n8n` nao e mais gate ativo do MVP
 
 ## Estrutura
 
@@ -196,7 +205,7 @@ Para usar o prototipo local com ChromaDB e CSV:
 pip install -e ".[chroma]"
 ```
 
-Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados. A V0 tambem pode expor a `chat-ui` como superficie publica controlada quando `ENABLE_PUBLIC_CHAT_UI=true`, usando os endpoints `POST /web/chat` e `POST /web/feedback` sem enviar `X-API-Key` ao navegador. Em staging, a tela antiga baseada em `ENABLE_CHAT_UI=true` continua disponivel apenas para validacao interna com `X-LLM-API-Key`. Nenhuma dessas superficies substitui integracoes externas como n8n ou WhatsApp.
+Em `APP_ENV=development`, a API tambem pode servir uma tela local de chat para testes controlados. A V0 tambem pode expor a `chat-ui` como superficie publica controlada quando `ENABLE_PUBLIC_CHAT_UI=true`, usando os endpoints `POST /web/chat` e `POST /web/feedback` sem enviar `X-API-Key` ao navegador. Em staging, a tela antiga baseada em `ENABLE_CHAT_UI=true` continua disponivel apenas para validacao interna com `X-LLM-API-Key`. Nenhuma dessas superficies substitui integracoes externas como Meta WhatsApp, Hermes ou outros consumidores servidor-servidor.
 
 ## Testes
 

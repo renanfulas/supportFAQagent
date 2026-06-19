@@ -1,6 +1,6 @@
 # Observabilidade Minima
 
-O MVP usa um padrao simples de rastreio por request para facilitar debug entre API, n8n, banco, retrieval e providers de LLM.
+O MVP usa um padrao simples de rastreio por request para facilitar debug entre API, banco, retrieval, providers de LLM e integracoes externas como Meta WhatsApp ou Hermes.
 
 ## Header de correlacao
 
@@ -20,7 +20,7 @@ Regras:
 - O mesmo `request_id` aparece no corpo do `POST /chat`.
 - Erros HTTP tratados e erros inesperados retornam `request_id` no corpo e no header.
 
-## Como usar no n8n
+## Como usar em consumidores externos
 
 Fluxo recomendado:
 
@@ -28,6 +28,11 @@ Fluxo recomendado:
 2. Enviar esse valor no header `X-Request-ID`.
 3. Guardar o `request_id` retornado pelo `/chat`.
 4. Enviar esse `request_id` depois no `/feedback`.
+
+Para Meta WhatsApp, o webhook e o transporte devem preservar a correlacao sem
+logar telefone bruto, corpo da mensagem, token, payload completo ou assinatura.
+Para legados como `n8n`, a regra continua a mesma: consumir contrato HTTP e
+preservar `request_id`, sem carregar regra central do agente.
 
 ## Logs estruturados
 

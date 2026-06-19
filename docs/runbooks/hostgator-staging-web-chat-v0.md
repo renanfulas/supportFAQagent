@@ -126,7 +126,7 @@ Esperado:
 ```bash
 curl -i \
   -H "Content-Type: application/json" \
-  -d '{"message":"Como conectar o WhatsApp na Evolution API?"}' \
+-d '{"message":"Como conectar o WhatsApp pela Meta API oficial?"}' \
   https://staging.example/web/chat
 ```
 

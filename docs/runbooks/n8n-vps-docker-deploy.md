@@ -1,5 +1,9 @@
 # Runbook - Subir n8n Em Docker Na VPS
 
+Status: legado. `n8n` nao e mais parte do plano operacional atual do MVP. Use
+este runbook apenas para preservar, auditar ou recuperar o servico historico,
+sem transforma-lo em gate de promocao.
+
 ## Objetivo
 
 Subir o `n8n` como servico separado na mesma VPS do `supportFAQagent`, usando

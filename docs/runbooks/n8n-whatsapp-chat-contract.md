@@ -1,5 +1,10 @@
 # Runbook - Contrato n8n/WhatsApp para `/chat`
 
+Status: legado. O contrato protegido `/chat` continua valido para consumidores
+servidor-servidor, mas `n8n`/Evolution nao sao mais a direcao operacional ativa
+do WhatsApp. Para a direcao atual, use Meta WhatsApp Cloud API nativa e o
+runbook `docs/runbooks/meta-whatsapp-private-smoke.md`.
+
 ## Objetivo
 
 Definir como uma automacao externa, como n8n ou WhatsApp, deve consumir o

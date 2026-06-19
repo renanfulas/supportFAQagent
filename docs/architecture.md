@@ -21,7 +21,8 @@ A arquitetura deve proteger estas promessas:
 - evitar resposta inventada quando o contexto for fraco
 - retornar `request_id`, `references`, `confidence`, `handoff_reasons` e `error_code`
 - falhar de forma segura quando retrieval, provider ou credencial falhar
-- manter n8n, WhatsApp e outros canais como consumidores de contrato, nao como nucleo de inteligencia
+- manter Meta WhatsApp, Hermes temporario e outros canais como consumidores ou
+  adapters de contrato, nao como nucleo de inteligencia
 
 ## Principios da arquitetura
 
@@ -56,7 +57,7 @@ O que nao deve ser hardcoded no core:
 - campos especificos de VPS ou WhatsApp
 - colunas especificas de vendas ou onboarding
 - regras de handoff por setor
-- detalhes operacionais do `n8n`
+- detalhes operacionais de Meta, Hermes, `n8n` legado ou canais externos
 
 Esses detalhes devem continuar em `domains/<domain>/`, contratos HTTP e
 integracoes externas.
@@ -248,4 +249,5 @@ Medio prazo:
 - usar feedback estruturado persistido para calibracao e backlog
 - calibragem de thresholds e termos sensiveis de handoff
 - roteamento entre dominios
-- automacao com `n8n`
+- ativacao operacional da Meta WhatsApp Cloud API depois de smoke privado
+- remocao de adapters temporarios quando a Meta estiver validada

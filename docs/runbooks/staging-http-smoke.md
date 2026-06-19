@@ -70,7 +70,7 @@ curl -i http://127.0.0.1:8000/chat-ui
 
 curl -i \
   -H "Content-Type: application/json" \
-  -d '{"message":"Como conectar o WhatsApp na Evolution API?"}' \
+-d '{"message":"Como conectar o WhatsApp pela Meta API oficial?"}' \
   http://127.0.0.1:8000/web/chat
 ```
 
