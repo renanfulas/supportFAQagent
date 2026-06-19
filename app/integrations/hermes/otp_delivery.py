@@ -7,6 +7,11 @@ from app.web_auth.delivery import OtpDeliveryUnavailable
 from app.web_auth.models import OtpDeliveryRequest
 
 
+def _whatsapp_chat_id(phone_e164: str) -> str:
+    digits = "".join(char for char in phone_e164 if char.isdigit())
+    return f"{digits}@s.whatsapp.net" if digits else ""
+
+
 class HermesOtpDeliveryAdapter:
     def __init__(self, *, client: HermesClient, template_name: str) -> None:
         self.client = client
@@ -17,6 +22,7 @@ class HermesOtpDeliveryAdapter:
             "delivery_id": request.challenge_id,
             "channel": "whatsapp",
             "phone_e164": request.phone,
+            "chat_id": _whatsapp_chat_id(request.phone),
             "template": self.template_name,
             "variables": {
                 "code": request.code,
