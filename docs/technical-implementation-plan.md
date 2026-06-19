@@ -60,10 +60,10 @@ Avancos confirmados no historico entre 13/05/2026 e 16/05/2026:
 
 Estado consolidado do nucleo tecnico em 14/06/2026:
 
-- `/chat` continua usando retrieval lexical como padrao seguro quando
-  `RETRIEVAL_BACKEND` nao aponta para `pgvector`
-- `RETRIEVAL_BACKEND=pgvector` ja ativa o caminho vetorial oficial em runtime
-  com `DATABASE_URL` e dados ingeridos
+- `/chat` continua usando retrieval lexical como padrao seguro em local/CI e
+  quando `RETRIEVAL_BACKEND` nao aponta para `pgvector`
+- `RETRIEVAL_BACKEND=pgvector` e o default operacional do staging quando
+  `DATABASE_URL`, embeddings e dados ingeridos estao presentes
 - `prompt_builder.py` ja e chamado por `ChatFlowService`
 - `LLMWrapper` ja esta integrado ao `LLMService` e o dominio padrao ja aponta para provider real
 - handoff estruturado ja retorna motivos de escalonamento
@@ -85,11 +85,11 @@ Estado consolidado do nucleo tecnico em 14/06/2026:
 - evals ja cobrem a linha de base atual do MVP com retrieval lexical, handoff calibrado e contrato de feedback atualizado
 - a calibragem local com `pgvector` ja gerou baseline forte:
   `pgvector_gate.yaml=74/78` e `pgvector_curated.yaml=179/240`
-- o staging oficial reproduziu exatamente os baselines:
-  `pgvector_gate.yaml=74/78` e `pgvector_curated.yaml=179/240`
+- o staging oficial fechou `pgvector_gate.yaml=76/78`, acima do criterio normal
+  `>=74/78`
 - as Fases 1 a 4 do nucleo tecnico estao concluidas
-- a promocao do pgvector como default permanente passa a ser decisao
-  operacional da Fase 5, com rollback para lexical
+- pgvector foi promovido como default operacional do staging, com rollback para
+  lexical preservado
 
 ## Responsaveis
 
@@ -698,6 +698,8 @@ Nota de sequencia:
 - Definir reverse proxy, TLS, rede e limites de logs quando houver servicos
   externos ativos.
 - Executar snapshot e restore cronometrado em ambiente isolado.
+- Operar o staging com `RETRIEVAL_BACKEND=pgvector` como default enquanto os
+  gates permanecerem saudaveis.
 - Garantir que consumidores externos futuros nunca acessem o banco do agente.
 
 ## Renan - Aplicacao, banco e seguranca

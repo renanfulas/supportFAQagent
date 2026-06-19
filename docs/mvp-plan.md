@@ -35,8 +35,8 @@ Hoje o repositorio ja possui:
 - estrutura modular de `app/`
 - dominio inicial versionado em `domains/suporte-vps-whatsapp/`
 - ingestao local de artigos e FAQs
-- retrieval lexical como padrao seguro
-- retrieval PostgreSQL/pgvector validado em staging privado por feature flag
+- retrieval lexical como padrao seguro para local/CI e rollback operacional
+- retrieval PostgreSQL/pgvector promovido como default operacional do staging
 - provider real configurado por dominio, com fallback seguro quando faltar credencial ou o provider falhar
 - `LLMService` integrado ao `LLMWrapper` para OpenAI/Anthropic no dominio atual
 - `ChatFlowService` integrado ao `prompt_builder.py`
@@ -54,10 +54,9 @@ Hoje o repositorio ja possui:
 - documentacao base de arquitetura e contribuicao
 
 Importante:
-`pgvector` ja funciona como caminho vetorial em staging quando
-`RETRIEVAL_BACKEND=pgvector` esta configurado. A gate oficial de staging foi
-validada; tornar esse backend o default permanente continua sendo uma decisao
-operacional com rollback documentado.
+`pgvector` e o default operacional do staging quando `DATABASE_URL`, embeddings
+e dados ingeridos estao presentes. A gate oficial de staging foi validada com
+`76/78`; `lexical` permanece como default local/CI e rollback documentado.
 
 Estado consolidado em 11/06/2026:
 
@@ -167,9 +166,8 @@ Estado validado com pgvector:
 4. O LLM real responde em uma unica chamada usando o contexto recuperado.
 
 O caminho acima ja foi validado em staging privado com dados reais do dominio
-inicial. O staging oficial reproduziu o baseline local com `74/78` na gate e
-`179/240` na curated. A promocao desse caminho como default permanente passa a
-ser uma decisao operacional da Fase 5, preservando rollback para lexical.
+inicial. O staging oficial fechou `76/78` na gate e passou a usar `pgvector`
+como default operacional, preservando rollback para lexical.
 
 ## Fora do escopo do MVP
 
@@ -265,6 +263,8 @@ Status: em andamento.
 - validar a fundacao Meta WhatsApp em smoke privado antes de ativacao real
 - validar em staging a persistencia, migrations, sanitizacao e outbox
   implementadas na Fase 0
+- acompanhar `pgvector` como default operacional do staging e preservar rollback
+  para `RETRIEVAL_BACKEND=lexical`
 - monitorar disco, banco, containers e logs da VPS
 - listar backlog pos-MVP
 
@@ -331,7 +331,7 @@ O MVP desta frente sera considerado pronto quando:
 - o fluxo `/chat` responder com contexto e confidence
 - o handoff estiver sinalizado de forma consistente
 - a configuracao do dominio inicial estiver documentada
-- a `pgvector_gate.yaml` em staging ficar proxima do baseline local aceito
+- a `pgvector_gate.yaml` em staging ficar acima do criterio normal aceito
 
 ## Resultado esperado
 

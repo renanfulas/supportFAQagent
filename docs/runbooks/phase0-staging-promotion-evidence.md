@@ -144,6 +144,28 @@ Resultado sanitizado:
 - `n8n` foi removido do plano operacional atual; seus containers permanecem
   desativados e os volumes historicos foram preservados apenas para seguranca.
 
+## Decisao De Retrieval 2026-06-19 - pgvector Default Em Staging
+
+`RETRIEVAL_BACKEND=pgvector` passa a ser o default operacional do staging.
+
+Evidencias sanitizadas:
+
+- `.env` privado do staging confirmado com `RETRIEVAL_BACKEND=pgvector`;
+- `DATABASE_URL` e provider de embeddings presentes;
+- `scripts.check_readiness` retornou `status: ok` com retrieval `pgvector`;
+- smoke HTTP privado retornou `3/3`;
+- `pgvector_gate.yaml` retornou `76/78`, acima do criterio normal `>=74/78`;
+- falhas restantes seguem conhecidas e concentradas em perguntas de disco com
+  `unexpected_escalation`.
+
+Rollback:
+
+- alterar `RETRIEVAL_BACKEND=lexical` no `.env` privado do staging;
+- reiniciar o runtime;
+- rodar smoke `/health`, `/domains` e `/chat`;
+- registrar relatorio sanitizado;
+- nao apagar tabelas, chunks ou embeddings pgvector sem decisao explicita.
+
 Pendencias bloqueantes:
 
 - restore cronometrado ainda nao foi executado em ambiente isolado;

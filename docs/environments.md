@@ -33,6 +33,9 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
 - Tipo: ambiente oficial de staging do projeto.
 - Banco: PostgreSQL oficial do `supportFAQagent` na HostGator.
 - `pgvector`: no mesmo banco da aplicacao.
+- Retrieval default: `RETRIEVAL_BACKEND=pgvector`.
+- Rollback de retrieval: `RETRIEVAL_BACKEND=lexical`, sem apagar dados
+  pgvector.
 - Provisionamento e operacao: Juliano, coordenado com Renan para banco,
   migrations e contratos.
 - Valores recomendados para a V0 do chat publico:
@@ -48,6 +51,9 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
   - cookie seguro e obrigatorio protege a sessao anonima do website
   - rate limit publico baixo reduz custo e abuso enquanto a V0 ainda nao tem antifraude mais forte
 - Status: ambiente oficial para conectar backend e validar operacao real.
+  Desde 19/06/2026, o staging opera com pgvector como default de retrieval
+  porque readiness, smoke privado e `pgvector_gate.yaml` passaram acima do
+  criterio normal.
 
 ### Producao HostGator
 
@@ -140,9 +146,8 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp
 
 ## Proximo encaixe
 
-1. Juliano restaura o acesso ao staging, cria snapshot e prepara logs, alertas
-   e runtime privado.
-2. Renan e Juliano executam rollout, readiness, gate pgvector e restore em
-   staging.
+1. Juliano prepara logs, alertas, snapshot e restore isolado.
+2. Renan e Juliano mantem readiness, smoke privado e gate pgvector como
+   validacoes recorrentes do staging.
 3. Consumidores externos futuros devem consumir a API HTTP, nunca o banco do
    agente.

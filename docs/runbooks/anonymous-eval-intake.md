@@ -113,11 +113,11 @@ Classifique cada falha antes de alterar codigo:
 - `provider`: erro externo ou resposta vazia
 - `contrato`: formato publico quebrou
 
-## Criterio para promover pgvector
+## Criterio para manter pgvector como default de staging
 
-So considerar `pgvector` como padrao permanente quando:
+Manter `pgvector` como default operacional do staging enquanto:
 
-- a `pgvector_gate.yaml` em staging ficar proxima do baseline local aceito
+- a `pgvector_gate.yaml` em staging ficar no criterio normal aceito
 - perguntas reais ou sinteticas recuperarem referencias coerentes
 - `error_code` permanecer `null` nos casos saudaveis
 - escalonamentos por `low_confidence` tiverem sido revisados

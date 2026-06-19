@@ -3,9 +3,31 @@
 ## Objetivo
 
 Definir criterios objetivos para decidir quando `RETRIEVAL_BACKEND=pgvector`
-pode deixar de ser feature flag validada e virar padrao do runtime.
+pode deixar de ser feature flag validada e virar padrao do runtime de staging.
 
 Este checklist nao altera ambiente, schema, migrations, indices ou workflows.
+
+## Decisao Atual
+
+Em 19/06/2026, `RETRIEVAL_BACKEND=pgvector` foi promovido como default
+operacional do staging. O codigo continua preservando `lexical` como default
+seguro para local/CI e rollback operacional.
+
+Evidencia usada na decisao:
+
+- staging em `main`, commit `61ea039`;
+- `.env` privado com `RETRIEVAL_BACKEND=pgvector`;
+- `DATABASE_URL` e provider de embeddings presentes;
+- `scripts.check_readiness` com database, migrations, retrieval `pgvector` e
+  outbox `ok`;
+- `pgvector_gate.yaml` em staging com `76/78`, acima do criterio normal
+  `>=74/78`;
+- smoke HTTP privado com `/health`, `/domains` e `/chat` passando;
+- rollback documentado para `RETRIEVAL_BACKEND=lexical`.
+
+O restore cronometrado continua um gate separado de recuperacao operacional; ele
+nao invalida a decisao de retrieval, mas ainda mantem a Fase 0 operacional como
+`not_approved`.
 
 ## Pre-requisitos
 
@@ -25,7 +47,7 @@ Este checklist nao altera ambiente, schema, migrations, indices ou workflows.
 
 Pode promover quando:
 
-- a `pgvector_gate.yaml` em staging ficar proxima do baseline local `74/78`
+- a `pgvector_gate.yaml` em staging ficar no criterio normal `>=74/78`
 - `/health`, `/domains` e `/chat` passam em staging
 - casos saudaveis retornam `error_code=null`
 - `references` continuam como `list[str]`
@@ -66,7 +88,7 @@ Depois do rollback:
 
 ## Evidencias minimas
 
-Para cada rodada de decisao, registrar:
+Para cada rodada de decisao ou revalidacao, registrar:
 
 - branch e commit
 - backend usado
@@ -75,8 +97,8 @@ Para cada rodada de decisao, registrar:
 - quantidade media de referencias
 - principais falhas por tipo: `conteudo`, `retrieval`, `confidence`,
   `handoff`, `provider`, `contrato`
-- recomendacao: promover, manter feature flag, melhorar conteudo ou ajustar
-  handoff/confidence
+- recomendacao: manter pgvector no staging, acionar rollback lexical, melhorar
+  conteudo ou ajustar handoff/confidence
 
 ## Fronteiras de ownership
 

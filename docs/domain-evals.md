@@ -117,7 +117,8 @@ Objetivo dessa suite:
 - medir se o pgvector recupera as referencias esperadas
 - medir se `confidence` e `handoff_reasons` estao coerentes
 - garantir que `error_code` fique ausente em casos saudaveis
-- calibrar antes de promover `RETRIEVAL_BACKEND=pgvector` como padrao
+- acompanhar `RETRIEVAL_BACKEND=pgvector` como default do staging e detectar
+  regressao antes de manter ou expandir a promocao
 
 Ela deve ser rodada de forma opt-in em ambiente privado com:
 

@@ -24,7 +24,8 @@ Use estes documentos para tomar decisoes atuais:
 - Fase 0 operacional: `not_approved` ate executar restore cronometrado em
   ambiente isolado e medir `RPO <= 24h` / `RTO <= 4h`;
 - Fase 5: em andamento, concentrada em operacao, capacidade, observabilidade e
-  promocao controlada. `n8n` nao e mais parte do plano operacional atual.
+  acompanhamento do pgvector como default de staging. `n8n` nao e mais parte do
+  plano operacional atual.
 
 ## Proxima Ordem Tecnica
 
@@ -42,8 +43,11 @@ Em 18/06/2026, o acesso SSH ao staging voltou, o disco foi reduzido de `100%`
 para `81%`, o checkout remoto foi promovido para `61ea039`, as migrations
 `001-008` foram verificadas, readiness passou, os testes PostgreSQL opt-in
 passaram em banco descartavel e a `pgvector_gate.yaml` fechou em `76/78`.
-A promocao operacional continua `not_approved` somente porque o restore
-cronometrado em ambiente isolado ainda nao foi executado. Consulte
+Em 19/06/2026, `RETRIEVAL_BACKEND=pgvector` foi confirmado como default
+operacional do staging, com readiness de retrieval `pgvector` ok e rollback
+documentado para `RETRIEVAL_BACKEND=lexical`. A promocao operacional continua
+`not_approved` somente porque o restore cronometrado em ambiente isolado ainda
+nao foi executado. Consulte
 `docs/runbooks/phase0-staging-promotion-evidence.md`.
 
 ## Documentos Historicos

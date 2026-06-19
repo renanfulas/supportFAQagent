@@ -83,8 +83,8 @@ Salvar um relatorio privado/sanitizado com:
 - quantidade aprovada/reprovada
 - falhas agrupadas por tipo: `conteudo`, `retrieval`, `confidence`,
   `handoff`, `provider`, `contrato`
-- recomendacao: melhorar conteudo, ajustar threshold, manter feature flag ou
-  promover pgvector
+- recomendacao: manter pgvector no staging, acionar rollback lexical, melhorar
+  conteudo ou ajustar threshold
 
 Nao incluir:
 

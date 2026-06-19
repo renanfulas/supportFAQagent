@@ -130,9 +130,16 @@ Responsabilidades:
 - ranquear contexto
 - entregar evidencias para o fluxo de chat
 
-Hoje o fluxo `/chat` usa retrieval lexical como padrao seguro e pode usar `pgvector` por `RETRIEVAL_BACKEND=pgvector` quando o ambiente tiver `DATABASE_URL`, embeddings e dados ingeridos. Chroma deve continuar como adapter local/prototipo, nao como fonte oficial de producao.
+Hoje o fluxo `/chat` usa retrieval lexical como padrao seguro em local/CI e usa
+`pgvector` como default operacional do staging por `RETRIEVAL_BACKEND=pgvector`
+quando o ambiente tiver `DATABASE_URL`, embeddings e dados ingeridos. Chroma
+deve continuar como adapter local/prototipo, nao como fonte oficial de
+producao.
 
-O retrieval ja passa por uma interface `VectorStore`. Hoje o adapter padrao e `LexicalVectorStore`; `PgVectorStore` implementa o caminho vetorial oficial por feature flag; `ChromaStore` implementa o mesmo contrato como prototipo local.
+O retrieval ja passa por uma interface `VectorStore`. `LexicalVectorStore`
+permanece como fallback local/rollback; `PgVectorStore` implementa o caminho
+vetorial oficial do staging; `ChromaStore` implementa o mesmo contrato como
+prototipo local.
 
 ## `app/llm`
 
@@ -239,7 +246,8 @@ Exemplos esperados de dominios futuros:
 Curto prazo:
 
 - calibrar confidence, handoff e ranking com perguntas reais
-- promover `pgvector` para padrao permanente apenas depois da calibragem
+- acompanhar `pgvector` como default operacional do staging e manter rollback
+  lexical documentado
 - manter Chroma como prototipo local ou remover quando deixar de trazer valor
 - melhorar a base de conhecimento usando os evals como regressao
 
