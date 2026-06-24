@@ -58,11 +58,14 @@ class DomainCheckoutConfig(DomainModel):
     """Optional deterministic payment closing for a sales domain.
 
     When ``enabled`` and the inbound message expresses payment intent (an
-    ``intent_phrases`` match), the flow answers with ``message`` (``{link}`` is
-    substituted) instead of running the LLM. It deliberately yields to the safety
-    path when a ``decline_phrases`` term appears (e.g. asking the bot to store a
-    card number) so escalation/refusal behavior is preserved. The fixed message
-    never echoes the inbound text, so card data is never repeated back.
+    ``intent_phrases`` match), the flow answers with ``message`` instead of running
+    the LLM. ``{link}`` is substituted with ``payment_link`` and ``{value}`` with a
+    short recap of the value the bot last quoted in this conversation (lines that
+    mention ``R$`` in the most recent assistant message); when no value is found the
+    ``{value}`` line is dropped. It deliberately yields to the safety path when a
+    ``decline_phrases`` term appears (e.g. asking the bot to store a card number) so
+    escalation/refusal behavior is preserved. The message never echoes the inbound
+    text, so card data is never repeated back.
     """
 
     enabled: bool = False

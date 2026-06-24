@@ -112,9 +112,9 @@ checkout:
   enabled: true
   payment_link: https://www.linkparapagamento.com.br
   message: |-
-    Certo
-
-    Seu link foi gerado {link}
+    Perfeito, otima escolha! Voce esta garantindo o valor promocional agora, antes que a oferta expire.
+    {value}
+    Seu link de pagamento seguro: {link}
   intent_phrases:
     - pix
     - cartao

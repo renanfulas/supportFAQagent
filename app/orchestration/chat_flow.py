@@ -1,3 +1,4 @@
+import re
 import unicodedata
 from time import perf_counter
 
@@ -52,7 +53,14 @@ class ChatFlowService:
         error_code = None
         chunks = []
 
-        checkout_answer = self._maybe_checkout_answer(domain, question)
+        checkout_answer = self._maybe_checkout_answer(
+            domain,
+            question,
+            session_id=session_id,
+            request_id=request_id,
+            channel=channel,
+            customer_id=customer_id,
+        )
         if checkout_answer is not None:
             return {
                 "request_id": request_id or "",
@@ -193,14 +201,24 @@ class ChatFlowService:
             customer_id=customer_id,
         )
 
-    def _maybe_checkout_answer(self, domain: DomainConfig, question: str) -> str | None:
+    def _maybe_checkout_answer(
+        self,
+        domain: DomainConfig,
+        question: str,
+        *,
+        session_id: str | None = None,
+        request_id: str | None = None,
+        channel: str = "api",
+        customer_id: str | None = None,
+    ) -> str | None:
         """Return a deterministic payment-link reply when the lead is paying.
 
         Fires only when the domain enables checkout and the message shows payment
         intent. Yields to the normal safety path when a decline phrase (asking the
         bot to store a card number, requesting a human, etc.) is present, so
-        escalation/refusal behavior is unchanged for those cases. The returned text
-        is fixed and never includes the inbound message, so card data is not echoed.
+        escalation/refusal behavior is unchanged for those cases. The reply restates
+        the value the bot last quoted (``{value}``) for anchoring, then the link, and
+        never includes the inbound message, so card data is not echoed.
         """
         checkout = getattr(domain, "checkout", None)
         if checkout is None or not checkout.enabled or not checkout.payment_link:
@@ -222,7 +240,56 @@ class ChatFlowService:
         ):
             return None
 
-        return checkout.message.replace("{link}", checkout.payment_link)
+        value = self._checkout_value_recap(
+            domain=domain,
+            session_id=session_id,
+            request_id=request_id,
+            channel=channel,
+            customer_id=customer_id,
+        )
+        return self._render_checkout_message(checkout.message, checkout.payment_link, value)
+
+    def _checkout_value_recap(
+        self,
+        *,
+        domain: DomainConfig,
+        session_id: str | None,
+        request_id: str | None,
+        channel: str,
+        customer_id: str | None,
+    ) -> str:
+        """Best-effort recap of the last value the bot quoted this conversation.
+
+        Reads the most recent assistant turn and keeps the lines that mention a
+        price (``R$``). Returns an empty string when there is no history (e.g.
+        persistence disabled), so the caller drops the value line gracefully.
+        """
+        history = self._build_history(
+            domain=domain,
+            session_id=session_id,
+            request_id=request_id,
+            channel=channel,
+            customer_id=customer_id,
+        )
+        for message in reversed(history):
+            if message.get("role") != "assistant":
+                continue
+            content = message.get("content") or ""
+            priced = [line.strip() for line in content.splitlines() if "R$" in line]
+            if priced:
+                return " ".join(priced[:2])[:400]
+        return ""
+
+    @staticmethod
+    def _render_checkout_message(template: str, link: str, value: str) -> str:
+        text = template.replace("{link}", link)
+        if value:
+            text = text.replace("{value}", value)
+        else:
+            text = "\n".join(
+                line for line in text.splitlines() if line.strip() != "{value}"
+            ).replace("{value}", "")
+        return re.sub(r"\n{3,}", "\n\n", text).strip()
 
     def _should_block_automated_response(self, reasons: list[str]) -> bool:
         return any(reason in self.BLOCKING_REASONS for reason in reasons)
