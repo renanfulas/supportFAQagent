@@ -299,6 +299,38 @@ def test_chat_webhook_rejects_proxied_request(monkeypatch: pytest.MonkeyPatch) -
     get_settings.cache_clear()
 
 
+def test_chat_webhook_uses_segregated_forward_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    # When a dedicated forward secret is set, the OTP secret must NOT validate.
+    forward_secret = "forward-secret-distinct"
+    monkeypatch.setenv("ENABLE_HERMES_CHAT", "true")
+    monkeypatch.setenv("HERMES_BASE_URL", "https://hermes.local")
+    monkeypatch.setenv("HERMES_WEBHOOK_SECRET", SECRET)
+    monkeypatch.setenv("HERMES_CHAT_FORWARD_SECRET", forward_secret)
+    get_settings.cache_clear()
+    client = TestClient(create_app(), raise_server_exceptions=False)
+
+    body = b'{"messages":[]}'
+    ts = str(int(datetime.now(UTC).timestamp()))
+
+    def sign(secret: str) -> str:
+        return hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+    ok = client.post(
+        "/integrations/hermes/chat/webhook",
+        content=body,
+        headers={"X-Webhook-Signature": sign(forward_secret), "X-Webhook-Timestamp": ts},
+    )
+    assert ok.status_code == 200
+
+    otp_signed = client.post(
+        "/integrations/hermes/chat/webhook",
+        content=body,
+        headers={"X-Webhook-Signature": sign(SECRET), "X-Webhook-Timestamp": ts},
+    )
+    assert otp_signed.status_code == 401
+    get_settings.cache_clear()
+
+
 def test_chat_webhook_rejects_too_many_messages(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENABLE_HERMES_CHAT", "true")
     monkeypatch.setenv("HERMES_BASE_URL", "https://hermes.local")

@@ -210,6 +210,10 @@ class Settings(BaseSettings):
         default="http://127.0.0.1:3000",
         alias="HERMES_BRIDGE_URL",
     )
+    hermes_chat_forward_secret: str | None = Field(
+        default=None,
+        alias="HERMES_CHAT_FORWARD_SECRET",
+    )
     whatsapp_chat_rate_limit_per_minute: int = Field(
         default=20,
         ge=1,

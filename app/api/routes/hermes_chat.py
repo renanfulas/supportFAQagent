@@ -42,11 +42,14 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
     body = await request.body()
     if not body or len(body) > MAX_BODY_BYTES:
         raise HTTPException(status_code=413, detail="invalid_hermes_payload")
+    # Dedicated secret for the inbound chat forward, segregated from the OTP secret.
+    # Falls back to the OTP secret only if a dedicated one is not configured.
+    forward_secret = settings.hermes_chat_forward_secret or settings.hermes_webhook_secret or ""
     if not verify_hermes_signature(
         body=body,
         signature=request.headers.get("X-Webhook-Signature"),
         timestamp=request.headers.get("X-Webhook-Timestamp"),
-        secret=settings.hermes_webhook_secret or "",
+        secret=forward_secret,
     ):
         log_event(
             logger,
