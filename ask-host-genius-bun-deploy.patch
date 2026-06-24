@@ -1,0 +1,64 @@
+diff --git a/README.md b/README.md
+index 0000000..0000000 100644
+--- a/README.md
++++ b/README.md
+@@
+-Instale dependências e suba o frontend:
++Instale dependências e suba o frontend. O repositório usa `bun.lock`; use Bun para instalações reproduzíveis:
+ 
+ ```powershell
+-npm.cmd install --no-package-lock
+-npm.cmd run dev -- --host 127.0.0.1 --port 5173
++bun install --frozen-lockfile
++bun run dev -- --host 127.0.0.1 --port 5173
+ ```
+@@
+ ## Deploy separado
+@@
+ /         -> ask-host-genius
+ /web/*    -> supportFAQagent
+ ```
++
++## Deploy em VPS
++
++O deploy em produção deve respeitar `bun.lock`; não use `npm install` neste repositório.
++
++```bash
++cd /opt/ask-host-genius
++git fetch origin
++git checkout main
++git pull --ff-only origin main
++bun install --frozen-lockfile
++bun run build
++systemctl restart ask-host-genius.service
++curl -fsSI http://127.0.0.1:5173/chat-ui
++curl -fsSI https://chat.ordens.com.br/chat-ui
++```
++
++Roteamento esperado:
++
++```text
++/chat-ui -> ask-host-genius em 127.0.0.1:5173
++/assets/* -> ask-host-genius em 127.0.0.1:5173
++/web/* -> supportFAQagent
++```
+@@
+ ```powershell
+-npm.cmd run lint
+-npm.cmd run build
++bun run lint
++bun run build
+ ```
+diff --git a/package.json b/package.json
+index 0000000..0000000 100644
+--- a/package.json
++++ b/package.json
+@@
+     "build": "vite build",
+     "build:dev": "vite build --mode development",
+     "preview": "vite preview",
+     "serve:staging": "vite preview --host 127.0.0.1 --port 5173",
++    "deploy:install": "bun install --frozen-lockfile",
+     "lint": "eslint .",
+     "format": "prettier --write ."
+   },
