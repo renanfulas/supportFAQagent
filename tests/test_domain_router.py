@@ -263,18 +263,19 @@ def test_sticky_follow_up_stays_in_chosen_domain() -> None:
     store = InMemorySessionDomainStore()
     transport = _sticky_transport(client, chat, loader, store)
 
-    # 1) explicit menu choice -> vendas, engine answers
-    transport.handle_text_message(message=_message("2"), request_id="r1")
-    assert loader.loaded[-1] == "vendas"
-    assert chat.calls == 1
+    # 1) explicit menu choice -> welcome, sticks to vendas, the chooser is NOT
+    #    fed to the brain
+    first = transport.handle_text_message(message=_message("2"), request_id="r1")
+    assert first.handoff_status == "routing_selected"
+    assert chat.calls == 0
 
-    # 2) generic follow-up with no keyword -> sticks to vendas, engine answers again
+    # 2) generic follow-up with no keyword -> sticks to vendas, engine answers
     result = transport.handle_text_message(
         message=_message("pode me explicar melhor?"),
         request_id="r2",
     )
     assert loader.loaded[-1] == "vendas"
-    assert chat.calls == 2
+    assert chat.calls == 1
     assert result.handoff_status != "routing_menu"
 
 

@@ -245,6 +245,17 @@ def test_transport_greeting_sends_menu_without_brain() -> None:
     assert "Vendas HostGator" in client.sent[0]
 
 
+def test_transport_menu_selection_sends_welcome_without_brain() -> None:
+    client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
+    transport = _transport(client, chat, loader)
+
+    result = transport.handle_text_message(message=_msg("2"), request_id="r1")
+
+    assert chat.calls == 0  # the chooser "2" must not be fed to the brain
+    assert result.handoff_status == "routing_selected"
+    assert "Vendas HostGator" in client.sent[0]
+
+
 def test_session_id_is_hashed_not_raw() -> None:
     from app.integrations.hermes.chat_transport import _safe_hermes_session_id
 

@@ -129,6 +129,13 @@ class DomainRouter:
         lines.append(self.menu_outro)
         return "\n".join(lines)
 
+    def welcome_text(self, domain_name: str) -> str:
+        display = next(
+            (d.display_name for d in self.domains if d.name == domain_name),
+            domain_name,
+        )
+        return f"Perfeito! Voce esta no atendimento de {display}. Como posso te ajudar?"
+
     def _match_menu_selection(self, normalized: str) -> str | None:
         tokens = set(re.split(r"[\s\-]+", normalized))
         for position, domain in enumerate(self.domains, start=1):

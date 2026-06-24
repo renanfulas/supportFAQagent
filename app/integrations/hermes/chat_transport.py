@@ -116,14 +116,14 @@ class HermesChatTransport:
             )
 
         if self.router is not None:
-            domain_name = resolve_sticky_domain(
+            resolution = resolve_sticky_domain(
                 router=self.router,
                 store=self.session_store,
                 default_domain=self.settings.default_domain,
                 text=message.text,
                 session_id=session_id,
             )
-            if domain_name is None:
+            if resolution.show_menu or resolution.domain is None:
                 outbound = self.client.send_text(
                     to=message.chat_id,
                     text=self.router.menu_text(),
@@ -135,6 +135,19 @@ class HermesChatTransport:
                     handoff_status="routing_menu",
                     persistence_status="skipped",
                 )
+            if resolution.selected:
+                outbound = self.client.send_text(
+                    to=message.chat_id,
+                    text=self.router.welcome_text(resolution.domain),
+                    message_id=message.message_id,
+                )
+                return HermesChatResult(
+                    request_id=request_id,
+                    outbound_message_id=outbound.message_id,
+                    handoff_status="routing_selected",
+                    persistence_status="skipped",
+                )
+            domain_name = resolution.domain
         else:
             domain_name = self.settings.default_domain
 

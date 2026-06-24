@@ -69,15 +69,6 @@ class MetaWhatsAppChatTransport:
             InMemorySessionDomainStore() if self.router is not None else None
         )
 
-    def _route_with_stickiness(self, text: str, session_id: str) -> str | None:
-        return resolve_sticky_domain(
-            router=self.router,
-            store=self.session_store,
-            default_domain=self.settings.default_domain,
-            text=text,
-            session_id=session_id,
-        )
-
     def handle_text_message(
         self,
         *,
@@ -87,8 +78,14 @@ class MetaWhatsAppChatTransport:
         session_id = _safe_meta_session_id(message.from_wa_id)
 
         if self.router is not None:
-            domain_name = self._route_with_stickiness(message.text, session_id)
-            if domain_name is None:
+            resolution = resolve_sticky_domain(
+                router=self.router,
+                store=self.session_store,
+                default_domain=self.settings.default_domain,
+                text=message.text,
+                session_id=session_id,
+            )
+            if resolution.show_menu or resolution.domain is None:
                 outbound = self.client.send_text(
                     to=message.from_wa_id,
                     text=self.router.menu_text(),
@@ -99,6 +96,18 @@ class MetaWhatsAppChatTransport:
                     handoff_status="routing_menu",
                     persistence_status="skipped",
                 )
+            if resolution.selected:
+                outbound = self.client.send_text(
+                    to=message.from_wa_id,
+                    text=self.router.welcome_text(resolution.domain),
+                )
+                return MetaWhatsAppChatResult(
+                    request_id=request_id,
+                    outbound_message_id=outbound.message_id,
+                    handoff_status="routing_selected",
+                    persistence_status="skipped",
+                )
+            domain_name = resolution.domain
         else:
             domain_name = self.settings.default_domain
 

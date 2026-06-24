@@ -7,10 +7,19 @@ channel-agnostic glue so the routing/stickiness rules live in one place.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from app.core.config import Settings
 from app.domain_engine.loader import DomainLoader
 from app.orchestration.domain_router import DomainRouter
 from app.orchestration.session_domain_store import SessionDomainStore
+
+
+@dataclass(frozen=True)
+class RouteResolution:
+    domain: str | None
+    show_menu: bool = False
+    selected: bool = False
 
 
 def build_domain_router(
@@ -40,30 +49,36 @@ def resolve_sticky_domain(
     default_domain: str,
     text: str,
     session_id: str,
-) -> str | None:
-    """Return the domain to answer, or None when the menu should be shown.
+) -> RouteResolution:
+    """Decide how to handle an inbound message.
 
-    Stickiness: an explicit selection or keyword match (re)binds the session to
-    that domain; a generic follow-up keeps the bound domain; a reset trigger drops
-    the binding and shows the menu.
+    Stickiness: a menu selection or keyword match (re)binds the session to that
+    domain; a generic follow-up keeps the bound domain; a reset trigger drops the
+    binding and shows the menu. A bare menu selection (e.g. "2") must NOT be fed to
+    the brain — it is only a chooser — so it is flagged ``selected`` for a welcome.
     """
     if router is None:
-        return default_domain
+        return RouteResolution(domain=default_domain)
 
     if store is not None and router.is_reset(text):
         store.clear(session_id)
-        return None
+        return RouteResolution(domain=None, show_menu=True)
 
     decision = router.route(text)
     intentful = {"menu_selection", "keyword_match", "single_domain"}
     if decision.domain is not None and decision.reason in intentful:
         if store is not None:
             store.set(session_id, decision.domain)
-        return decision.domain
+        return RouteResolution(
+            domain=decision.domain,
+            selected=decision.reason == "menu_selection",
+        )
 
     if store is not None:
         sticky = store.get(session_id)
         if sticky is not None:
-            return sticky
+            return RouteResolution(domain=sticky)
 
-    return decision.domain
+    if decision.domain is None:
+        return RouteResolution(domain=None, show_menu=True)
+    return RouteResolution(domain=decision.domain)
