@@ -13,6 +13,7 @@ import pytest
 from app.db.runtime import DatabaseRuntime
 from app.db.operational import (
     ChatAuditInput,
+    HANDOFF_QUEUED,
     PERSISTENCE_PERSISTED,
     OperationalRepository,
 )
