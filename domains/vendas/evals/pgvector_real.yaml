@@ -24,6 +24,26 @@ cases:
       expected_references:
         - hostgator-hospedagem-de-sites.md
 
+  - id: real-preco-hospedagem-plano-p
+    category: oferta
+    question: Sou iniciante e quero um site simples para meu cliente, cerca de 100 visitas por dia. Qual plano e quanto custa por mes?
+    expectation:
+      should_escalate: false
+      required_terms:
+        - "10,09"
+      expected_references:
+        - planos-e-precos.md
+
+  - id: real-preco-vps-basico
+    category: oferta
+    question: Qual o VPS mais barato de voces, quanto de RAM ele tem e qual o preco por mes?
+    expectation:
+      should_escalate: false
+      required_terms:
+        - "21,69"
+      expected_references:
+        - planos-e-precos.md
+
   - id: real-vps-performance
     category: descoberta
     question: Meu site no compartilhado esta travando e preciso de mais performance e controle do servidor. O VPS resolve?

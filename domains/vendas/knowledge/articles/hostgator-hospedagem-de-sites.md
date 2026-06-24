@@ -12,7 +12,7 @@ sites WordPress.
 
 - Servidores em nuvem localizados no Brasil, com menor latencia.
 - Email profissional gratis.
-- Ate 2 dominios gratis em planos elegiveis.
+- Dominio gratis (1 no Plano P, 2 no M, 3 no Turbo; ver planos-e-precos.md).
 - Migracao de sites sem custo.
 - Certificado SSL.
 - Agente de IA "Gator" para configuracao automatica, "zero tecniques para
@@ -29,13 +29,12 @@ sites WordPress.
 ## Ancoras comerciais que pode usar
 
 - Promocao publicada de ate 77% OFF.
-- Dominio gratis (ate 2) em planos elegiveis.
+- Dominio gratis (varia por plano: 1, 2 ou 3; ver planos-e-precos.md).
 - Migracao gratuita do site atual.
 - Garantia de ate 30 dias para reembolso.
 
-## Limites de honestidade
+## Precos e specs
 
-A pagina publica nao lista os nomes dos planos, o preco fechado por plano nem os
-limites exatos de armazenamento, e-mails ou bancos de dados. Nunca invente esses
-numeros. Quando o lead pedir o valor exato ou o limite do plano, confirme com um
-especialista comercial humano antes de prometer.
+Os nomes (Plano P, M, Turbo), valores, armazenamento, limite de visitas e dominios
+gratis estao em `planos-e-precos.md` (Plano P a partir de R$ 10,09/mes). Use esses
+numeros oficiais ao recomendar; nao invente valores que nao estejam la.

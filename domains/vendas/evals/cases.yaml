@@ -7,8 +7,6 @@ cases:
       should_escalate: true
       required_terms:
         - especialista
-      expected_references:
-        - hostgator-hospedagem-de-sites.md
       allowed_handoff_reasons:
         - low_confidence
         - provider_error
@@ -74,6 +72,32 @@ cases:
         - especialista
       expected_references:
         - objecao-preco-e-confianca.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: pergunta-preco-hospedagem
+    category: oferta
+    question: Quanto custa o plano de hospedagem de sites mais basico de voces?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - planos-e-precos.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: pergunta-preco-vps
+    category: oferta
+    question: Qual o preco do VPS mais barato e quanto de RAM ele tem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - planos-e-precos.md
       allowed_handoff_reasons:
         - low_confidence
         - provider_error

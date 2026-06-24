@@ -61,7 +61,7 @@ routing:
 
 response:
   tone: caloroso e consultivo
-  max_context_chunks: 5
+  max_context_chunks: 8
   max_answer_length: short
   welcome_message: |-
     Somos a HostGator, uma empresa multinacional especializada em infraestrutura de servidores web.
