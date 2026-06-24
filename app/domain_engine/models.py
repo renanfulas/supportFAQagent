@@ -54,6 +54,24 @@ class DomainHandoffConfig(DomainModel):
     sensitive_terms: list[str] = Field(default_factory=list)
 
 
+class DomainCheckoutConfig(DomainModel):
+    """Optional deterministic payment closing for a sales domain.
+
+    When ``enabled`` and the inbound message expresses payment intent (an
+    ``intent_phrases`` match), the flow answers with ``message`` (``{link}`` is
+    substituted) instead of running the LLM. It deliberately yields to the safety
+    path when a ``decline_phrases`` term appears (e.g. asking the bot to store a
+    card number) so escalation/refusal behavior is preserved. The fixed message
+    never echoes the inbound text, so card data is never repeated back.
+    """
+
+    enabled: bool = False
+    payment_link: str = ""
+    message: str = "Certo\n\nSeu link foi gerado {link}"
+    intent_phrases: list[str] = Field(default_factory=list)
+    decline_phrases: list[str] = Field(default_factory=list)
+
+
 class DomainKnowledgeConfig(DomainModel):
     sources: list[str] = Field(default_factory=list)
 
@@ -82,6 +100,7 @@ class DomainConfig(DomainModel):
     routing: DomainRoutingConfig = Field(default_factory=DomainRoutingConfig)
     response: DomainResponseConfig = Field(default_factory=DomainResponseConfig)
     handoff: DomainHandoffConfig = Field(default_factory=DomainHandoffConfig)
+    checkout: DomainCheckoutConfig = Field(default_factory=DomainCheckoutConfig)
     knowledge: DomainKnowledgeConfig = Field(default_factory=DomainKnowledgeConfig)
     llm: DomainLLMConfig = Field(default_factory=DomainLLMConfig)
     embedding: DomainEmbeddingConfig = Field(default_factory=DomainEmbeddingConfig)

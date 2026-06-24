@@ -108,6 +108,46 @@ handoff:
     - system prompt
     - ignorar instrucoes
 
+checkout:
+  enabled: true
+  payment_link: https://www.linkparapagamento.com.br
+  message: |-
+    Certo
+
+    Seu link foi gerado {link}
+  intent_phrases:
+    - pix
+    - cartao
+    - cartão
+    - quero pagar
+    - vou pagar
+    - pode pagar
+    - como pago
+    - como faco o pagamento
+    - gerar o link
+    - gera o link
+    - manda o link
+    - me manda o link
+    - link de pagamento
+    - link para pagamento
+    - pode gerar o link
+    - quero finalizar
+    - finalizar a compra
+    - finalizar o pagamento
+    - vou de cartao
+    - pode ser no cartao
+    - quero no pix
+  decline_phrases:
+    - numero do cartao
+    - anotar
+    - anota meu
+    - guardar meu
+    - salvar meu
+    - chave api
+    - chave de api
+    - prompt interno
+    - system prompt
+
 knowledge:
   sources:
     - knowledge/articles
