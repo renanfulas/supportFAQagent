@@ -76,6 +76,15 @@ class DomainRouter:
     menu_outro: str = "Responda com o numero ou o nome da opcao."
 
     MENU_TRIGGERS = ("menu", "opcoes", "opcao", "ajuda", "oi", "ola", "inicio")
+    RESET_TRIGGERS = ("menu", "trocar", "voltar", "recomecar", "inicio", "opcoes")
+
+    def is_reset(self, text: str) -> bool:
+        """A short message that should drop sticky memory and re-show the menu."""
+        normalized = _normalize(text)
+        if not normalized:
+            return False
+        tokens = set(re.split(r"[\s\-]+", normalized))
+        return bool(tokens & set(self.RESET_TRIGGERS))
 
     @classmethod
     def from_domain_configs(

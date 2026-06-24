@@ -17,6 +17,10 @@ from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage
 from app.orchestration.chat_flow import ChatFlowService
 from app.orchestration.domain_router import DomainRouter
+from app.orchestration.session_domain_store import (
+    InMemorySessionDomainStore,
+    SessionDomainStore,
+)
 
 
 class MetaWhatsAppChatTransportError(RuntimeError):
@@ -42,6 +46,7 @@ class MetaWhatsAppChatTransport:
         chat_service: ChatFlowService | None = None,
         repository: OperationalRepository | None = None,
         router: DomainRouter | None = None,
+        session_store: SessionDomainStore | None = None,
     ) -> None:
         self.settings = settings
         self.database_runtime = database_runtime
@@ -52,6 +57,40 @@ class MetaWhatsAppChatTransport:
         )
         self.repository = repository or OperationalRepository(database_runtime)
         self.router = router if router is not None else self._build_router()
+        # Ephemeral default; the persistence frente can inject a durable store.
+        self.session_store = session_store or (
+            InMemorySessionDomainStore() if self.router is not None else None
+        )
+
+    def _route_with_stickiness(self, text: str, session_id: str) -> str | None:
+        """Return the domain to answer, or None when the menu should be shown.
+
+        Stickiness: an explicit selection or a keyword match (re)binds the session
+        to that domain; a generic follow-up keeps the bound domain instead of going
+        back to the menu; a reset trigger drops the binding and shows the menu.
+        """
+        router = self.router
+        store = self.session_store
+        if router is None:
+            return self.settings.default_domain
+
+        if store is not None and router.is_reset(text):
+            store.clear(session_id)
+            return None
+
+        decision = router.route(text)
+        intentful = {"menu_selection", "keyword_match", "single_domain"}
+        if decision.domain is not None and decision.reason in intentful:
+            if store is not None:
+                store.set(session_id, decision.domain)
+            return decision.domain
+
+        if store is not None:
+            sticky = store.get(session_id)
+            if sticky is not None:
+                return sticky
+
+        return decision.domain
 
     def _build_router(self) -> DomainRouter | None:
         if not self.settings.enable_whatsapp_domain_router:
@@ -77,8 +116,8 @@ class MetaWhatsAppChatTransport:
         session_id = _safe_meta_session_id(message.from_wa_id)
 
         if self.router is not None:
-            decision = self.router.route(message.text)
-            if decision.show_menu or decision.domain is None:
+            domain_name = self._route_with_stickiness(message.text, session_id)
+            if domain_name is None:
                 outbound = self.client.send_text(
                     to=message.from_wa_id,
                     text=self.router.menu_text(),
@@ -89,7 +128,6 @@ class MetaWhatsAppChatTransport:
                     handoff_status="routing_menu",
                     persistence_status="skipped",
                 )
-            domain_name = decision.domain
         else:
             domain_name = self.settings.default_domain
 

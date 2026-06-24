@@ -5,6 +5,7 @@ from app.db.operational import ChatPersistenceResult
 from app.integrations.meta_whatsapp.chat_transport import MetaWhatsAppChatTransport
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage, MetaSendResult
 from app.orchestration.domain_router import DomainRouter, RoutableDomain
+from app.orchestration.session_domain_store import InMemorySessionDomainStore
 
 
 SUPPORT = RoutableDomain(
@@ -117,10 +118,14 @@ class _FakeDomainLoader:
 
 class _FakeChatService:
     def __init__(self) -> None:
-        self.called = False
+        self.calls = 0
+
+    @property
+    def called(self) -> bool:
+        return self.calls > 0
 
     def answer(self, **kwargs):
-        self.called = True
+        self.calls += 1
         return {
             "domain": "vendas",
             "answer": "Resposta de vendas.",
@@ -201,3 +206,99 @@ def test_transport_routes_sales_message_to_vendas_domain() -> None:
     assert chat.called is True
     assert "vendas" in loader.loaded
     assert result.outbound_message_id == "wamid.outbound"
+
+
+# --- sticky session memory ----------------------------------------------------
+
+
+def test_is_reset_detects_reset_words() -> None:
+    r = _router()
+    assert r.is_reset("menu") is True
+    assert r.is_reset("quero trocar") is True
+    assert r.is_reset("voltar") is True
+    assert r.is_reset("quero contratar um plano") is False
+
+
+def test_in_memory_store_set_get_clear() -> None:
+    store = InMemorySessionDomainStore()
+    assert store.get("s1") is None
+    store.set("s1", "vendas")
+    assert store.get("s1") == "vendas"
+    store.clear("s1")
+    assert store.get("s1") is None
+
+
+def test_in_memory_store_respects_ttl() -> None:
+    import time
+
+    store = InMemorySessionDomainStore(ttl_seconds=10)
+    store.set("s1", "vendas")
+    # Force the entry to look expired without sleeping.
+    store._entries["s1"] = ("vendas", time.monotonic() - 1)
+    assert store.get("s1") is None
+
+
+def _sticky_transport(client, chat, loader, store):
+    settings = Settings(
+        _env_file=None,
+        APP_ENV="development",
+        ENABLE_WHATSAPP_DOMAIN_ROUTER="true",
+        WHATSAPP_ROUTER_DOMAINS="suporte-vps-whatsapp,vendas",
+    )
+    router = DomainRouter(domains=(SUPPORT, VENDAS), default_domain="suporte-vps-whatsapp")
+    return MetaWhatsAppChatTransport(
+        settings=settings,
+        database_runtime=object(),
+        client=client,
+        domain_loader=loader,
+        chat_service=chat,
+        repository=_FakeRepository(),
+        router=router,
+        session_store=store,
+    )
+
+
+def test_sticky_follow_up_stays_in_chosen_domain() -> None:
+    client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
+    store = InMemorySessionDomainStore()
+    transport = _sticky_transport(client, chat, loader, store)
+
+    # 1) explicit menu choice -> vendas, engine answers
+    transport.handle_text_message(message=_message("2"), request_id="r1")
+    assert loader.loaded[-1] == "vendas"
+    assert chat.calls == 1
+
+    # 2) generic follow-up with no keyword -> sticks to vendas, engine answers again
+    result = transport.handle_text_message(
+        message=_message("pode me explicar melhor?"),
+        request_id="r2",
+    )
+    assert loader.loaded[-1] == "vendas"
+    assert chat.calls == 2
+    assert result.handoff_status != "routing_menu"
+
+
+def test_reset_drops_stickiness_and_shows_menu() -> None:
+    client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
+    store = InMemorySessionDomainStore()
+    transport = _sticky_transport(client, chat, loader, store)
+
+    transport.handle_text_message(message=_message("2"), request_id="r1")
+    session_key = next(iter(store._entries))
+    assert session_key.startswith("whatsapp:meta:")
+    assert "5511999999999" not in session_key  # key is the sanitized hash, not raw wa_id
+    assert store.get(session_key) == "vendas"
+
+    # reset -> menu, engine not called, binding cleared
+    calls_before = chat.calls
+    result = transport.handle_text_message(message=_message("menu"), request_id="r2")
+    assert result.handoff_status == "routing_menu"
+    assert chat.calls == calls_before
+    assert store.get(session_key) is None
+
+    # after reset, a generic message has no sticky domain -> menu again
+    result2 = transport.handle_text_message(
+        message=_message("pode me explicar melhor?"),
+        request_id="r3",
+    )
+    assert result2.handoff_status == "routing_menu"
