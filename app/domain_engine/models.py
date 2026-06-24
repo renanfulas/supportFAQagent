@@ -36,6 +36,7 @@ class DomainResponseConfig(DomainModel):
     tone: str = "simples"
     max_context_chunks: int = Field(default=5, ge=1, le=20)
     max_answer_length: str = "short"
+    welcome_message: str | None = None
     no_context_message: str = (
         "Nao encontrei contexto suficiente na base atual. "
         "Vale revisar os artigos deste dominio ou escalar para humano."

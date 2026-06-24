@@ -21,7 +21,14 @@ class HermesRequestError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class HermesSendResult:
+    message_id: str
+
+
+@dataclass(frozen=True)
 class HermesClient:
+    """OTP delivery client (signed POST to the Hermes gateway)."""
+
     base_url: str
     webhook_secret: str
     timeout_seconds: int = 5
@@ -59,3 +66,37 @@ class HermesClient:
         except requests.RequestException as exc:
             status_code = exc.response.status_code if exc.response is not None else None
             raise HermesRequestError("hermes_request_failed", status_code=status_code) from exc
+
+
+@dataclass(frozen=True)
+class HermesBridgeClient:
+    """Outbound chat sender for the WhatsApp bridge.
+
+    Real contract of the bridge: ``POST {base_url}/send {"chatId", "message"}`` on a
+    localhost express server (no HMAC). Returns the provider message id when present.
+    """
+
+    base_url: str = "http://127.0.0.1:3000"
+    timeout_seconds: int = 10
+    send_path: str = "/send"
+
+    def send_text(self, *, to: str, text: str, message_id: str) -> HermesSendResult:
+        try:
+            response = requests.post(
+                f"{self.base_url.rstrip('/')}{self.send_path}",
+                json={"chatId": to, "message": text},
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            status_code = exc.response.status_code if exc.response is not None else None
+            raise HermesRequestError("hermes_bridge_send_failed", status_code=status_code) from exc
+
+        provider_id = message_id
+        try:
+            data = response.json()
+            if isinstance(data, dict) and data.get("messageId"):
+                provider_id = str(data["messageId"])
+        except ValueError:
+            pass
+        return HermesSendResult(message_id=provider_id)

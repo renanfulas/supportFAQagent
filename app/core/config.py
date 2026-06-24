@@ -202,6 +202,23 @@ class Settings(BaseSettings):
         default="/otp-delivery",
         alias="HERMES_OTP_DELIVERY_PATH",
     )
+    enable_hermes_chat: bool = Field(
+        default=False,
+        alias="ENABLE_HERMES_CHAT",
+    )
+    hermes_bridge_url: str = Field(
+        default="http://127.0.0.1:3000",
+        alias="HERMES_BRIDGE_URL",
+    )
+    hermes_chat_forward_secret: str | None = Field(
+        default=None,
+        alias="HERMES_CHAT_FORWARD_SECRET",
+    )
+    whatsapp_chat_rate_limit_per_minute: int = Field(
+        default=20,
+        ge=1,
+        alias="WHATSAPP_CHAT_RATE_LIMIT_PER_MINUTE",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -291,6 +308,16 @@ class Settings(BaseSettings):
         self.hermes_otp_delivery_path = self.hermes_otp_delivery_path.strip() or "/otp-delivery"
         if not self.hermes_otp_delivery_path.startswith("/"):
             raise ValueError("HERMES_OTP_DELIVERY_PATH must start with /")
+        self.hermes_bridge_url = self.hermes_bridge_url.strip() or "http://127.0.0.1:3000"
+        if self.enable_hermes_chat:
+            self.hermes_base_url = _normalize_required_secret(
+                self.hermes_base_url,
+                "HERMES_BASE_URL",
+            )
+            self.hermes_webhook_secret = _normalize_required_secret(
+                self.hermes_webhook_secret,
+                "HERMES_WEBHOOK_SECRET",
+            )
         if self.enable_meta_whatsapp_webhook:
             self.meta_whatsapp_app_secret = _normalize_required_secret(
                 self.meta_whatsapp_app_secret,

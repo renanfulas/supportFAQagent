@@ -30,9 +30,8 @@ compartilhada ou precisa customizar o servidor.
 - Valor inicial divulgado: a partir de R$ 21,69/mes.
 - Garantia de ate 30 dias para reembolso.
 
-## Limites de honestidade
+## Precos e specs
 
-A pagina publica nao detalha vCPU, RAM, disco exato por plano nem o suporte
-tecnico incluso. Nunca invente esses numeros. Quando o lead pedir a especificacao
-exata ou o preco fechado do plano, confirme com um especialista comercial humano
-antes de prometer.
+Os valores, vCPU, RAM e disco por plano de VPS estao em `planos-e-precos.md`
+(VPS NVMe 2 a partir de R$ 21,69/mes). Use esses numeros oficiais ao recomendar;
+nao invente valores que nao estejam la.

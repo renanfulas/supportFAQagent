@@ -184,7 +184,7 @@ class ChatFlowService:
         if "out_of_scope" in reasons:
             return (
                 "Nao posso atuar fora do escopo deste dominio. "
-                "Se o tema nao for sobre VPS, WhatsApp, Evolution API, n8n ou automacoes relacionadas, "
+                "Se o tema fugir do que este canal cobre, "
                 "o caminho seguro e escalar para atendimento humano."
             )
 

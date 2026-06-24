@@ -36,6 +36,7 @@ class RoutableDomain:
     display_name: str
     keywords: tuple[str, ...] = ()
     aliases: tuple[str, ...] = ()
+    welcome: str = ""
 
     @classmethod
     def from_config(cls, config: object) -> "RoutableDomain":
@@ -43,7 +44,14 @@ class RoutableDomain:
         display_name = str(getattr(config, "display_name", name))
         routing = getattr(config, "routing", None)
         keywords = tuple(getattr(routing, "keywords", []) or [])
-        return cls(name=name, display_name=display_name, keywords=keywords)
+        response = getattr(config, "response", None)
+        welcome = (getattr(response, "welcome_message", None) or "").strip()
+        return cls(
+            name=name,
+            display_name=display_name,
+            keywords=keywords,
+            welcome=welcome,
+        )
 
     def _alias_tokens(self, position: int) -> set[str]:
         # Conservative on purpose: only the menu position number, the leading word
@@ -76,6 +84,21 @@ class DomainRouter:
     menu_outro: str = "Responda com o numero ou o nome da opcao."
 
     MENU_TRIGGERS = ("menu", "opcoes", "opcao", "ajuda", "oi", "ola", "inicio")
+    RESET_TRIGGERS = ("menu", "trocar", "voltar", "recomecar")
+
+    def is_reset(self, text: str) -> bool:
+        """True only for a short, explicit navigation command.
+
+        Must not fire when a trigger word merely appears inside a normal sentence
+        (e.g. "Quais opcoes voce tem?" is a question, not a menu command).
+        """
+        normalized = _normalize(text)
+        if not normalized:
+            return False
+        tokens = [token for token in re.split(r"[\s\-]+", normalized) if token]
+        if len(tokens) > 3:
+            return False
+        return any(token in self.RESET_TRIGGERS for token in tokens)
 
     @classmethod
     def from_domain_configs(
@@ -119,6 +142,13 @@ class DomainRouter:
             lines.append(f"{position}) {domain.display_name}")
         lines.append(self.menu_outro)
         return "\n".join(lines)
+
+    def welcome_text(self, domain_name: str) -> str:
+        domain = next((d for d in self.domains if d.name == domain_name), None)
+        if domain is not None and domain.welcome:
+            return domain.welcome
+        display = domain.display_name if domain is not None else domain_name
+        return f"Perfeito! Voce esta no atendimento de {display}. Como posso te ajudar?"
 
     def _match_menu_selection(self, normalized: str) -> str | None:
         tokens = set(re.split(r"[\s\-]+", normalized))

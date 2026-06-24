@@ -14,13 +14,19 @@ proximo passo.
 - Planos elegiveis de Hospedagem dao ate 2 dominios gratis.
 - Email profissional gratis na Hospedagem.
 
-## Como conduzir o fechamento
+## Como fazer a oferta e fechar
 
-1. Resuma o encaixe: plano recomendado + principal beneficio para o objetivo do lead.
-2. Faca uma pergunta de avanco: qual plano faz mais sentido para comecar.
-3. Conduza ate a porta do checkout.
-4. Para pagamento, contrato, cobranca ou emissao de nota, escale para um especialista
-   comercial humano concluir com seguranca.
+Assim que souber o objetivo do site, o porte/trafego esperado e o nivel tecnico,
+faca a oferta concreta:
 
-Nunca peca numero de cartao, dados de pagamento ou credencial. Esses passos sao
-sempre finalizados por um humano em ambiente seguro.
+1. Recomende um plano especifico pelo nome, com preco e specs da base.
+2. Explique em 1-2 frases por que esse plano resolve o problema do lead, conectando
+   ao que ele disse (ex.: "para um site com ~100 visitas/dia, o plano X tem folga de
+   recurso e e simples de gerir, ideal pro projeto do seu cliente").
+3. Reforce uma garantia/ancora (ate 30 dias de reembolso, migracao gratis).
+4. Feche perguntando a forma de pagamento: "Prefere Pix ou cartao?".
+5. Apos a escolha, direcione para o checkout seguro ou um especialista finalizar o
+   pagamento.
+
+Nunca peca numero de cartao, dados de pagamento ou credencial no chat. O pagamento e
+sempre concluido em ambiente seguro (checkout/humano), nunca pela conversa.

@@ -15,6 +15,7 @@ from app.api.routes import (
     feedback,
     health,
     ingestion,
+    hermes_chat,
     internal_webhooks,
     meta_whatsapp,
     web_auth,
@@ -30,6 +31,7 @@ from app.core.request_context import (
     resolve_request_id,
 )
 from app.core.web_session import extract_public_session_token
+from app.orchestration.session_domain_store import InMemorySessionDomainStore
 from app.web_auth.runtime import create_web_auth_runtime
 from app.db.runtime import DatabaseRuntime
 from app.core.errors import DatabaseUnavailableError
@@ -67,6 +69,13 @@ def create_app() -> FastAPI:
     )
     application.state.settings = settings
     application.state.database_runtime = database_runtime
+    # Process-wide sticky domain memory so a WhatsApp conversation keeps its chosen
+    # domain across messages. Durable cross-process storage is a follow-up.
+    application.state.session_domain_store = InMemorySessionDomainStore()
+    # Short-lived per-session conversational state (e.g. the out-of-scope escape menu).
+    application.state.session_state_store = InMemorySessionDomainStore(ttl_seconds=900)
+    # Last outbound text per session, to avoid repeating the exact same message.
+    application.state.session_last_out_store = InMemorySessionDomainStore(ttl_seconds=900)
     application.state.web_auth_runtime = create_web_auth_runtime(
         settings,
         application.state.database_runtime,
@@ -255,6 +264,11 @@ def create_app() -> FastAPI:
         internal_webhooks.router,
         prefix="/internal/webhooks",
         tags=["internal-webhooks"],
+    )
+    application.include_router(
+        hermes_chat.router,
+        prefix="/integrations/hermes",
+        tags=["hermes-chat"],
     )
     return application
 
