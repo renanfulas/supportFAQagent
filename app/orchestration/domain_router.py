@@ -76,15 +76,21 @@ class DomainRouter:
     menu_outro: str = "Responda com o numero ou o nome da opcao."
 
     MENU_TRIGGERS = ("menu", "opcoes", "opcao", "ajuda", "oi", "ola", "inicio")
-    RESET_TRIGGERS = ("menu", "trocar", "voltar", "recomecar", "inicio", "opcoes")
+    RESET_TRIGGERS = ("menu", "trocar", "voltar", "recomecar")
 
     def is_reset(self, text: str) -> bool:
-        """A short message that should drop sticky memory and re-show the menu."""
+        """True only for a short, explicit navigation command.
+
+        Must not fire when a trigger word merely appears inside a normal sentence
+        (e.g. "Quais opcoes voce tem?" is a question, not a menu command).
+        """
         normalized = _normalize(text)
         if not normalized:
             return False
-        tokens = set(re.split(r"[\s\-]+", normalized))
-        return bool(tokens & set(self.RESET_TRIGGERS))
+        tokens = [token for token in re.split(r"[\s\-]+", normalized) if token]
+        if len(tokens) > 3:
+            return False
+        return any(token in self.RESET_TRIGGERS for token in tokens)
 
     @classmethod
     def from_domain_configs(

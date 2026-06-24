@@ -217,6 +217,9 @@ def test_is_reset_detects_reset_words() -> None:
     assert r.is_reset("quero trocar") is True
     assert r.is_reset("voltar") is True
     assert r.is_reset("quero contratar um plano") is False
+    # "opcoes" inside a normal question must NOT reset (regression).
+    assert r.is_reset("Quais opcoes voce tem para meu site?") is False
+    assert r.is_reset("opcoes") is False
 
 
 def test_in_memory_store_set_get_clear() -> None:

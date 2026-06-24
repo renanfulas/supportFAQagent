@@ -85,6 +85,7 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
             base_url=settings.hermes_bridge_url,
             timeout_seconds=settings.hermes_request_timeout_seconds,
         ),
+        session_store=getattr(request.app.state, "session_domain_store", None),
     )
     try:
         for message in messages:
