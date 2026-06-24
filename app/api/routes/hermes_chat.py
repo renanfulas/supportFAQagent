@@ -22,6 +22,8 @@ from app.integrations.hermes.inbound import (
 router = APIRouter()
 logger = logging.getLogger(__name__)
 MAX_BODY_BYTES = 262_144
+MAX_MESSAGES_PER_REQUEST = 25
+PROXY_HEADERS = ("X-Forwarded-For", "X-Real-IP", "X-Forwarded-Host")
 SAFE_ERROR_RE = re.compile(r"^hermes_[a-z0-9_]{1,80}$")
 
 
@@ -29,6 +31,12 @@ SAFE_ERROR_RE = re.compile(r"^hermes_[a-z0-9_]{1,80}$")
 async def receive_chat_webhook(request: Request) -> dict[str, str]:
     settings = request.app.state.settings
     if not settings.enable_hermes_chat:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    # Internal endpoint: the bridge calls 127.0.0.1:8000 directly. Anything arriving
+    # through the public reverse proxy carries forwarding headers — reject it so the
+    # webhook is never reachable from the internet, only from the local bridge.
+    if any(request.headers.get(header) for header in PROXY_HEADERS):
         raise HTTPException(status_code=404, detail="Not Found")
 
     body = await request.body()
@@ -56,6 +64,8 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
         raise HTTPException(status_code=400, detail="invalid_hermes_payload")
 
     messages = parse_hermes_inbound(payload)
+    if len(messages) > MAX_MESSAGES_PER_REQUEST:
+        raise HTTPException(status_code=400, detail="too_many_messages")
     log_event(
         logger,
         "hermes_chat_webhook_received",

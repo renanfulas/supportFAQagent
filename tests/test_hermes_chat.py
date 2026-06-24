@@ -279,3 +279,43 @@ def test_chat_webhook_rejects_bad_signature(monkeypatch: pytest.MonkeyPatch) -> 
     )
     assert resp.status_code == 401
     get_settings.cache_clear()
+
+
+def test_chat_webhook_rejects_proxied_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A request that came through the public reverse proxy carries X-Forwarded-For;
+    # the internal webhook must 404 it (only the direct local bridge may call it).
+    monkeypatch.setenv("ENABLE_HERMES_CHAT", "true")
+    monkeypatch.setenv("HERMES_BASE_URL", "https://hermes.local")
+    monkeypatch.setenv("HERMES_WEBHOOK_SECRET", SECRET)
+    get_settings.cache_clear()
+    client = TestClient(create_app(), raise_server_exceptions=False)
+
+    resp = client.post(
+        "/integrations/hermes/chat/webhook",
+        content=b'{"messages":[]}',
+        headers={"X-Forwarded-For": "203.0.113.7"},
+    )
+    assert resp.status_code == 404
+    get_settings.cache_clear()
+
+
+def test_chat_webhook_rejects_too_many_messages(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENABLE_HERMES_CHAT", "true")
+    monkeypatch.setenv("HERMES_BASE_URL", "https://hermes.local")
+    monkeypatch.setenv("HERMES_WEBHOOK_SECRET", SECRET)
+    get_settings.cache_clear()
+    client = TestClient(create_app(), raise_server_exceptions=False)
+
+    events = [
+        {"messageId": f"h{i}", "chatId": "c", "senderId": "s", "body": "oi", "isGroup": False}
+        for i in range(26)
+    ]
+    body = json.dumps({"messages": events}, separators=(",", ":")).encode()
+    ts = str(int(datetime.now(UTC).timestamp()))
+    resp = client.post(
+        "/integrations/hermes/chat/webhook",
+        content=body,
+        headers={"X-Webhook-Signature": _sign(body, ts), "X-Webhook-Timestamp": ts},
+    )
+    assert resp.status_code == 400
+    get_settings.cache_clear()
