@@ -11,7 +11,7 @@ import pytest
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import InMemoryRateLimiter
 from app.db.operational import ChatPersistenceResult
-from app.integrations.hermes.chat_transport import HermesChatTransport
+from app.integrations.hermes.chat_transport import ESCAPE_STATE, HermesChatTransport
 from app.integrations.hermes.client import HermesBridgeClient, HermesSendResult
 from app.integrations.hermes.inbound import (
     HermesInboundMessage,
@@ -20,6 +20,7 @@ from app.integrations.hermes.inbound import (
 )
 from app.main import create_app
 from app.orchestration.domain_router import DomainRouter, RoutableDomain
+from app.orchestration.session_domain_store import InMemorySessionDomainStore
 
 
 SECRET = "hermes-secret"
@@ -254,6 +255,73 @@ def test_transport_menu_selection_sends_welcome_without_brain() -> None:
     assert chat.calls == 0  # the chooser "2" must not be fed to the brain
     assert result.handoff_status == "routing_selected"
     assert "Vendas HostGator" in client.sent[0]
+
+
+class _OutOfScopeChat:
+    def answer(self, **kwargs):
+        return {
+            "domain": "vendas",
+            "answer": "Nao posso atuar fora do escopo deste dominio.",
+            "confidence": 0.0,
+            "escalated": True,
+            "handoff_reasons": ["out_of_scope"],
+            "references": [],
+            "error_code": None,
+        }
+
+
+def _escape_transport():
+    client, loader = _FakeClient(), _FakeDomainLoader()
+    store = InMemorySessionDomainStore()
+    state = InMemorySessionDomainStore()
+    settings = Settings(
+        _env_file=None,
+        APP_ENV="development",
+        ENABLE_WHATSAPP_DOMAIN_ROUTER="true",
+        WHATSAPP_ROUTER_DOMAINS="suporte-vps-whatsapp,vendas",
+    )
+    router = DomainRouter(domains=(SUPPORT, VENDAS), default_domain="suporte-vps-whatsapp")
+    transport = HermesChatTransport(
+        settings=settings,
+        database_runtime=object(),
+        client=client,
+        domain_loader=loader,
+        chat_service=_OutOfScopeChat(),
+        repository=_FakeRepository(),
+        router=router,
+        session_store=store,
+        state_store=state,
+        rate_limiter=InMemoryRateLimiter(max_requests=1000),
+    )
+    return transport, client, store, state
+
+
+def test_out_of_scope_offers_escape_then_2_closes_and_resets() -> None:
+    transport, client, store, state = _escape_transport()
+
+    # A routed message that comes back out_of_scope gets the escape options.
+    transport.handle_text_message(message=_msg("preciso de hospedagem"), request_id="r1")
+    assert "1) Resolver com um atendente" in client.sent[-1]
+    assert "2) Encerrar atendimento" in client.sent[-1]
+    session_key = next(iter(state._entries))
+    assert state.get(session_key) == ESCAPE_STATE
+    store.set(session_key, "vendas")
+
+    # "2" closes and resets both the sticky domain and the escape state.
+    result = transport.handle_text_message(message=_msg("2"), request_id="r2")
+    assert result.handoff_status == "closed"
+    assert "encerrado" in client.sent[-1].lower()
+    assert state.get(session_key) is None
+    assert store.get(session_key) is None
+
+
+def test_escape_option_1_routes_to_human() -> None:
+    transport, client, store, state = _escape_transport()
+    transport.handle_text_message(message=_msg("preciso de hospedagem"), request_id="r1")
+
+    result = transport.handle_text_message(message=_msg("1"), request_id="r2")
+    assert result.handoff_status == "human_requested"
+    assert "atendente humano" in client.sent[-1].lower()
 
 
 def test_session_id_is_hashed_not_raw() -> None:

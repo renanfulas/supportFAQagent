@@ -86,6 +86,7 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
             timeout_seconds=settings.hermes_request_timeout_seconds,
         ),
         session_store=getattr(request.app.state, "session_domain_store", None),
+        state_store=getattr(request.app.state, "session_state_store", None),
     )
     try:
         for message in messages:

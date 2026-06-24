@@ -54,6 +54,27 @@ def _shared_rate_limiter(max_per_minute: int) -> InMemoryRateLimiter:
     return _rate_limiter
 
 
+ESCAPE_STATE = "awaiting_escape"
+ESCAPE_OPTIONS = "\n\n1) Resolver com um atendente\n2) Encerrar atendimento"
+MSG_TO_HUMAN = (
+    "Certo! Vou te transferir para um atendente humano. "
+    "Em instantes alguem continua o atendimento por aqui."
+)
+MSG_CLOSED = (
+    "Atendimento encerrado. Quando precisar, e so mandar um *oi* que eu "
+    "recomeco por aqui. Ate logo!"
+)
+
+
+def _escape_choice(text: str) -> str:
+    normalized = text.strip().lower()
+    if normalized == "1" or "atendente" in normalized:
+        return "1"
+    if normalized == "2" or "encerrar" in normalized:
+        return "2"
+    return ""
+
+
 @dataclass(frozen=True)
 class HermesChatResult:
     request_id: str
@@ -74,11 +95,15 @@ class HermesChatTransport:
         repository: OperationalRepository | None = None,
         router: DomainRouter | None = None,
         session_store: SessionDomainStore | None = None,
+        state_store: SessionDomainStore | None = None,
         rate_limiter: InMemoryRateLimiter | None = None,
     ) -> None:
         self.settings = settings
         self.database_runtime = database_runtime
         self.client = client
+        # Per-session conversational state (e.g. waiting for the escape choice).
+        # When absent, the escape-options feature is inactive.
+        self.state_store = state_store
         self.rate_limiter = rate_limiter or _shared_rate_limiter(
             settings.whatsapp_chat_rate_limit_per_minute
         )
@@ -114,6 +139,20 @@ class HermesChatTransport:
                 handoff_status="rate_limited",
                 persistence_status="skipped",
             )
+
+        # If the session was offered the escape options, interpret 1/2 here.
+        if self.state_store is not None and self.state_store.get(session_id) == ESCAPE_STATE:
+            choice = _escape_choice(message.text)
+            if choice == "1":
+                self.state_store.clear(session_id)
+                return self._reply(message, MSG_TO_HUMAN, request_id, "human_requested")
+            if choice == "2":
+                self.state_store.clear(session_id)
+                if self.session_store is not None:
+                    self.session_store.clear(session_id)
+                return self._reply(message, MSG_CLOSED, request_id, "closed")
+            # Any other reply cancels the prompt and is handled as a normal message.
+            self.state_store.clear(session_id)
 
         if self.router is not None:
             resolution = resolve_sticky_domain(
@@ -185,6 +224,11 @@ class HermesChatTransport:
                 f"{answer} O atendimento humano esta temporariamente indisponivel; "
                 "guarde o request_id para acompanhamento."
             )
+        # When the bot cannot help (out of scope), offer a clear escape and remember
+        # we are waiting for the choice.
+        if self.state_store is not None and "out_of_scope" in response["handoff_reasons"]:
+            answer = answer + ESCAPE_OPTIONS
+            self.state_store.set(session_id, ESCAPE_STATE)
         outbound = self.client.send_text(
             to=message.chat_id,
             text=answer,
@@ -195,6 +239,25 @@ class HermesChatTransport:
             outbound_message_id=outbound.message_id,
             handoff_status=persistence.handoff_status,
             persistence_status=persistence.persistence_status,
+        )
+
+    def _reply(
+        self,
+        message: HermesInboundMessage,
+        text: str,
+        request_id: str,
+        status: str,
+    ) -> HermesChatResult:
+        outbound = self.client.send_text(
+            to=message.chat_id,
+            text=text,
+            message_id=message.message_id,
+        )
+        return HermesChatResult(
+            request_id=request_id,
+            outbound_message_id=outbound.message_id,
+            handoff_status=status,
+            persistence_status="skipped",
         )
 
 
