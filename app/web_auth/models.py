@@ -23,6 +23,7 @@ class VerifiedIdentity:
     phone_last4: str
     verified_at: datetime
     status: str = "verified"
+    customer_id: str | None = None
 
 
 @dataclass(frozen=True)

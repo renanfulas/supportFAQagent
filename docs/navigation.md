@@ -45,6 +45,9 @@ curtos antes de codar:
 
 - `docs/web-chat-v1-whatsapp-otp-spec.md`: contrato, threat model e fronteiras
   da identidade de canal por WhatsApp OTP.
+- `docs/quality-plans/customer-identity-whatsapp-handoff-plan.md`: plano
+  tecnico para ligar Auth WhatsApp, identidade do cliente, historico,
+  preferencias de front end, ticket humano e notificacao WhatsApp para o time.
 - `docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md`: plano historico da
   ponte OTP por n8n/Evolution; use apenas para contexto legado.
 - `docs/quality-plans/meta-whatsapp-native-integration-plan.md`: plano tecnico

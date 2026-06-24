@@ -33,6 +33,7 @@ def test_web_chat_accepts_valid_payload_without_api_key_and_returns_public_contr
         request_id: str | None = None,
         provider_api_key: str | None = None,
         channel: str = "api",
+        customer_id: str | None = None,
     ) -> dict[str, object]:
         captured["domain"] = domain.name
         captured["question"] = question
@@ -129,6 +130,7 @@ def test_web_chat_reuses_valid_anonymous_session_cookie(
         request_id: str | None = None,
         provider_api_key: str | None = None,
         channel: str = "api",
+        customer_id: str | None = None,
     ) -> dict[str, object]:
         _ = (domain, question, provider_api_key, channel)
         captured.append(session_id)
@@ -173,6 +175,7 @@ def test_web_chat_rate_limit_returns_429_with_retry_after(
         request_id: str | None = None,
         provider_api_key: str | None = None,
         channel: str = "api",
+        customer_id: str | None = None,
     ) -> dict[str, object]:
         _ = (domain, question, session_id, provider_api_key, channel)
         return {

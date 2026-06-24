@@ -52,6 +52,7 @@ def test_history_service_hashes_session_and_preserves_channel_isolation() -> Non
             "channel": "whatsapp",
             "session_hash": hash_session("raw-session", "history-secret"),
             "session_hash_version": "hmac-sha256-v1",
+            "customer_id": None,
             "limit": 4,
         }
     ]
@@ -70,6 +71,32 @@ def test_history_service_fails_open_when_database_is_unavailable() -> None:
         session_id="session",
         request_id="req-history-failure",
     ) == []
+
+
+def test_history_service_can_load_by_customer_identity() -> None:
+    runtime = FakeRuntime()
+    repository = FakeRepository(rows=[{"role": "user", "content": "Ja autenticado"}])
+    service = ConversationHistoryService(runtime, repository=repository)
+
+    rows = service.load_recent(
+        domain="suporte-vps-whatsapp",
+        channel="web",
+        session_id="raw-session",
+        customer_id="customer-123",
+        request_id="req-customer-history",
+    )
+
+    assert rows == [{"role": "user", "content": "Ja autenticado"}]
+    assert repository.calls == [
+        {
+            "domain": "suporte-vps-whatsapp",
+            "channel": "web",
+            "session_hash": hash_session("raw-session", "history-secret"),
+            "session_hash_version": "hmac-sha256-v1",
+            "customer_id": "customer-123",
+            "limit": 4,
+        }
+    ]
 
 
 def test_prompt_history_ignores_unknown_roles_and_marks_content_untrusted() -> None:
@@ -132,6 +159,7 @@ def test_chat_flow_loads_short_history_into_the_generated_prompt() -> None:
         "channel": "whatsapp",
         "session_id": "raw-session",
         "request_id": "req-history-flow",
+        "customer_id": None,
     }
     assert "O nginx caiu antes." in str(captured["prompt"])
     assert "<untrusted_history>" in str(captured["prompt"])

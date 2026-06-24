@@ -117,6 +117,8 @@ class WebWhatsAppAuthService:
                 verified_at=self._now(),
             )
             identity = self.store.save_identity(identity)
+        elif identity.customer_id is None:
+            identity = self.store.save_identity(identity)
         self.store.bind_session(self._digest_identity(session_id), identity)
         return identity
 

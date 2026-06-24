@@ -445,6 +445,7 @@ def test_escalated_chat_is_recorded_with_idempotent_outbox_key() -> None:
             (False,),
             ("audit-id", "turn-id"),
             ("conversation-id",),
+            ("support-case-id",),
             ("pending",),
         ]
     )
@@ -471,6 +472,7 @@ def test_escalated_chat_is_recorded_with_idempotent_outbox_key() -> None:
     outbox_params = runtime.cursor.calls[-1][1]
     assert outbox_params is not None
     assert outbox_params[0] == "handoff:turn-id"
+    assert "support-case-id" in outbox_params[2]
     assert "user@example.com" not in str(runtime.cursor.calls)
     assert "reference-secret" not in str(runtime.cursor.calls)
     assert "ghp_" not in str(runtime.cursor.calls)
@@ -485,6 +487,7 @@ def test_escalated_chat_is_unavailable_when_outbox_is_dead_or_missing(
         (False,),
         ("audit-id", "turn-id"),
         ("conversation-id",),
+        ("support-case-id",),
     ]
     if outbox_row is not None:
         rows.append(outbox_row)

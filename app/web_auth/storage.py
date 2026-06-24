@@ -81,8 +81,21 @@ class InMemoryWebAuthStore:
 
     def save_identity(self, identity: VerifiedIdentity) -> VerifiedIdentity:
         with self._lock:
-            self._identities_by_phone[identity.phone_hash] = identity
-        return identity
+            existing = self._identities_by_phone.get(identity.phone_hash)
+            saved = VerifiedIdentity(
+                id=existing.id if existing else identity.id,
+                phone_hash=identity.phone_hash,
+                phone_last4=identity.phone_last4,
+                verified_at=identity.verified_at,
+                status=identity.status,
+                customer_id=(
+                    existing.customer_id
+                    if existing and existing.customer_id
+                    else identity.customer_id or str(uuid4())
+                ),
+            )
+            self._identities_by_phone[identity.phone_hash] = saved
+        return saved
 
     def bind_session(self, session_hash: str, identity: VerifiedIdentity) -> None:
         with self._lock:
@@ -184,7 +197,7 @@ class PostgresWebAuthStore:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, phone_hash, phone_last4, verified_at, status
+                    SELECT id, phone_hash, phone_last4, verified_at, status, customer_id
                     FROM verified_identities
                     WHERE channel = 'whatsapp' AND phone_hash = %s
                     """,
@@ -195,16 +208,35 @@ class PostgresWebAuthStore:
     def save_identity(self, identity: VerifiedIdentity) -> VerifiedIdentity:
         with self.runtime.transaction() as connection:
             with connection.cursor() as cursor:
+                customer_id = identity.customer_id or str(uuid4())
+                cursor.execute(
+                    """
+                    INSERT INTO customers (id, default_channel, last_seen_at)
+                    VALUES (%s, 'whatsapp', now())
+                    ON CONFLICT (id) DO UPDATE
+                    SET last_seen_at = now(),
+                        default_channel = COALESCE(customers.default_channel, 'whatsapp'),
+                        updated_at = now()
+                    """,
+                    (customer_id,),
+                )
                 cursor.execute(
                     """
                     INSERT INTO verified_identities (
-                      id, channel, phone_hash, phone_last4, verified_at, status
+                      id, channel, phone_hash, phone_last4, verified_at, status,
+                      customer_id
                     )
-                    VALUES (%s, 'whatsapp', %s, %s, %s, %s)
+                    VALUES (%s, 'whatsapp', %s, %s, %s, %s, %s)
                     ON CONFLICT (channel, phone_hash) DO UPDATE
-                    SET verified_at = EXCLUDED.verified_at, status = EXCLUDED.status,
+                    SET verified_at = EXCLUDED.verified_at,
+                        status = EXCLUDED.status,
+                        phone_last4 = EXCLUDED.phone_last4,
+                        customer_id = COALESCE(
+                          verified_identities.customer_id,
+                          EXCLUDED.customer_id
+                        ),
                         updated_at = now()
-                    RETURNING id, phone_hash, phone_last4, verified_at, status
+                    RETURNING id, phone_hash, phone_last4, verified_at, status, customer_id
                     """,
                     (
                         identity.id or str(uuid4()),
@@ -212,11 +244,21 @@ class PostgresWebAuthStore:
                         identity.phone_last4,
                         identity.verified_at,
                         identity.status,
+                        customer_id,
                     ),
                 )
                 saved = self._to_identity(cursor.fetchone())
                 if saved is None:
                     raise RuntimeError("identity persistence returned no row")
+                if saved.customer_id:
+                    cursor.execute(
+                        """
+                        UPDATE customers
+                        SET last_seen_at = now(), updated_at = now()
+                        WHERE id = %s
+                        """,
+                        (saved.customer_id,),
+                    )
                 return saved
 
     def bind_session(self, session_hash: str, identity: VerifiedIdentity) -> None:
@@ -237,7 +279,8 @@ class PostgresWebAuthStore:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT i.id, i.phone_hash, i.phone_last4, i.verified_at, i.status
+                    SELECT i.id, i.phone_hash, i.phone_last4, i.verified_at, i.status,
+                           i.customer_id
                     FROM web_sessions s
                     JOIN verified_identities i ON i.id = s.verified_identity_id
                     WHERE s.anonymous_session_hash = %s AND i.status = 'verified'
@@ -292,4 +335,5 @@ class PostgresWebAuthStore:
             phone_last4=row[2],
             verified_at=row[3],
             status=row[4],
+            customer_id=str(row[5]) if len(row) > 5 and row[5] else None,
         )

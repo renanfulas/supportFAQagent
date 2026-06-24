@@ -16,6 +16,7 @@ from app.core.web_session import (
     get_or_create_public_session_id,
     set_public_session_cookie,
 )
+from app.identity.current import CurrentIdentityResolver
 from app.domain_engine.loader import DomainLoader
 from app.conversations.service import ConversationHistoryService
 from app.feedback.service import FeedbackService
@@ -42,6 +43,7 @@ def create_web_chat(
     request_id = get_request_id(request)
     settings = get_settings()
     session_id, should_set_cookie = get_or_create_public_session_id(request, settings)
+    identity_context = _resolve_identity_context(request, settings, session_id)
     domain = _load_default_domain(settings)
 
     database_runtime = request.app.state.database_runtime
@@ -54,6 +56,7 @@ def create_web_chat(
         request_id=request_id,
         provider_api_key=None,
         channel="web",
+        customer_id=identity_context.customer_id,
     )
     persistence_result = OperationalRepository(database_runtime).record_chat(
         ChatAuditInput(
@@ -68,6 +71,7 @@ def create_web_chat(
             references=list(chat_response["references"]),
             error_code=chat_response["error_code"],
             channel="web",
+            customer_id=identity_context.customer_id,
         )
     )
     chat_response["handoff_status"] = persistence_result.handoff_status
@@ -154,6 +158,18 @@ def _load_default_domain(settings):
     if domain is None:
         raise HTTPException(status_code=404, detail="Domain not found")
     return domain
+
+
+def _resolve_identity_context(request: Request, settings, session_id: str):
+    service = (
+        request.app.state.web_auth_runtime.service
+        if settings.enable_web_whatsapp_auth
+        else None
+    )
+    return CurrentIdentityResolver(
+        settings=settings,
+        web_auth_service=service,
+    ).resolve(session_id)
 
 
 def _log_web_chat_event(

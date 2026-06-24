@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 from typing import Any
 
@@ -14,6 +15,11 @@ from app.db.runtime import DatabaseRuntime
 ACTIVE_CONVERSATION_STATUSES = ("bot", "handoff_pending", "human_active")
 
 
+@dataclass(frozen=True)
+class PersistedConversationTurn:
+    conversation_id: str
+
+
 class ConversationRepository:
     """PostgreSQL adapter that only accepts hashed and sanitized values."""
 
@@ -25,23 +31,29 @@ class ConversationRepository:
         *,
         domain: str,
         channel: str,
-        session_hash: str,
+        session_hash: str | None,
         session_hash_version: str,
+        customer_id: str | None,
         limit: int,
     ) -> list[dict[str, str]]:
         with self.runtime.transaction() as connection:
             with connection.cursor() as cursor:
+                identity_filter, params = _history_identity_filter(
+                    customer_id=customer_id,
+                    session_hash=session_hash,
+                    session_hash_version=session_hash_version,
+                )
+                status_filter = _history_status_filter(customer_id=customer_id)
                 cursor.execute(
-                    """
+                    f"""
                     SELECT m.role, m.content
                     FROM conversations c
                     JOIN domains d ON d.id = c.domain_id
                     JOIN messages m ON m.conversation_id = c.id
                     WHERE d.name = %s
                       AND c.channel = %s
-                      AND c.session_hash = %s
-                      AND c.session_hash_version = %s
-                      AND c.status IN ('bot', 'handoff_pending', 'human_active')
+                      AND {identity_filter}
+                      AND {status_filter}
                       AND m.role IN ('user', 'assistant')
                       AND m.redaction_version = %s
                     ORDER BY m.message_sequence DESC
@@ -50,8 +62,7 @@ class ConversationRepository:
                     (
                         domain,
                         channel,
-                        session_hash,
-                        session_hash_version,
+                        *params,
                         REDACTION_VERSION,
                         limit,
                     ),
@@ -70,6 +81,7 @@ class ConversationRepository:
         session_hash: str,
         session_hash_version: str,
         channel: str,
+        customer_id: str | None = None,
         audit_id: Any,
         turn_id: str,
         request_id: str,
@@ -84,13 +96,20 @@ class ConversationRepository:
         sanitized_handoff_reasons = _sanitize_string_list(handoff_reasons)
         sanitized_references = _sanitize_string_list(references)
         sanitized_error_code = sanitize_for_persistence(error_code)
+        self._archive_identity_conflicts(
+            cursor=cursor,
+            domain_id=domain_id,
+            channel=channel,
+            session_hash=session_hash,
+            customer_id=customer_id,
+        )
         cursor.execute(
             """
             INSERT INTO conversations (
               domain_id, channel, session_hash, session_hash_version,
-              status, last_message_at
+              customer_id, status, last_message_at
             )
-            VALUES (%s, %s, %s, %s, %s, now())
+            VALUES (%s, %s, %s, %s, %s, %s, now())
             ON CONFLICT (domain_id, channel, session_hash)
               WHERE session_hash IS NOT NULL
                 AND status IN ('bot', 'handoff_pending', 'human_active')
@@ -100,6 +119,7 @@ class ConversationRepository:
                   THEN conversations.status
                 ELSE EXCLUDED.status
               END,
+              customer_id = COALESCE(conversations.customer_id, EXCLUDED.customer_id),
               session_hash_version = EXCLUDED.session_hash_version,
               updated_at = now(),
               last_message_at = now()
@@ -110,6 +130,7 @@ class ConversationRepository:
                 channel,
                 session_hash,
                 session_hash_version,
+                customer_id,
                 "handoff_pending" if escalated else "bot",
             ),
         )
@@ -158,6 +179,45 @@ class ConversationRepository:
                 shared[6],
             ),
         )
+        return PersistedConversationTurn(conversation_id=str(conversation_id))
+
+    def _archive_identity_conflicts(
+        self,
+        *,
+        cursor: Any,
+        domain_id: Any,
+        channel: str,
+        session_hash: str,
+        customer_id: str | None,
+    ) -> PersistedConversationTurn:
+        if customer_id:
+            cursor.execute(
+                """
+                UPDATE conversations
+                SET status = 'identity_changed', updated_at = now()
+                WHERE domain_id = %s
+                  AND channel = %s
+                  AND session_hash = %s
+                  AND customer_id IS NOT NULL
+                  AND customer_id <> %s
+                  AND status IN ('bot', 'handoff_pending', 'human_active')
+                """,
+                (domain_id, channel, session_hash, customer_id),
+            )
+            return
+
+        cursor.execute(
+            """
+            UPDATE conversations
+            SET status = 'identity_changed', updated_at = now()
+            WHERE domain_id = %s
+              AND channel = %s
+              AND session_hash = %s
+              AND customer_id IS NOT NULL
+              AND status IN ('bot', 'handoff_pending', 'human_active')
+            """,
+            (domain_id, channel, session_hash),
+        )
 
 
 def _sanitize_string_list(values: list[str]) -> list[str]:
@@ -167,3 +227,43 @@ def _sanitize_string_list(values: list[str]) -> list[str]:
     ):
         raise TypeError("persisted metadata must be a list of strings")
     return sanitized
+
+
+def _history_identity_filter(
+    *,
+    customer_id: str | None,
+    session_hash: str | None,
+    session_hash_version: str,
+) -> tuple[str, tuple[object, ...]]:
+    if customer_id and session_hash:
+        return (
+            """
+            (
+                c.customer_id = %s
+                OR (
+                    c.customer_id IS NULL
+                    AND c.session_hash = %s
+                    AND c.session_hash_version = %s
+                )
+            )
+            """,
+            (customer_id, session_hash, session_hash_version),
+        )
+    if customer_id:
+        return "c.customer_id = %s", (customer_id,)
+    if session_hash:
+        return (
+            """
+            c.customer_id IS NULL
+            AND c.session_hash = %s
+            AND c.session_hash_version = %s
+            """,
+            (session_hash, session_hash_version),
+        )
+    return "false", ()
+
+
+def _history_status_filter(*, customer_id: str | None) -> str:
+    if customer_id:
+        return "c.status IN ('bot', 'handoff_pending', 'human_active', 'identity_changed')"
+    return "c.status IN ('bot', 'handoff_pending', 'human_active')"
