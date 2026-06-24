@@ -88,6 +88,18 @@ def test_menu_text_lists_options() -> None:
     assert "2) Vendas HostGator" in text
 
 
+def test_welcome_text_uses_custom_when_set() -> None:
+    custom = RoutableDomain(
+        name="vendas",
+        display_name="Vendas HostGator",
+        welcome="Somos a HostGator. Como posso te ajudar hoje?",
+    )
+    router = DomainRouter(domains=(SUPPORT, custom), default_domain="suporte-vps-whatsapp")
+    assert router.welcome_text("vendas") == "Somos a HostGator. Como posso te ajudar hoje?"
+    # a domain without a custom welcome falls back to the generic greeting
+    assert "Suporte VPS e WhatsApp" in router.welcome_text("suporte-vps-whatsapp")
+
+
 def test_from_domain_configs_reads_routing_keywords() -> None:
     class FakeRouting:
         keywords = ["hospedagem", "plano"]
