@@ -17,6 +17,7 @@ from typing import Any
 from app.conversations.service import ConversationHistoryService
 from app.core.config import Settings
 from app.core.privacy import hash_sensitive_value
+from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded
 from app.db.operational import (
     ChatAuditInput,
     HANDOFF_UNAVAILABLE,
@@ -42,6 +43,17 @@ class HermesChatTransportError(RuntimeError):
     pass
 
 
+# Shared across per-request transports so the per-number limit actually holds.
+_rate_limiter: InMemoryRateLimiter | None = None
+
+
+def _shared_rate_limiter(max_per_minute: int) -> InMemoryRateLimiter:
+    global _rate_limiter
+    if _rate_limiter is None or _rate_limiter.max_requests != max_per_minute:
+        _rate_limiter = InMemoryRateLimiter(max_requests=max_per_minute, window_seconds=60)
+    return _rate_limiter
+
+
 @dataclass(frozen=True)
 class HermesChatResult:
     request_id: str
@@ -62,10 +74,14 @@ class HermesChatTransport:
         repository: OperationalRepository | None = None,
         router: DomainRouter | None = None,
         session_store: SessionDomainStore | None = None,
+        rate_limiter: InMemoryRateLimiter | None = None,
     ) -> None:
         self.settings = settings
         self.database_runtime = database_runtime
         self.client = client
+        self.rate_limiter = rate_limiter or _shared_rate_limiter(
+            settings.whatsapp_chat_rate_limit_per_minute
+        )
         self.domain_loader = domain_loader or DomainLoader(settings.domains_path)
         self.chat_service = chat_service or ChatFlowService(
             history_service=ConversationHistoryService(database_runtime),
@@ -86,6 +102,18 @@ class HermesChatTransport:
         request_id: str,
     ) -> HermesChatResult:
         session_id = _safe_hermes_session_id(message.from_wa_id)
+
+        try:
+            self.rate_limiter.check(session_id)
+        except RateLimitExceeded:
+            # Drop the excess silently: no LLM call, no outbound burst. Protects cost
+            # and reduces spam-ban risk on the unofficial bridge.
+            return HermesChatResult(
+                request_id=request_id,
+                outbound_message_id="",
+                handoff_status="rate_limited",
+                persistence_status="skipped",
+            )
 
         if self.router is not None:
             domain_name = resolve_sticky_domain(

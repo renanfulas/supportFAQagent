@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.core.config import Settings, get_settings
+from app.core.rate_limit import InMemoryRateLimiter
 from app.db.operational import ChatPersistenceResult
 from app.integrations.hermes.chat_transport import HermesChatTransport
 from app.integrations.hermes.client import HermesBridgeClient, HermesSendResult
@@ -177,7 +178,36 @@ def _transport(client, chat, loader):
         chat_service=chat,
         repository=_FakeRepository(),
         router=router,
+        rate_limiter=InMemoryRateLimiter(max_requests=1000),
     )
+
+
+def test_transport_rate_limits_per_number() -> None:
+    client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
+    settings = Settings(
+        _env_file=None,
+        APP_ENV="development",
+        ENABLE_WHATSAPP_DOMAIN_ROUTER="true",
+        WHATSAPP_ROUTER_DOMAINS="suporte-vps-whatsapp,vendas",
+    )
+    router = DomainRouter(domains=(SUPPORT, VENDAS), default_domain="suporte-vps-whatsapp")
+    transport = HermesChatTransport(
+        settings=settings,
+        database_runtime=object(),
+        client=client,
+        domain_loader=loader,
+        chat_service=chat,
+        repository=_FakeRepository(),
+        router=router,
+        rate_limiter=InMemoryRateLimiter(max_requests=2),
+    )
+    msg = "quero contratar um plano de hospedagem"
+    transport.handle_text_message(message=_msg(msg), request_id="r1")
+    transport.handle_text_message(message=_msg(msg), request_id="r2")
+    third = transport.handle_text_message(message=_msg(msg), request_id="r3")
+
+    assert third.handoff_status == "rate_limited"
+    assert chat.calls == 2  # so o excesso e descartado, sem chamar o LLM
 
 
 def _msg(text: str) -> HermesInboundMessage:

@@ -210,6 +210,11 @@ class Settings(BaseSettings):
         default="http://127.0.0.1:3000",
         alias="HERMES_BRIDGE_URL",
     )
+    whatsapp_chat_rate_limit_per_minute: int = Field(
+        default=20,
+        ge=1,
+        alias="WHATSAPP_CHAT_RATE_LIMIT_PER_MINUTE",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
