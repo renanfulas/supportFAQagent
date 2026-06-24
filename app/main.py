@@ -15,6 +15,7 @@ from app.api.routes import (
     feedback,
     health,
     ingestion,
+    hermes_chat,
     internal_webhooks,
     meta_whatsapp,
     web_auth,
@@ -255,6 +256,11 @@ def create_app() -> FastAPI:
         internal_webhooks.router,
         prefix="/internal/webhooks",
         tags=["internal-webhooks"],
+    )
+    application.include_router(
+        hermes_chat.router,
+        prefix="/integrations/hermes",
+        tags=["hermes-chat"],
     )
     return application
 

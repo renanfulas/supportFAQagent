@@ -202,6 +202,14 @@ class Settings(BaseSettings):
         default="/otp-delivery",
         alias="HERMES_OTP_DELIVERY_PATH",
     )
+    enable_hermes_chat: bool = Field(
+        default=False,
+        alias="ENABLE_HERMES_CHAT",
+    )
+    hermes_chat_delivery_path: str = Field(
+        default="/chat-delivery",
+        alias="HERMES_CHAT_DELIVERY_PATH",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -291,6 +299,18 @@ class Settings(BaseSettings):
         self.hermes_otp_delivery_path = self.hermes_otp_delivery_path.strip() or "/otp-delivery"
         if not self.hermes_otp_delivery_path.startswith("/"):
             raise ValueError("HERMES_OTP_DELIVERY_PATH must start with /")
+        self.hermes_chat_delivery_path = self.hermes_chat_delivery_path.strip() or "/chat-delivery"
+        if not self.hermes_chat_delivery_path.startswith("/"):
+            raise ValueError("HERMES_CHAT_DELIVERY_PATH must start with /")
+        if self.enable_hermes_chat:
+            self.hermes_base_url = _normalize_required_secret(
+                self.hermes_base_url,
+                "HERMES_BASE_URL",
+            )
+            self.hermes_webhook_secret = _normalize_required_secret(
+                self.hermes_webhook_secret,
+                "HERMES_WEBHOOK_SECRET",
+            )
         if self.enable_meta_whatsapp_webhook:
             self.meta_whatsapp_app_secret = _normalize_required_secret(
                 self.meta_whatsapp_app_secret,

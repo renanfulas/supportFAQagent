@@ -1,3 +1,14 @@
+"""Temporary Hermes conversational chat transport.
+
+Mirror of the Meta WhatsApp chat transport, but going through the Hermes bridge
+instead of the Meta Graph API. It reuses the same brain (``ChatFlowService``) and
+the same domain router + sticky memory, so support and sales behave exactly like
+the website and the Meta path.
+
+This is a pilot bridge. The strategic chat channel is Meta WhatsApp Cloud API; keep
+Hermes here only while it reduces operational risk, behind ``ENABLE_HERMES_CHAT``.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,8 +24,8 @@ from app.db.operational import (
 )
 from app.db.runtime import DatabaseRuntime
 from app.domain_engine.loader import DomainLoader
-from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
-from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage
+from app.integrations.hermes.client import HermesClient
+from app.integrations.hermes.inbound import HermesInboundMessage
 from app.orchestration.channel_routing import (
     build_domain_router,
     resolve_sticky_domain,
@@ -27,25 +38,25 @@ from app.orchestration.session_domain_store import (
 )
 
 
-class MetaWhatsAppChatTransportError(RuntimeError):
+class HermesChatTransportError(RuntimeError):
     pass
 
 
 @dataclass(frozen=True)
-class MetaWhatsAppChatResult:
+class HermesChatResult:
     request_id: str
     outbound_message_id: str
     handoff_status: str
     persistence_status: str
 
 
-class MetaWhatsAppChatTransport:
+class HermesChatTransport:
     def __init__(
         self,
         *,
         settings: Settings,
         database_runtime: DatabaseRuntime,
-        client: MetaWhatsAppClient,
+        client: HermesClient,
         domain_loader: DomainLoader | None = None,
         chat_service: ChatFlowService | None = None,
         repository: OperationalRepository | None = None,
@@ -64,36 +75,33 @@ class MetaWhatsAppChatTransport:
             router if router is not None
             else build_domain_router(settings, self.domain_loader)
         )
-        # Ephemeral default; the persistence frente can inject a durable store.
         self.session_store = session_store or (
             InMemorySessionDomainStore() if self.router is not None else None
-        )
-
-    def _route_with_stickiness(self, text: str, session_id: str) -> str | None:
-        return resolve_sticky_domain(
-            router=self.router,
-            store=self.session_store,
-            default_domain=self.settings.default_domain,
-            text=text,
-            session_id=session_id,
         )
 
     def handle_text_message(
         self,
         *,
-        message: MetaInboundTextMessage,
+        message: HermesInboundMessage,
         request_id: str,
-    ) -> MetaWhatsAppChatResult:
-        session_id = _safe_meta_session_id(message.from_wa_id)
+    ) -> HermesChatResult:
+        session_id = _safe_hermes_session_id(message.from_wa_id)
 
         if self.router is not None:
-            domain_name = self._route_with_stickiness(message.text, session_id)
+            domain_name = resolve_sticky_domain(
+                router=self.router,
+                store=self.session_store,
+                default_domain=self.settings.default_domain,
+                text=message.text,
+                session_id=session_id,
+            )
             if domain_name is None:
                 outbound = self.client.send_text(
                     to=message.from_wa_id,
                     text=self.router.menu_text(),
+                    message_id=message.message_id,
                 )
-                return MetaWhatsAppChatResult(
+                return HermesChatResult(
                     request_id=request_id,
                     outbound_message_id=outbound.message_id,
                     handoff_status="routing_menu",
@@ -106,7 +114,7 @@ class MetaWhatsAppChatTransport:
             self.settings.default_domain
         )
         if domain is None:
-            raise MetaWhatsAppChatTransportError("meta_whatsapp_domain_not_found")
+            raise HermesChatTransportError("hermes_domain_not_found")
         response: dict[str, Any] = self.chat_service.answer(
             domain=domain,
             question=message.text,
@@ -136,8 +144,12 @@ class MetaWhatsAppChatTransport:
                 f"{answer} O atendimento humano esta temporariamente indisponivel; "
                 "guarde o request_id para acompanhamento."
             )
-        outbound = self.client.send_text(to=message.from_wa_id, text=answer)
-        return MetaWhatsAppChatResult(
+        outbound = self.client.send_text(
+            to=message.from_wa_id,
+            text=answer,
+            message_id=message.message_id,
+        )
+        return HermesChatResult(
             request_id=request_id,
             outbound_message_id=outbound.message_id,
             handoff_status=persistence.handoff_status,
@@ -145,6 +157,6 @@ class MetaWhatsAppChatTransport:
         )
 
 
-def _safe_meta_session_id(wa_id: str) -> str:
+def _safe_hermes_session_id(wa_id: str) -> str:
     digest = hash_sensitive_value(wa_id) or "unknown"
-    return f"whatsapp:meta:{digest}"
+    return f"whatsapp:hermes:{digest}"
