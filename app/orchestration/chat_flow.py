@@ -1,3 +1,4 @@
+import unicodedata
 from time import perf_counter
 
 from app.core.errors import ProviderError, RetrievalError
@@ -8,6 +9,12 @@ from app.orchestration.confidence import compute_confidence
 from app.orchestration.prompt_builder import build_prompt
 from app.retrieval.service import RetrievalService
 from app.conversations.service import ConversationHistoryService
+
+
+def _normalize(text: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", text)
+    without_accents = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return without_accents.casefold().strip()
 
 
 class ChatFlowService:
@@ -44,6 +51,25 @@ class ChatFlowService:
         llm_started_at = None
         error_code = None
         chunks = []
+
+        checkout_answer = self._maybe_checkout_answer(domain, question)
+        if checkout_answer is not None:
+            return {
+                "request_id": request_id or "",
+                "domain": domain.name,
+                "answer": checkout_answer,
+                "confidence": 1.0,
+                "escalated": False,
+                "handoff_reasons": [],
+                "references": [],
+                "error_code": None,
+                "observability": self._build_observability(
+                    total_started_at=total_started_at,
+                    retrieval_ms=retrieval_ms,
+                    llm_ms=llm_ms,
+                ),
+            }
+
         pre_handoff_reasons = self.handoff_service.inspect_question(domain, question)
 
         if self._should_block_automated_response(pre_handoff_reasons):
@@ -166,6 +192,37 @@ class ChatFlowService:
             request_id=request_id,
             customer_id=customer_id,
         )
+
+    def _maybe_checkout_answer(self, domain: DomainConfig, question: str) -> str | None:
+        """Return a deterministic payment-link reply when the lead is paying.
+
+        Fires only when the domain enables checkout and the message shows payment
+        intent. Yields to the normal safety path when a decline phrase (asking the
+        bot to store a card number, requesting a human, etc.) is present, so
+        escalation/refusal behavior is unchanged for those cases. The returned text
+        is fixed and never includes the inbound message, so card data is not echoed.
+        """
+        checkout = getattr(domain, "checkout", None)
+        if checkout is None or not checkout.enabled or not checkout.payment_link:
+            return None
+
+        text = _normalize(question)
+        if not text:
+            return None
+
+        declines = [
+            *checkout.decline_phrases,
+            *domain.handoff.explicit_human_phrases,
+        ]
+        if any(_normalize(phrase) in text for phrase in declines if phrase.strip()):
+            return None
+
+        if not any(
+            _normalize(phrase) in text for phrase in checkout.intent_phrases if phrase.strip()
+        ):
+            return None
+
+        return checkout.message.replace("{link}", checkout.payment_link)
 
     def _should_block_automated_response(self, reasons: list[str]) -> bool:
         return any(reason in self.BLOCKING_REASONS for reason in reasons)
