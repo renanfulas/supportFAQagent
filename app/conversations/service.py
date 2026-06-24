@@ -30,19 +30,30 @@ class ConversationHistoryService:
         channel: str,
         session_id: str | None,
         request_id: str | None,
+        customer_id: str | None = None,
     ) -> list[dict[str, str]]:
         limit = self.runtime.settings.conversation_history_messages
-        if not self.runtime.persistence_enabled or not session_id or limit <= 0:
+        if (
+            not self.runtime.persistence_enabled
+            or (not session_id and not customer_id)
+            or limit <= 0
+        ):
             return []
         try:
+            session_hash = (
+                hash_session(
+                    session_id,
+                    self.runtime.settings.persistence_hash_secret or "",
+                )
+                if session_id
+                else None
+            )
             return self.repository.load_recent(
                 domain=domain,
                 channel=channel,
-                session_hash=hash_session(
-                    session_id,
-                    self.runtime.settings.persistence_hash_secret or "",
-                ),
+                session_hash=session_hash,
                 session_hash_version=self.runtime.settings.persistence_hash_version,
+                customer_id=customer_id,
                 limit=limit,
             )
         except DatabaseUnavailableError:

@@ -11,6 +11,10 @@ frente especifica. O plano concluido de retrieval vetorial foi movido para
 
 Planos ativos:
 
+- [`customer-identity-whatsapp-handoff-plan.md`](customer-identity-whatsapp-handoff-plan.md):
+  integracao entre Auth WhatsApp, identidade do cliente, historico,
+  preferencias de front end, ticket humano e notificacao WhatsApp para o time.
+
 - [`meta-whatsapp-native-integration-plan.md`](meta-whatsapp-native-integration-plan.md):
   refatoracao de entrega externa para Meta WhatsApp Cloud API nativa, com
   Hermes apenas como adapter temporario.

@@ -22,6 +22,20 @@ domains/
 python -m app.evals.run_domain_eval suporte-vps-whatsapp
 ```
 
+Para o dominio comercial `vendas` (Servidor VPS e Hospedagem de Sites HostGator):
+
+```bash
+python -m app.evals.run_domain_eval vendas
+python -m app.evals.run_domain_eval vendas --file evals/confinement/out_of_scope.yaml
+python -m app.evals.run_domain_eval vendas --file evals/confinement/redefinition.yaml
+python -m app.evals.run_domain_eval vendas --file evals/confinement/secrets.yaml
+```
+
+O metodo de interacao consultiva usado por esse dominio (rapport, descoberta,
+recomendacao, objecao e fechamento, com escalonamento humano para etapas
+sensiveis) esta na skill `supportfaq-vendas-closer` e ancorado em
+`domains/vendas/knowledge/articles/metodo-de-venda-consultiva.md`.
+
 Para suites dedicadas de confinamento:
 
 ```bash

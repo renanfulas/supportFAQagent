@@ -13,13 +13,14 @@ import pytest
 from app.db.runtime import DatabaseRuntime
 from app.db.operational import (
     ChatAuditInput,
+    HANDOFF_QUEUED,
     PERSISTENCE_PERSISTED,
     OperationalRepository,
 )
 from app.api.schemas.feedback import FeedbackRequest
 from app.conversations.service import ConversationHistoryService, hash_session
 from app.integrations.webhook_ingress import CLAIMED, IN_PROGRESS, WebhookIngressRepository
-from app.web_auth.models import OtpChallenge
+from app.web_auth.models import OtpChallenge, VerifiedIdentity
 from app.web_auth.storage import PostgresWebAuthStore
 from scripts.dispatch_outbox import PermanentDeliveryError, dispatch_one
 from scripts.prune_operational_data import prune_batch
@@ -72,6 +73,7 @@ def runtime() -> DatabaseRuntime:
             cursor.execute(
                 """
                 TRUNCATE messages, conversations,
+                         support_cases, customer_preferences, customers,
                          webhook_ingress_receipts, operational_outbox,
                          feedback, chat_audits, otp_challenges,
                          web_sessions, verified_identities
@@ -106,6 +108,78 @@ def test_otp_can_be_consumed_only_once(runtime: DatabaseRuntime) -> None:
         )
 
     assert sum(result is not None for result in results) == 1
+
+
+def test_customer_identity_support_case_schema_is_expand_only(
+    runtime: DatabaseRuntime,
+) -> None:
+    _ensure_domain(runtime)
+    store = PostgresWebAuthStore(runtime)
+    now = datetime.now(UTC)
+
+    identity = store.save_identity(
+        VerifiedIdentity(
+            id="00000000-0000-0000-0000-000000000101",
+            phone_hash="safe-phone-hash-customer",
+            phone_last4="0101",
+            verified_at=now,
+            status="verified",
+            customer_id=None,
+        )
+    )
+
+    assert identity.customer_id is not None
+    with runtime.transaction() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id::text, default_channel FROM customers WHERE id = %s",
+                (identity.customer_id,),
+            )
+            assert cursor.fetchone() == (identity.customer_id, "whatsapp")
+            cursor.execute(
+                "SELECT id FROM domains WHERE name = 'suporte-vps-whatsapp'",
+            )
+            domain_id = cursor.fetchone()[0]
+            cursor.execute(
+                """
+                INSERT INTO customer_preferences (
+                  customer_id, domain_id, preferences_json
+                )
+                VALUES (%s, %s, '{"locale":"pt-BR"}'::jsonb)
+                RETURNING preferences_json
+                """,
+                (identity.customer_id, domain_id),
+            )
+            assert cursor.fetchone()[0]["locale"] == "pt-BR"
+            cursor.execute(
+                """
+                INSERT INTO support_cases (
+                  domain_id, customer_id, request_id, channel, reason_codes,
+                  context_snapshot_sanitized, idempotency_key
+                )
+                VALUES (
+                  %s, %s, 'req-support-case', 'web',
+                  '["low_confidence"]'::jsonb,
+                  '{"summary":"safe"}'::jsonb,
+                  'support-case:req-support-case'
+                )
+                ON CONFLICT (idempotency_key)
+                DO UPDATE SET idempotency_key = EXCLUDED.idempotency_key
+                RETURNING id, status, priority
+                """,
+                (domain_id, identity.customer_id),
+            )
+            support_case = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT count(*)
+                FROM support_cases
+                WHERE idempotency_key = 'support-case:req-support-case'
+                """
+            )
+            assert cursor.fetchone()[0] == 1
+
+    assert support_case[1:] == ("open", "normal")
 
 
 def test_two_dispatchers_deliver_one_event_once(
@@ -505,6 +579,144 @@ def test_concurrent_turns_share_one_active_conversation_and_history_is_ordered(
         "user",
         "assistant",
     ]
+
+
+def test_customer_history_survives_logout_without_leaking_to_anonymous_session(
+    runtime: DatabaseRuntime,
+) -> None:
+    _ensure_domain(runtime)
+    customer_a = "00000000-0000-0000-0000-000000000201"
+    customer_b = "00000000-0000-0000-0000-000000000202"
+    with runtime.transaction() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO customers (id, default_channel)
+                VALUES (%s, 'web'), (%s, 'web')
+                """,
+                (customer_a, customer_b),
+            )
+
+    repository = OperationalRepository(runtime)
+
+    def persist(question: str, customer_id: str | None) -> None:
+        repository.record_chat(
+            ChatAuditInput(
+                request_id=f"req-{question.replace(' ', '-')}",
+                domain="suporte-vps-whatsapp",
+                session_id="same-public-session",
+                customer_id=customer_id,
+                question=question,
+                answer=f"Resposta para {question}",
+                confidence=0.8,
+                escalated=False,
+                handoff_reasons=[],
+                references=["safe.md"],
+                error_code=None,
+                channel="web",
+            )
+        )
+
+    persist("anon antes do login", None)
+    persist("cliente a autenticado", customer_a)
+    persist("anon depois do logout", None)
+    persist("cliente b autenticado", customer_b)
+
+    service = ConversationHistoryService(runtime)
+    history_a = service.load_recent(
+        domain="suporte-vps-whatsapp",
+        channel="web",
+        session_id="same-public-session",
+        customer_id=customer_a,
+        request_id="req-history-a",
+    )
+    anonymous_history = service.load_recent(
+        domain="suporte-vps-whatsapp",
+        channel="web",
+        session_id="same-public-session",
+        customer_id=None,
+        request_id="req-history-anon",
+    )
+    history_b = service.load_recent(
+        domain="suporte-vps-whatsapp",
+        channel="web",
+        session_id="same-public-session",
+        customer_id=customer_b,
+        request_id="req-history-b",
+    )
+
+    rendered_a = " ".join(message["content"] for message in history_a)
+    rendered_anonymous = " ".join(message["content"] for message in anonymous_history)
+    rendered_b = " ".join(message["content"] for message in history_b)
+
+    assert "anon antes do login" in rendered_a
+    assert "cliente a autenticado" in rendered_a
+    assert "cliente b autenticado" not in rendered_a
+    assert "cliente a autenticado" not in rendered_anonymous
+    assert "anon depois do logout" in rendered_b
+    assert "cliente b autenticado" in rendered_b
+    assert "cliente a autenticado" not in rendered_b
+
+
+def test_escalated_chat_creates_idempotent_support_case_and_handoff_outbox(
+    runtime: DatabaseRuntime,
+) -> None:
+    _ensure_domain(runtime)
+    customer_id = "00000000-0000-0000-0000-000000000301"
+    with runtime.transaction() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO customers (id, default_channel) VALUES (%s, 'web')",
+                (customer_id,),
+            )
+
+    repository = OperationalRepository(runtime)
+    audit = ChatAuditInput(
+        request_id="req-support-case-handoff",
+        domain="suporte-vps-whatsapp",
+        session_id="support-case-session",
+        customer_id=customer_id,
+        question="Preciso falar com humano sobre acesso sensivel.",
+        answer="Vou escalar para atendimento humano.",
+        confidence=0.1,
+        escalated=True,
+        handoff_reasons=["explicit_human_request"],
+        references=["safe.md"],
+        error_code=None,
+        channel="web",
+    )
+
+    first = repository.record_chat(audit)
+    duplicate = repository.record_chat(audit)
+
+    assert first.handoff_status == HANDOFF_QUEUED
+    assert duplicate.handoff_status == HANDOFF_QUEUED
+    with runtime.transaction() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id::text, customer_id::text, request_id, reason_codes
+                FROM support_cases
+                WHERE request_id = 'req-support-case-handoff'
+                """
+            )
+            support_cases = cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT payload_sanitized
+                FROM operational_outbox
+                WHERE request_id = 'req-support-case-handoff'
+                """
+            )
+            outbox_rows = cursor.fetchall()
+
+    assert len(support_cases) == 1
+    support_case_id, persisted_customer_id, request_id, reason_codes = support_cases[0]
+    assert persisted_customer_id == customer_id
+    assert request_id == "req-support-case-handoff"
+    assert reason_codes == ["explicit_human_request"]
+    assert len(outbox_rows) == 1
+    assert outbox_rows[0][0]["support_case_id"] == support_case_id
 
 
 def _ensure_domain(runtime: DatabaseRuntime) -> None:

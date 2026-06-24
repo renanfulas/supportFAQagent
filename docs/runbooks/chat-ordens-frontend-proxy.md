@@ -33,12 +33,15 @@ colocamos uma porta apontando para a recepcao certa.
 
 ## Configuracao Do Frontend
 
-No repositorio `ask-host-genius`:
+A branch de producao do `ask-host-genius` e `main`. O repo usa `bun.lock`, entao
+use Bun (nao `npm install`):
 
 ```bash
-npm ci
-npm run build
-npm run serve:staging
+git checkout main
+git reset --hard origin/main
+bun install --frozen-lockfile
+bun run build
+bun run serve:staging
 ```
 
 O app deve responder localmente em:
@@ -46,6 +49,23 @@ O app deve responder localmente em:
 ```text
 http://127.0.0.1:5173/chat-ui
 ```
+
+## Deploy No VPS
+
+Use o script versionado, que segue `main` por padrao e valida o resultado:
+
+```powershell
+# da maquina local (envia e executa via SSH):
+./scripts/deploy_ask_host_genius.ps1
+# deploy pontual de outra branch, se necessario:
+./scripts/deploy_ask_host_genius.ps1 -DeployBranch <branch>
+```
+
+O deploy so e valido se o bloco `depois` retornar `200` e o `Last-Modified` dos
+assets em `/assets/*.js` passar a ser do dia do build. Se continuar antigo, o
+servico esta servindo build velho (branch errada, diretorio errado ou container
+nao rebuildado). Nao apontar o deploy para `codex/serve-chat-ui-via-proxy`: essa
+branch e historica e fica atras de `main`.
 
 ## Configuracao Nginx
 

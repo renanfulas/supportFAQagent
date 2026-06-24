@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
+from app.identity.current import CurrentIdentityResolver
 from app.main import create_app
 from app.web_auth.delivery import OtpDeliveryUnavailable
 
@@ -95,6 +96,81 @@ def test_confirm_links_verified_identity_to_browser_session(
         "status": "verified",
         "phone_last4": "9999",
     }
+    session_id = enabled_client.cookies.get("sfaq_web_session")
+    assert session_id is not None
+    identity = enabled_client.app.state.web_auth_runtime.service.get_session_identity(
+        session_id,
+    )
+    assert identity is not None
+    assert identity.customer_id is not None
+
+
+def test_confirm_reuses_customer_id_for_same_whatsapp(
+    enabled_client: TestClient,
+) -> None:
+    first_challenge_id = _start(enabled_client).json()["challenge_id"]
+    assert (
+        enabled_client.post(
+            "/web/auth/whatsapp/confirm",
+            json={
+                "challenge_id": first_challenge_id,
+                "code": _delivered_code(enabled_client),
+            },
+        ).status_code
+        == 200
+    )
+    session_id = enabled_client.cookies.get("sfaq_web_session")
+    assert session_id is not None
+    service = enabled_client.app.state.web_auth_runtime.service
+    first_identity = service.get_session_identity(session_id)
+    assert first_identity is not None
+    assert first_identity.customer_id is not None
+
+    assert enabled_client.post("/web/auth/logout").status_code == 200
+    second_challenge_id = _start(enabled_client).json()["challenge_id"]
+    assert (
+        enabled_client.post(
+            "/web/auth/whatsapp/confirm",
+            json={
+                "challenge_id": second_challenge_id,
+                "code": _delivered_code(enabled_client),
+            },
+        ).status_code
+        == 200
+    )
+    second_identity = service.get_session_identity(session_id)
+
+    assert second_identity is not None
+    assert second_identity.customer_id == first_identity.customer_id
+
+
+def test_current_identity_resolver_returns_customer_context(
+    enabled_client: TestClient,
+) -> None:
+    challenge_id = _start(enabled_client).json()["challenge_id"]
+    assert (
+        enabled_client.post(
+            "/web/auth/whatsapp/confirm",
+            json={"challenge_id": challenge_id, "code": _delivered_code(enabled_client)},
+        ).status_code
+        == 200
+    )
+    session_id = enabled_client.cookies.get("sfaq_web_session")
+    assert session_id is not None
+    settings = get_settings()
+
+    context = CurrentIdentityResolver(
+        settings=settings,
+        web_auth_service=enabled_client.app.state.web_auth_runtime.service,
+    ).resolve(session_id)
+
+    assert context.authenticated is True
+    assert context.customer_id is not None
+    assert context.verified_identity_id is not None
+    assert context.phone_last4 == "9999"
+    assert context.persistence_session_hash is not None
+    assert len(context.persistence_session_hash) == 64
+    assert context.persistence_session_hash_version == settings.persistence_hash_version
 
 
 def test_confirm_uses_generic_error_and_consumes_attempts(

@@ -73,6 +73,9 @@ Regras:
 - PostgreSQL, outbox e ingress assinado estao implementados sem alterar o
   contrato HTTP publico; entrega real por Meta ou Hermes ainda exige ativacao
   opt-in e smoke privado
+- em PostgreSQL, a identidade verificada pode ser vinculada a um `customer_id`
+  interno para historico, preferencias e suporte humano; esse identificador
+  nao faz parte do contrato publico do navegador nesta etapa
 
 Exemplo:
 
@@ -256,7 +259,9 @@ Saida minima:
 separa a decisao de escalar da confirmacao de que a notificacao foi enfileirada.
 
 `persistence_status` pode ser `persisted`, `persistence_disabled` ou
-`persistence_unavailable`. Se um handoff nao puder ser gravado na outbox,
+`persistence_unavailable`. Quando `escalated=true` e a persistencia PostgreSQL
+esta ativa, o backend cria ou reutiliza um `support_case` duravel antes de
+enfileirar a entrega externa. Se o caso ou a outbox nao puderem ser gravados,
 `handoff_status=handoff_unavailable` e a resposta informa que o atendimento
 humano esta temporariamente indisponivel.
 
@@ -268,8 +273,8 @@ Uso esperado:
   rota.
 - a `/chat-ui` pode enviar `X-LLM-API-Key` em staging para permitir que cada pessoa teste com a propria chave do provider ou com o alias do projeto.
 - Se `escalated=true`, o consumidor deve preservar a decisao, mas nao duplicar
-  a notificacao humana: a outbox e o workflow `escalation-notify` formam o
-  caminho autoritativo.
+  a notificacao humana: `support_cases` e a fonte de verdade do ticket humano,
+  e a outbox e o caminho autoritativo de entrega externa.
 - `request_id` deve ser preservado em logs e feedback.
 - A API retorna `references`; na persistencia PostgreSQL, este campo deve ser salvo em `messages.message_references`.
 
@@ -294,6 +299,17 @@ Contrato atual de `handoff_reasons`:
 - retorna motivos estruturados como `low_confidence`, `explicit_human_request`, `sensitive_topic`, `secret_request`, `prompt_injection_attempt` e `out_of_scope`
 - integracoes externas nao devem inferir regra propria de negocio a partir do texto da resposta quando esse campo ja existir
 - se `escalated=true`, o consumidor deve priorizar `handoff_reasons` para roteamento operacional
+
+Contrato atual de `support_cases`:
+
+- o caso humano e criado dentro da mesma transacao da persistencia do chat
+  escalado;
+- `support_cases.idempotency_key` impede duplicidade no retry do mesmo turno;
+- `context_snapshot_sanitized` guarda apenas resumo, referencias, motivos e
+  erro sanitizados;
+- o evento `handoff.requested` na outbox inclui `support_case_id` no
+  `payload_sanitized`;
+- outbox continua sendo fila de entrega, nao banco de ticket.
 
 Contrato de persistencia de resposta:
 
@@ -736,3 +752,27 @@ Regras:
 - falhas do provider em `POST /zoom/join` retornam apenas
   `zoom_provider_unavailable` ou `zoom_provider_rejected_request`, nunca o
   corpo bruto do provider
+
+
+## Roteamento de dominio no WhatsApp (palavra-chave + menu)
+
+Quando um unico numero WhatsApp atende mais de um dominio (por exemplo
+`suporte-vps-whatsapp` e `vendas`), o transporte Meta usa `DomainRouter`
+(`app/orchestration/domain_router.py`) para decidir qual dominio responde cada
+mensagem.
+
+Contrato:
+
+- desligado por padrao (`ENABLE_WHATSAPP_DOMAIN_ROUTER=false`); ligado, exige
+  `WHATSAPP_ROUTER_DOMAINS` com 2+ dominios validos, na ordem do menu.
+- selecao explicita por numero (`1`, `2`) ou pelo nome da opcao (`suporte`,
+  `vendas`) escolhe o dominio.
+- sem selecao, a mensagem e pontuada contra `routing.keywords` de cada dominio
+  (match por palavra inteira, acentos normalizados); o melhor unico vence.
+- saudacao, texto vazio, empate ou nenhum match -> o transporte envia o menu e
+  nao chama o motor de resposta.
+- com 1 dominio configurado, nunca mostra menu (atende sempre esse dominio).
+- decisao stateless: nao lembra a escolha entre mensagens. Memoria de sessao
+  (escolha pegajosa por conversa) e incremento futuro e depende de persistencia.
+- o roteador apenas escolhe o dominio; toda a politica de seguranca, handoff e
+  confinamento continua no `ChatFlowService` do dominio escolhido.

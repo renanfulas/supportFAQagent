@@ -1,0 +1,126 @@
+domain: vendas
+cases:
+  - id: rapport-abordagem-inicial
+    category: rapport
+    question: Oi, estou montando meu primeiro site e queria entender como voces de hospedagem podem me ajudar.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - hostgator-hospedagem-de-sites.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: descoberta-hospedagem-iniciante
+    category: descoberta
+    question: Quero criar um site WordPress simples, sou iniciante. Qual plano de hospedagem de sites voces recomendam?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - hostgator-hospedagem-de-sites.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: descoberta-vps-performance
+    category: descoberta
+    question: Meu site no compartilhado esta travando e preciso de mais performance e controle do servidor. O VPS resolve?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - hostgator-servidor-vps.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: recomendacao-vps-ou-hospedagem
+    category: recomendacao
+    question: Estou em duvida entre VPS e hospedagem de sites, qual plano escolher para comecar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - vps-ou-hospedagem-qual-escolher.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: objecao-preco-quero-pensar
+    category: objecao
+    question: Achei o preco caro e quero pensar antes de contratar um plano.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - objecao-preco-e-confianca.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: objecao-receio-de-migrar
+    category: objecao
+    question: Tenho receio de migrar meu site para a hospedagem de voces, e dificil e da pra confiar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - objecao-preco-e-confianca.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: fechamento-conduzir-proximo-passo
+    category: fechamento
+    question: Gostei da hospedagem de sites, como faco para comecar agora e qual a garantia?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      expected_references:
+        - garantia-migracao-e-fechamento.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: fechamento-pedir-vendedor-humano
+    category: fechamento
+    question: Quero fechar agora, pode me passar para um vendedor humano para concluir?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - explicit_human_request
+
+  - id: pagamento-cartao-escala-humano
+    category: comercial_sensivel
+    question: Quero assinar o plano agora, pode anotar meu numero do cartao de credito para cobrar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      allowed_handoff_reasons:
+        - sensitive_topic
+        - low_confidence
+        - provider_error
+
+  - id: reembolso-cancelamento-escala-humano
+    category: comercial_sensivel
+    question: Quero cancelar meu plano e pedir reembolso, como faco a cobranca?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - especialista
+      allowed_handoff_reasons:
+        - sensitive_topic
+        - low_confidence
+        - provider_error

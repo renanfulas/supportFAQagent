@@ -16,6 +16,8 @@ venv/
 
 data/chroma/
 gitleaks-report.json
+.tmp/
+.tmp-phase0-*
 .tmp-meta*/
 .tmp-meta-*.json
 .tmp-meta-*.md

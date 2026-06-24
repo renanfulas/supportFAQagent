@@ -52,6 +52,7 @@ class ChatAuditInput:
     references: list[str]
     error_code: str | None
     channel: str = "api"
+    customer_id: str | None = None
     turn_id: str = field(default_factory=lambda: str(uuid4()))
 
 
@@ -160,13 +161,15 @@ class OperationalRepository:
                         ),
                     )
                     audit_id, persisted_turn_id = cursor.fetchone()
+                    conversation_id = None
                     if session_hash:
-                        self.conversations.append_turn(
+                        persisted_conversation = self.conversations.append_turn(
                             cursor=cursor,
                             domain_id=row[0],
                             session_hash=session_hash,
                             session_hash_version=session_hash_version or "",
                             channel=audit.channel,
+                            customer_id=audit.customer_id,
                             audit_id=audit_id,
                             turn_id=str(persisted_turn_id),
                             request_id=safe_request_id,
@@ -178,8 +181,26 @@ class OperationalRepository:
                             references=references,
                             error_code=error_code,
                         )
+                        conversation_id = persisted_conversation.conversation_id
                     handoff_status = HANDOFF_NOT_REQUIRED
                     if audit.escalated:
+                        support_case_id = self._upsert_support_case(
+                            cursor=cursor,
+                            domain_id=row[0],
+                            customer_id=audit.customer_id,
+                            conversation_id=conversation_id,
+                            turn_id=str(persisted_turn_id),
+                            request_id=safe_request_id,
+                            channel=audit.channel,
+                            handoff_reasons=handoff_reasons,
+                            references=references,
+                            error_code=error_code,
+                            summary=question[:500],
+                        )
+                        payload = {
+                            **payload,
+                            "support_case_id": support_case_id,
+                        }
                         cursor.execute(
                             """
                             INSERT INTO operational_outbox (
@@ -226,6 +247,57 @@ class OperationalRepository:
                 persistence_status=PERSISTENCE_UNAVAILABLE,
                 turn_id=audit.turn_id,
             )
+
+    def _upsert_support_case(
+        self,
+        *,
+        cursor,
+        domain_id,
+        customer_id: str | None,
+        conversation_id: str | None,
+        turn_id: str,
+        request_id: str,
+        channel: str,
+        handoff_reasons: list[str],
+        references: list[str],
+        error_code: str | None,
+        summary: str,
+    ) -> str:
+        context_snapshot = sanitize_payload(
+            {
+                "request_id": request_id,
+                "channel": channel,
+                "handoff_reasons": handoff_reasons,
+                "references": references,
+                "error_code": error_code,
+                "summary": summary,
+            }
+        )
+        cursor.execute(
+            """
+            INSERT INTO support_cases (
+              domain_id, customer_id, conversation_id, request_id, channel,
+              reason_codes, context_snapshot_sanitized, idempotency_key
+            )
+            VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s)
+            ON CONFLICT (idempotency_key)
+            DO UPDATE SET
+              updated_at = now(),
+              context_snapshot_sanitized = EXCLUDED.context_snapshot_sanitized
+            RETURNING id
+            """,
+            (
+                domain_id,
+                customer_id,
+                conversation_id,
+                request_id,
+                channel,
+                json.dumps(handoff_reasons),
+                json.dumps(context_snapshot),
+                f"support_case:{turn_id}",
+            ),
+        )
+        return str(cursor.fetchone()[0])
 
     def record_feedback(self, feedback: FeedbackRequest) -> FeedbackResponse:
         if not self.runtime.persistence_enabled:

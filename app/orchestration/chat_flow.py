@@ -36,6 +36,7 @@ class ChatFlowService:
         request_id: str | None = None,
         provider_api_key: str | None = None,
         channel: str = "api",
+        customer_id: str | None = None,
     ) -> dict[str, object]:
         total_started_at = perf_counter()
         retrieval_ms = 0.0
@@ -109,6 +110,7 @@ class ChatFlowService:
                     session_id=session_id,
                     request_id=request_id,
                     channel=channel,
+                    customer_id=customer_id,
                 )
                 prompt = build_prompt(
                     domain=domain,
@@ -153,6 +155,7 @@ class ChatFlowService:
         session_id: str | None,
         request_id: str | None,
         channel: str,
+        customer_id: str | None,
     ) -> list[dict[str, str]]:
         if self.history_service is None:
             return []
@@ -161,6 +164,7 @@ class ChatFlowService:
             channel=channel,
             session_id=session_id,
             request_id=request_id,
+            customer_id=customer_id,
         )
 
     def _should_block_automated_response(self, reasons: list[str]) -> bool:

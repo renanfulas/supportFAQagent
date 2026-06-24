@@ -3,7 +3,7 @@
 from typing import Any
 
 
-CONTRACT_MIGRATION = "008_feedback_integrity.sql"
+CONTRACT_MIGRATION = "009_customer_identity_support_cases.sql"
 
 REQUIRED_COLUMNS = {
     "chat_audits": {
@@ -14,9 +14,27 @@ REQUIRED_COLUMNS = {
         "redaction_version",
     },
     "conversations": {
+        "customer_id",
         "session_hash",
         "session_hash_version",
         "last_message_at",
+    },
+    "customer_preferences": {
+        "id",
+        "customer_id",
+        "domain_id",
+        "preferences_json",
+        "version",
+        "created_at",
+        "updated_at",
+    },
+    "customers": {
+        "id",
+        "status",
+        "default_channel",
+        "last_seen_at",
+        "created_at",
+        "updated_at",
     },
     "feedback": {
         "message_id",
@@ -39,6 +57,26 @@ REQUIRED_COLUMNS = {
         "attempt_count",
         "available_at",
     },
+    "support_cases": {
+        "id",
+        "domain_id",
+        "customer_id",
+        "conversation_id",
+        "request_id",
+        "channel",
+        "status",
+        "priority",
+        "reason_codes",
+        "context_snapshot_sanitized",
+        "idempotency_key",
+        "assigned_team",
+        "opened_at",
+        "updated_at",
+        "closed_at",
+    },
+    "verified_identities": {
+        "customer_id",
+    },
     "webhook_ingress_receipts": {
         "idempotency_key_hash",
         "payload_hash",
@@ -52,9 +90,20 @@ REQUIRED_INDEXES = {
     "idx_chat_audits_feedback_context",
     "idx_chat_audits_request_fingerprint",
     "idx_conversations_active_session",
+    "idx_conversations_customer",
+    "idx_customer_preferences_customer_domain",
+    "idx_customer_preferences_customer_global",
+    "idx_customer_preferences_domain",
+    "idx_customers_last_seen",
+    "idx_customers_status",
     "idx_feedback_idempotency_key",
     "idx_messages_turn_role",
     "idx_outbox_dispatch",
+    "idx_support_cases_domain_status_opened",
+    "idx_support_cases_customer",
+    "idx_support_cases_conversation",
+    "idx_support_cases_request",
+    "idx_verified_identities_customer",
     "idx_webhook_ingress_status_updated",
 }
 
@@ -67,9 +116,18 @@ FORBIDDEN_TRIGGERS = {"conversations_legacy_writer_guard"}
 
 REQUIRED_CONSTRAINTS = {
     "chat_audits_session_hash_version_check",
+    "customer_preferences_json_object_check",
+    "customer_preferences_version_check",
+    "customers_status_check",
     "feedback_idempotency_fingerprint_check",
     "feedback_session_hash_version_check",
     "otp_challenges_status_check",
+    "support_cases_context_snapshot_object_check",
+    "support_cases_closed_at_check",
+    "support_cases_idempotency_key_unique",
+    "support_cases_priority_check",
+    "support_cases_reason_codes_array_check",
+    "support_cases_status_check",
 }
 
 
