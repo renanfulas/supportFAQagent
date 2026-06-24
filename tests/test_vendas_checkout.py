@@ -96,3 +96,55 @@ def test_checkout_disabled_domain_is_inert() -> None:
     domain = DomainConfig(name="x", display_name="X", root_path=Path("."))
     res = _service().answer(domain=domain, question="cartão", request_id="r")
     assert PAYMENT_LINK not in res["answer"]
+
+
+class _FakeHistory:
+    def __init__(self, messages: list[dict[str, str]]) -> None:
+        self._messages = messages
+
+    def load_recent(self, **kwargs) -> list[dict[str, str]]:
+        return self._messages
+
+
+def _domain_with_value_template() -> DomainConfig:
+    base = make_vendas_domain()
+    return base.model_copy(
+        update={
+            "checkout": base.checkout.model_copy(
+                update={"message": "Garantindo agora.\n{value}\nLink: {link}"}
+            )
+        }
+    )
+
+
+def test_checkout_restates_last_quoted_value() -> None:
+    service = _service()
+    service.history_service = _FakeHistory(
+        [
+            {"role": "user", "content": "site de farmacia, ~100 visitas/dia"},
+            {
+                "role": "assistant",
+                "content": (
+                    "Recomendo o Plano M: de R$ 50,39 por R$ 11,59/mes (77% OFF), "
+                    "equivale a R$ 415,69 em 3 anos.\nAte 120 mil visitas/mes, 100 GB NVMe."
+                ),
+            },
+        ]
+    )
+    res = service.answer(
+        domain=_domain_with_value_template(), question="vou de cartão", request_id="r"
+    )
+    assert "R$ 11,59" in res["answer"]
+    assert "R$ 415,69" in res["answer"]
+    assert PAYMENT_LINK in res["answer"]
+
+
+def test_checkout_drops_value_line_without_history() -> None:
+    # ChatFlowService() has no history_service -> no value recalled.
+    res = _service().answer(
+        domain=_domain_with_value_template(), question="pix", request_id="r"
+    )
+    assert "{value}" not in res["answer"]
+    assert PAYMENT_LINK in res["answer"]
+    # placeholder line removed cleanly, no blank gap left behind
+    assert "\n\n" not in res["answer"].replace("Garantindo agora.\nLink:", "")
