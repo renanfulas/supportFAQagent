@@ -74,6 +74,8 @@ def create_app() -> FastAPI:
     application.state.session_domain_store = InMemorySessionDomainStore()
     # Short-lived per-session conversational state (e.g. the out-of-scope escape menu).
     application.state.session_state_store = InMemorySessionDomainStore(ttl_seconds=900)
+    # Last outbound text per session, to avoid repeating the exact same message.
+    application.state.session_last_out_store = InMemorySessionDomainStore(ttl_seconds=900)
     application.state.web_auth_runtime = create_web_auth_runtime(
         settings,
         application.state.database_runtime,

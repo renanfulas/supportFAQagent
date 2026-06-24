@@ -315,6 +315,42 @@ def test_out_of_scope_offers_escape_then_2_closes_and_resets() -> None:
     assert store.get(session_key) is None
 
 
+def test_repeated_message_is_replaced_by_reflection_nudge() -> None:
+    client, loader = _FakeClient(), _FakeDomainLoader()
+    store = InMemorySessionDomainStore()
+    state = InMemorySessionDomainStore()
+    last_out = InMemorySessionDomainStore()
+    settings = Settings(
+        _env_file=None,
+        APP_ENV="development",
+        ENABLE_WHATSAPP_DOMAIN_ROUTER="true",
+        WHATSAPP_ROUTER_DOMAINS="suporte-vps-whatsapp,vendas",
+    )
+    router = DomainRouter(domains=(SUPPORT, VENDAS), default_domain="suporte-vps-whatsapp")
+    transport = HermesChatTransport(
+        settings=settings,
+        database_runtime=object(),
+        client=client,
+        domain_loader=loader,
+        chat_service=_OutOfScopeChat(),
+        repository=_FakeRepository(),
+        router=router,
+        session_store=store,
+        state_store=state,
+        last_out_store=last_out,
+        rate_limiter=InMemoryRateLimiter(max_requests=1000),
+    )
+
+    transport.handle_text_message(message=_msg("preciso de hospedagem"), request_id="r1")
+    first = client.sent[-1]
+    result = transport.handle_text_message(message=_msg("preciso de hospedagem"), request_id="r2")
+    second = client.sent[-1]
+
+    assert first != second  # the exact same message was not repeated
+    assert "me conta em uma frase" in second.lower()  # reflection nudge instead
+    assert result.handoff_status == "repeat_reflection"
+
+
 def test_escape_option_1_routes_to_human() -> None:
     transport, client, store, state = _escape_transport()
     transport.handle_text_message(message=_msg("preciso de hospedagem"), request_id="r1")

@@ -56,6 +56,11 @@ def _shared_rate_limiter(max_per_minute: int) -> InMemoryRateLimiter:
 
 ESCAPE_STATE = "awaiting_escape"
 ESCAPE_OPTIONS = "\n\n1) Resolver com um atendente\n2) Encerrar atendimento"
+REPEAT_NUDGE = (
+    "Acho que me embolei aqui. Pra eu te ajudar melhor, me conta em uma frase: "
+    "qual o tipo de site, o objetivo e quantas visitas voce espera por dia? "
+    "Com isso eu ja te indico o plano certo e a gente fecha."
+)
 MSG_TO_HUMAN = (
     "Certo! Vou te transferir para um atendente humano. "
     "Em instantes alguem continua o atendimento por aqui."
@@ -96,6 +101,7 @@ class HermesChatTransport:
         router: DomainRouter | None = None,
         session_store: SessionDomainStore | None = None,
         state_store: SessionDomainStore | None = None,
+        last_out_store: SessionDomainStore | None = None,
         rate_limiter: InMemoryRateLimiter | None = None,
     ) -> None:
         self.settings = settings
@@ -104,6 +110,9 @@ class HermesChatTransport:
         # Per-session conversational state (e.g. waiting for the escape choice).
         # When absent, the escape-options feature is inactive.
         self.state_store = state_store
+        # Last outbound text per session, to avoid sending the exact same message
+        # twice in a row (which is the symptom of a stuck conversation).
+        self.last_out_store = last_out_store
         self.rate_limiter = rate_limiter or _shared_rate_limiter(
             settings.whatsapp_chat_rate_limit_per_minute
         )
@@ -150,6 +159,8 @@ class HermesChatTransport:
                 self.state_store.clear(session_id)
                 if self.session_store is not None:
                     self.session_store.clear(session_id)
+                if self.last_out_store is not None:
+                    self.last_out_store.clear(session_id)
                 return self._reply(message, MSG_CLOSED, request_id, "closed")
             # Any other reply cancels the prompt and is handled as a normal message.
             self.state_store.clear(session_id)
@@ -163,28 +174,20 @@ class HermesChatTransport:
                 session_id=session_id,
             )
             if resolution.show_menu or resolution.domain is None:
-                outbound = self.client.send_text(
-                    to=message.chat_id,
+                return self._send_dedup(
+                    session_id=session_id,
+                    message=message,
                     text=self.router.menu_text(),
-                    message_id=message.message_id,
-                )
-                return HermesChatResult(
                     request_id=request_id,
-                    outbound_message_id=outbound.message_id,
-                    handoff_status="routing_menu",
-                    persistence_status="skipped",
+                    status="routing_menu",
                 )
             if resolution.selected:
-                outbound = self.client.send_text(
-                    to=message.chat_id,
+                return self._send_dedup(
+                    session_id=session_id,
+                    message=message,
                     text=self.router.welcome_text(resolution.domain),
-                    message_id=message.message_id,
-                )
-                return HermesChatResult(
                     request_id=request_id,
-                    outbound_message_id=outbound.message_id,
-                    handoff_status="routing_selected",
-                    persistence_status="skipped",
+                    status="routing_selected",
                 )
             domain_name = resolution.domain
         else:
@@ -229,15 +232,12 @@ class HermesChatTransport:
         if self.state_store is not None and "out_of_scope" in response["handoff_reasons"]:
             answer = answer + ESCAPE_OPTIONS
             self.state_store.set(session_id, ESCAPE_STATE)
-        outbound = self.client.send_text(
-            to=message.chat_id,
+        return self._send_dedup(
+            session_id=session_id,
+            message=message,
             text=answer,
-            message_id=message.message_id,
-        )
-        return HermesChatResult(
             request_id=request_id,
-            outbound_message_id=outbound.message_id,
-            handoff_status=persistence.handoff_status,
+            status=persistence.handoff_status,
             persistence_status=persistence.persistence_status,
         )
 
@@ -258,6 +258,36 @@ class HermesChatTransport:
             outbound_message_id=outbound.message_id,
             handoff_status=status,
             persistence_status="skipped",
+        )
+
+    def _send_dedup(
+        self,
+        *,
+        session_id: str,
+        message: HermesInboundMessage,
+        text: str,
+        request_id: str,
+        status: str,
+        persistence_status: str = "skipped",
+    ) -> HermesChatResult:
+        store = self.last_out_store
+        if store is not None:
+            if store.get(session_id) == text:
+                # Would repeat the exact same message to the same person: stop, and
+                # re-engage with a reflection that moves the conversation forward.
+                text, status = REPEAT_NUDGE, "repeat_reflection"
+                persistence_status = "skipped"
+            store.set(session_id, text)
+        outbound = self.client.send_text(
+            to=message.chat_id,
+            text=text,
+            message_id=message.message_id,
+        )
+        return HermesChatResult(
+            request_id=request_id,
+            outbound_message_id=outbound.message_id,
+            handoff_status=status,
+            persistence_status=persistence_status,
         )
 
 
