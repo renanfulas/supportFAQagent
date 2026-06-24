@@ -149,6 +149,14 @@ class Settings(BaseSettings):
         default=False,
         alias="ENABLE_META_WHATSAPP_CHAT",
     )
+    enable_whatsapp_domain_router: bool = Field(
+        default=False,
+        alias="ENABLE_WHATSAPP_DOMAIN_ROUTER",
+    )
+    whatsapp_router_domains: str = Field(
+        default="suporte-vps-whatsapp,vendas",
+        alias="WHATSAPP_ROUTER_DOMAINS",
+    )
     meta_whatsapp_access_token: str | None = Field(
         default=None,
         alias="META_WHATSAPP_ACCESS_TOKEN",
@@ -200,6 +208,15 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def whatsapp_router_domain_list(self) -> list[str]:
+        seen: dict[str, None] = {}
+        for item in self.whatsapp_router_domains.split(","):
+            name = item.strip()
+            if name:
+                seen.setdefault(name, None)
+        return list(seen)
 
     @model_validator(mode="after")
     def require_api_secret_outside_dev(self) -> Self:

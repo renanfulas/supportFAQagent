@@ -16,6 +16,7 @@ from app.domain_engine.loader import DomainLoader
 from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage
 from app.orchestration.chat_flow import ChatFlowService
+from app.orchestration.domain_router import DomainRouter
 
 
 class MetaWhatsAppChatTransportError(RuntimeError):
@@ -40,6 +41,7 @@ class MetaWhatsAppChatTransport:
         domain_loader: DomainLoader | None = None,
         chat_service: ChatFlowService | None = None,
         repository: OperationalRepository | None = None,
+        router: DomainRouter | None = None,
     ) -> None:
         self.settings = settings
         self.database_runtime = database_runtime
@@ -49,6 +51,22 @@ class MetaWhatsAppChatTransport:
             history_service=ConversationHistoryService(database_runtime),
         )
         self.repository = repository or OperationalRepository(database_runtime)
+        self.router = router if router is not None else self._build_router()
+
+    def _build_router(self) -> DomainRouter | None:
+        if not self.settings.enable_whatsapp_domain_router:
+            return None
+        configs = [
+            config
+            for name in self.settings.whatsapp_router_domain_list
+            if (config := self.domain_loader.load(name)) is not None
+        ]
+        if len(configs) <= 1:
+            return None
+        return DomainRouter.from_domain_configs(
+            configs,
+            default_domain=self.settings.default_domain,
+        )
 
     def handle_text_message(
         self,
@@ -56,10 +74,30 @@ class MetaWhatsAppChatTransport:
         message: MetaInboundTextMessage,
         request_id: str,
     ) -> MetaWhatsAppChatResult:
-        domain = self.domain_loader.load(self.settings.default_domain)
+        session_id = _safe_meta_session_id(message.from_wa_id)
+
+        if self.router is not None:
+            decision = self.router.route(message.text)
+            if decision.show_menu or decision.domain is None:
+                outbound = self.client.send_text(
+                    to=message.from_wa_id,
+                    text=self.router.menu_text(),
+                )
+                return MetaWhatsAppChatResult(
+                    request_id=request_id,
+                    outbound_message_id=outbound.message_id,
+                    handoff_status="routing_menu",
+                    persistence_status="skipped",
+                )
+            domain_name = decision.domain
+        else:
+            domain_name = self.settings.default_domain
+
+        domain = self.domain_loader.load(domain_name) or self.domain_loader.load(
+            self.settings.default_domain
+        )
         if domain is None:
             raise MetaWhatsAppChatTransportError("meta_whatsapp_domain_not_found")
-        session_id = _safe_meta_session_id(message.from_wa_id)
         response: dict[str, Any] = self.chat_service.answer(
             domain=domain,
             question=message.text,

@@ -1,0 +1,70 @@
+# Suite opt-in de calibragem do dominio vendas com pgvector + provider real.
+#
+# NAO determinista como cases.yaml. Roda apenas em ambiente com:
+# - DATABASE_URL apontando para o pgvector com o dominio vendas ingerido
+# - OPENAI_API_KEY (provider real)
+# - RETRIEVAL_BACKEND=pgvector
+#
+# Rodar:
+#   python -m app.evals.run_domain_eval vendas --file evals/pgvector_real.yaml
+#
+# As expectativas refletem o comportamento real observado na VPS (pgvector pg16 +
+# gpt-4o-mini). O retrieval e deterministico (embeddings fixos), entao referencias
+# e flags de escalacao por confianca sao estaveis; a redacao do LLM varia, por isso
+# required_terms fica minimo. O objetivo e detectar regressao de retrieval e de
+# calibragem de escalacao, nao validar texto literal do modelo.
+
+domain: vendas
+cases:
+  - id: real-hospedagem-iniciante
+    category: descoberta
+    question: Quero criar um site WordPress simples, sou iniciante. Qual plano de hospedagem voces recomendam?
+    expectation:
+      should_escalate: false
+      expected_references:
+        - hostgator-hospedagem-de-sites.md
+
+  - id: real-vps-performance
+    category: descoberta
+    question: Meu site no compartilhado esta travando e preciso de mais performance e controle do servidor. O VPS resolve?
+    expectation:
+      should_escalate: false
+      expected_references:
+        - hostgator-servidor-vps.md
+
+  - id: real-comparacao-vps-ou-hospedagem
+    category: recomendacao
+    question: Estou em duvida entre VPS e hospedagem de sites, qual escolher para comecar?
+    expectation:
+      should_escalate: false
+      expected_references:
+        - vps-ou-hospedagem-qual-escolher.md
+
+  - id: real-objecao-preco
+    category: objecao
+    question: Achei o preco caro e quero pensar antes de contratar.
+    expectation:
+      should_escalate: true
+      expected_references:
+        - objecao-preco-e-confianca.md
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: real-fechamento-garantia
+    category: fechamento
+    question: Gostei da hospedagem, como faco para comecar agora e qual a garantia?
+    expectation:
+      should_escalate: true
+      expected_references:
+        - garantia-migracao-e-fechamento.md
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: real-cartao-recusa-segura
+    category: comercial_sensivel
+    question: Quero assinar agora, pode anotar meu numero do cartao de credito?
+    expectation:
+      should_escalate: true
+      allowed_handoff_reasons:
+        - sensitive_topic
+        - low_confidence
