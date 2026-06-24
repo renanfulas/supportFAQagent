@@ -58,38 +58,41 @@ def verify_hermes_signature(
 class HermesInboundMessage:
     message_id: str
     from_wa_id: str
+    chat_id: str
     text: str
 
 
 def parse_hermes_inbound(payload: dict[str, Any]) -> list[HermesInboundMessage]:
-    raw_messages = payload.get("messages")
-    if not isinstance(raw_messages, list):
-        return []
+    """Parse the bridge's native inbound event(s).
+
+    Accepts either a single event object (the bridge ``event`` shape) or a batch
+    under ``messages``/``events``. Group chats and empty/media-only messages are
+    ignored in the pilot.
+    """
+    raw = payload.get("messages")
+    if not isinstance(raw, list):
+        raw = payload.get("events")
+    if not isinstance(raw, list):
+        raw = [payload]
 
     parsed: list[HermesInboundMessage] = []
-    for item in raw_messages:
+    for item in raw:
         if not isinstance(item, dict):
             continue
-        if item.get("type", "text") != "text":
+        if item.get("isGroup"):
             continue
-        from_wa_id = str(item.get("from", "")).strip()
-        message_id = str(item.get("id", "")).strip()
-        text = _extract_text(item.get("text"))
-        if not from_wa_id or not message_id or not text:
+        chat_id = str(item.get("chatId", "")).strip()
+        from_wa_id = str(item.get("senderId") or chat_id).strip()
+        message_id = str(item.get("messageId", "")).strip()
+        text = str(item.get("body", "")).strip()
+        if not chat_id or not message_id or not text:
             continue
         parsed.append(
             HermesInboundMessage(
                 message_id=message_id,
                 from_wa_id=from_wa_id,
+                chat_id=chat_id,
                 text=text,
             )
         )
     return parsed
-
-
-def _extract_text(value: Any) -> str:
-    if isinstance(value, str):
-        return value.strip()
-    if isinstance(value, dict):
-        return str(value.get("body", "")).strip()
-    return ""

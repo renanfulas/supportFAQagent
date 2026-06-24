@@ -206,9 +206,9 @@ class Settings(BaseSettings):
         default=False,
         alias="ENABLE_HERMES_CHAT",
     )
-    hermes_chat_delivery_path: str = Field(
-        default="/chat-delivery",
-        alias="HERMES_CHAT_DELIVERY_PATH",
+    hermes_bridge_url: str = Field(
+        default="http://127.0.0.1:3000",
+        alias="HERMES_BRIDGE_URL",
     )
 
     model_config = SettingsConfigDict(
@@ -299,9 +299,7 @@ class Settings(BaseSettings):
         self.hermes_otp_delivery_path = self.hermes_otp_delivery_path.strip() or "/otp-delivery"
         if not self.hermes_otp_delivery_path.startswith("/"):
             raise ValueError("HERMES_OTP_DELIVERY_PATH must start with /")
-        self.hermes_chat_delivery_path = self.hermes_chat_delivery_path.strip() or "/chat-delivery"
-        if not self.hermes_chat_delivery_path.startswith("/"):
-            raise ValueError("HERMES_CHAT_DELIVERY_PATH must start with /")
+        self.hermes_bridge_url = self.hermes_bridge_url.strip() or "http://127.0.0.1:3000"
         if self.enable_hermes_chat:
             self.hermes_base_url = _normalize_required_secret(
                 self.hermes_base_url,

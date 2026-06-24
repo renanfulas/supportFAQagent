@@ -11,7 +11,7 @@ import pytest
 from app.core.config import Settings, get_settings
 from app.db.operational import ChatPersistenceResult
 from app.integrations.hermes.chat_transport import HermesChatTransport
-from app.integrations.hermes.client import HermesClient, HermesSendResult
+from app.integrations.hermes.client import HermesBridgeClient, HermesSendResult
 from app.integrations.hermes.inbound import (
     HermesInboundMessage,
     parse_hermes_inbound,
@@ -38,24 +38,36 @@ VENDAS = RoutableDomain(
 # --- inbound contract ---------------------------------------------------------
 
 
-def test_parse_hermes_inbound_extracts_text_messages() -> None:
+def test_parse_hermes_inbound_single_bridge_event() -> None:
+    parsed = parse_hermes_inbound(
+        {
+            "messageId": "h1",
+            "chatId": "5511999999999@s.whatsapp.net",
+            "senderId": "5511999999999@s.whatsapp.net",
+            "body": "Oi",
+            "isGroup": False,
+        }
+    )
+    assert len(parsed) == 1
+    assert parsed[0].message_id == "h1"
+    assert parsed[0].chat_id == "5511999999999@s.whatsapp.net"
+    assert parsed[0].text == "Oi"
+
+
+def test_parse_hermes_inbound_batch_ignores_groups_and_empty() -> None:
     payload = {
         "messages": [
-            {"from": "5511999999999", "id": "h1", "type": "text", "text": "Oi"},
-            {"from": "5511888888888", "id": "h2", "type": "image"},
-            {"from": "5511777777777", "id": "h3", "type": "text", "text": {"body": "ola"}},
+            {"messageId": "h1", "chatId": "c1", "senderId": "s1", "body": "oi", "isGroup": False},
+            {"messageId": "h2", "chatId": "g1", "senderId": "s2", "body": "ping", "isGroup": True},
+            {"messageId": "h3", "chatId": "c3", "senderId": "s3", "body": "", "isGroup": False},
         ]
     }
-    parsed = parse_hermes_inbound(payload)
-    assert [m.message_id for m in parsed] == ["h1", "h3"]
-    assert parsed[0].text == "Oi"
-    assert parsed[1].text == "ola"
+    assert [m.message_id for m in parse_hermes_inbound(payload)] == ["h1"]
 
 
 def test_parse_hermes_inbound_ignores_malformed() -> None:
     assert parse_hermes_inbound({}) == []
-    assert parse_hermes_inbound({"messages": "x"}) == []
-    assert parse_hermes_inbound({"messages": [{"id": "h1", "type": "text"}]}) == []
+    assert parse_hermes_inbound({"messageId": "h1", "chatId": "c1"}) == []  # sem body
 
 
 def _sign(body: bytes, ts: str) -> str:
@@ -76,7 +88,7 @@ def test_verify_hermes_signature_accepts_fresh_and_rejects_tampered() -> None:
 # --- client send_text ---------------------------------------------------------
 
 
-def test_hermes_client_send_text_signs_and_posts(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_hermes_bridge_client_send_text_posts_to_send(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
     class Response:
@@ -84,22 +96,21 @@ def test_hermes_client_send_text_signs_and_posts(monkeypatch: pytest.MonkeyPatch
             return None
 
         def json(self) -> dict[str, object]:
-            return {"message_id": "hermes-out-1"}
+            return {"messageId": "wamid-out"}
 
-    def fake_post(url, *, data, headers, timeout):
-        captured.update(url=url, data=data, headers=headers)
+    def fake_post(url, *, json, timeout):
+        captured.update(url=url, json=json)
         return Response()
 
     monkeypatch.setattr("app.integrations.hermes.client.requests.post", fake_post)
-    client = HermesClient(base_url="https://hermes.local", webhook_secret=SECRET)
+    client = HermesBridgeClient(base_url="http://127.0.0.1:3000")
 
-    result = client.send_text(to="5511999999999", text="Oi", message_id="h1")
+    result = client.send_text(to="5511999999999@s.whatsapp.net", text="Oi", message_id="h1")
 
     assert isinstance(result, HermesSendResult)
-    assert result.message_id == "hermes-out-1"
-    assert captured["url"] == "https://hermes.local/chat-delivery"
-    assert "X-Webhook-Signature" in captured["headers"]
-    assert json.loads(captured["data"])["to"] == "5511999999999"
+    assert result.message_id == "wamid-out"
+    assert captured["url"] == "http://127.0.0.1:3000/send"
+    assert captured["json"] == {"chatId": "5511999999999@s.whatsapp.net", "message": "Oi"}
 
 
 # --- transport (routing + brain reuse) ----------------------------------------
@@ -170,7 +181,12 @@ def _transport(client, chat, loader):
 
 
 def _msg(text: str) -> HermesInboundMessage:
-    return HermesInboundMessage(message_id="h1", from_wa_id="5511999999999", text=text)
+    return HermesInboundMessage(
+        message_id="h1",
+        from_wa_id="5511999999999@s.whatsapp.net",
+        chat_id="5511999999999@s.whatsapp.net",
+        text=text,
+    )
 
 
 def test_transport_routes_sales_and_reuses_brain() -> None:

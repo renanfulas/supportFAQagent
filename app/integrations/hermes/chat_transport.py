@@ -97,7 +97,7 @@ class HermesChatTransport:
             )
             if domain_name is None:
                 outbound = self.client.send_text(
-                    to=message.from_wa_id,
+                    to=message.chat_id,
                     text=self.router.menu_text(),
                     message_id=message.message_id,
                 )
@@ -145,7 +145,7 @@ class HermesChatTransport:
                 "guarde o request_id para acompanhamento."
             )
         outbound = self.client.send_text(
-            to=message.from_wa_id,
+            to=message.chat_id,
             text=answer,
             message_id=message.message_id,
         )

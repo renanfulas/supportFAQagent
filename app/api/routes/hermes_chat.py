@@ -12,7 +12,7 @@ from app.integrations.hermes.chat_transport import (
     HermesChatTransport,
     HermesChatTransportError,
 )
-from app.integrations.hermes.client import HermesClient
+from app.integrations.hermes.client import HermesBridgeClient
 from app.integrations.hermes.inbound import (
     parse_hermes_inbound,
     verify_hermes_signature,
@@ -68,12 +68,9 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
     transport = HermesChatTransport(
         settings=settings,
         database_runtime=request.app.state.database_runtime,
-        client=HermesClient(
-            base_url=settings.hermes_base_url or "",
-            webhook_secret=settings.hermes_webhook_secret or "",
+        client=HermesBridgeClient(
+            base_url=settings.hermes_bridge_url,
             timeout_seconds=settings.hermes_request_timeout_seconds,
-            otp_delivery_path=settings.hermes_otp_delivery_path,
-            chat_delivery_path=settings.hermes_chat_delivery_path,
         ),
     )
     try:

@@ -1,68 +1,53 @@
 # Plano Tecnico - Ponte de Chat Conversacional via Hermes (Piloto)
 
-Status: nosso lado do contrato implementado e dormente atras de `ENABLE_HERMES_CHAT`.
-Ativacao depende do servico Hermes externo (frente Alexandre) e do runtime (Silotto).
+Status: nosso lado pronto e dormente atras de `ENABLE_HERMES_CHAT`. Falta o cutover
+no bridge (patch gated por env) + a decisao de produto. Runbook em
+`docs/runbooks/hermes-chat-cutover.md`.
 Data de revisao: 2026-06-24.
 
-## Objetivo
+## Arquitetura real (investigada na VPS)
 
-Validar rapido suporte E vendas conversando no WhatsApp via Hermes, reusando o mesmo
-cerebro (`ChatFlowService`) e o `DomainRouter` com memoria pegajosa. E uma PONTE
-TEMPORARIA: a via estrategica de chat continua sendo Meta WhatsApp Cloud API. Manter
-o Hermes aqui apenas enquanto reduzir risco operacional, como diz o README.
+- O WhatsApp roda num bridge node bespoke (`/usr/local/lib/hermes-agent/scripts/
+  whatsapp-bridge/bridge.js`, Baileys, express :3000, `--mode bot`, allowlist
+  `WHATSAPP_ALLOWED_USERS`). Segura UMA sessao de WhatsApp.
+- Inbound: `messages.upsert` monta um `event` e faz `messageQueue.push(event)`.
+- `GET /messages` DRENA a fila (`splice`) — consumidor unico. Hoje o gateway Hermes
+  (`hermes_cli` :8644) faz polling e responde como agente.
+- Outbound: `POST /send {chatId, message}` (localhost, sem HMAC).
+- O OTP do login sai pelo mesmo gateway/bridge. Quebrar o bridge quebra o login.
 
-## O que ja existe no nosso backend (este commit)
+## Nosso lado (implementado, dormente)
 
-- Flag `ENABLE_HERMES_CHAT` (default false) + `HERMES_CHAT_DELIVERY_PATH`.
-- `HermesClient.send_text(to, text, message_id)` — POST assinado para o
-  `chat_delivery_path`, mesma assinatura HMAC do `deliver_otp`.
-- Contrato e parser de inbound (`app/integrations/hermes/inbound.py`):
-  `parse_hermes_inbound` + `verify_hermes_signature`.
-- `HermesChatTransport` (espelho do Meta) reusando `ChatFlowService` + roteador +
-  stickiness; sessao identificada por hash `whatsapp:hermes:<digest>` (nunca wa_id cru).
-- Rota assinada `POST /integrations/hermes/chat/webhook`, 404 quando a flag esta off,
-  401 com assinatura invalida, erros sanitizados.
+- `HermesBridgeClient.send_text` -> `POST {HERMES_BRIDGE_URL}/send {chatId, message}`.
+- `parse_hermes_inbound` aceita o `event` nativo do bridge (`chatId`, `senderId`,
+  `body`, `messageId`, `isGroup`); ignora grupo e vazio.
+- `verify_hermes_signature`: `HMAC_SHA256(HERMES_WEBHOOK_SECRET, body)` em hex +
+  `X-Webhook-Timestamp` (replay 300s).
+- `HermesChatTransport`: inbound -> `ChatFlowService` + roteador + stickiness ->
+  resposta pelo bridge `/send`. Sessao por hash `whatsapp:hermes:<digest>`.
+- Rota `POST /integrations/hermes/chat/webhook` (404 com flag off, 401 sem assinatura).
+- Flags: `ENABLE_HERMES_CHAT` (off), `HERMES_BRIDGE_URL` (default `http://127.0.0.1:3000`).
 
-## O contrato que o Hermes precisa cumprir (frente Alexandre)
+## O cutover (patch gated, reversivel)
 
-PROPOSTO; confirmar e ajustar nomes de campo/caminho com o dono do Hermes.
+O bridge passa a dar forward do inbound pro nosso webhook E para de enfileirar pro
+agente Hermes (sem double-bot) — mas APENAS quando `HERMES_CHAT_FORWARD_URL` esta
+setada. Sem a var, comportamento identico ao de hoje. Ver o patch e os passos em
+`docs/runbooks/hermes-chat-cutover.md`.
 
-### Inbound (Hermes -> nosso backend)
+## Decisao de produto (gate humano)
 
-- Quando o Hermes receber uma mensagem do usuario, faz `POST` para
-  `/integrations/hermes/chat/webhook` com:
+Ativar o forward significa: **este numero deixa de ser o agente Hermes e passa a ser
+o bot de suporte/vendas do supportFAQagent**, para quem estiver na allowlist. Quem
+decide a politica da allowlist e se a breve interrupcao de OTP (janela de restart do
+bridge) e aceitavel e o dono do produto. Recomendacao mais segura: usar um NUMERO
+DEDICADO para o bot, deixando o numero de OTP/agente intacto.
 
-  ```json
-  { "messages": [ { "from": "<wa_id>", "id": "<message_id>", "type": "text", "text": "<body>" } ] }
-  ```
+## Riscos
 
-- Headers de seguranca: `X-Webhook-Signature` = `HMAC_SHA256(HERMES_WEBHOOK_SECRET, body)`
-  em hex, e `X-Webhook-Timestamp` (epoch). Janela de replay: 300s.
-
-### Outbound (nosso backend -> Hermes)
-
-- Recebemos a resposta do cerebro e fazemos `POST` assinado para
-  `HERMES_BASE_URL + HERMES_CHAT_DELIVERY_PATH` com
-  `{ "to", "text", "message_id" }`. O Hermes entrega ao destinatario no WhatsApp.
-- Resposta opcional `{ "message_id": "<id do provedor>" }` (usada so para auditoria).
-
-## Passos de ativacao (quando decidirem ligar o piloto)
-
-1. Alexandre confirma/implementa no Hermes o forward de inbound e o endpoint de
-   entrega de chat, com a mesma assinatura HMAC.
-2. Silotto seta no `.env` da VPS: `ENABLE_HERMES_CHAT=true`, `HERMES_CHAT_DELIVERY_PATH`,
-   e garante `HERMES_BASE_URL`/`HERMES_WEBHOOK_SECRET` (ja presentes para OTP).
-3. Para suporte E vendas no mesmo numero, ligar tambem `ENABLE_WHATSAPP_DOMAIN_ROUTER=true`.
-4. Apontar o webhook do Hermes para `/integrations/hermes/chat/webhook`.
-
-## Riscos e limites honestos
-
-- WhatsApp por caminho nao-oficial tem risco de bloqueio/banimento do numero (ver o
-  artigo de risco no dominio de suporte). O Meta oficial existe para reduzir isso.
+- Caminho nao-oficial de WhatsApp tem risco de bloqueio/banimento do numero.
+- Restart do bridge derruba a sessao por segundos (afeta OTP nesse intervalo);
+  reconecta das credenciais (backup feito).
 - Stickiness em producao precisa do store duravel (ver
-  `whatsapp-sticky-domain-routing-plan.md`); o default em memoria nao sobrevive a
-  restart nem e compartilhado entre workers.
-- O formato de wire inbound/outbound aqui e PROPOSTO; so vai para producao depois de
-  casar com o que o Hermes realmente fala.
-- Toda a inteligencia (resposta, handoff, confinamento) permanece no backend; o
-  Hermes e so transporte.
+  `whatsapp-sticky-domain-routing-plan.md`).
+- Meta WhatsApp Cloud API segue sendo o caminho estrategico; Hermes e ponte temporaria.
