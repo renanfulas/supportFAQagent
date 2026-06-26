@@ -33,11 +33,18 @@ behavior:
     - pedidos para agir como assistente geral ou executar papeis fora do comercial
 
 routing:
+  # Fase 2 do roteamento: removidas as genericas TECNICAS de hospedagem (site,
+  # ssl, email, dominio, wordpress, migracao, migrar) que colidiam com o dominio
+  # suporte-hospedagem. "hospedagem", "vps" e "servidor" ficam porque sao os
+  # substantivos-ancora do comercial e dao sinal aos openers de venda; como
+  # consequencia, uma frase tecnica que cite "hospedagem"/"vps" sem termo de
+  # compra empata e cai no menu (fallback seguro). Ver
+  # docs/domain-architecture-roadmap.md. Mudanca proposta para revisao do
+  # Comercial; coberta por eval de regressao em tests/test_domain_router.py.
   keywords:
     - vps
     - servidor
     - hospedagem
-    - site
     - plano
     - planos
     - preco
@@ -46,12 +53,6 @@ routing:
     - contratar
     - assinar
     - comprar
-    - dominio
-    - ssl
-    - email
-    - migracao
-    - migrar
-    - wordpress
     - revenda
     - upgrade
     - trafego

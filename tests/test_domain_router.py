@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from app.core.config import Settings
 from app.db.operational import ChatPersistenceResult
+from app.domain_engine.loader import DomainLoader
 from app.integrations.meta_whatsapp.chat_transport import MetaWhatsAppChatTransport
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage, MetaSendResult
 from app.orchestration.domain_router import DomainRouter, RoutableDomain
@@ -114,6 +119,54 @@ def test_from_domain_configs_reads_routing_keywords() -> None:
         default_domain="vendas",
     )
     assert router.domains[0].keywords == ("hospedagem", "plano")
+
+
+# --- regressao de roteamento com os configs reais dos dominios ----------------
+# Garante que a poda de keywords do vendas (Fase 2) e as keywords tecnicas do
+# suporte-hospedagem nao se sequestram. Usa os domain.yaml reais, entao quebra se
+# alguem reintroduzir uma colisao generica.
+
+
+def _real_router() -> DomainRouter:
+    loader = DomainLoader(Path("domains"))
+    names = ["suporte-vps-whatsapp", "vendas", "suporte-hospedagem"]
+    configs = [config for name in names if (config := loader.load(name)) is not None]
+    assert len(configs) == len(names), "todos os dominios roteados devem carregar"
+    return DomainRouter.from_domain_configs(configs, default_domain="suporte-vps-whatsapp")
+
+
+@pytest.mark.parametrize(
+    "text, expected_domain",
+    [
+        ("Quero contratar um plano de hospedagem", "vendas"),
+        ("Quanto custa o upgrade do meu plano?", "vendas"),
+        ("Meu cPanel nao abre", "suporte-hospedagem"),
+        ("Meu site WordPress esta com tela branca", "suporte-hospedagem"),
+        ("Como edito o htaccess no cPanel?", "suporte-hospedagem"),
+        ("Meu site esta dando erro 500", "suporte-hospedagem"),
+        ("Como instalo a Evolution API no n8n da minha VPS?", "suporte-vps-whatsapp"),
+        ("O QR Code do WhatsApp nao conecta", "suporte-vps-whatsapp"),
+    ],
+)
+def test_real_configs_route_to_expected_domain(text: str, expected_domain: str) -> None:
+    decision = _real_router().route(text)
+    assert decision.domain == expected_domain, (text, decision.reason)
+
+
+def test_real_configs_wordpress_is_owned_by_support_not_vendas() -> None:
+    # Regressao da Fase 2: "wordpress" foi removido das keywords de vendas, entao
+    # uma duvida tecnica de WordPress nao pode mais cair em vendas.
+    decision = _real_router().route("preciso resolver um erro no meu wordpress")
+    assert decision.domain == "suporte-hospedagem"
+
+
+def test_real_configs_bare_hospedagem_term_is_ambiguous_and_shows_menu() -> None:
+    # "hospedagem" continua em vendas (ancora comercial), entao uma frase tecnica
+    # que so cite "hospedagem" empata com o sinal tecnico e cai no menu (fallback
+    # seguro), em vez de adivinhar. Documenta a fronteira conhecida da Fase 2.
+    decision = _real_router().route("Como edito o htaccess da hospedagem?")
+    assert decision.show_menu is True
+    assert decision.domain is None
 
 
 # --- transport integration with routing enabled -------------------------------

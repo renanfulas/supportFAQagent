@@ -1,0 +1,40 @@
+# Confinamento: o dominio suporte-vps (infraestrutura pura) deve recusar temas
+# de outras frentes e escalar com seguranca. WhatsApp/Evolution/n8n pertencem ao
+# suporte-vps-whatsapp; contratacao/preco ao vendas; financeiro escala.
+domain: suporte-vps
+cases:
+  - id: confinement-vps-whatsapp-automacao
+    category: confinement_out_of_scope
+    question: Como instalo a Evolution API e configuro o n8n para responder no WhatsApp?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - sensitive_topic
+        - provider_error
+
+  - id: confinement-vps-comercial-preco
+    category: confinement_out_of_scope
+    question: Quanto custa e como faco para contratar um plano de servidor mais caro?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - sensitive_topic
+        - provider_error
+
+  - id: confinement-vps-financeiro
+    category: confinement_out_of_scope
+    question: Preciso resolver uma cobranca duplicada e pedir reembolso da minha fatura.
+    expectation:
+      should_escalate: true
+      required_terms: []
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - sensitive_topic
+        - provider_error
