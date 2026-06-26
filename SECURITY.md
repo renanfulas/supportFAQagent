@@ -64,6 +64,15 @@ Hermes) com forward do inbound para `POST /integrations/hermes/chat/webhook`.
 
 - Webhook interno protegido por HMAC (`HERMES_CHAT_FORWARD_SECRET`) + janela de
   replay de 300s e limite de corpo (256 KB).
+- Protecao de replay: assinaturas ja vistas dentro da janela de frescor sao
+  rejeitadas (`HermesReplayGuard`, HTTP 409), fechando o replay verbatim sem
+  depender de mudar o contrato de assinatura do bridge.
+- Rejeicao precoce por `Content-Length` antes de bufferizar o corpo inteiro na
+  memoria (a checagem pos-leitura continua como defesa contra header mentiroso).
+- Limite por mensagem de 4 KB de texto antes do LLM, para conter custo de token e
+  prompt-stuffing mesmo dentro do envelope de 256 KB.
+- Clientes HTTP do Hermes (OTP e bridge) nao seguem redirects (`allow_redirects=False`):
+  um gateway/bridge comprometido nao consegue desviar a chamada para um host interno (SSRF).
 - Webhook rejeita (404) qualquer requisicao com header de proxy
   (`X-Forwarded-For`/`X-Real-IP`/`X-Forwarded-Host`): so o bridge local alcanca.
 - nginx tambem nega publicamente `^~ /integrations/` e `^~ /internal/` (defesa em
@@ -79,7 +88,11 @@ Hermes) com forward do inbound para `POST /integrations/hermes/chat/webhook`.
 - Revisar/remover chaves SSH operacionais temporarias quando nao forem mais
   necessarias (ex.: `claude-code-supportfaq-vps`).
 - Assinar o `X-Webhook-Timestamp` dentro do HMAC do forward (hoje a assinatura
-  cobre so o body); reduz replay caso o endpoint deixe de ser localhost-only.
+  cobre so o body). Reduz replay de forma definitiva, mas exige rollout coordenado
+  com o dono do bridge (Alexandre) por ser uma mudanca no contrato de wire; ate la,
+  o `HermesReplayGuard` cobre o replay verbatim no processo local.
+- Persistir o guard de replay fora do processo (hoje e best-effort por worker)
+  caso o canal escale horizontalmente.
 - Teto global de custo/volume no canal (o rate limit atual e por numero; uma
   multidao de numeros distintos nao e capada).
 - Paridade do rate limit no transporte Meta quando o canal Meta for ativado.

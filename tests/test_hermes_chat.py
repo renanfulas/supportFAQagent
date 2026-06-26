@@ -15,6 +15,7 @@ from app.integrations.hermes.chat_transport import ESCAPE_STATE, HermesChatTrans
 from app.integrations.hermes.client import HermesBridgeClient, HermesSendResult
 from app.integrations.hermes.inbound import (
     HermesInboundMessage,
+    HermesReplayGuard,
     parse_hermes_inbound,
     verify_hermes_signature,
 )
@@ -72,6 +73,29 @@ def test_parse_hermes_inbound_ignores_malformed() -> None:
     assert parse_hermes_inbound({"messageId": "h1", "chatId": "c1"}) == []  # sem body
 
 
+def test_parse_hermes_inbound_caps_text_length() -> None:
+    long_body = "a" * 9000
+    parsed = parse_hermes_inbound(
+        {"messageId": "h1", "chatId": "c1", "senderId": "s1", "body": long_body},
+        max_text_chars=4096,
+    )
+    assert len(parsed) == 1
+    assert len(parsed[0].text) == 4096
+
+
+def test_replay_guard_blocks_second_identical_signature() -> None:
+    guard = HermesReplayGuard(ttl_seconds=300)
+    assert guard.check_and_remember("sig-1", now=1_000.0) is True
+    # Same signature inside the window is a replay.
+    assert guard.check_and_remember("sig-1", now=1_100.0) is False
+    # A different signature is independent.
+    assert guard.check_and_remember("sig-2", now=1_100.0) is True
+    # Once the TTL elapses the signature is forgotten and accepted again.
+    assert guard.check_and_remember("sig-1", now=1_400.0) is True
+    # An empty signature is never accepted.
+    assert guard.check_and_remember("", now=1_000.0) is False
+
+
 def _sign(body: bytes, ts: str) -> str:
     return hmac.new(SECRET.encode(), body, hashlib.sha256).hexdigest()
 
@@ -100,8 +124,8 @@ def test_hermes_bridge_client_send_text_posts_to_send(monkeypatch: pytest.Monkey
         def json(self) -> dict[str, object]:
             return {"messageId": "wamid-out"}
 
-    def fake_post(url, *, json, timeout):
-        captured.update(url=url, json=json)
+    def fake_post(url, *, json, timeout, allow_redirects):
+        captured.update(url=url, json=json, allow_redirects=allow_redirects)
         return Response()
 
     monkeypatch.setattr("app.integrations.hermes.client.requests.post", fake_post)
@@ -113,6 +137,7 @@ def test_hermes_bridge_client_send_text_posts_to_send(monkeypatch: pytest.Monkey
     assert result.message_id == "wamid-out"
     assert captured["url"] == "http://127.0.0.1:3000/send"
     assert captured["json"] == {"chatId": "5511999999999@s.whatsapp.net", "message": "Oi"}
+    assert captured["allow_redirects"] is False  # never chase redirects (anti-SSRF)
 
 
 # --- transport (routing + brain reuse) ----------------------------------------
@@ -443,6 +468,42 @@ def test_chat_webhook_uses_segregated_forward_secret(monkeypatch: pytest.MonkeyP
         headers={"X-Webhook-Signature": sign(SECRET), "X-Webhook-Timestamp": ts},
     )
     assert otp_signed.status_code == 401
+    get_settings.cache_clear()
+
+
+def test_chat_webhook_rejects_replayed_signature(monkeypatch: pytest.MonkeyPatch) -> None:
+    # An identical signed request (same body, same signature) must be accepted once and
+    # rejected on replay within the freshness window.
+    monkeypatch.setenv("ENABLE_HERMES_CHAT", "true")
+    monkeypatch.setenv("HERMES_BASE_URL", "https://hermes.local")
+    monkeypatch.setenv("HERMES_WEBHOOK_SECRET", SECRET)
+    get_settings.cache_clear()
+    client = TestClient(create_app(), raise_server_exceptions=False)
+
+    body = b'{"messages":[]}'
+    ts = str(int(datetime.now(UTC).timestamp()))
+    headers = {"X-Webhook-Signature": _sign(body, ts), "X-Webhook-Timestamp": ts}
+
+    first = client.post("/integrations/hermes/chat/webhook", content=body, headers=headers)
+    assert first.status_code == 200
+
+    replay = client.post("/integrations/hermes/chat/webhook", content=body, headers=headers)
+    assert replay.status_code == 409
+    get_settings.cache_clear()
+
+
+def test_chat_webhook_rejects_oversized_body(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENABLE_HERMES_CHAT", "true")
+    monkeypatch.setenv("HERMES_BASE_URL", "https://hermes.local")
+    monkeypatch.setenv("HERMES_WEBHOOK_SECRET", SECRET)
+    get_settings.cache_clear()
+    client = TestClient(create_app(), raise_server_exceptions=False)
+
+    # Over the 256 KB cap: rejected via the Content-Length pre-check before any
+    # signature work, so no valid signature is needed.
+    body = b'{"x":"' + b"a" * 300_000 + b'"}'
+    resp = client.post("/integrations/hermes/chat/webhook", content=body)
+    assert resp.status_code == 413
     get_settings.cache_clear()
 
 

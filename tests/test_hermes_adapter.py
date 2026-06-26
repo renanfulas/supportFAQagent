@@ -21,8 +21,14 @@ def test_hermes_client_signs_otp_delivery(monkeypatch: pytest.MonkeyPatch) -> No
         def raise_for_status(self) -> None:
             return None
 
-    def fake_post(url, *, data, headers, timeout):
-        captured.update(url=url, data=data, headers=headers, timeout=timeout)
+    def fake_post(url, *, data, headers, timeout, allow_redirects):
+        captured.update(
+            url=url,
+            data=data,
+            headers=headers,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+        )
         return Response()
 
     monkeypatch.setattr("app.integrations.hermes.client.requests.post", fake_post)
@@ -43,6 +49,7 @@ def test_hermes_client_signs_otp_delivery(monkeypatch: pytest.MonkeyPatch) -> No
 
     assert captured["url"] == "https://hermes.internal/otp-delivery"
     assert captured["timeout"] == 7
+    assert captured["allow_redirects"] is False
     headers = captured["headers"]
     assert headers["X-Delivery-ID"] == "challenge-id"
     assert not headers["X-Webhook-Signature"].startswith("sha256=")

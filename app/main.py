@@ -31,6 +31,7 @@ from app.core.request_context import (
     resolve_request_id,
 )
 from app.core.web_session import extract_public_session_token
+from app.integrations.hermes.inbound import HermesReplayGuard
 from app.orchestration.session_domain_store import InMemorySessionDomainStore
 from app.web_auth.runtime import create_web_auth_runtime
 from app.db.runtime import DatabaseRuntime
@@ -76,6 +77,9 @@ def create_app() -> FastAPI:
     application.state.session_state_store = InMemorySessionDomainStore(ttl_seconds=900)
     # Last outbound text per session, to avoid repeating the exact same message.
     application.state.session_last_out_store = InMemorySessionDomainStore(ttl_seconds=900)
+    # Best-effort replay protection for the inbound Hermes chat forward (the HMAC
+    # covers only the body, so an identical request is otherwise replayable).
+    application.state.hermes_replay_guard = HermesReplayGuard()
     application.state.web_auth_runtime = create_web_auth_runtime(
         settings,
         application.state.database_runtime,

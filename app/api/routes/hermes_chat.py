@@ -23,6 +23,9 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 MAX_BODY_BYTES = 262_144
 MAX_MESSAGES_PER_REQUEST = 25
+# Hard cap on a single inbound message body before it reaches the LLM, to bound token
+# cost and prompt-stuffing abuse even within the 256 KB request envelope.
+MAX_MESSAGE_TEXT_CHARS = 4_096
 PROXY_HEADERS = ("X-Forwarded-For", "X-Real-IP", "X-Forwarded-Host")
 SAFE_ERROR_RE = re.compile(r"^hermes_[a-z0-9_]{1,80}$")
 
@@ -39,15 +42,26 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
     if any(request.headers.get(header) for header in PROXY_HEADERS):
         raise HTTPException(status_code=404, detail="Not Found")
 
+    # Reject oversized payloads from the advertised length before buffering the whole
+    # body into memory. The post-read length check below still guards a lying header.
+    declared_length = request.headers.get("Content-Length")
+    if declared_length is not None:
+        try:
+            if int(declared_length) > MAX_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="invalid_hermes_payload")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="invalid_hermes_payload") from exc
+
     body = await request.body()
     if not body or len(body) > MAX_BODY_BYTES:
         raise HTTPException(status_code=413, detail="invalid_hermes_payload")
     # Dedicated secret for the inbound chat forward, segregated from the OTP secret.
     # Falls back to the OTP secret only if a dedicated one is not configured.
     forward_secret = settings.hermes_chat_forward_secret or settings.hermes_webhook_secret or ""
+    signature = request.headers.get("X-Webhook-Signature")
     if not verify_hermes_signature(
         body=body,
-        signature=request.headers.get("X-Webhook-Signature"),
+        signature=signature,
         timestamp=request.headers.get("X-Webhook-Timestamp"),
         secret=forward_secret,
     ):
@@ -59,6 +73,18 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
         )
         raise HTTPException(status_code=401, detail="invalid_hermes_signature")
 
+    # The HMAC only covers the body, so an identical signed request is replayable inside
+    # the freshness window. Reject any signature already seen within that window.
+    replay_guard = getattr(request.app.state, "hermes_replay_guard", None)
+    if replay_guard is not None and not replay_guard.check_and_remember(signature or ""):
+        log_event(
+            logger,
+            "hermes_chat_webhook_rejected",
+            request_id=get_request_id(request),
+            error_code="hermes_replayed_signature",
+        )
+        raise HTTPException(status_code=409, detail="hermes_replayed_signature")
+
     try:
         payload = json.loads(body)
     except json.JSONDecodeError as exc:
@@ -66,7 +92,7 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="invalid_hermes_payload")
 
-    messages = parse_hermes_inbound(payload)
+    messages = parse_hermes_inbound(payload, max_text_chars=MAX_MESSAGE_TEXT_CHARS)
     if len(messages) > MAX_MESSAGES_PER_REQUEST:
         raise HTTPException(status_code=400, detail="too_many_messages")
     log_event(
