@@ -1,0 +1,228 @@
+# Fase 1: base de conhecimento real reaproveitada dos artigos publicos da
+# Central de Ajuda HostGator (categoria Primeiros Passos e relacionadas),
+# parafraseada no formato do projeto.
+#
+# Padrao deterministico (igual aos dominios vivos): sem chave de provider, o
+# fluxo escala por provider_error/low_confidence, entao todos os casos in-scope
+# usam should_escalate:true e validam o RETRIEVAL pelo expected_references. Com
+# a chave real configurada, o dominio responde de fato usando estes artigos.
+domain: suporte-hospedagem
+cases:
+  - id: hosp-acessar-cpanel
+    category: cpanel
+    question: Como faco para acessar o cPanel da minha hospedagem compartilhada?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - acessar-cpanel-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-criar-email
+    category: email_cpanel
+    question: Como crio uma conta de e-mail no cPanel da hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - criar-email-cpanel.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-email-cpanel-nao-envia
+    category: email_cpanel
+    question: O e-mail criado no cPanel da hospedagem nao envia mensagens, o que confiro?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - email-cpanel-nao-envia.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-wordpress-tela-branca
+    category: wordpress
+    question: Meu site WordPress abre uma tela branca na hospedagem, o que confiro primeiro?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - wordpress-tela-branca-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-apontar-dns
+    category: dns
+    question: Como configuro o DNS do meu dominio para a hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - apontar-dns-dominio-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-localizar-dns
+    category: dns
+    question: Onde encontro o DNS da minha hospedagem para configurar o dominio?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - localizar-dns-da-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-ssl-gratis
+    category: ssl
+    question: Como funciona o SSL gratis na minha hospedagem de sites?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - ssl-gratis-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-restaurar-backup
+    category: backup
+    question: Como restauro um backup completo da minha hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - restaurar-backup-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-conferir-arquivos
+    category: arquivos
+    question: Como confiro se os arquivos do site estao na hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - conferir-arquivos-site-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-migrar-sem-downtime
+    category: migracao
+    question: Como migro meu site para a hospedagem sem tirar do ar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - migrar-site-sem-downtime-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-criar-banco-mysql
+    category: banco_dados
+    question: Como crio um banco de dados MySQL no cPanel da hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - criar-banco-mysql-cpanel.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-criar-ftp
+    category: ftp
+    question: Como crio uma conta de FTP no cPanel da hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - criar-conta-ftp-cpanel.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-editar-htaccess
+    category: htaccess
+    question: Como edito o arquivo .htaccess no cPanel da hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - editar-htaccess-cpanel.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-alterar-php
+    category: php
+    question: Como altero a versao do PHP da minha hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - alterar-versao-php-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-agendar-cron
+    category: cron
+    question: Como agendo um trabalho cron no cPanel da hospedagem?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - agendar-cron-job-cpanel.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-erro-500
+    category: erros_site
+    question: Meu site na hospedagem esta dando erro 500, o que confiro?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - erro-500-site-hospedagem.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: hosp-pedido-humano
+    category: seguranca_escalonamento
+    question: Prefiro falar com humano para resolver isso na minha hospedagem.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references: []
+      allowed_handoff_reasons:
+        - explicit_human_request

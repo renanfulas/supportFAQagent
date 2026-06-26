@@ -1,0 +1,191 @@
+# Synthetic intake sourced from real HostGator support article titles.
+#
+# Source pattern: the public HostGator Central de Ajuda category tree
+# (https://suporte.hostgator.com.br/hc/pt-br/categories/30807008626707 and its
+# 16 sibling categories) was mapped article by article. Questions below were
+# paraphrased from real article titles in the "VPS e Dedicados",
+# "Especificacoes dos Servidores", "Seguranca" and "Aplicacoes e Ferramentas
+# Externas" categories, kept inside the suporte-vps-whatsapp scope (VPS,
+# Evolution API, WhatsApp, n8n, webhooks, automacoes). No article body text or
+# customer data was copied; only the underlying intent.
+#
+# See evals/intake/hostgator-categories-mapping.md for the full category
+# classification (in-scope vs out-of-scope) used to decide what went here
+# versus into evals/confinement/out_of_scope.yaml.
+#
+# All cases keep expected_references empty on purpose: they are discovery
+# candidates for knowledge curation, not yet promoted to pgvector_curated.yaml
+# or pgvector_gate.yaml. Promoting a case means writing or pointing to a real
+# article first, per docs/runbooks/anonymous-eval-intake.md.
+
+domain: suporte-vps-whatsapp
+cases:
+  - id: hg-real-001-vps-kvm
+    category: orientacao_iniciantes
+    question: O que e a tecnologia KVM usada na minha VPS e isso muda algo na pratica?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-002-vps-linux-vs-n8n
+    category: orientacao_iniciantes
+    question: Qual e a diferenca entre o plano VPS Linux e o plano VPS feito para n8n da HostGator?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-003-almalinux9
+    category: orientacao_iniciantes
+    question: Minha VPS vai migrar o sistema operacional para AlmaLinux 9, isso pode quebrar minha aplicacao?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: hg-real-004-openclaw-o-que-e
+    category: automacoes_n8n
+    question: O que e o OpenClaw e como ele funciona dentro da minha VPS?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-005-openclaw-instalar-manual
+    category: automacoes_n8n
+    question: Como instalo o OpenClaw manualmente na VPS em vez de usar o Portal do Cliente?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: hg-real-006-evolution-crm-vs-api
+    category: automacoes_n8n
+    question: Minha VPS tem Evolution CRM, e a mesma coisa que a Evolution API que eu uso para o WhatsApp?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: hg-real-007-portas-evolution-n8n
+    category: automacoes_n8n
+    question: Quais portas eu preciso liberar no firewall da VPS para a Evolution API e o n8n funcionarem juntos?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-008-painel-cyberpanel
+    category: painel_whm_cpanel
+    question: Posso usar CyberPanel em vez de cPanel na minha VPS HostGator?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-009-painel-webmin
+    category: painel_whm_cpanel
+    question: Como acesso o Webmin que veio instalado na minha VPS?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-010-licenca-cpanel-vps
+    category: painel_whm_cpanel
+    question: Como troco a licenca de cPanel da minha VPS para outro painel de controle?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: hg-real-011-whm-conta-revenda
+    category: painel_whm_cpanel
+    question: Como crio uma conta de revenda dentro do WHM da minha VPS?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: hg-real-012-dedicado-windows-rdp
+    category: acesso_ssh
+    question: Como conecto via RDP no meu Servidor Dedicado Windows da HostGator?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-013-erro-500-vps
+    category: indisponibilidade_incidente
+    question: Meu site hospedado na VPS esta retornando erro 500, o que eu confiro primeiro?
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-014-erro-503-vps
+    category: indisponibilidade_incidente
+    question: A aplicacao que rodo na minha VPS esta respondendo erro 503 de servico indisponivel.
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-015-erro-522-cloudflare
+    category: indisponibilidade_incidente
+    question: Recebo erro 522 da Cloudflare quando tento acessar o site que esta na minha VPS.
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: hg-real-016-too-many-redirects
+    category: webserver_ssl
+    question: Meu site na VPS entrou em loop de redirecionamento e o navegador mostra ERR_TOO_MANY_REDIRECTS.
+    expectation:
+      should_escalate: false
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons: []
+
+  - id: hg-real-017-modsecurity-webhook
+    category: seguranca_escalonamento
+    question: Como configuro o ModSecurity na minha VPS sem bloquear o webhook do n8n?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence
+
+  - id: hg-real-018-encerrar-processo-vps
+    category: performance_recursos
+    question: Como identifico e encerro um processo travado na minha VPS sem derrubar a aplicacao toda?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      expected_references: []
+      allowed_handoff_reasons:
+        - low_confidence

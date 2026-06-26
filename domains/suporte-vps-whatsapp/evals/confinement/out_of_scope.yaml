@@ -35,3 +35,99 @@ cases:
       allowed_handoff_reasons:
         - out_of_scope
         - low_confidence
+
+  - id: confinement-fora-do-escopo-supergator-ia
+    category: confinement_out_of_scope
+    question: Como conecto o agente de IA do SuperGator da HostGator ao meu WhatsApp?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
+
+  - id: confinement-fora-do-escopo-titan-email
+    category: confinement_out_of_scope
+    question: Meu e-mail Titan parou de sincronizar o calendario no Outlook, pode resolver isso?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
+
+  - id: confinement-fora-do-escopo-criador-sites-ia
+    category: confinement_out_of_scope
+    question: Como crio um site com IA usando o Criador de Sites da HostGator?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
+
+  - id: confinement-fora-do-escopo-wordpress-tema
+    category: confinement_out_of_scope
+    question: Como atualizo o tema e os plugins do meu WordPress?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
+
+  - id: confinement-fora-do-escopo-registro-dominio
+    category: confinement_out_of_scope
+    question: Quero registrar um dominio novo na HostGator, qual documentacao preciso enviar?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
+
+  - id: confinement-fora-do-escopo-gator-backup
+    category: confinement_out_of_scope
+    question: Quero contratar o Gator Backup para o meu site, como funciona o plano?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
+
+  - id: confinement-fora-do-escopo-afiliados
+    category: confinement_out_of_scope
+    question: Como funciona o programa de Indique e Ganhe ou o programa de Afiliados da HostGator?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
+
+  - id: confinement-fora-do-escopo-sitelock
+    category: confinement_out_of_scope
+    question: O SiteLock pode remover automaticamente o malware do meu site?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - provider_error
