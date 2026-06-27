@@ -72,6 +72,7 @@ def test_chat_flow_returns_observable_provider_error() -> None:
 
     assert response["request_id"] == "req-2"
     assert response["error_code"] == "provider_error"
+    assert response["provider_failure_kind"] == "provider_timeout"
     assert response["escalated"] is True
     assert "provider_error" in response["handoff_reasons"]
     assert "provider_timeout" not in response["handoff_reasons"]

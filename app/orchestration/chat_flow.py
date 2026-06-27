@@ -51,6 +51,7 @@ class ChatFlowService:
         llm_ms = 0.0
         llm_started_at = None
         error_code = None
+        provider_failure_kind = None
         chunks = []
 
         checkout_answer = self._maybe_checkout_answer(
@@ -71,6 +72,7 @@ class ChatFlowService:
                 "handoff_reasons": [],
                 "references": [],
                 "error_code": None,
+                "provider_failure_kind": None,
                 "observability": self._build_observability(
                     total_started_at=total_started_at,
                     retrieval_ms=retrieval_ms,
@@ -98,6 +100,7 @@ class ChatFlowService:
                 "handoff_reasons": pre_handoff_reasons,
                 "references": [chunk.source for chunk in chunks],
                 "error_code": None,
+                "provider_failure_kind": None,
                 "observability": self._build_observability(
                     total_started_at=total_started_at,
                     retrieval_ms=retrieval_ms,
@@ -133,6 +136,7 @@ class ChatFlowService:
                 "handoff_reasons": handoff_reasons,
                 "references": [chunk.source for chunk in chunks],
                 "error_code": error_code,
+                "provider_failure_kind": provider_failure_kind,
             }
 
         if not chunks:
@@ -159,6 +163,7 @@ class ChatFlowService:
                 ).generate_answer(prompt)
             except ProviderError as exc:
                 error_code = exc.error_code
+                provider_failure_kind = exc.failure_kind
                 if error_code not in handoff_reasons:
                     handoff_reasons.append(error_code)
                 answer = domain.response.provider_error_message
@@ -175,6 +180,7 @@ class ChatFlowService:
             "handoff_reasons": handoff_reasons,
             "references": [chunk.source for chunk in chunks],
             "error_code": error_code,
+            "provider_failure_kind": provider_failure_kind,
             "observability": self._build_observability(
                 total_started_at=total_started_at,
                 retrieval_ms=retrieval_ms,
