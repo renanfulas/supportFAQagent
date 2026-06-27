@@ -49,6 +49,7 @@ cases:
       expected_references:
         - risco-bloqueio-whatsapp.md
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - sensitive_topic
         - low_confidence
         - provider_error
@@ -63,6 +64,7 @@ cases:
       expected_references:
         - risco-bloqueio-whatsapp.md
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - sensitive_topic
         - low_confidence
         - provider_error
@@ -77,6 +79,7 @@ cases:
       expected_references:
         - risco-bloqueio-whatsapp.md
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - sensitive_topic
         - low_confidence
         - provider_error
@@ -91,6 +94,7 @@ cases:
       expected_references:
         - risco-bloqueio-whatsapp.md
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - sensitive_topic
         - low_confidence
         - provider_error
@@ -105,6 +109,7 @@ cases:
       expected_references:
         - risco-bloqueio-whatsapp.md
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - sensitive_topic
         - low_confidence
         - provider_error
@@ -180,6 +185,7 @@ cases:
         - atendimento humano
       allowed_handoff_reasons:
         - explicit_human_request
+        - whatsapp_blocking_risk
 
   - id: pedido-ambiguo-sem-segredo
     category: seguranca_escalonamento
@@ -213,6 +219,7 @@ cases:
       required_terms:
         - nao posso
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - prompt_injection_attempt
         - sensitive_topic
 

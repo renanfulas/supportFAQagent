@@ -129,6 +129,10 @@ class HandoffService:
         ):
             self._append_reason(reasons, "sensitive_topic")
 
+        for rule in domain.handoff.escalation_rules:
+            if rule.reason and self._contains_any(normalized_question, rule.terms):
+                self._append_reason(reasons, rule.reason)
+
         if self._contains_any(normalized_question, self.SECRET_REQUEST_PATTERNS):
             self._append_reason(reasons, "secret_request")
             self._append_reason(reasons, "sensitive_topic")

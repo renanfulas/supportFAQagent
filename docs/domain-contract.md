@@ -67,6 +67,11 @@ handoff:
   sensitive_terms:
     - contrato
     - reembolso
+  escalation_rules:
+    - reason: operational_risk
+      terms:
+        - bloqueio
+        - banimento
 
 knowledge:
   sources:
@@ -111,3 +116,4 @@ embedding:
 - Quantidade de chunks recuperados.
 - Mensagens padrao de falta de contexto ou erro de provider.
 - Threshold e gatilhos de escalonamento.
+- Regras configuraveis de escalonamento por termos do dominio, sem hardcode no motor compartilhado.
