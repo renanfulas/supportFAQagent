@@ -61,6 +61,9 @@ class HermesClient:
                     "X-Webhook-Signature": signature,
                 },
                 timeout=self.timeout_seconds,
+                # Never follow a redirect: a compromised/misconfigured gateway must not
+                # be able to bounce a signed OTP payload to an attacker-chosen host (SSRF).
+                allow_redirects=False,
             )
             response.raise_for_status()
         except requests.RequestException as exc:
@@ -86,6 +89,9 @@ class HermesBridgeClient:
                 f"{self.base_url.rstrip('/')}{self.send_path}",
                 json={"chatId": to, "message": text},
                 timeout=self.timeout_seconds,
+                # The bridge is a local express server; do not chase redirects to an
+                # arbitrary host if it is ever compromised or misconfigured (SSRF).
+                allow_redirects=False,
             )
             response.raise_for_status()
         except requests.RequestException as exc:
