@@ -53,6 +53,10 @@ curtos antes de codar:
 - `docs/quality-plans/meta-whatsapp-native-integration-plan.md`: plano tecnico
   para refatorar a entrega externa, preparar Meta WhatsApp Cloud API nativa e
   limitar Hermes a adapter temporario.
+- `docs/quality-plans/vendas-funnel-hardening-plan.md`: plano tecnico para
+  endurecer o funil de vendas no WhatsApp (dado de cartao/PAN, escopo ciente de
+  contexto, separar sinal soft de fila humana, loop de descoberta), ordenado por
+  risco e com pre-requisitos de instrumentacao, flag e deploy.
 - `docs/runbooks/meta-whatsapp-private-smoke.md`: smoke privado sanitizado para
   validar webhook Meta e Hermes sem imprimir secrets ou payload bruto. Use
   `scripts/meta_whatsapp_activation_suite.py` para gerar preflight, smoke opt-in
