@@ -80,6 +80,16 @@ handoff:
     - system prompt
     - ignorar instrucoes
     - ignorar as instrucoes
+  escalation_rules:
+    - reason: whatsapp_blocking_risk
+      terms:
+        - bloqueio
+        - bloqueando
+        - bloqueou
+        - banimento
+        - banido
+        - api nao oficial
+        - disparos
 
 knowledge:
   sources:

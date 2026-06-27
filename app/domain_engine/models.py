@@ -47,11 +47,17 @@ class DomainResponseConfig(DomainModel):
     )
 
 
+class DomainHandoffRuleConfig(DomainModel):
+    reason: str
+    terms: list[str] = Field(default_factory=list)
+
+
 class DomainHandoffConfig(DomainModel):
     confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
     escalate_on: list[str] = Field(default_factory=list)
     explicit_human_phrases: list[str] = Field(default_factory=list)
     sensitive_terms: list[str] = Field(default_factory=list)
+    escalation_rules: list[DomainHandoffRuleConfig] = Field(default_factory=list)
 
 
 class DomainCheckoutConfig(DomainModel):

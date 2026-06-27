@@ -8,6 +8,7 @@ cases:
       required_terms:
         - atendimento humano
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - sensitive_topic
         - out_of_scope
         - low_confidence
@@ -20,6 +21,7 @@ cases:
       required_terms:
         - atendimento humano
       allowed_handoff_reasons:
+        - whatsapp_blocking_risk
         - sensitive_topic
         - out_of_scope
         - low_confidence

@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from app.domain_engine.models import DomainConfig, DomainHandoffConfig, DomainRoutingConfig
+from app.domain_engine.models import (
+    DomainConfig,
+    DomainHandoffConfig,
+    DomainHandoffRuleConfig,
+    DomainRoutingConfig,
+)
 from app.handoff.service import HandoffService
 
 
@@ -13,6 +18,12 @@ def make_domain() -> DomainConfig:
             confidence_threshold=0.7,
             explicit_human_phrases=["falar com humano"],
             sensitive_terms=["senha", "bloqueio"],
+            escalation_rules=[
+                DomainHandoffRuleConfig(
+                    reason="whatsapp_blocking_risk",
+                    terms=["bloqueio", "bloqueando", "banimento"],
+                )
+            ],
         ),
         routing=DomainRoutingConfig(
             keywords=[
@@ -56,12 +67,24 @@ def test_handoff_escalates_on_explicit_human_request() -> None:
 def test_handoff_escalates_on_sensitive_term() -> None:
     decision = HandoffService().decide(
         domain=make_domain(),
-        question="Estou com bloqueio no numero",
+        question="Preciso ver a senha da VPS",
         confidence=0.95,
     )
 
     assert decision.escalated is True
     assert "sensitive_topic" in decision.reasons
+
+
+def test_handoff_escalates_whatsapp_blocking_risk_without_sensitive_topic() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="Estou com risco de banimento no numero do WhatsApp",
+        confidence=0.95,
+    )
+
+    assert decision.escalated is True
+    assert "whatsapp_blocking_risk" in decision.reasons
+    assert "sensitive_topic" not in decision.reasons
 
 
 def test_handoff_escalates_on_redefinition_attempt() -> None:
