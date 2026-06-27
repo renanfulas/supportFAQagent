@@ -34,6 +34,17 @@ def test_ingestion_preview_returns_documents_and_chunks() -> None:
     assert payload["document_count"] >= 1
     assert payload["chunk_count"] >= payload["document_count"]
     assert payload["sample_chunks"]
+    assert payload["chunks"]
+    assert payload["chunk_count"] == len(payload["chunks"])
+    assert {
+        "source",
+        "title",
+        "text",
+        "chunk_index",
+    }.issubset(payload["chunks"][0])
+    normalized_source = payload["chunks"][0]["source"].replace("\\", "/")
+    assert "domains/suporte-vps-whatsapp/knowledge" in normalized_source
+    assert payload["chunks"][0]["chunk_index"] == 0
 
 
 def test_chat_returns_answer_with_references() -> None:
