@@ -1,10 +1,11 @@
 # Plano V1B - Persistencia OTP E Entrega WhatsApp Real
 
-Status: plano historico/superseded para a ponte n8n/Evolution. Backend
-PostgreSQL e contratos foram incorporados, mas a direcao operacional atual
-substituiu a ativacao n8n/Evolution por Meta WhatsApp Cloud API nativa com
+Status: ARQUIVADO (superseded). Plano historico da ponte n8n/Evolution. O
+backend PostgreSQL e os contratos foram incorporados, mas `n8n` foi removido do
+projeto e a direcao operacional atual e Meta WhatsApp Cloud API nativa, com
 Hermes apenas como adapter temporario. Use este documento somente como contexto
-legado, nao como proximo passo ativo.
+legado, nao como proximo passo ativo. Fonte atual:
+`../../quality-plans/meta-whatsapp-native-integration-plan.md`.
 
 ## Objetivo
 

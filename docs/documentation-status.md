@@ -24,8 +24,9 @@ Use estes documentos para tomar decisoes atuais:
 - Fase 0 operacional: `not_approved` ate executar restore cronometrado em
   ambiente isolado e medir `RPO <= 24h` / `RTO <= 4h`;
 - Fase 5: em andamento, concentrada em operacao, capacidade, observabilidade e
-  acompanhamento do pgvector como default de staging. `n8n` nao e mais parte do
-  plano operacional atual.
+  acompanhamento do pgvector como default de staging. `n8n` foi removido do
+  projeto (assets `deploy/n8n/`, aliases de config e runbooks dedicados) e nao
+  faz parte do plano operacional.
 
 ## Proxima Ordem Tecnica
 

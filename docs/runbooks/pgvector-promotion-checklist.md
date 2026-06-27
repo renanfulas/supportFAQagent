@@ -105,4 +105,5 @@ Para cada rodada de decisao ou revalidacao, registrar:
 - Renan coordena criterios, evals, contratos, schema, migrations, indices,
   persistencia e qualidade.
 - Juliano responde pelo runtime oficial, rede, proxy, TLS e logs de operacao.
-- n8n deve consumir o contrato HTTP, nao redesenhar inteligencia do backend.
+- Automacoes externas devem consumir o contrato HTTP, nao redesenhar
+  inteligencia do backend.

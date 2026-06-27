@@ -1,8 +1,11 @@
 # Runbook - Subir n8n Em Docker Na VPS
 
-Status: legado. `n8n` nao e mais parte do plano operacional atual do MVP. Use
-este runbook apenas para preservar, auditar ou recuperar o servico historico,
-sem transforma-lo em gate de promocao.
+Status: ARQUIVADO. `n8n` foi removido do projeto e nao faz mais parte do plano
+operacional do MVP. Os arquivos `deploy/n8n/` que este runbook copiava
+(`docker-compose.yml`, `.env.example` e workflows) foram excluidos do repo. Use
+este documento apenas como registro historico das decisoes de hardening; ele nao
+e executavel como esta. Para a direcao atual de WhatsApp, veja
+`../../quality-plans/meta-whatsapp-native-integration-plan.md`.
 
 ## Objetivo
 
@@ -245,5 +248,5 @@ Parar e registrar bloqueio privado se ocorrer:
 ## Referencias
 
 - [Contrato n8n/WhatsApp para `/chat`](n8n-whatsapp-chat-contract.md)
-- [Mapa oficial de ambientes](../environments.md)
-- [Runtime controlado da VPS](vps-controlled-runtime.md)
+- [Mapa oficial de ambientes](../../environments.md)
+- [Runtime controlado da VPS](../../runbooks/vps-controlled-runtime.md)

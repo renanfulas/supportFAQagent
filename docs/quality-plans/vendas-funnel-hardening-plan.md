@@ -168,7 +168,7 @@ Mudanca: taxonomia de reasons em `app/handoff/` / `app/orchestration/chat_flow.p
   seguranca. Ver secao 4.
 
 Risco de contrato: `escalated` e usado por log `chat_completed`, campo da
-`ChatResponse` e consumidor de fila/n8n. Decouplar `escalated` de "precisa humano"
+`ChatResponse` e consumidor de fila/automacao externa. Decouplar `escalated` de "precisa humano"
 e **mudanca de contrato** -> atualizar `docs/integration-contracts.md` e comunicar.
 
 Seam de teste: `tests/test_chat_flow_errors.py` + teste de `operational` com

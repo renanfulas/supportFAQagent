@@ -22,8 +22,9 @@ O detalhamento tecnico por fase e por responsavel esta em [Plano Tecnico de Impl
 - A comunicacao do projeto deve seguir `docs/product-positioning.md`: comercial tecnica, honesta sobre limites e focada em seguranca operacional.
 - O fluxo do MVP sera RAG simples, linear e previsivel.
 - O MVP nao usara `ConversationalRetrievalChain`.
-- A direcao atual de WhatsApp e Meta WhatsApp Cloud API nativa; `n8n` e
-  Evolution permanecem apenas como legado/ponte operacional, sem gate ativo.
+- A direcao atual de WhatsApp e Meta WhatsApp Cloud API nativa; `n8n` foi
+  removido do projeto e Evolution permanece apenas como ponte legada, sem gate
+  ativo.
 - LangChain, se usado, entra apenas como apoio pontual e nao como espinha dorsal do sistema.
 
 ## Estado atual do projeto
@@ -79,7 +80,7 @@ Avanco integrado pelo PR `#64` em 12/06/2026:
 - PostgreSQL/pgvector real local passou pelo rollout expand/contract e pela
   suite completa com `356 passed`
 - a Fase 0 continua `not_approved` ate provar restore cronometrado em ambiente
-  isolado; `n8n` nao e mais gate ativo do MVP
+  isolado; `n8n` foi removido do projeto e nao e gate do MVP
 
 ## Responsabilidades
 
@@ -87,8 +88,9 @@ Para este MVP, as frentes ficam organizadas assim:
 
 - `Juliano Barreto`
   Responsavel pela VPS, deploy, runtime, rede, logs, secrets, restore,
-  conectividade e apoio pontual em LangChain. Qualquer legado `n8n`/Evolution
-  fica sob responsabilidade operacional, nao como plano ativo do MVP.
+  conectividade e apoio pontual em LangChain. `n8n` foi removido; qualquer
+  legado Evolution fica sob responsabilidade operacional, nao como plano ativo
+  do MVP.
 
 - `Renan`
   Responsavel por arquitetura, orquestracao, PostgreSQL, pgvector,
@@ -199,8 +201,8 @@ Por isso:
 ## Papel das integracoes WhatsApp
 
 A direcao atual e tratar WhatsApp como canal externo com Meta WhatsApp Cloud
-API nativa. `n8n` e Evolution deixam de ser plano operacional ativo do MVP e
-permanecem apenas como legado ou ponte temporaria ate decisao explicita.
+API nativa. `n8n` foi removido do projeto; Evolution permanece apenas como ponte
+legada ate decisao explicita.
 
 Uso previsto para a fundacao atual:
 

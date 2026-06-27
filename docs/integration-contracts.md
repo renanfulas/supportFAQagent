@@ -279,9 +279,9 @@ Uso esperado:
 - A API retorna `references`; na persistencia PostgreSQL, este campo deve ser salvo em `messages.message_references`.
 
 Para detalhes operacionais da fundacao Meta, use
-`docs/runbooks/meta-whatsapp-private-smoke.md`. O runbook
-`docs/runbooks/n8n-whatsapp-chat-contract.md` permanece apenas como referencia
-legada.
+`docs/runbooks/meta-whatsapp-private-smoke.md`. O contrato historico n8n/WhatsApp
+foi arquivado em `docs/archive/runbooks/n8n-whatsapp-chat-contract.md` apos a
+remocao do n8n; consulte apenas como referencia legada.
 
 Contrato atual de `references`:
 
@@ -551,13 +551,11 @@ Regras:
 - entrega concorrente em andamento retorna `425`;
 - somente depois da validacao encaminha ao destino verificado configurado como
   `VERIFIED_*_WEBHOOK_URL`;
-- `N8N_VERIFIED_*_URL` permanece como alias legado temporario para runtimes
-  privados existentes;
 - payload, assinatura, secret e URL privada nunca entram nos logs.
 
 O dispatcher deve apontar `HANDOFF_WEBHOOK_URL`,
 `WHATSAPP_MESSAGE_WEBHOOK_URL` e `OTP_DELIVERY_WEBHOOK_URL` para essa fachada
-interna, nao diretamente para o n8n.
+interna de entrega verificada, nao diretamente para um provedor externo.
 
 O dispatcher separa evento interno de rota de entrega:
 

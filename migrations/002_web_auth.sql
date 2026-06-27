@@ -4,7 +4,7 @@
 --
 -- Cria as tabelas de identidade de canal, sessoes web e desafios OTP.
 -- Estas tabelas suportam o fluxo de verificacao de WhatsApp via OTP
--- descrito em docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md
+-- descrito em docs/archive/implementation-plans/web-chat-v1b-postgres-n8n-plan.md
 --
 -- Regras de privacidade obrigatorias:
 --   - phone_e164 nunca persiste nessas tabelas

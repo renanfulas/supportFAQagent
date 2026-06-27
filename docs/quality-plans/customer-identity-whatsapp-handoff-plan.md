@@ -86,7 +86,7 @@ Nao objetivos:
 
 - Nao reimplementar o Auth do zero.
 - Nao salvar telefone bruto, OTP, token, payload completo ou session id bruto.
-- Nao transformar Meta, Hermes, n8n ou Evolution em regra de negocio.
+- Nao transformar Meta, Hermes ou Evolution em regra de negocio.
 - Nao usar outbox como banco de tickets.
 - Nao tentar recuperar historico antigo que nao possui vinculo de identidade.
 - Nao ativar fluxo real de Meta antes de smoke privado e restore isolado.

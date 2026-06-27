@@ -6,8 +6,8 @@ Baseado em `docs/environments.md`, `docs/runbooks/vps-controlled-runtime.md`,
 `docs/security/vps-security-plan.md`.
 
 Ownership de VPS, deploy, runtime, rede, logs, secrets, restore e
-conectividade externa: Juliano. `n8n` e Evolution permanecem apenas como
-legado/ponte operacional, nao como plano ativo do MVP.
+conectividade externa: Juliano. `n8n` foi removido do projeto; a entrega externa
+de WhatsApp segue a direcao de Meta WhatsApp Cloud API nativa.
 Ownership de banco, migrations, pgvector, contratos, backend e testes: Renan.
 Rollout de migration, restore e promocao exigem revisao conjunta.
 
@@ -81,9 +81,9 @@ PERSISTENCE_HASH_SECRET=<secret-dedicado>
 PERSISTENCE_HASH_VERSION=hmac-sha256-v1
 OUTBOX_WEBHOOK_SECRET=<secret-dedicado>
 ENABLE_OUTBOX_INGRESS=true
-N8N_VERIFIED_HANDOFF_URL=<url-interna>
-N8N_VERIFIED_WHATSAPP_URL=<url-interna>
-N8N_VERIFIED_OTP_URL=<url-interna>
+VERIFIED_HANDOFF_WEBHOOK_URL=<url-interna>
+VERIFIED_WHATSAPP_WEBHOOK_URL=<url-interna>
+VERIFIED_OTP_WEBHOOK_URL=<url-interna>
 HANDOFF_WEBHOOK_URL=<url-interna-do-ingress-assinado>
 WHATSAPP_MESSAGE_WEBHOOK_URL=<url-interna-do-ingress-assinado>
 OTP_DELIVERY_WEBHOOK_URL=<url-interna-do-ingress-assinado>
@@ -106,8 +106,8 @@ ENABLE_WEB_WHATSAPP_AUTH=true
 WEB_AUTH_STORAGE_BACKEND=postgres
 IDENTITY_HASH_SECRET=<secret-diferente-do-api-secret>
 OTP_DIGEST_SECRET=<secret-diferente-dos-demais>
-N8N_OTP_DELIVERY_WEBHOOK_URL=<url-interna-do-webhook-n8n>
-N8N_OTP_WEBHOOK_SECRET=<secret-dedicado-nao-reutilizar>
+WEB_AUTH_OTP_DELIVERY_TRANSPORT=<memory|verified_webhook>
+VERIFIED_OTP_WEBHOOK_URL=<url-interna-do-webhook-de-entrega>
 
 # Zoom (deixar vazio se nao usar)
 RECALL_API_KEY=
@@ -338,5 +338,5 @@ Parar e registrar bloqueio privado se ocorrer:
 - [Web chat V0 HostGator staging](hostgator-staging-web-chat-v0.md)
 - [Plano de seguranca da VPS](../security/vps-security-plan.md)
 - [Relatorio historico de validacao anterior](../archive/historical-reports/staging-runtime-validation-report.md)
-- [Plano V1B WhatsApp OTP](../quality-plans/web-chat-v1b-postgres-n8n-plan.md)
+- [Plano V1B WhatsApp OTP (arquivado)](../archive/implementation-plans/web-chat-v1b-postgres-n8n-plan.md)
 - [Checklist de promocao da Fase 0](phase0-staging-promotion-evidence.md)

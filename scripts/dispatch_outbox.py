@@ -12,6 +12,7 @@ import time
 
 import requests
 
+from app.conversations.archive_sink import build_archive_sink_from_env
 from app.integrations.meta_whatsapp.client import (
     MetaWhatsAppClient,
     MetaWhatsAppRequestError,
@@ -23,12 +24,14 @@ class DeliveryRoute:
     name: str
     url_env: str
     transport_env: str
+    default_transport: str = "internal_webhook"
 
 
 EVENT_DELIVERY_ROUTES = {
     "handoff.requested": "handoff",
     "whatsapp.message.requested": "whatsapp_message",
     "otp.delivery.requested": "otp_delivery",
+    "conversation.turn.archived": "conversation_archive",
 }
 DELIVERY_ROUTES = {
     "handoff": DeliveryRoute(
@@ -46,8 +49,19 @@ DELIVERY_ROUTES = {
         url_env="OTP_DELIVERY_WEBHOOK_URL",
         transport_env="OUTBOX_OTP_DELIVERY_TRANSPORT",
     ),
+    "conversation_archive": DeliveryRoute(
+        name="conversation_archive",
+        url_env="",
+        transport_env="OUTBOX_CONVERSATION_ARCHIVE_TRANSPORT",
+        default_transport="append_only_sink",
+    ),
 }
-SUPPORTED_DELIVERY_TRANSPORTS = {"internal_webhook", "meta_whatsapp", "disabled"}
+SUPPORTED_DELIVERY_TRANSPORTS = {
+    "internal_webhook",
+    "meta_whatsapp",
+    "append_only_sink",
+    "disabled",
+}
 META_WHATSAPP_ROUTES = {"whatsapp_message"}
 MAX_ATTEMPTS = 5
 RETRYABLE_HTTP_STATUS = {408, 409, 425, 429}
@@ -184,7 +198,20 @@ def deliver(event: dict) -> None:
     if transport == "meta_whatsapp":
         deliver_meta_whatsapp(event=event, route=route)
         return
+    if transport == "append_only_sink":
+        deliver_conversation_archive(event=event)
+        return
     deliver_internal_webhook(event=event, route=route)
+
+
+def deliver_conversation_archive(*, event: dict) -> None:
+    sink = build_archive_sink_from_env()
+    sink.append(
+        idempotency_key=event["idempotency_key"],
+        event_type=str(event["event_type"]),
+        request_id=event["request_id"],
+        payload=event["payload_sanitized"],
+    )
 
 
 def deliver_internal_webhook(*, event: dict, route: DeliveryRoute) -> None:
@@ -259,8 +286,8 @@ def resolve_delivery_route(event_type: str) -> DeliveryRoute:
 
 
 def resolve_delivery_transport(route: DeliveryRoute) -> str:
-    transport = os.getenv(route.transport_env, "internal_webhook").strip().lower()
-    transport = transport or "internal_webhook"
+    transport = os.getenv(route.transport_env, route.default_transport).strip().lower()
+    transport = transport or route.default_transport
     if transport not in SUPPORTED_DELIVERY_TRANSPORTS:
         raise PermanentDeliveryError(f"unsupported delivery transport: {transport}")
     return transport

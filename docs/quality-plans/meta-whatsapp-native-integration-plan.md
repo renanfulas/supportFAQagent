@@ -3,6 +3,12 @@
 Status: planejamento tecnico ativo; Onda 1 implementada em codigo e docs.
 Data de revisao: 2026-06-18.
 
+Atualizacao: `n8n` foi removido do projeto. Os assets `deploy/n8n/` e os aliases
+legados `N8N_VERIFIED_*_URL` em `app/core/config.py` foram excluidos; somente os
+nomes genericos `VERIFIED_*_WEBHOOK_URL` permanecem. As tarefas abaixo que falam
+em "manter alias legado n8n" estao concluidas pela remocao e ficam apenas como
+registro historico do caminho de migracao.
+
 ## Diagnostico
 
 O projeto ja tem o core certo para essa mudanca: `/chat`, handoff, feedback,
@@ -73,8 +79,8 @@ Arquivos com acoplamento direto a n8n:
 - `app/core/config.py`
   - Contem `VERIFIED_HANDOFF_WEBHOOK_URL`,
     `VERIFIED_WHATSAPP_WEBHOOK_URL` e `VERIFIED_OTP_WEBHOOK_URL`.
-  - Mantem `N8N_VERIFIED_HANDOFF_URL`, `N8N_VERIFIED_WHATSAPP_URL` e
-    `N8N_VERIFIED_OTP_URL` como alias legado temporario.
+  - Os aliases legados `N8N_VERIFIED_*_URL` foram removidos junto com o n8n;
+    resta apenas a config generica.
   - `ENABLE_OUTBOX_INGRESS` e `OUTBOX_WEBHOOK_SECRET` ja sao genericos e devem
     ser preservados.
 
@@ -145,12 +151,8 @@ Mudancas planejadas:
   - `VERIFIED_HANDOFF_WEBHOOK_URL`
   - `VERIFIED_WHATSAPP_WEBHOOK_URL`
   - `VERIFIED_OTP_WEBHOOK_URL`
-- Manter `N8N_VERIFIED_*` como alias legado por uma fase.
-- Definir precedencia:
-  - variavel generica vence;
-  - se somente `N8N_VERIFIED_*` existir, usar legado;
-  - se ambas existirem com valores conflitantes, falhar no startup em ambiente
-    nao local.
+- (Concluido pela remocao do n8n) O alias legado `N8N_VERIFIED_*` foi excluido;
+  a config usa apenas os nomes genericos, sem precedencia nem conflito a tratar.
 - Atualizar mensagens de erro e logs para `verified_delivery_*`, nao
   `n8n_*`.
 
@@ -165,9 +167,8 @@ Arquivos alvo:
 
 Criterio de pronto:
 
-- Nenhum comportamento muda para o n8n atual.
-- O novo nome generico funciona.
-- O alias legado continua funcionando.
+- O nome generico funciona como unica config de destino verificado.
+- O alias legado `N8N_VERIFIED_*` foi removido.
 - Logs deixam de dizer que o destino verificado sempre e n8n.
 
 ## Fase 2 - Separar Evento Interno De Provedor Externo
@@ -425,9 +426,9 @@ Mitigacoes:
 
 A entrega futura so deve ser aceita se:
 
-- O core RAG nao conhecer classes Meta, Hermes, n8n ou Evolution.
-- `internal_webhooks.py` deixar de depender semanticamente de `N8N_VERIFIED_*`.
-- Config generica funcionar e alias legado continuar temporariamente.
+- O core RAG nao conhecer classes Meta, Hermes ou Evolution.
+- `internal_webhooks.py` nao depender de `N8N_VERIFIED_*` (alias ja removido).
+- Config generica `VERIFIED_*_WEBHOOK_URL` funcionar como unica fonte.
 - Dispatcher separar evento interno de rota/provedor.
 - Meta webhook validar token de verificacao e assinatura.
 - Meta client enviar mensagem com timeout e erro sanitizado.
@@ -453,8 +454,7 @@ python -m pytest
 
 Testes esperados na fase de codigo:
 
-- config generica e alias `N8N_VERIFIED_*`;
-- conflito entre config generica e legado;
+- config generica `VERIFIED_*_WEBHOOK_URL`;
 - ingress interno com evento desconhecido;
 - ingress interno com HMAC invalido;
 - dispatcher sem URL configurada;

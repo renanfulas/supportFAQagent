@@ -57,7 +57,7 @@ O que nao deve ser hardcoded no core:
 - campos especificos de VPS ou WhatsApp
 - colunas especificas de vendas ou onboarding
 - regras de handoff por setor
-- detalhes operacionais de Meta, Hermes, `n8n` legado ou canais externos
+- detalhes operacionais de Meta, Hermes ou canais externos
 
 Esses detalhes devem continuar em `domains/<domain>/`, contratos HTTP e
 integracoes externas.

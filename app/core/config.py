@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     )
     enable_outbox_ingress: bool = Field(default=False, alias="ENABLE_OUTBOX_INGRESS")
     outbox_webhook_secret: str | None = Field(default=None, alias="OUTBOX_WEBHOOK_SECRET")
+    enable_conversation_archive: bool = Field(
+        default=False,
+        alias="ENABLE_CONVERSATION_ARCHIVE",
+    )
     verified_handoff_webhook_url: str | None = Field(
         default=None,
         alias="VERIFIED_HANDOFF_WEBHOOK_URL",
@@ -46,18 +50,6 @@ class Settings(BaseSettings):
     verified_otp_webhook_url: str | None = Field(
         default=None,
         alias="VERIFIED_OTP_WEBHOOK_URL",
-    )
-    n8n_verified_handoff_url: str | None = Field(
-        default=None,
-        alias="N8N_VERIFIED_HANDOFF_URL",
-    )
-    n8n_verified_whatsapp_url: str | None = Field(
-        default=None,
-        alias="N8N_VERIFIED_WHATSAPP_URL",
-    )
-    n8n_verified_otp_url: str | None = Field(
-        default=None,
-        alias="N8N_VERIFIED_OTP_URL",
     )
     conversation_retention_days: int = Field(
         default=60,
@@ -361,26 +353,14 @@ class Settings(BaseSettings):
                 self.outbox_webhook_secret,
                 "OUTBOX_WEBHOOK_SECRET",
             )
-        self.verified_handoff_webhook_url = _resolve_delivery_url_alias(
-            generic_value=self.verified_handoff_webhook_url,
-            legacy_value=self.n8n_verified_handoff_url,
-            generic_name="VERIFIED_HANDOFF_WEBHOOK_URL",
-            legacy_name="N8N_VERIFIED_HANDOFF_URL",
-            app_env=app_env,
+        self.verified_handoff_webhook_url = _normalize_optional_text(
+            self.verified_handoff_webhook_url
         )
-        self.verified_whatsapp_webhook_url = _resolve_delivery_url_alias(
-            generic_value=self.verified_whatsapp_webhook_url,
-            legacy_value=self.n8n_verified_whatsapp_url,
-            generic_name="VERIFIED_WHATSAPP_WEBHOOK_URL",
-            legacy_name="N8N_VERIFIED_WHATSAPP_URL",
-            app_env=app_env,
+        self.verified_whatsapp_webhook_url = _normalize_optional_text(
+            self.verified_whatsapp_webhook_url
         )
-        self.verified_otp_webhook_url = _resolve_delivery_url_alias(
-            generic_value=self.verified_otp_webhook_url,
-            legacy_value=self.n8n_verified_otp_url,
-            generic_name="VERIFIED_OTP_WEBHOOK_URL",
-            legacy_name="N8N_VERIFIED_OTP_URL",
-            app_env=app_env,
+        self.verified_otp_webhook_url = _normalize_optional_text(
+            self.verified_otp_webhook_url
         )
         if self.database_pool_min_size > self.database_pool_max_size:
             raise ValueError("DATABASE_POOL_MIN_SIZE cannot exceed DATABASE_POOL_MAX_SIZE")
@@ -411,20 +391,3 @@ def _normalize_optional_text(value: str | None) -> str | None:
     if value and value.strip():
         return value.strip()
     return None
-
-
-def _resolve_delivery_url_alias(
-    *,
-    generic_value: str | None,
-    legacy_value: str | None,
-    generic_name: str,
-    legacy_name: str,
-    app_env: str,
-) -> str | None:
-    generic = _normalize_optional_text(generic_value)
-    legacy = _normalize_optional_text(legacy_value)
-    if generic and legacy and generic != legacy and app_env not in DEV_ENVS:
-        raise ValueError(
-            f"{generic_name} conflicts with legacy {legacy_name}; use only the generic delivery URL",
-        )
-    return generic or legacy
