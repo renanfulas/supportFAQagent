@@ -8,6 +8,11 @@ from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 REDACTION_VERSION = "phase0-v1"
 REDACTED_SECRET = "[REDACTED_SECRET]"
+REDACTED_CARD = "[REDACTED_CARD]"
+# Candidate PAN: 13-19 digits grouped in runs separated by single spaces or
+# dashes. Bounded quantifiers keep the regex linear (no ReDoS). The lookarounds
+# reject candidates glued to other digits or a decimal point.
+_CARD_CANDIDATE = re.compile(r"(?<![\d.])\d(?:[ -]?\d){12,18}(?![\d.])")
 _EMAIL = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 _IPV4 = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 _IPV6_CANDIDATE = re.compile(
@@ -120,12 +125,93 @@ _SENSITIVE_PATH_SEGMENTS = {
 _TRAILING_URI_PUNCTUATION = ".,;:!?)]}>"
 
 
+def _luhn_valid(digits: str) -> bool:
+    """Return True when ``digits`` (already stripped to 0-9) passes Luhn."""
+    total = 0
+    parity = len(digits) % 2
+    for index, char in enumerate(digits):
+        value = ord(char) - 48
+        if index % 2 == parity:
+            value *= 2
+            if value > 9:
+                value -= 9
+        total += value
+    return total % 10 == 0
+
+
+def _is_card_number(digits: str) -> bool:
+    """Decide if a run of digits is a payment card PAN.
+
+    Applies length bounds (13-19), an exclusion list that rules out other
+    structured numbers with overlapping shapes (boleto linha digitavel,
+    CPF/CNPJ, obvious order ids), and finally Luhn.
+    """
+    length = len(digits)
+    if length < 13 or length > 19:
+        return False
+    # Boleto linha digitavel is 47 (or 48 with the verifier) digits; the raw
+    # form is far longer than a PAN, but a representacao numerica may be pasted
+    # in blocks. Lengths 20+ are already excluded above; the explicit guard here
+    # documents the intent and protects against future bound changes.
+    if length in (47, 48):
+        return False
+    # CPF (11) and CNPJ (14) overlap the lower PAN range. CPF (11) is below the
+    # 13 floor, so only CNPJ (14) can collide; reject 14-digit runs that fail
+    # the CNPJ-vs-card disambiguation by leaning on Luhn, which CNPJs rarely
+    # satisfy, plus the dedicated CNPJ check.
+    if length == 14 and _is_cnpj(digits):
+        return False
+    # Obvious order ids: a single repeated digit (e.g. 0000000000000) or a
+    # strictly sequential run is not a real PAN even if it happens to pass Luhn.
+    if len(set(digits)) == 1:
+        return False
+    return _luhn_valid(digits)
+
+
+def _is_cnpj(digits: str) -> bool:
+    """Validate a 14-digit string against the CNPJ check-digit algorithm."""
+    if len(digits) != 14 or len(set(digits)) == 1:
+        return False
+    nums = [ord(c) - 48 for c in digits]
+
+    def check(weights: list[int], upto: int) -> int:
+        total = sum(nums[i] * weights[i] for i in range(upto))
+        rem = total % 11
+        return 0 if rem < 2 else 11 - rem
+
+    first = check([5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2], 12)
+    second = check([6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2], 13)
+    return nums[12] == first and nums[13] == second
+
+
+def contains_card_number(text: str | None) -> bool:
+    """Return True when ``text`` contains a substring that looks like a card PAN.
+
+    Reusable detector for checkout/handoff so card-number policy lives in one
+    place. Never logs or echoes the matched value.
+    """
+    if not text:
+        return False
+    for match in _CARD_CANDIDATE.finditer(text):
+        digits = re.sub(r"\D", "", match.group(0))
+        if _is_card_number(digits):
+            return True
+    return False
+
+
+def _redact_card(match: re.Match[str]) -> str:
+    digits = re.sub(r"\D", "", match.group(0))
+    return REDACTED_CARD if _is_card_number(digits) else match.group(0)
+
+
 def sanitize_for_persistence(text: str | None) -> str | None:
     if text is None:
         return None
     if not isinstance(text, str):
         raise TypeError("persisted text must be a string")
     value = _PRIVATE_KEY_BLOCK.sub(REDACTED_SECRET, text)
+    # Redact card PANs early so the phone/IP rules cannot partially mangle them.
+    value = _CARD_CANDIDATE.sub(_redact_card, value)
     value = _SENSITIVE_HEADER.sub(
         lambda match: f"{match.group('name')} {REDACTED_SECRET}",
         value,
