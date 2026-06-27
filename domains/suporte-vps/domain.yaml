@@ -1,6 +1,9 @@
 contract_version: 1
 name: suporte-vps
-display_name: Suporte VPS
+# Display com palavra inicial distinta ("Gerenciamento") para o menu do roteador
+# nao virar duas opcoes "Suporte VPS..." e para a selecao por rotulo nao colidir
+# com suporte-vps-whatsapp / suporte-hospedagem.
+display_name: Gerenciamento de VPS e Dedicado
 description: Agente de suporte de gerenciamento e ciclo de vida de Servidor VPS e Dedicado da HostGator pelo Portal do Cliente - o que e VPS/KVM, reinstalacao (rebuild) de sistema operacional, adicionar painel ou aplicacao, upgrade de plano e acesso ao Servidor Dedicado (SSH/RDP).
 owner: Renan
 default_language: pt-BR
