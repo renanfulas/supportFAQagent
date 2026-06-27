@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+import json
 import os
 import subprocess
 import sys
@@ -439,6 +440,77 @@ def test_conversation_schema_removes_raw_session_and_persists_only_sanitized_mes
     assert "hunter2" not in rendered
     assert all(row[1] == "whatsapp" for row in rows)
     assert all(row[3] == "phase0-v1" for row in rows)
+
+
+def test_persisted_turn_is_fanned_out_to_append_only_sink(
+    runtime: DatabaseRuntime,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    _ensure_domain(runtime)
+    runtime.settings.enable_conversation_archive = True
+    repository = OperationalRepository(runtime)
+
+    result = repository.record_chat(
+        ChatAuditInput(
+            request_id="req-archive-fanout",
+            domain="suporte-vps-whatsapp",
+            session_id="whatsapp:archive-session",
+            question="Meu email e user@example.com",
+            answer="Nao use password=hunter2.",
+            confidence=0.7,
+            escalated=False,
+            handoff_reasons=[],
+            references=["safe.md"],
+            error_code=None,
+            channel="whatsapp",
+        )
+    )
+
+    assert result.persistence_status == PERSISTENCE_PERSISTED
+    with runtime.transaction() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT idempotency_key, status
+                FROM operational_outbox
+                WHERE event_type = 'conversation.turn.archived'
+                """
+            )
+            outbox_rows = cursor.fetchall()
+
+    assert outbox_rows == [(f"archive:{result.turn_id}", "pending")]
+
+    sink_path = tmp_path / "archive.ndjson"
+    monkeypatch.delenv("OUTBOX_CONVERSATION_ARCHIVE_TRANSPORT", raising=False)
+    monkeypatch.setenv("CONVERSATION_ARCHIVE_SINK_TRANSPORT", "append_only_file")
+    monkeypatch.setenv("CONVERSATION_ARCHIVE_SINK_PATH", str(sink_path))
+
+    assert dispatch_one(DATABASE_URL) is True
+
+    archived = [
+        json.loads(line)
+        for line in sink_path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    assert len(archived) == 1
+    record = archived[0]
+    assert record["idempotency_key"] == f"archive:{result.turn_id}"
+    assert record["event_type"] == "conversation.turn.archived"
+    rendered = json.dumps(record)
+    assert "archive-session" not in rendered
+    assert "user@example.com" not in rendered
+    assert "hunter2" not in rendered
+
+    with runtime.transaction() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT status FROM operational_outbox
+                WHERE event_type = 'conversation.turn.archived'
+                """
+            )
+            assert cursor.fetchone()[0] == "delivered"
 
 
 def test_conversation_turn_is_persistently_idempotent_and_request_reuse_is_visible(

@@ -182,6 +182,22 @@ class OperationalRepository:
                             error_code=error_code,
                         )
                         conversation_id = persisted_conversation.conversation_id
+                    if getattr(
+                        self.runtime.settings, "enable_conversation_archive", False
+                    ):
+                        self._enqueue_conversation_archive(
+                            cursor=cursor,
+                            turn_id=str(persisted_turn_id),
+                            request_id=safe_request_id,
+                            audit=audit,
+                            session_hash=session_hash,
+                            session_hash_version=session_hash_version,
+                            question=question,
+                            answer=answer,
+                            handoff_reasons=handoff_reasons,
+                            references=references,
+                            error_code=error_code,
+                        )
                     handoff_status = HANDOFF_NOT_REQUIRED
                     if audit.escalated:
                         support_case_id = self._upsert_support_case(
@@ -247,6 +263,62 @@ class OperationalRepository:
                 persistence_status=PERSISTENCE_UNAVAILABLE,
                 turn_id=audit.turn_id,
             )
+
+    def _enqueue_conversation_archive(
+        self,
+        *,
+        cursor,
+        turn_id: str,
+        request_id: str,
+        audit: ChatAuditInput,
+        session_hash: str | None,
+        session_hash_version: str | None,
+        question: str,
+        answer: str,
+        handoff_reasons: list[str],
+        references: list[str],
+        error_code: str | None,
+    ) -> None:
+        """Enqueue an append-only copy of the persisted turn.
+
+        Runs inside the same transaction as the turn write, so the insurance
+        copy shares the source-of-truth durability guarantee. The dispatcher
+        drains it to the off-box sink off the hot path.
+        """
+        archive_payload = sanitize_payload(
+            {
+                "turn_id": turn_id,
+                "request_id": request_id,
+                "domain": audit.domain,
+                "channel": audit.channel,
+                "session_hash": session_hash,
+                "session_hash_version": session_hash_version,
+                "customer_id": audit.customer_id,
+                "confidence": audit.confidence,
+                "escalated": audit.escalated,
+                "handoff_reasons": handoff_reasons,
+                "references": references,
+                "error_code": error_code,
+                "question_sanitized": question,
+                "answer_sanitized": answer,
+                "redaction_version": REDACTION_VERSION,
+            }
+        )
+        cursor.execute(
+            """
+            INSERT INTO operational_outbox (
+              event_type, idempotency_key, request_id, payload_sanitized
+            )
+            VALUES ('conversation.turn.archived', %s, %s, %s::jsonb)
+            ON CONFLICT (idempotency_key)
+            DO UPDATE SET idempotency_key = EXCLUDED.idempotency_key
+            """,
+            (
+                f"archive:{turn_id}",
+                request_id,
+                json.dumps(archive_payload),
+            ),
+        )
 
     def _upsert_support_case(
         self,
