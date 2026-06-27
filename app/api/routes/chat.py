@@ -85,6 +85,7 @@ def chat(
         escalated=response["escalated"],
         handoff_reasons=response["handoff_reasons"],
         error_code=response["error_code"],
+        provider_failure_kind=response.get("provider_failure_kind"),
         handoff_status=response["handoff_status"],
         persistence_status=response["persistence_status"],
         request_id_reused=persistence_result.request_id_reused,

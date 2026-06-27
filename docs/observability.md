@@ -48,6 +48,7 @@ Eventos atuais:
   motivos, erro, canal, `handoff_status`, `persistence_status`, reutilizacao de
   `request_id`, backend de retrieval, quantidade de referencias e tempos
   agregados do fluxo.
+- quando houver falha do provider de LLM, `chat_completed` tambem pode registrar `provider_failure_kind` como metadado interno seguro, por exemplo `missing_credentials`, `provider_timeout`, `provider_request_error`, `empty_response` ou `initialization_error`.
 - `chat_persistence_unavailable`: falha sanitizada ao gravar audit, conversa
   ou outbox, sem pergunta, resposta, sessao ou detalhe privado do banco.
 - `conversation_history_unavailable`: historico indisponivel; o chat continua
@@ -76,6 +77,7 @@ Eventos e sinais importantes para a trilha de seguranca:
   `PERSISTENCE_HASH_SECRET` quando configurado; sem ele, usa chave efemera por
   processo para evitar hash enumeravel, sem prometer correlacao entre restarts.
 - `error_code`: erro observavel, como `provider_error` ou `retrieval_error`.
+- `provider_failure_kind`: classificacao interna e segura da falha de provider, usada para diagnostico operacional sem mudar o contrato publico do `/chat`.
 - `handoff_reasons`: motivos de escalonamento para humano.
 - `retrieval_backend`: backend configurado no runtime, como `lexical` ou
   `pgvector`.
