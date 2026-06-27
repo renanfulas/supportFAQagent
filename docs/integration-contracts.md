@@ -502,6 +502,16 @@ Uso esperado:
 - Smoke test local do dominio.
 - Conferencia rapida antes de rodar ingestao persistente no futuro.
 
+Resposta:
+
+- Mesmo shape de `POST /ingestion/preview`: `domain`, `document_count`,
+  `chunk_count`, `sample_chunks` e a lista completa `chunks` com `source`,
+  `title`, `text` e `chunk_index`.
+- `source` aponta para o caminho local do arquivo lido em
+  `domains/<domain_name>/knowledge`.
+- Como nao recebe payload via header, normalmente nao envia `request_id`.
+- Tambem nao persiste dados nem gera embeddings.
+
 Regra de seguranca:
 
 - esta rota exige `X-API-Key`

@@ -78,4 +78,13 @@ def preview_domain_ingestion(
         document_count=len(documents),
         chunk_count=len(chunks),
         sample_chunks=[chunk.text for chunk in chunks[:3]],
+        chunks=[
+            IngestionPreviewChunk(
+                source=chunk.source,
+                title=chunk.title,
+                text=chunk.text,
+                chunk_index=chunk.chunk_index,
+            )
+            for chunk in chunks
+        ],
     )
