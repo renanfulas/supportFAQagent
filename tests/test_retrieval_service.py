@@ -1,10 +1,13 @@
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
+import sys
 
 import pytest
 
 from app.core.errors import RetrievalError
-from app.domain_engine.models import DomainConfig
+from app.domain_engine.models import DomainConfig, DomainEmbeddingConfig
 from app.ingestion.models import KnowledgeChunk
+from app.retrieval.embeddings import get_domain_embeddings, get_embeddings
 from app.retrieval.lexical_store import LexicalVectorStore
 from app.retrieval.models import RetrievedChunk
 from app.retrieval.pgvector_store import PgVectorStore
@@ -139,3 +142,120 @@ def test_lexical_store_orders_equal_scores_deterministically() -> None:
     )
 
     assert [chunk.source for chunk in chunks] == ["a.md", "z.md"]
+
+
+def _install_fake_openai_embeddings(
+    monkeypatch: pytest.MonkeyPatch,
+    embeddings_class: type,
+) -> None:
+    fake_module = ModuleType("langchain_openai")
+    fake_module.OpenAIEmbeddings = embeddings_class
+    monkeypatch.setitem(sys.modules, "langchain_openai", fake_module)
+
+
+def _install_fake_huggingface_embeddings(
+    monkeypatch: pytest.MonkeyPatch,
+    embeddings_class: type,
+) -> None:
+    community = ModuleType("langchain_community")
+    embeddings_pkg = ModuleType("langchain_community.embeddings")
+    embeddings_pkg.HuggingFaceEmbeddings = embeddings_class
+    community.embeddings = embeddings_pkg
+    monkeypatch.setitem(sys.modules, "langchain_community", community)
+    monkeypatch.setitem(sys.modules, "langchain_community.embeddings", embeddings_pkg)
+
+
+class RecordingEmbeddings:
+    def __init__(self, **kwargs: object) -> None:
+        self.kwargs = kwargs
+
+
+def test_get_embeddings_openai_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.retrieval.embeddings.get_settings",
+        lambda: SimpleNamespace(openai_api_key=None),
+    )
+
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY is required"):
+        get_embeddings(provider="openai")
+
+
+def test_get_embeddings_openai_builds_client_with_key_and_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_openai_embeddings(monkeypatch, RecordingEmbeddings)
+    monkeypatch.setattr(
+        "app.retrieval.embeddings.get_settings",
+        lambda: SimpleNamespace(openai_api_key="sk-test"),
+    )
+
+    embeddings = get_embeddings(provider="openai", model="text-embedding-3-large")
+
+    assert isinstance(embeddings, RecordingEmbeddings)
+    assert embeddings.kwargs["api_key"] == "sk-test"
+    assert embeddings.kwargs["model"] == "text-embedding-3-large"
+
+
+def test_get_embeddings_normalizes_provider_casing_and_whitespace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_openai_embeddings(monkeypatch, RecordingEmbeddings)
+    monkeypatch.setattr(
+        "app.retrieval.embeddings.get_settings",
+        lambda: SimpleNamespace(openai_api_key="sk-test"),
+    )
+
+    embeddings = get_embeddings(provider="  OpenAI  ")
+
+    assert isinstance(embeddings, RecordingEmbeddings)
+
+
+def test_get_embeddings_huggingface_branch(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_fake_huggingface_embeddings(monkeypatch, RecordingEmbeddings)
+
+    embeddings = get_embeddings(provider="huggingface", model="all-MiniLM-L6-v2")
+
+    assert isinstance(embeddings, RecordingEmbeddings)
+    assert embeddings.kwargs["model_name"] == "all-MiniLM-L6-v2"
+
+
+def test_get_embeddings_local_alias_uses_huggingface(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_fake_huggingface_embeddings(monkeypatch, RecordingEmbeddings)
+
+    embeddings = get_embeddings(provider="local", model="local-model")
+
+    assert isinstance(embeddings, RecordingEmbeddings)
+    assert embeddings.kwargs["model_name"] == "local-model"
+
+
+def test_get_embeddings_rejects_unsupported_provider() -> None:
+    with pytest.raises(ValueError, match="not supported"):
+        get_embeddings(provider="cohere")
+
+
+def test_get_domain_embeddings_routes_provider_and_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, str] = {}
+
+    def fake_get_embeddings(provider: str, model: str):
+        captured["provider"] = provider
+        captured["model"] = model
+        return RecordingEmbeddings(provider=provider, model=model)
+
+    monkeypatch.setattr(
+        "app.retrieval.embeddings.get_embeddings",
+        fake_get_embeddings,
+    )
+
+    domain = DomainConfig(
+        name="test-domain",
+        display_name="Test Domain",
+        root_path=Path("."),
+        embedding=DomainEmbeddingConfig(provider="huggingface", model="custom-model"),
+    )
+
+    embeddings = get_domain_embeddings(domain)
+
+    assert isinstance(embeddings, RecordingEmbeddings)
+    assert captured == {"provider": "huggingface", "model": "custom-model"}
