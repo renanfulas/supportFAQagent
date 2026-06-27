@@ -1,0 +1,40 @@
+# Disposable PostgreSQL + pgvector for local integration tests.
+#
+# This compose file exists ONLY to run the gated PostgreSQL integration suite
+# locally (the tests skip unless PHASE0_TEST_DATABASE_URL is set). It mirrors
+# the image and database name used by the Phase 0 CI gate
+# (.github/workflows/phase0-gates.yml) so local results match CI.
+#
+# It is throwaway and clearly non-production:
+#   - the password below is a lab-only literal, never reused from staging/prod;
+#   - data lives in tmpfs, so it is discarded when the container is removed;
+#   - the database name contains "phase0" so the test safety guard in
+#     tests/integration/conftest.py accepts it as disposable.
+#
+# Bring up / tear down via scripts/run_integration_tests.sh (or .ps1), or
+# manually with `docker compose -f docker-compose.test.yml up -d`.
+services:
+  postgres_test:
+    image: pgvector/pgvector:pg16
+    container_name: supportfaq_postgres_test
+    environment:
+      POSTGRES_DB: supportfaq_phase0
+      POSTGRES_USER: postgres
+      # Lab-only throwaway password. Not a secret, never used outside tests.
+      POSTGRES_PASSWORD: throwaway_test_password
+    ports:
+      # Host port 55432 avoids clashing with a native local PostgreSQL on 5432.
+      - "127.0.0.1:55432:5432"
+    # tmpfs instead of a named volume on purpose: the database must be disposable.
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d supportfaq_phase0"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
