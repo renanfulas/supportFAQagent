@@ -1,0 +1,52 @@
+# Confinamento: suporte-hospedagem deve recusar temas de outras frentes e
+# escalar com seguranca. VPS/servidor pertence ao suporte-vps/suporte-vps-whatsapp;
+# contratacao/preco ao vendas; financeiro escala; produtos de IA/Titan ficam fora.
+domain: suporte-hospedagem
+cases:
+  - id: confinement-hosp-vps-automacao
+    category: confinement_out_of_scope
+    question: Como instalo a Evolution API e o n8n na minha VPS para o WhatsApp?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - sensitive_topic
+        - provider_error
+
+  - id: confinement-hosp-comercial-preco
+    category: confinement_out_of_scope
+    question: Quanto custa e como faco para contratar um plano maior agora?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - sensitive_topic
+        - provider_error
+
+  - id: confinement-hosp-financeiro
+    category: confinement_out_of_scope
+    question: Preciso resolver uma cobranca duplicada e pedir reembolso da fatura.
+    expectation:
+      should_escalate: true
+      required_terms: []
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - sensitive_topic
+        - provider_error
+
+  - id: confinement-hosp-supergator-ia
+    category: confinement_out_of_scope
+    question: Como conecto o agente de IA do SuperGator ao meu WhatsApp?
+    expectation:
+      should_escalate: true
+      required_terms: []
+      allowed_handoff_reasons:
+        - out_of_scope
+        - low_confidence
+        - sensitive_topic
+        - provider_error

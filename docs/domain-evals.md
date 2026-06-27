@@ -36,6 +36,19 @@ recomendacao, objecao e fechamento, com escalonamento humano para etapas
 sensiveis) esta na skill `supportfaq-vendas-closer` e ancorado em
 `domains/vendas/knowledge/articles/metodo-de-venda-consultiva.md`.
 
+Para os novos dominios em Fase 1, com base de conhecimento real e provider
+`openai` (mesmo padrao deterministico dos dominios vivos). `suporte-hospedagem`
+ja entra no roteador (`WHATSAPP_ROUTER_DOMAINS`); `suporte-vps` segue fora do
+roteador por colisao de vocabulario com `suporte-vps-whatsapp` (ver
+`docs/domain-architecture-roadmap.md`):
+
+```bash
+python -m app.evals.run_domain_eval suporte-hospedagem
+python -m app.evals.run_domain_eval suporte-hospedagem --file evals/confinement/out_of_scope.yaml
+python -m app.evals.run_domain_eval suporte-vps
+python -m app.evals.run_domain_eval suporte-vps --file evals/confinement/out_of_scope.yaml
+```
+
 Para suites dedicadas de confinamento:
 
 ```bash
@@ -118,6 +131,10 @@ Estado atual:
 - `evals/pgvector_gate.yaml` e a suite curta de gate do MVP
 - `evals/pgvector_curated.yaml` e a suite ampla de diagnostico e calibracao
 - `evals/intake/` contem o banco sintetico de perguntas para cobertura
+- `evals/intake/hostgator-categories-mapping.md` registra o mapeamento das
+  categorias reais do suporte HostGator (dentro vs fora do escopo deste
+  dominio) usado para gerar `vps_support_faq_hostgator_real.yaml` e os novos
+  casos de `evals/confinement/out_of_scope.yaml`
 - `evals/pgvector_real.yaml` continua opcional para uma rodada futura com
   perguntas anonimas reais
 

@@ -154,7 +154,7 @@ class Settings(BaseSettings):
         alias="ENABLE_WHATSAPP_DOMAIN_ROUTER",
     )
     whatsapp_router_domains: str = Field(
-        default="suporte-vps-whatsapp,vendas",
+        default="suporte-vps-whatsapp,vendas,suporte-hospedagem,suporte-vps",
         alias="WHATSAPP_ROUTER_DOMAINS",
     )
     meta_whatsapp_access_token: str | None = Field(

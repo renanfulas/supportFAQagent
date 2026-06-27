@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from app.core.config import Settings
 from app.db.operational import ChatPersistenceResult
+from app.domain_engine.loader import DomainLoader
 from app.integrations.meta_whatsapp.chat_transport import MetaWhatsAppChatTransport
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage, MetaSendResult
 from app.orchestration.domain_router import DomainRouter, RoutableDomain
@@ -114,6 +119,113 @@ def test_from_domain_configs_reads_routing_keywords() -> None:
         default_domain="vendas",
     )
     assert router.domains[0].keywords == ("hospedagem", "plano")
+
+
+# --- regressao de roteamento com os configs reais dos dominios ----------------
+# Garante que a poda de keywords do vendas (Fase 2) e as keywords tecnicas do
+# suporte-hospedagem nao se sequestram. Usa os domain.yaml reais, entao quebra se
+# alguem reintroduzir uma colisao generica.
+
+
+def _real_router() -> DomainRouter:
+    loader = DomainLoader(Path("domains"))
+    names = ["suporte-vps-whatsapp", "vendas", "suporte-hospedagem", "suporte-vps"]
+    configs = [config for name in names if (config := loader.load(name)) is not None]
+    assert len(configs) == len(names), "todos os dominios roteados devem carregar"
+    return DomainRouter.from_domain_configs(configs, default_domain="suporte-vps-whatsapp")
+
+
+@pytest.mark.parametrize(
+    "text, expected_domain",
+    [
+        ("Quero contratar um plano de hospedagem", "vendas"),
+        ("Quanto custa o upgrade do meu plano?", "vendas"),
+        ("Meu cPanel nao abre", "suporte-hospedagem"),
+        ("Meu site WordPress esta com tela branca", "suporte-hospedagem"),
+        ("Como edito o htaccess no cPanel?", "suporte-hospedagem"),
+        ("Meu site esta dando erro 500", "suporte-hospedagem"),
+        ("Como instalo a Evolution API no n8n da minha VPS?", "suporte-vps-whatsapp"),
+        ("O QR Code do WhatsApp nao conecta", "suporte-vps-whatsapp"),
+        # suporte-vps (gerenciamento/ciclo de vida) roteia pelos discriminadores,
+        # mesmo com "vps" sendo termo compartilhado (ambient) e portanto ignorado.
+        ("Como reinstalo o sistema operacional da minha VPS?", "suporte-vps"),
+        ("Preciso fazer o rebuild da minha VPS", "suporte-vps"),
+        ("Como acesso meu Servidor Dedicado Windows por RDP?", "suporte-vps"),
+    ],
+)
+def test_real_configs_route_to_expected_domain(text: str, expected_domain: str) -> None:
+    decision = _real_router().route(text)
+    assert decision.domain == expected_domain, (text, decision.reason)
+
+
+def test_real_configs_wordpress_is_owned_by_support_not_vendas() -> None:
+    # Regressao da Fase 2: "wordpress" foi removido das keywords de vendas, entao
+    # uma duvida tecnica de WordPress nao pode mais cair em vendas.
+    decision = _real_router().route("preciso resolver um erro no meu wordpress")
+    assert decision.domain == "suporte-hospedagem"
+
+
+def test_real_configs_bare_hospedagem_term_is_ambiguous_and_shows_menu() -> None:
+    # "hospedagem" continua em vendas (ancora comercial), entao uma frase tecnica
+    # que so cite "hospedagem" empata com o sinal tecnico e cai no menu (fallback
+    # seguro), em vez de adivinhar. Documenta a fronteira conhecida da Fase 2.
+    decision = _real_router().route("Como edito o htaccess da hospedagem?")
+    assert decision.show_menu is True
+    assert decision.domain is None
+
+
+def test_real_configs_bare_vps_is_ambient_and_shows_menu() -> None:
+    # "vps" e compartilhado por suporte-vps-whatsapp, vendas e suporte-vps, entao
+    # e tratado como ambiente e ignorado no roteamento: uma frase so com "vps" cai
+    # no menu em vez de empatar de forma arbitraria.
+    decision = _real_router().route("preciso de ajuda com a minha vps")
+    assert decision.show_menu is True
+    assert decision.domain is None
+
+
+def test_real_configs_servidor_dedicado_is_ambiguous_with_sales_anchor() -> None:
+    # Fronteira conhecida (generico vs especifico): "servidor" e ancora comercial
+    # de vendas e "servidor dedicado" e do suporte-vps; sem outro discriminador
+    # empata e cai no menu. Seguro: o usuario escolhe.
+    decision = _real_router().route("tenho um servidor dedicado")
+    assert decision.show_menu is True
+
+
+# --- mecanismo de unique-keyword routing (com fixtures controladas) -----------
+
+
+def test_shared_keyword_is_ignored_for_routing() -> None:
+    infra = RoutableDomain(name="infra", display_name="Infra", keywords=("vps", "rebuild"))
+    auto = RoutableDomain(name="auto", display_name="Auto", keywords=("vps", "evolution"))
+    router = DomainRouter(domains=(infra, auto), default_domain="infra")
+
+    # "vps" e compartilhado -> ambiente -> uma mensagem so com "vps" nao decide
+    assert router.route("minha vps").show_menu is True
+    # os discriminadores unicos ainda decidem
+    assert router.route("preciso fazer rebuild na vps").domain == "infra"
+    assert router.route("a evolution na vps caiu").domain == "auto"
+
+
+def test_domain_with_only_shared_keywords_is_not_keyword_routable() -> None:
+    # Quebra conhecida: um dominio cujas keywords sao todas compartilhadas nao
+    # ganha roteamento por keyword (so por menu/numero). Documentado de proposito.
+    only_shared = RoutableDomain(name="a", display_name="A", keywords=("vps",))
+    rich = RoutableDomain(name="b", display_name="B", keywords=("vps", "evolution"))
+    router = DomainRouter(domains=(only_shared, rich), default_domain="a")
+
+    assert router.route("minha vps").show_menu is True
+    assert router.route("a evolution travou").domain == "b"
+
+
+def test_keyword_listed_twice_in_one_domain_is_not_shared() -> None:
+    # Dedupe dentro do dominio: a mesma keyword repetida em um unico config nao
+    # pode parecer "compartilhada" e se auto-anular.
+    a = RoutableDomain(name="a", display_name="A", keywords=("vps", "vps", "rebuild"))
+    b = RoutableDomain(name="b", display_name="B", keywords=("evolution",))
+    router = DomainRouter(domains=(a, b), default_domain="a")
+
+    assert "vps" not in router._shared_keywords()
+    assert router.route("minha vps travou").domain == "a"
 
 
 # --- transport integration with routing enabled -------------------------------

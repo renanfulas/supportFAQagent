@@ -158,13 +158,36 @@ class DomainRouter:
                 return domain.name
         return None
 
+    def _shared_keywords(self) -> set[str]:
+        """Normalized keywords owned by two or more distinct domains.
+
+        Shared vocabulary (e.g. ``vps`` across the VPS support and sales domains)
+        is ambient, not discriminating: counting it only produces ties that bounce
+        to the menu and blocks two domains that share a base vocabulary from ever
+        routing. Routing ignores it so the domain-specific keywords decide.
+
+        This is router-only. The same shared term stays a valid in-scope signal
+        inside an already-selected domain (``HandoffService._has_domain_signal``),
+        which is computed independently and is intentionally not changed here.
+        """
+        owners: dict[str, set[str]] = {}
+        for domain in self.domains:
+            # dedupe within a domain so a keyword listed twice in one config does
+            # not look "shared"; ownership is counted per distinct domain name.
+            for keyword in {_normalize(k) for k in domain.keywords}:
+                if keyword:
+                    owners.setdefault(keyword, set()).add(domain.name)
+        return {keyword for keyword, names in owners.items() if len(names) >= 2}
+
     def _match_keywords(self, normalized: str) -> str | None:
+        shared = self._shared_keywords()
         scores: list[tuple[int, str]] = []
         for domain in self.domains:
             score = sum(
                 1
                 for keyword in domain.keywords
-                if self._contains_word(normalized, _normalize(keyword))
+                if (normalized_keyword := _normalize(keyword)) not in shared
+                and self._contains_word(normalized, normalized_keyword)
             )
             scores.append((score, domain.name))
 

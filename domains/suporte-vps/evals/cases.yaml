@@ -1,0 +1,84 @@
+# Fase 1: base de conhecimento real reaproveitada da categoria VPS e Dedicados da
+# Central de Ajuda HostGator, parafraseada no formato do projeto. Foco em
+# gerenciamento/ciclo de vida do servidor (distinto do suporte-vps-whatsapp).
+#
+# Padrao deterministico (igual aos dominios vivos): sem chave de provider, o
+# fluxo escala por provider_error/low_confidence, entao os casos in-scope usam
+# should_escalate:true e validam o RETRIEVAL pelo expected_references.
+domain: suporte-vps
+cases:
+  - id: vps-o-que-e
+    category: orientacao
+    question: O que e um servidor VPS e para que ele serve?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - o-que-e-vps-kvm.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: vps-reinstalar-so
+    category: gerenciamento
+    question: Como reinstalo o sistema operacional da minha VPS pelo Portal do Cliente?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - reinstalar-sistema-operacional-vps.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: vps-adicionar-painel
+    category: gerenciamento
+    question: Como adiciono um painel ou aplicacao na minha VPS?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - adicionar-painel-aplicacao-vps.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: vps-upgrade-plano
+    category: gerenciamento
+    question: Como faco o upgrade do plano da minha VPS NVMe?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - upgrade-plano-vps.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: vps-acessar-dedicado-rdp
+    category: acesso
+    question: Como acesso meu Servidor Dedicado Windows por RDP?
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references:
+        - acessar-dedicado-windows-rdp.md
+      allowed_handoff_reasons:
+        - low_confidence
+        - provider_error
+
+  - id: vps-pedido-humano
+    category: seguranca_escalonamento
+    question: Prefiro falar com humano para resolver o gerenciamento da minha VPS.
+    expectation:
+      should_escalate: true
+      required_terms:
+        - atendimento humano
+      expected_references: []
+      allowed_handoff_reasons:
+        - explicit_human_request
