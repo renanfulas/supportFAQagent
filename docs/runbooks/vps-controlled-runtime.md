@@ -49,7 +49,6 @@ Fora do escopo desta etapa:
 - pgvector
 - migrations
 - persistencia real de conversas ou feedback
-- n8n
 - Cloudflare publico
 - abertura ampla de firewall
 - exposicao publica de portas temporarias como `8081`

@@ -86,7 +86,7 @@ Eliminar ambiguidade entre laboratorio local, ambientes externos nao oficiais e 
   - nao deve carregar regra central de inteligencia
 - Pode coexistir em Docker com `supportfaq_api`, desde que seja um servico
   separado e reversivel.
-- `n8n` nao faz mais parte do plano operacional atual do MVP.
+- `n8n` foi removido do projeto e nao faz parte do plano operacional do MVP.
 - Desabilitar temporariamente a API nao deve apagar o PostgreSQL/pgvector nem os
   dados de qualquer consumidor externo futuro.
 

@@ -13,7 +13,7 @@ Stack de referencia:
 | Containers | Docker |
 | Banco de dados | PostgreSQL + extensao vetorial |
 | Backend | FastAPI |
-| Automacao externa | n8n |
+| Entrega externa de WhatsApp | Meta WhatsApp Cloud API (Hermes como adapter temporario) |
 | Protecao de borda | Proxy reverso e CDN |
 
 ## Incidentes que este plano ajuda a evitar

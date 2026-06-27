@@ -107,7 +107,7 @@ novo. As tabelas historicas permanecem como registro da execucao das Fases 1 a
 | Pessoa | Frente | Missao principal |
 | --- | --- | --- |
 | Silotto - TekZoom HG | VPS e infraestrutura | Ambiente, deploy, variaveis, rede, logs e operacao base |
-| Alexandre Madeira | n8n e banco de dados | PostgreSQL, pgvector, persistencia, workflows n8n e integracoes |
+| Alexandre Madeira | Banco de dados | PostgreSQL, pgvector, persistencia e integracoes de dados |
 | Juliano Barreto | LangChain e afins | Text splitter, loaders uteis e apoio no pipeline RAG |
 | Renan | Arquitetura, orquestracao, testes e seguranca | Contratos, fluxo de chat, qualidade, hardening e coordenacao tecnica |
 
@@ -157,7 +157,7 @@ O que deve ficar fora do schema central:
 - regras especificas de suporte VPS
 - logica especifica de vendas
 - handoff especifico de onboarding
-- detalhes operacionais de Meta, Hermes, `n8n` legado ou canais externos
+- detalhes operacionais de Meta, Hermes ou canais externos
 
 Direcao pratica:
 
@@ -690,7 +690,7 @@ Nota de sequencia:
 - a gate de staging reproduziu o baseline local em `74/78`
 - esta fase agora concentra operacao, persistencia, recuperacao e evolucao
   pos-MVP
-- `n8n` nao faz mais parte do plano operacional atual
+- `n8n` foi removido do projeto e nao faz parte do plano operacional
 
 ## Juliano - VPS e runtime
 

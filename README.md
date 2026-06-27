@@ -152,7 +152,7 @@ Risco operacional conhecido:
   da limpeza e promocao parcial ficou em `81%`, portanto precisa de alerta e
   politica de limpeza antes de producao
 - a Fase 0 operacional continua `not_approved` ate o restore isolado passar;
-  `n8n` nao e mais gate ativo do MVP
+  `n8n` foi removido do projeto e nao e gate do MVP
 
 ## Estrutura
 

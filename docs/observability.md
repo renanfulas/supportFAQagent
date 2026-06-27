@@ -31,8 +31,8 @@ Fluxo recomendado:
 
 Para Meta WhatsApp, o webhook e o transporte devem preservar a correlacao sem
 logar telefone bruto, corpo da mensagem, token, payload completo ou assinatura.
-Para legados como `n8n`, a regra continua a mesma: consumir contrato HTTP e
-preservar `request_id`, sem carregar regra central do agente.
+Para qualquer automacao externa, a regra continua a mesma: consumir contrato
+HTTP e preservar `request_id`, sem carregar regra central do agente.
 
 ## Logs estruturados
 

@@ -48,11 +48,11 @@ curtos antes de codar:
 - `docs/quality-plans/customer-identity-whatsapp-handoff-plan.md`: plano
   tecnico para ligar Auth WhatsApp, identidade do cliente, historico,
   preferencias de front end, ticket humano e notificacao WhatsApp para o time.
-- `docs/quality-plans/web-chat-v1b-postgres-n8n-plan.md`: plano historico da
-  ponte OTP por n8n/Evolution; use apenas para contexto legado.
 - `docs/quality-plans/meta-whatsapp-native-integration-plan.md`: plano tecnico
   para refatorar a entrega externa, preparar Meta WhatsApp Cloud API nativa e
-  limitar Hermes a adapter temporario.
+  limitar Hermes a adapter temporario. `n8n` foi removido do projeto; o plano
+  historico da ponte OTP n8n/Evolution esta em
+  `docs/archive/implementation-plans/web-chat-v1b-postgres-n8n-plan.md`.
 - `docs/quality-plans/vendas-funnel-hardening-plan.md`: plano tecnico para
   endurecer o funil de vendas no WhatsApp (dado de cartao/PAN, escopo ciente de
   contexto, separar sinal soft de fila humana, loop de descoberta), ordenado por
@@ -64,7 +64,6 @@ curtos antes de codar:
 - `docs/runbooks/vps-capacity-and-docker-cleanup.md`: alerta de disco, politica
   de limpeza Docker/cache, protecao de volumes PostgreSQL/pgvector e evidencia
   minima de restore cronometrado isolado.
-
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
 feedback/outbox, devem ser entendidas pelo estado atual do codigo e pelos docs

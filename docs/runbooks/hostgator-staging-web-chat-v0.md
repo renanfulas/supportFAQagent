@@ -15,7 +15,6 @@ Nao substitui os runbooks de:
 
 - smoke HTTP geral
 - pgvector
-- n8n
 - WhatsApp
 
 Se a UI publica for o `ask-host-genius`, use tambem

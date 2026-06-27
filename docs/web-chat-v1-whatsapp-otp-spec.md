@@ -32,7 +32,7 @@ Documento pai:
 - Recuperacao de conta.
 - Painel administrativo.
 - Login por email ou senha.
-- Regra de autenticacao implementada dentro do workflow `n8n`.
+- Regra de autenticacao implementada dentro de uma automacao externa.
 - Liberar operacoes sensiveis apenas porque o telefone foi verificado.
 
 ## Fluxo
@@ -281,7 +281,7 @@ Os valores devem ser configuraveis e ajustados com dados operacionais.
 | vazamento em logs | mascarar telefone e nunca logar codigo |
 | roubo de cookie | `HttpOnly`, `SameSite=Lax`, `Secure` fora de dev |
 | confundir telefone com conta HostGator | copy e contrato explicitos |
-| mover regra para n8n | backend continua dono da validacao |
+| mover regra para automacao externa | backend continua dono da validacao |
 
 ## Observabilidade
 

@@ -27,4 +27,4 @@ Explique a mudanca em 2-4 linhas.
 ## Ownership
 
 - [ ] A mudanca respeita a responsabilidade da frente afetada
-- [ ] Coordenei com o responsavel quando toquei deploy, DB, n8n, LangChain ou seguranca
+- [ ] Coordenei com o responsavel quando toquei deploy, DB, LangChain ou seguranca

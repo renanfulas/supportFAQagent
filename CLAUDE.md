@@ -52,7 +52,7 @@ Do not load every doc by default.
 | Handoff or escalation | `docs/domain-contract.md`, `docs/integration-contracts.md`, `docs/domain-evals.md` | `app/handoff/`, `app/orchestration/`, `domains/<domain>/domain.yaml`, `tests/` |
 | Observability/logging | `docs/observability.md`, `docs/technical-implementation-plan.md` | `app/core/`, `app/main.py`, route files |
 | Security or public surface hardening | `SECURITY.md`, `docs/security/`, `docs/observability.md`, `docs/code-standards.md` | `app/core/`, `app/api/`, `tests/security/`, `.github/workflows/` |
-| n8n integration | `docs/integration-contracts.md`, `docs/observability.md`, `docs/technical-implementation-plan.md` | docs first; do not move intelligence into n8n |
+| External transport/automation (Meta WhatsApp, Hermes) | `docs/integration-contracts.md`, `docs/observability.md`, `docs/technical-implementation-plan.md` | docs first; do not move intelligence into external transport |
 | PostgreSQL/pgvector | `docs/technical-implementation-plan.md`, `docs/architecture.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `app/retrieval/`, `app/ingestion/pgvector_writer.py`, `migrations/`, `scripts/ingest_domain_pgvector.py` |
 | VPS/deploy/runtime | `docs/environments.md`, `docs/technical-implementation-plan.md`, `docs/observability.md`, `docs/runbooks/` | `scripts/`, config/docs |
 | Dependency management or security audit | `pyproject.toml`, `CONTRIBUTING.md`, `.github/workflows/security.yml` | `pyproject.toml`, `.github/workflows/` |
@@ -61,7 +61,7 @@ Do not load every doc by default.
 ### Ownership Boundaries
 
 - Renan: architecture, orchestration, tests, security, contracts, quality, docs.
-- Alexandre: n8n, PostgreSQL, pgvector, persistence, workflows.
+- Alexandre: PostgreSQL, pgvector, persistence, workflows.
 - Juliano: LangChain utilities, splitter/loaders, RAG support without overcoupling.
 - Silotto: VPS, deploy, runtime environment, networking, logs.
 
@@ -73,7 +73,7 @@ If a task touches another person's primary area, prefer creating a contract, doc
 - Put domain-specific behavior in `domains/`, not hardcoded in `app/`.
 - Routes should validate and orchestrate, not hold business logic.
 - Prefer small adapters and interfaces over heavy framework coupling.
-- Keep n8n as automation/orchestration outside the intelligence core.
+- Keep external automation/transport outside the intelligence core.
 - Treat PostgreSQL + pgvector as the planned production vector store.
 - Treat Chroma as local/prototype unless the team explicitly decides otherwise.
 - Treat `pyproject.toml` as the only dependency source of truth; do not create parallel dependency lists.
@@ -216,7 +216,7 @@ git log --oneline --decorate -15
 | Pessoa | Responsabilidade primária |
 | --- | --- |
 | Silotto - TekZoom HG | VPS, deploy, ambiente, networking, logs, operação de runtime |
-| Alexandre Madeira | n8n, PostgreSQL, pgvector, persistência, workflows, integrações |
+| Alexandre Madeira | PostgreSQL, pgvector, persistência, workflows, integrações |
 | Juliano Barreto | LangChain utilities, splitter, loaders, suporte RAG sem acoplamento excessivo |
 | Renan | Arquitetura, orquestração, testes, segurança, contratos, qualidade, docs, coordenação |
 
@@ -254,6 +254,6 @@ Testes, evals ou checks que devem rodar.
 
 - Do not implement before asking intent and name when missing.
 - Do not recommend rewriting the architecture from scratch.
-- Do not move intelligence rules into n8n.
+- Do not move intelligence rules into external transport/automation.
 - Do not make Chroma the production source of truth unless the team explicitly decides.
 - Do not bypass pgvector ownership by creating a parallel production vector store.

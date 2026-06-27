@@ -97,7 +97,7 @@ Nao fazer no V0:
 - Exposicao publica de `confidence` como porcentagem de verdade.
 - Uso de segredo real no JavaScript.
 - Permitir que o browser escolha qualquer dominio livremente.
-- Mover regra de inteligencia para o frontend ou para `n8n`.
+- Mover regra de inteligencia para o frontend ou para automacao externa.
 
 ## Arquitetura Alvo Por Fase
 
