@@ -64,6 +64,11 @@ curtos antes de codar:
 - `docs/runbooks/vps-capacity-and-docker-cleanup.md`: alerta de disco, politica
   de limpeza Docker/cache, protecao de volumes PostgreSQL/pgvector e evidencia
   minima de restore cronometrado isolado.
+- `docs/quality-plans/conversation-persistence-tiering-plan.md`: decisao de
+  arquitetura e plano em fatias para persistencia de conversa em camadas (hot
+  RAM/Redis, operacional Redis+AOF, sink append-only off-box ja implementado,
+  Postgres como warehouse com sumarizacao noturna) e maquina de estados de sessao.
+
 Frentes ja incorporadas na `main`, como bloqueio de WhatsApp, provider/runtime,
 ingestao/chunking, chat UI local, calibragem de chat/handoff e contrato de
 feedback/outbox, devem ser entendidas pelo estado atual do codigo e pelos docs
