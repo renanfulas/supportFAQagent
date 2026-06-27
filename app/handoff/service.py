@@ -1,3 +1,4 @@
+from app.core.persistence_sanitize import contains_card_number
 from app.domain_engine.models import DomainConfig
 from app.handoff.models import HandoffDecision
 
@@ -139,6 +140,9 @@ class HandoffService:
 
         if self._contains_any(normalized_question, self.PROMPT_INJECTION_PATTERNS):
             self._append_reason(reasons, "prompt_injection_attempt")
+
+        if contains_card_number(question):
+            self._append_reason(reasons, "card_data")
 
         return reasons
 

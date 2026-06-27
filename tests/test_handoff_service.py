@@ -75,6 +75,29 @@ def test_handoff_escalates_on_sensitive_term() -> None:
     assert "sensitive_topic" in decision.reasons
 
 
+def test_handoff_escalates_on_card_number_with_card_data_reason() -> None:
+    # WS-1: a pasted PAN escalates with the dedicated card_data reason, even when
+    # retrieval confidence is high.
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="segue meu cartao 4111 1111 1111 1111 para cobrar",
+        confidence=0.95,
+    )
+
+    assert decision.escalated is True
+    assert "card_data" in decision.reasons
+
+
+def test_handoff_no_card_data_reason_without_pan() -> None:
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="quero pagar com cartao de credito",
+        confidence=0.95,
+    )
+
+    assert "card_data" not in decision.reasons
+
+
 def test_handoff_escalates_whatsapp_blocking_risk_without_sensitive_topic() -> None:
     decision = HandoffService().decide(
         domain=make_domain(),

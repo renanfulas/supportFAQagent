@@ -3,6 +3,7 @@ import unicodedata
 from time import perf_counter
 
 from app.core.errors import ProviderError, RetrievalError
+from app.core.persistence_sanitize import contains_card_number
 from app.domain_engine.models import DomainConfig
 from app.handoff.service import HandoffService
 from app.llm.service import LLMService
@@ -20,6 +21,7 @@ def _normalize(text: str) -> str:
 
 class ChatFlowService:
     BLOCKING_REASONS = {
+        "card_data",
         "explicit_human_request",
         "out_of_scope",
         "prompt_injection_attempt",
@@ -230,6 +232,12 @@ class ChatFlowService:
         if checkout is None or not checkout.enabled or not checkout.payment_link:
             return None
 
+        # Never generate a payment link when the lead pasted a card number.
+        # Yield to the safety/handoff path so the card_data block fires and the
+        # data is never echoed back.
+        if contains_card_number(question):
+            return None
+
         text = _normalize(question)
         if not text:
             return None
@@ -305,6 +313,13 @@ class ChatFlowService:
         return bool(reasons) and all(reason in retrievable_reasons for reason in reasons)
 
     def _build_hardened_response(self, reasons: list[str]) -> str:
+        if "card_data" in reasons:
+            return (
+                "Por seguranca, nao envie dados de cartao por aqui. "
+                "O pagamento e concluido em ambiente seguro com um especialista. "
+                "Vou encaminhar voce para o atendimento humano."
+            )
+
         if "explicit_human_request" in reasons:
             return (
                 "Vou escalar para atendimento humano. "
