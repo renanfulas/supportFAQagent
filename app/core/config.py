@@ -65,7 +65,7 @@ class Settings(BaseSettings):
         ge=1,
     )
     conversation_history_messages: int = Field(
-        default=4,
+        default=8,
         alias="CONVERSATION_HISTORY_MESSAGES",
         ge=0,
         le=20,
