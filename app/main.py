@@ -32,7 +32,10 @@ from app.core.request_context import (
 )
 from app.core.web_session import extract_public_session_token
 from app.integrations.hermes.inbound import HermesReplayGuard
-from app.orchestration.session_domain_store import InMemorySessionDomainStore
+from app.orchestration.session_domain_store import (
+    InMemorySessionDomainStore,
+    build_session_domain_store,
+)
 from app.web_auth.runtime import create_web_auth_runtime
 from app.db.runtime import DatabaseRuntime
 from app.core.errors import DatabaseUnavailableError
@@ -71,8 +74,10 @@ def create_app() -> FastAPI:
     application.state.settings = settings
     application.state.database_runtime = database_runtime
     # Process-wide sticky domain memory so a WhatsApp conversation keeps its chosen
-    # domain across messages. Durable cross-process storage is a follow-up.
-    application.state.session_domain_store = InMemorySessionDomainStore()
+    # domain across messages. Durable across restarts/workers when
+    # SESSION_DOMAIN_STORE_BACKEND=postgres (with persistence on); ephemeral default
+    # otherwise.
+    application.state.session_domain_store = build_session_domain_store(database_runtime)
     # Short-lived per-session conversational state (e.g. the out-of-scope escape menu).
     application.state.session_state_store = InMemorySessionDomainStore(ttl_seconds=900)
     # Last outbound text per session, to avoid repeating the exact same message.

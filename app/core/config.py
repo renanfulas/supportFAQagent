@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     database_url: str | None = Field(default=None, alias="DATABASE_URL")
     retrieval_backend: str = Field(default="lexical", alias="RETRIEVAL_BACKEND")
     persistence_backend: str = Field(default="disabled", alias="PERSISTENCE_BACKEND")
+    session_domain_store_backend: str = Field(
+        default="memory", alias="SESSION_DOMAIN_STORE_BACKEND"
+    )
     persistence_hash_secret: str | None = Field(
         default=None,
         alias="PERSISTENCE_HASH_SECRET",
@@ -341,6 +344,13 @@ class Settings(BaseSettings):
             )
             self.persistence_hash_version = (
                 self.persistence_hash_version.strip() or "hmac-sha256-v1"
+            )
+        self.session_domain_store_backend = self.session_domain_store_backend.strip().lower()
+        if self.session_domain_store_backend not in {"memory", "postgres"}:
+            raise ValueError("SESSION_DOMAIN_STORE_BACKEND must be memory or postgres")
+        if self.session_domain_store_backend == "postgres" and persistence_backend != "postgres":
+            raise ValueError(
+                "SESSION_DOMAIN_STORE_BACKEND=postgres requires PERSISTENCE_BACKEND=postgres"
             )
         self.retrieval_backend = self.retrieval_backend.strip().lower()
         if self.retrieval_backend not in {"lexical", "pgvector"}:

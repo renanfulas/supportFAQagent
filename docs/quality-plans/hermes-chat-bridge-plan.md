@@ -48,6 +48,8 @@ DEDICADO para o bot, deixando o numero de OTP/agente intacto.
 - Caminho nao-oficial de WhatsApp tem risco de bloqueio/banimento do numero.
 - Restart do bridge derruba a sessao por segundos (afeta OTP nesse intervalo);
   reconecta das credenciais (backup feito).
-- Stickiness em producao precisa do store duravel (ver
-  `whatsapp-sticky-domain-routing-plan.md`).
+- Stickiness em producao precisa do store duravel — **disponivel** via
+  `PgSessionDomainStore` (migration `011`) atras de `SESSION_DOMAIN_STORE_BACKEND=postgres`
+  (default `memory`). O piloto single-worker roda com o efemero; producao multi-worker
+  liga a flag. Ver `whatsapp-sticky-domain-routing-plan.md`.
 - Meta WhatsApp Cloud API segue sendo o caminho estrategico; Hermes e ponte temporaria.

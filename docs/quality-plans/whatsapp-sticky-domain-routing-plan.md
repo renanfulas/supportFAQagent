@@ -1,8 +1,11 @@
 # Plano Tecnico - Memoria de Sessao Pegajosa para Roteamento de Dominio
 
-Status: seam implementado (contrato + adapter efimero + integracao no transporte
-WhatsApp); storage duravel pendente da frente de persistencia.
-Data de revisao: 2026-06-24.
+Status: seam + adapter durável implementados. Contrato + adapter efêmero +
+integração no transporte WhatsApp já estavam prontos; o storage durável
+(`PgSessionDomainStore`, migration `011`) entrou atrás de
+`SESSION_DOMAIN_STORE_BACKEND=postgres` (default `memory`, dark). Falta só medir/
+ligar em staging.
+Data de revisao: 2026-06-28.
 
 ## Problema
 
@@ -58,18 +61,28 @@ Em `MetaWhatsAppChatTransport._route_with_stickiness`:
 A seguranca nao muda: o roteador so escolhe o dominio; handoff, confinamento e
 politica continuam no `ChatFlowService` do dominio escolhido.
 
-## Implementacao duravel (frente Alexandre)
+## Implementacao duravel (frente de persistencia, Renan) — IMPLEMENTADA
 
-1. Schema expand-only, ex.: `session_domain_binding(session_id_hash PK, domain,
-   updated_at, expires_at)`. Sem PII; apenas hash de sessao e nome de dominio.
-2. Adapter `PgSessionDomainStore(SessionDomainStore)` com upsert em `set`, leitura
-   com checagem de `expires_at` em `get`, delete em `clear`.
-3. Injetar o adapter no `MetaWhatsAppChatTransport(session_store=...)` no wiring de
-   runtime, substituindo o `InMemorySessionDomainStore` (que nao sobrevive a
-   restart nem e compartilhado entre workers).
-4. Reusar o mesmo segredo/estrategia de hash de sessao ja usada no historico, para
-   nao criar um segundo esquema de identidade. Ver
+Entregue dark por default (`SESSION_DOMAIN_STORE_BACKEND=memory`):
+
+1. Schema expand-only `session_domain_binding(session_id_hash PK, domain,
+   updated_at, expires_at)` — `migrations/011_session_domain_binding.sql`. Sem PII;
+   só o hash de sessão já sanitizado (ex.: `whatsapp:hermes:<digest>`) e o domínio.
+2. Adapter `PgSessionDomainStore(SessionDomainStore)` em
+   `app/orchestration/session_domain_store.py`: upsert em `set` (com TTL via
+   `expires_at`), leitura com checagem de `expires_at` em `get`, delete em `clear`.
+   Fail-open (erro de persistência → degrada para o menu, não derruba o canal).
+3. `build_session_domain_store(runtime)` injeta o durável em
+   `app.state.session_domain_store` (consumido por Hermes e Meta) quando
+   `SESSION_DOMAIN_STORE_BACKEND=postgres` e persistência ligada; senão mantém o
+   `InMemorySessionDomainStore`.
+4. A chave é o session id já sanitizado pelo transporte (mesmo digest do histórico),
+   não um segundo esquema de identidade. Ver
    `customer-identity-whatsapp-handoff-plan.md`.
+
+Pendente: ligar `SESSION_DOMAIN_STORE_BACKEND=postgres` em staging (aplicar a `011`)
+e validar persistência entre instâncias/expiração — coberto pelo teste opt-in
+`tests/integration/test_session_domain_store_postgres.py`.
 
 ## Validacao
 
