@@ -1,7 +1,14 @@
 # Plano Tecnico - Hardening do Funil de Vendas no WhatsApp
 
-Status: planejamento tecnico ativo; nenhuma mudanca implementada ainda.
-Data de revisao: 2026-06-26.
+Status: parcialmente implementado. **WS-1 (cartao/PAN) completo**: detector Luhn +
+exclusoes em `app/core/persistence_sanitize.py`, recusa no checkout, reason
+`card_data` e `tests/test_pii_card.py` entraram pelo #81; a suite de eval de
+confinamento `domains/vendas/evals/confinement/payment_data.yaml` fecha o gap.
+**WS-0 metricas** ja saem do `chat_completed` (confidence/escalated/handoff_reasons
+por dominio); o harness de smoke segue bloqueado (schema scratch isolado =
+runtime/Juliano). **WS-2/WS-3** bloqueados na primitiva de flag por dominio
+(decisao 5; direcao: campo em `domain.yaml`). WS-4 depende do harness de WS-0.
+Data de revisao: 2026-06-28.
 Owner de coordenacao: Renan. Frentes envolvidas: Renan (handoff/orquestracao/seguranca),
 Alexandre (fila de handoff/persistencia), Silotto (deploy), Juliano (retrieval).
 
