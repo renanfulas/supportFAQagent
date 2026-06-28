@@ -113,3 +113,12 @@ class DomainConfig(DomainModel):
     knowledge: DomainKnowledgeConfig = Field(default_factory=DomainKnowledgeConfig)
     llm: DomainLLMConfig = Field(default_factory=DomainLLMConfig)
     embedding: DomainEmbeddingConfig = Field(default_factory=DomainEmbeddingConfig)
+    # Per-domain behavioral feature flags. Free-form name -> on/off, defaulting to
+    # empty so every flag is off (dark) until a domain.yaml opts in. Lets a behavior
+    # change ship behind a flag scoped to one domain, without a global env var. Read
+    # it with ``is_flag_enabled`` so callers get a safe ``False`` for unknown flags.
+    feature_flags: dict[str, bool] = Field(default_factory=dict)
+
+    def is_flag_enabled(self, flag: str) -> bool:
+        """Return whether ``flag`` is enabled for this domain (``False`` if unset)."""
+        return self.feature_flags.get(flag, False)

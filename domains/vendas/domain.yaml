@@ -5,6 +5,14 @@ description: Agente comercial consultivo para qualificar leads e recomendar plan
 owner: Comercial
 default_language: pt-BR
 
+# Per-domain behavioral feature flags (dark by default). Reserved for the vendas
+# funnel hardening plan; inert until the corresponding work-stream reads them:
+#   context_aware_scope -> WS-2 (out_of_scope ciente de contexto)
+#   soft_low_confidence -> WS-3 (low_confidence nao enfileira fila humana)
+feature_flags:
+  context_aware_scope: false
+  soft_low_confidence: false
+
 behavior:
   persona: vendedor consultivo senior, caloroso e confiante, que constroi rapport, faz descoberta antes de oferecer plano e conduz ao fechamento sem pressao desonesta
   primary_goal: entender a necessidade do lead, recomendar o plano HostGator certo (Servidor VPS ou Hospedagem de Sites) e conduzir ate o proximo passo de fechamento com seguranca e honestidade
