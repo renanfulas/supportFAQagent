@@ -143,7 +143,17 @@ legitimo** (ex.: lead em vendas que pede config de nginx). Mitigacoes:
 Seam de teste: `tests/test_handoff_service.py` (multi-turno; suites de
 confinamento single-turn permanecem verdes mas nao cobrem isto -> unit test e a
 rede).
-Flag: `VENDAS_CONTEXT_AWARE_SCOPE`. Dono: Renan. Risco: medio.
+Flag: `context_aware_scope` em `domain.yaml` (primitiva da #89). Dono: Renan.
+Risco: medio.
+
+**Implementado (dark, flag off no vendas):** `HandoffService.decide` aceita
+`recent_user_texts` e, so com a flag ligada, reabre o sinal de dominio sobre os
+ultimos `CONTEXT_SCOPE_WINDOW` (4) turnos do usuario usando **apenas** keywords
+fortes (>= 4 chars). `ChatFlowService` carrega o historico cedo (uma leitura,
+reusada no prompt) so quando a flag esta ligada. Cobertura multi-turno em
+`tests/test_handoff_service.py` (suprime falso positivo; nao mascara out_of_scope
+real; flag off = inalterado; janela decai). Ligar = `context_aware_scope: true`
+no `domains/vendas/domain.yaml` apos validar em staging.
 
 ### WS-3 - Separar sinal soft de fila humana (contrato com Alexandre)
 
