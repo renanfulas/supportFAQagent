@@ -71,6 +71,28 @@ class WebhookIngressRepository:
         key_hash = idempotency_hash(idempotency_key)
         with self.runtime.transaction() as connection:
             with connection.cursor() as cursor:
+                # Atomic first claim. ON CONFLICT DO NOTHING closes the
+                # select-then-insert race: two concurrent claims for the same new
+                # key would both see no row under FOR UPDATE (which cannot lock a
+                # row that does not exist yet) and both INSERT, so the loser hit a
+                # primary-key violation. Now exactly one INSERT wins (RETURNING a
+                # row); the loser gets no row back and falls through to evaluate the
+                # existing receipt, which Postgres guarantees is visible because the
+                # ON CONFLICT waited on the winner's commit.
+                cursor.execute(
+                    """
+                    INSERT INTO webhook_ingress_receipts (
+                      idempotency_key_hash, event_type, request_id, payload_hash
+                    )
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (idempotency_key_hash) DO NOTHING
+                    RETURNING attempt_count
+                    """,
+                    (key_hash, event_type, request_id, body_hash),
+                )
+                inserted = cursor.fetchone()
+                if inserted is not None:
+                    return ClaimResult(CLAIMED, int(inserted[0]))
                 cursor.execute(
                     """
                     SELECT event_type, payload_hash, status, attempt_count,
@@ -82,17 +104,6 @@ class WebhookIngressRepository:
                     (PROCESSING_STALE_SECONDS, key_hash),
                 )
                 row = cursor.fetchone()
-                if row is None:
-                    cursor.execute(
-                        """
-                        INSERT INTO webhook_ingress_receipts (
-                          idempotency_key_hash, event_type, request_id, payload_hash
-                        )
-                        VALUES (%s, %s, %s, %s)
-                        """,
-                        (key_hash, event_type, request_id, body_hash),
-                    )
-                    return ClaimResult(CLAIMED, 1)
                 if row[0] != event_type or row[1] != body_hash:
                     return ClaimResult(PAYLOAD_CONFLICT, int(row[3]))
                 if row[2] == "delivered":

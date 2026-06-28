@@ -70,7 +70,9 @@ def _repo(fetch_results: list[object]) -> tuple[WebhookIngressRepository, FakeCu
 
 
 def test_claim_inserts_new_receipt_when_absent() -> None:
-    repo, cursor, runtime = _repo([None])
+    # The atomic INSERT ... ON CONFLICT DO NOTHING RETURNING wins and returns the
+    # default attempt_count; no SELECT is needed on the happy path.
+    repo, cursor, runtime = _repo([(1,)])
 
     result = repo.claim(
         event_type="handoff.requested",
@@ -82,19 +84,40 @@ def test_claim_inserts_new_receipt_when_absent() -> None:
     assert result.status == CLAIMED
     assert result.attempt_count == 1
     assert runtime.transactions == 1
-    # First SELECT carries the stale-window seconds; then an INSERT runs.
-    select_sql, select_params = cursor.executed[0]
-    assert "FOR UPDATE" in select_sql
-    assert select_params[0] == PROCESSING_STALE_SECONDS
-    assert "INSERT INTO webhook_ingress_receipts" in cursor.executed[1][0]
+    insert_sql, _insert_params = cursor.executed[0]
+    assert "INSERT INTO webhook_ingress_receipts" in insert_sql
+    assert "ON CONFLICT (idempotency_key_hash) DO NOTHING" in insert_sql
+    assert len(cursor.executed) == 1  # winner returns without the fallback SELECT
     # The raw idempotency key is hashed before it reaches SQL.
-    assert "handoff:req-1" not in select_sql
+    assert "handoff:req-1" not in insert_sql
     assert idempotency_hash("handoff:req-1") in {p for _, params in cursor.executed for p in params}
+
+
+def test_claim_loser_of_concurrent_insert_gets_in_progress() -> None:
+    # Concurrent claim: ON CONFLICT DO NOTHING returns no row (first None), then the
+    # fallback SELECT sees the winner's fresh processing row -> IN_PROGRESS, never a
+    # primary-key violation.
+    repo, cursor, _runtime = _repo(
+        [None, ("handoff.requested", "bodyhash", "processing", 1, False)]
+    )
+
+    result = repo.claim(
+        event_type="handoff.requested",
+        idempotency_key="k",
+        request_id="r",
+        body_hash="bodyhash",
+    )
+
+    assert result.status == IN_PROGRESS
+    assert "ON CONFLICT (idempotency_key_hash) DO NOTHING" in cursor.executed[0][0]
+    assert "FOR UPDATE" in cursor.executed[1][0]
+    assert cursor.executed[1][1][0] == PROCESSING_STALE_SECONDS
 
 
 def test_claim_detects_payload_conflict_on_event_mismatch() -> None:
     # row = (event_type, payload_hash, status, attempt_count, stale_flag)
-    repo, _cursor, _runtime = _repo([("other.event", "bodyhash", "processing", 2, False)])
+    # Leading None = INSERT ... ON CONFLICT DO NOTHING found an existing receipt.
+    repo, _cursor, _runtime = _repo([None, ("other.event", "bodyhash", "processing", 2, False)])
 
     result = repo.claim(
         event_type="handoff.requested",
@@ -108,7 +131,7 @@ def test_claim_detects_payload_conflict_on_event_mismatch() -> None:
 
 
 def test_claim_detects_payload_conflict_on_body_mismatch() -> None:
-    repo, _cursor, _runtime = _repo([("handoff.requested", "different", "processing", 3, False)])
+    repo, _cursor, _runtime = _repo([None, ("handoff.requested", "different", "processing", 3, False)])
 
     result = repo.claim(
         event_type="handoff.requested",
@@ -122,7 +145,7 @@ def test_claim_detects_payload_conflict_on_body_mismatch() -> None:
 
 
 def test_claim_returns_duplicate_when_already_delivered() -> None:
-    repo, _cursor, _runtime = _repo([("handoff.requested", "bodyhash", "delivered", 1, False)])
+    repo, _cursor, _runtime = _repo([None, ("handoff.requested", "bodyhash", "delivered", 1, False)])
 
     result = repo.claim(
         event_type="handoff.requested",
@@ -137,7 +160,7 @@ def test_claim_returns_duplicate_when_already_delivered() -> None:
 
 def test_claim_returns_in_progress_for_fresh_processing_row() -> None:
     # status processing and NOT stale -> another worker holds it.
-    repo, _cursor, _runtime = _repo([("handoff.requested", "bodyhash", "processing", 4, False)])
+    repo, _cursor, _runtime = _repo([None, ("handoff.requested", "bodyhash", "processing", 4, False)])
 
     result = repo.claim(
         event_type="handoff.requested",
@@ -153,7 +176,7 @@ def test_claim_returns_in_progress_for_fresh_processing_row() -> None:
 def test_claim_reclaims_stale_processing_row() -> None:
     # processing but stale -> UPDATE bumps attempt_count and re-claims.
     repo, cursor, _runtime = _repo(
-        [("handoff.requested", "bodyhash", "processing", 4, True), (5,)]
+        [None, ("handoff.requested", "bodyhash", "processing", 4, True), (5,)]
     )
 
     result = repo.claim(
@@ -165,13 +188,14 @@ def test_claim_reclaims_stale_processing_row() -> None:
 
     assert result.status == CLAIMED
     assert result.attempt_count == 5
-    assert "UPDATE webhook_ingress_receipts" in cursor.executed[1][0]
+    # executed: [0] INSERT ON CONFLICT, [1] SELECT FOR UPDATE, [2] UPDATE re-claim.
+    assert "UPDATE webhook_ingress_receipts" in cursor.executed[2][0]
 
 
 def test_claim_reclaims_retryable_failed_row() -> None:
     # any non-delivered, non-fresh-processing status re-claims via UPDATE.
     repo, _cursor, _runtime = _repo(
-        [("handoff.requested", "bodyhash", "retryable_failed", 1, False), (2,)]
+        [None, ("handoff.requested", "bodyhash", "retryable_failed", 1, False), (2,)]
     )
 
     result = repo.claim(
