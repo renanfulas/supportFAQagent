@@ -90,16 +90,34 @@ class HandoffService:
         "como resolvo",
     )
 
+    # WS-2: how many recent user turns the context-aware scope looks back over. Kept
+    # short so an old keyword does not keep the scope open forever.
+    CONTEXT_SCOPE_WINDOW = 4
+    CONTEXT_AWARE_SCOPE_FLAG = "context_aware_scope"
+
     def decide(
         self,
         domain: DomainConfig,
         question: str,
         confidence: float,
+        *,
+        recent_user_texts: list[str] | None = None,
     ) -> HandoffDecision:
         reasons = self.inspect_question(domain, question)
         normalized_question = question.lower()
 
         has_domain_signal = self._has_domain_signal(domain, normalized_question)
+        # WS-2 (behind the per-domain flag, dark by default): a discovery follow-up
+        # like "100 visitas por dia" has no keyword of its own and would be blocked as
+        # out_of_scope. When the flag is on, reopen the domain signal over the recent
+        # user turns so the conversation stays in scope and the LLM answer is kept.
+        if (
+            not has_domain_signal
+            and recent_user_texts
+            and domain.is_flag_enabled(self.CONTEXT_AWARE_SCOPE_FLAG)
+        ):
+            has_domain_signal = self._has_recent_domain_signal(domain, recent_user_texts)
+
         if (
             confidence < domain.handoff.confidence_threshold
             and not has_domain_signal
@@ -161,6 +179,29 @@ class HandoffService:
             text,
             [term for term in normalized_terms if len(term) >= 4],
         )
+
+    def _has_recent_domain_signal(
+        self, domain: DomainConfig, recent_user_texts: list[str]
+    ) -> bool:
+        """True when a recent user turn carried a strong domain keyword.
+
+        Deliberately stricter than :meth:`_has_domain_signal`: only strong (>= 4 char)
+        domain terms in the last :attr:`CONTEXT_SCOPE_WINDOW` user turns count, and the
+        ambiguous patterns are ignored. This keeps a genuine out_of_scope follow-up
+        (no recent domain term) from being masked.
+        """
+        domain_terms = [
+            *domain.routing.keywords,
+            domain.name,
+            domain.display_name,
+        ]
+        strong_terms = [
+            term for term in self._expand_domain_terms(domain_terms) if len(term) >= 4
+        ]
+        if not strong_terms:
+            return False
+        window = recent_user_texts[-self.CONTEXT_SCOPE_WINDOW :]
+        return any(self._contains_any(text.lower(), strong_terms) for text in window)
 
     def _is_benign_auth_context(self, text: str) -> bool:
         return self._contains_any(text, self.BENIGN_AUTH_CONTEXT_PATTERNS)

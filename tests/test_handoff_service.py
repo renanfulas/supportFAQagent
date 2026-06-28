@@ -210,3 +210,71 @@ def test_handoff_escalates_boot_failure_even_above_threshold() -> None:
 
     assert decision.escalated is True
     assert "low_confidence" in decision.reasons
+
+
+def make_domain_with_context_scope() -> DomainConfig:
+    return make_domain().model_copy(update={"feature_flags": {"context_aware_scope": True}})
+
+
+# --- WS-2: context-aware out_of_scope (behind the per-domain flag) ---------------
+
+def test_ws2_flag_on_suppresses_out_of_scope_for_discovery_follow_up() -> None:
+    # Follow-up with no keyword of its own, but a recent turn carried "evolution":
+    # with the flag on it stays in scope (no out_of_scope block); low_confidence
+    # remains as a soft signal so the turn still escalates.
+    decision = HandoffService().decide(
+        domain=make_domain_with_context_scope(),
+        question="E quanto tempo isso costuma levar?",
+        confidence=0.3,
+        recent_user_texts=["Minha evolution api parou ontem depois do reboot"],
+    )
+
+    assert "out_of_scope" not in decision.reasons
+    assert "low_confidence" in decision.reasons
+    assert decision.escalated is True
+
+
+def test_ws2_flag_on_does_not_mask_real_out_of_scope() -> None:
+    # Recent turns carry no domain term, so a genuinely out-of-scope question is
+    # still flagged even with the flag on.
+    decision = HandoffService().decide(
+        domain=make_domain_with_context_scope(),
+        question="Qual a melhor criptomoeda para comprar hoje?",
+        confidence=0.2,
+        recent_user_texts=["oi", "bom dia", "tudo bem?"],
+    )
+
+    assert "out_of_scope" in decision.reasons
+
+
+def test_ws2_flag_off_ignores_recent_domain_signal() -> None:
+    # Dark by default: with the flag off the recent signal is ignored and the
+    # follow-up is still marked out_of_scope (unchanged behavior).
+    decision = HandoffService().decide(
+        domain=make_domain(),
+        question="E quanto tempo isso costuma levar?",
+        confidence=0.3,
+        recent_user_texts=["Minha evolution api parou ontem depois do reboot"],
+    )
+
+    assert "out_of_scope" in decision.reasons
+
+
+def test_ws2_flag_on_window_decays_old_keyword() -> None:
+    # The strong keyword is older than CONTEXT_SCOPE_WINDOW user turns, so it no
+    # longer keeps the scope open and out_of_scope fires.
+    older_then_window = [
+        "Minha evolution api caiu",
+        "a",
+        "b",
+        "c",
+        "d",
+    ]
+    decision = HandoffService().decide(
+        domain=make_domain_with_context_scope(),
+        question="E ai, vale a pena?",
+        confidence=0.3,
+        recent_user_texts=older_then_window,
+    )
+
+    assert "out_of_scope" in decision.reasons

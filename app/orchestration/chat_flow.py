@@ -119,10 +119,30 @@ class ChatFlowService:
             retrieval_ms += self._elapsed_ms(retrieval_started_at)
 
         confidence = compute_confidence(domain, chunks)
+        # WS-2: only when context-aware scope is on for this domain, load history early
+        # so decide() can see recent user turns. It is reused for the prompt below, so
+        # there is at most one history read; with the flag off this is a no-op and the
+        # hot path is unchanged.
+        history: list[dict[str, str]] | None = None
+        recent_user_texts: list[str] | None = None
+        if domain.is_flag_enabled(self.handoff_service.CONTEXT_AWARE_SCOPE_FLAG):
+            history = self._build_history(
+                domain=domain,
+                session_id=session_id,
+                request_id=request_id,
+                channel=channel,
+                customer_id=customer_id,
+            )
+            recent_user_texts = [
+                message["content"]
+                for message in history
+                if message.get("role") == "user" and message.get("content")
+            ]
         handoff = self.handoff_service.decide(
             domain=domain,
             question=question,
             confidence=confidence,
+            recent_user_texts=recent_user_texts,
         )
         handoff_reasons = list(handoff.reasons)
         if error_code and error_code not in handoff_reasons:
@@ -145,13 +165,14 @@ class ChatFlowService:
             answer = domain.response.no_context_message
         else:
             try:
-                history = self._build_history(
-                    domain=domain,
-                    session_id=session_id,
-                    request_id=request_id,
-                    channel=channel,
-                    customer_id=customer_id,
-                )
+                if history is None:
+                    history = self._build_history(
+                        domain=domain,
+                        session_id=session_id,
+                        request_id=request_id,
+                        channel=channel,
+                        customer_id=customer_id,
+                    )
                 prompt = build_prompt(
                     domain=domain,
                     question=question,
