@@ -87,6 +87,9 @@ embedding:
   provider: openai
   model: text-embedding-3-small
   dimensions: 1536
+
+feature_flags:
+  context_aware_scope: false
 ```
 
 ## Regras simples
@@ -97,6 +100,10 @@ embedding:
 - Regra reutilizavel entre setores deve ficar em `app/`.
 - Comece com `provider: mock` antes de ligar provider real.
 - Ajuste `confidence_threshold` so depois de observar conversas reais.
+- `feature_flags` e um mapa opcional `nome -> on/off` por dominio, default vazio
+  (toda flag desligada). Serve para ligar uma mudanca de comportamento atras de
+  flag escopada a um dominio, sem variavel de ambiente global. Leia no codigo com
+  `domain.is_flag_enabled("<flag>")`, que devolve `False` para flag nao declarada.
 
 ## Como criar um novo dominio
 

@@ -55,6 +55,45 @@ display_name: Suporte
     assert DomainLoader(tmp_path).load("vendas") is None
 
 
+def test_feature_flags_default_to_empty_and_off(tmp_path: Path) -> None:
+    write_domain_config(
+        tmp_path,
+        "vendas",
+        """
+name: vendas
+display_name: Suporte de Vendas
+""",
+    )
+
+    domain = DomainLoader(tmp_path).load("vendas")
+
+    assert domain is not None
+    assert domain.feature_flags == {}
+    # Unknown flags are safely off, so behavior is unchanged until a domain opts in.
+    assert domain.is_flag_enabled("context_aware_scope") is False
+
+
+def test_feature_flags_load_from_contract(tmp_path: Path) -> None:
+    write_domain_config(
+        tmp_path,
+        "vendas",
+        """
+name: vendas
+display_name: Suporte de Vendas
+feature_flags:
+  context_aware_scope: true
+  soft_low_confidence: false
+""",
+    )
+
+    domain = DomainLoader(tmp_path).load("vendas")
+
+    assert domain is not None
+    assert domain.is_flag_enabled("context_aware_scope") is True
+    assert domain.is_flag_enabled("soft_low_confidence") is False
+    assert domain.is_flag_enabled("not_declared") is False
+
+
 def test_list_domains_returns_only_valid_contracts(tmp_path: Path) -> None:
     write_domain_config(
         tmp_path,
