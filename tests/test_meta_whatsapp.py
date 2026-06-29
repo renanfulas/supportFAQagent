@@ -4,11 +4,13 @@ import hashlib
 import hmac
 import json
 import logging
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 import pytest
 
 from app.core.config import Settings, get_settings
+from app.domain_engine.models import DomainConfig
 from app.integrations.meta_whatsapp.client import (
     MetaWhatsAppClient,
     MetaWhatsAppRequestError,
@@ -515,7 +517,9 @@ def test_meta_chat_transport_calls_core_without_raw_wa_id() -> None:
     class FakeDomainLoader:
         def load(self, domain_name: str):
             captured["domain_name"] = domain_name
-            return object()
+            return DomainConfig(
+                name=domain_name, display_name=domain_name, root_path=Path(".")
+            )
 
     class FakeChatService:
         def answer(self, **kwargs):

@@ -14,6 +14,7 @@ from app.core.persistence_sanitize import (
 from app.db.runtime import DatabaseRuntime
 from app.db.operational import (
     ChatAuditInput,
+    HANDOFF_NOT_REQUIRED,
     HANDOFF_QUEUED,
     HANDOFF_UNAVAILABLE,
     PERSISTENCE_PERSISTED,
@@ -476,6 +477,42 @@ def test_escalated_chat_is_recorded_with_idempotent_outbox_key() -> None:
     assert "user@example.com" not in str(runtime.cursor.calls)
     assert "reference-secret" not in str(runtime.cursor.calls)
     assert "ghp_" not in str(runtime.cursor.calls)
+
+
+def test_soft_low_confidence_turn_is_not_enqueued_for_human_queue() -> None:
+    # WS-3: with requires_human_queue=False (a low_confidence-only turn under the
+    # soft_low_confidence flag), the turn is still persisted/escalated but no
+    # support_case or handoff.requested outbox row is written.
+    runtime = RecordingRuntime(
+        rows=[
+            ("domain-id",),
+            (False,),
+            ("audit-id", "turn-id"),
+            ("conversation-id",),
+        ]
+    )
+    repository = OperationalRepository(runtime)
+
+    status = repository.record_chat(
+        ChatAuditInput(
+            request_id="req-soft",
+            domain="vendas",
+            session_id="raw-session",
+            question="e quanto tempo isso costuma levar?",
+            answer="depende do plano",
+            confidence=0.3,
+            escalated=True,
+            handoff_reasons=["low_confidence"],
+            references=[],
+            error_code=None,
+            requires_human_queue=False,
+        )
+    )
+
+    assert status.handoff_status == HANDOFF_NOT_REQUIRED
+    assert status.persistence_status == PERSISTENCE_PERSISTED
+    assert all("operational_outbox" not in str(call[0]) for call in runtime.cursor.calls)
+    assert all("support_cases" not in str(call[0]) for call in runtime.cursor.calls)
 
 
 @pytest.mark.parametrize("outbox_row", [("dead_letter",), None])

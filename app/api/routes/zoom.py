@@ -24,6 +24,7 @@ from app.db.operational import (
     OperationalRepository,
 )
 from app.db.runtime import DatabaseRuntime
+from app.handoff.taxonomy import resolve_human_queue
 from app.orchestration.chat_flow import ChatFlowService
 
 
@@ -110,6 +111,9 @@ def process_and_reply(
                 references=list(response["references"]),
                 error_code=response["error_code"],
                 channel="zoom",
+                requires_human_queue=resolve_human_queue(
+                    domain, list(response["handoff_reasons"])
+                ),
             )
         )
         answer_text = response.get(

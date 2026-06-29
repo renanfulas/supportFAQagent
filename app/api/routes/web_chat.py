@@ -28,6 +28,7 @@ from app.db.operational import (
     HANDOFF_UNAVAILABLE,
     OperationalRepository,
 )
+from app.handoff.taxonomy import resolve_human_queue
 
 
 router = APIRouter()
@@ -72,6 +73,9 @@ def create_web_chat(
             error_code=chat_response["error_code"],
             channel="web",
             customer_id=identity_context.customer_id,
+            requires_human_queue=resolve_human_queue(
+                domain, list(chat_response["handoff_reasons"])
+            ),
         )
     )
     chat_response["handoff_status"] = persistence_result.handoff_status

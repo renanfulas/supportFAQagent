@@ -173,8 +173,22 @@ e **mudanca de contrato** -> atualizar `docs/integration-contracts.md` e comunic
 
 Seam de teste: `tests/test_chat_flow_errors.py` + teste de `operational` com
 runtime fake provando que `low_confidence` sozinho nao enfileira.
-Flag: `VENDAS_SOFT_LOW_CONFIDENCE`. Dono: Renan + Alexandre. Risco: medio-alto
-(contrato + rede de seguranca de bot que cota preco).
+Flag: `soft_low_confidence` em `domain.yaml` (primitiva da #89). Dono: Renan.
+Risco: medio-alto (contrato + rede de seguranca de bot que cota preco).
+
+**Implementado (dark, flag off no vendas):** taxonomia em `app/handoff/taxonomy.py`
+(`SOFT_SIGNAL_REASONS = {low_confidence}`; `requires_human_queue` = "ha motivo
+nao-soft"; `resolve_human_queue` aplica a flag por dominio). O enfileiramento em
+`app/db/operational.py` agora usa `ChatAuditInput.human_queue_required` (que cai de
+volta em `escalated` quando a flag esta off), cobrindo os **dois** sumidouros
+(`support_cases` + `operational_outbox`). As 5 superficies que gravam audit
+(chat, web_chat, zoom, hermes, meta) passam `requires_human_queue`. Contrato
+documentado em `docs/integration-contracts.md` (escalated nao garante fila humana;
+use `handoff_status`). Cobertura: `tests/test_handoff_taxonomy.py` +
+`tests/test_phase0_operational_safety.py` (low_confidence-only nao enfileira;
+escalated legado segue enfileirando). Decisao 1 resolvida na direcao do plano:
+`low_confidence` vira SOFT_SIGNAL (escalated/logado, **nao** enfileira), nao
+"enfileira silencioso".
 
 ### WS-4 - Loop de descoberta e recomendacao de plano nomeado
 
