@@ -60,8 +60,8 @@ class SupportCaseRepository:
                            sc.updated_at
                     FROM support_cases sc
                     JOIN domains d ON d.id = sc.domain_id
-                    WHERE (%s IS NULL OR d.name = %s)
-                      AND (%s IS NULL OR sc.status = %s)
+                    WHERE (%s::text IS NULL OR d.name = %s)
+                      AND (%s::text IS NULL OR sc.status = %s)
                     ORDER BY sc.opened_at DESC
                     LIMIT %s OFFSET %s
                     """,
