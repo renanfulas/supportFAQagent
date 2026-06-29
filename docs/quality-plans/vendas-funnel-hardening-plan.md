@@ -1,22 +1,16 @@
 # Plano Tecnico - Hardening do Funil de Vendas no WhatsApp
 
-Status: codigo de WS-1/WS-2/WS-3 entregue; falta so o harness de medicao (WS-0)
-para ligar WS-2/WS-3 com dado. **Primitiva de flag por dominio: existe** (campo em
-`domain.yaml`, #89) — a decisao 5 esta resolvida e WS-2/WS-3 deixaram de estar
-bloqueados nela. **WS-1 (cartao/PAN) completo**: detector Luhn + exclusoes em
-`app/core/persistence_sanitize.py`, recusa no checkout, reason `card_data` e
-`tests/test_pii_card.py` entraram pelo #81; a suite de confinamento
-`domains/vendas/evals/confinement/payment_data.yaml` entrou pelo #88. **WS-2
-(out_of_scope ciente de contexto) implementado dark** (#90, flag
-`context_aware_scope` off no vendas). **WS-3 (desacoplar fila humana de
-`escalated`) implementado dark** (#91, flag `soft_low_confidence` off no vendas;
-contrato atualizado em `docs/integration-contracts.md`). **WS-0**: metricas ja
-saem do `chat_completed` (confidence/escalated/handoff_reasons por dominio) e o
-driver ad-hoc `scripts/whatsapp_smoke_drive.py` ja esta commitado (#75), porem
-in-memory/persistencia off; falta o **harness repetivel com schema scratch
-isolado** (building block ja disponivel: Postgres descartavel `docker-compose.test.yml`,
-#84). WS-0 e o caminho critico que destrava ligar WS-2/WS-3 e atacar WS-4.
-WS-4 depende do harness de WS-0.
+Status: **WS-1/WS-2/WS-3 entregues e WS-2/WS-3 LIGADAS no vendas** (apos o WS-0
+medir e confirmar). Primitiva de flag por dominio existe (#89, decisao 5 resolvida).
+**WS-1 (cartao/PAN) completo** (#81 detector Luhn + recusa no checkout + reason
+`card_data`; #88 suite de confinamento `payment_data.yaml`). **WS-2
+(`context_aware_scope`) e WS-3 (`soft_low_confidence`) = true** em
+`domains/vendas/domain.yaml` apos o WS-0 (ver secao "WS-0 - resultado" abaixo).
+**WS-0 executado** (2026-06-29) por um harness que dirige `ChatFlowService.answer`
+direto, com history in-memory fiel (multi-turno), retrieval pgvector real e LLM
+real, sem nenhuma escrita em prod (answer() nao persiste) — rodado na VPS. Falta:
+**WS-4** (loop de descoberta / recomendacao de plano), que dependia do WS-0 e agora
+esta destravado.
 Data de revisao: 2026-06-29.
 Owner de coordenacao: Renan. Time ativo: Renan (handoff/orquestracao/seguranca/
 persistencia/schema scratch) + Juliano (runtime/deploy/onde rodar + retrieval).
@@ -139,6 +133,30 @@ Mudanca:
 Seam de teste: o proprio harness vira a evidencia de aceitacao das demais WS.
 Dono: Renan (metricas + schema scratch, que agora e frente do Renan) +
 Juliano (onde rodar/runtime). Risco: baixo.
+
+#### WS-0 - resultado (2026-06-29, rodado na VPS)
+
+Harness: dirige `ChatFlowService.answer` direto (sem transporte/persistencia),
+history in-memory fiel para multi-turno, retrieval pgvector real + LLM real,
+zero escrita em prod. 10 conversas, 34 turnos, rodadas em baseline (flags off) e
+treatment (flags on).
+
+| Metrica | Baseline (off) | Treatment (on) |
+| --- | ---: | ---: |
+| Turnos escalados | 23/34 (67,6%) | 23/34 (67,6%) |
+| `out_of_scope` (HARD_BLOCK; descarta a resposta) | 13 | 1 |
+| Enfileiramentos p/ fila humana (handoff + support_case) | 23 | 2 |
+| Confidence media / mediana | 0,509 / 0,49 | idem (retrieval nao muda) |
+| Turnos na faixa 0,30-0,55 | 21/34 | 21/34 |
+
+Leitura: **WS-2** recupera 12 follow-ups de descoberta que eram bloqueados por
+falso `out_of_scope` e passam a entregar resposta grounded (sem mascarar
+out_of_scope legitimo no sample). **WS-3** reduz a fila humana de 23 para 2
+(so `card_data` + 1 misto), confirmando a over-escalation. A escalacao total nao
+muda porque `confidence` (manometro cego, ignora a pergunta) mantem 21 turnos logo
+abaixo do threshold 0,55 — o que reforca a **decisao 2** (avaliar baixar
+`confidence_threshold` ~0,45 para atacar a raiz). Ambas as flags foram ligadas no
+vendas com base nesse resultado.
 
 ### WS-2 - `out_of_scope` ciente de contexto (atras de flag)
 
