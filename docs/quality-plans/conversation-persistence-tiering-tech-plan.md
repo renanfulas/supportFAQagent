@@ -179,6 +179,19 @@ def build_session_state_store_from_env() -> SessionStateStore:
 
 ## Fase 3 — Warehouse + batch noturno de sumarização
 
+Status: **núcleo implementado (2026-06-29)**, dark por `ENABLE_CONVERSATION_SUMMARY`.
+Migration `012_conversation_summaries.sql` (tabela + `UNIQUE(domain, conversation_key)`
++ CHECK de status). Núcleo testável em `app/conversations/summary.py` (transcript
+com sanitização **antes** do modelo, prompt, parse robusto de JSON, `run_summary_batch`
+idempotente por upsert). Script operacional `scripts/summarize_conversations.py`
+(elegível = inativa ≥ `--inactivity-hours`, ≥ `--min-turns`, ainda não resumida;
+`--dry-run` não chama modelo; recusa escrever sem a flag). `customer_ref` =
+`customer_id` senão `session_hash`. Cobertura: `tests/test_conversation_summary.py`
+(unit, inclui PAN redigido antes do modelo) + `tests/integration/test_conversation_summary_postgres.py`
+(Postgres real, na gate `phase0-gates.yml`). **Pendente:** agendamento (systemd timer
++ runbook), consumo no RAG (Fase 4, atrás de eval), e métrica de custo no
+`cost-latency-profile`.
+
 Postgres como base analítica/RAG, alimentada por batch idempotente às ~3h.
 
 ### Migration
