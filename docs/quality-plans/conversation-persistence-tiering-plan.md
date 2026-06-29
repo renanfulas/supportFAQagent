@@ -138,6 +138,40 @@ Escada de escalada (só sobe quando o gatilho aparecer, sem virar a B inteira):
 Assim a A **cresce para dentro da B** de forma incremental e reversível, em vez de
 pagar a complexidade adiantado por uma carga que ainda não existe.
 
+### Fluxos de referência (síncrono vs assíncrono)
+
+O princípio operacional do Nível 0, concreto. Existe um diagrama de referência
+deste desenho (gerado na discussão de 2026-06-29); o texto abaixo é a fonte da
+verdade.
+
+**Fluxo de um turno (qualquer domínio):**
+
+1. Inbound (web/WhatsApp/…) chega ao `ChatFlowService` — roteia, recupera (pgvector),
+   responde (LLM).
+2. **Síncrono (1 transação Postgres):** grava o turno (`conversations`/`messages` +
+   `chat_audits`) **e**, na mesma transação, **enfileira o(s) evento(s) no
+   `operational_outbox`**. Commit atômico = o turno está durável e a cópia está
+   garantida. Custo ~ms (não percebido; o LLM domina).
+3. **Estado quente (síncrono, fail-open):** lê/grava `SessionStateStore` (in-memory
+   no Nível 0) por `(domain, channel, session_hash)`. Se o store cair, o `/chat`
+   responde mesmo assim — não é autoritativo.
+4. **Assíncrono (worker `dispatch_outbox`, fora do hot path):** entrega o evento
+   `conversation.turn.archived` ao **backup off-box (R2/S3, append-only)** — at-least-once,
+   idempotente. RPO ≈ lag do worker (segundos).
+
+**Fluxo de handoff (escalou para humano):**
+
+1. Mesma transação síncrona do turno, **mais** o `support_cases` (ticket durável) +
+   o evento `handoff.requested` no outbox. **Este é o gate de consistência:** se a
+   transação falhar, **não** se promete humano ao usuário (não "barra" em falso).
+2. Assíncrono via outbox: entrega de `handoff.requested` ao consumidor externo
+   (quando configurado) + a cópia off-box. O **support inbox** (leitura) já serve o
+   ticket a partir do Postgres, independente da entrega externa.
+
+**Onde o Redis entra (Níveis 1–2, sob gatilho):** como backend do `SessionStateStore`
+(estado quente, TTL, não-autoritativo) e/ou cache de leitura 7d por cima do Postgres
+— **nunca** como âncora de durabilidade no Nível 0.
+
 ---
 
 ## 5. Tradeoffs honestos / limites de MVP
