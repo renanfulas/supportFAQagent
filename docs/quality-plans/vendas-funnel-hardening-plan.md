@@ -8,9 +8,14 @@ medir e confirmar). Primitiva de flag por dominio existe (#89, decisao 5 resolvi
 `domains/vendas/domain.yaml` apos o WS-0 (ver secao "WS-0 - resultado" abaixo).
 **WS-0 executado** (2026-06-29) por um harness que dirige `ChatFlowService.answer`
 direto, com history in-memory fiel (multi-turno), retrieval pgvector real e LLM
-real, sem nenhuma escrita em prod (answer() nao persiste) — rodado na VPS. Falta:
-**WS-4** (loop de descoberta / recomendacao de plano), que dependia do WS-0 e agora
-esta destravado.
+real, sem nenhuma escrita em prod (answer() nao persiste) — rodado na VPS. **WS-4
+layer 1 verificado**: com historico real + WS-2, o loop nao persiste — converge para
+recomendacao de plano nomeada + fechamento; o loop do smoke era artefato de
+persistencia-off. Layer 2 (prompt) testada e nao shippada (sem ganho claro num A/B
+pequeno; risco de variancia); layer 3 (slots) nao justificada. Funil de vendas
+essencialmente fechado; em aberto so a **decisao 2** (avaliar baixar
+`confidence_threshold`, hoje de baixo impacto pratico pois WS-3 ja torna
+`low_confidence` soft).
 Data de revisao: 2026-06-29.
 Owner de coordenacao: Renan. Time ativo: Renan (handoff/orquestracao/seguranca/
 persistencia/schema scratch) + Juliano (runtime/deploy/onde rodar + retrieval).
@@ -256,8 +261,25 @@ Camadas (barata -> cara):
 Risco: a camada 2 empurra o LLM a "fechar/recomendar" e pode aumentar
 alucinacao; manter as guardas de honestidade do dominio. O `session_state_store`
 in-memory se perde em restart e quebra com >1 worker.
-Dono: Renan (prompt/seam) + Alexandre (durabilidade). Risco: baixo (camada 2),
-medio (camada 3).
+Dono: Renan (prompt/seam). Risco: baixo (camada 2), medio (camada 3).
+
+#### WS-4 layer 1 - verificado (2026-06-29, harness na VPS, flags WS-2/WS-3 on)
+
+Rodadas conversas de descoberta multi-turno com historico real. **O loop nao
+persiste de verdade**: as conversas convergem para recomendacao de plano **nomeada**
+(ex.: "Plano P" R$ 10,09/mes com specs; "Plano M") e caminho de fechamento
+(Pix/cartao -> checkout/especialista). O "loop" do smoke original era artefato da
+persistencia-off (sem historico) — confirma a hipotese do achado #4 ("mais
+enhancement que bug"). Resíduo observado: re-pergunta ocasional, em parte
+**legitima** (dado faltante ou vago, ex.: "trafego medio" sem numero).
+
+Layer 2 (prompt) testado e **nao shippado**: um ajuste no system prompt do vendas
+("nao repita pergunta ja respondida; com objetivo+trafego+nivel, va direto para a
+oferta") nao mostrou ganho claro num A/B de 2 conversas e numa amostra **piorou** o
+fechamento (recomendou so a categoria em vez de nomear o plano). Coerente com o
+risco de variancia da camada 2. Decisao: **nao mexer no prompt sem um A/B mais
+robusto** (multiplas amostras + criterio de aceitacao); o comportamento atual ja
+converge para plano nomeado + fechamento. Layer 3 (slots) **nao justificada**.
 
 ## 4. Riscos conhecidos e o que pode quebrar (red-team)
 
