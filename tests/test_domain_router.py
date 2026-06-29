@@ -7,6 +7,7 @@ import pytest
 from app.core.config import Settings
 from app.db.operational import ChatPersistenceResult
 from app.domain_engine.loader import DomainLoader
+from app.domain_engine.models import DomainConfig
 from app.integrations.meta_whatsapp.chat_transport import MetaWhatsAppChatTransport
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage, MetaSendResult
 from app.orchestration.domain_router import DomainRouter, RoutableDomain
@@ -237,7 +238,9 @@ class _FakeDomainLoader:
 
     def load(self, domain_name: str):
         self.loaded.append(domain_name)
-        return object()
+        return DomainConfig(
+            name=domain_name, display_name=domain_name, root_path=Path(".")
+        )
 
 
 class _FakeChatService:

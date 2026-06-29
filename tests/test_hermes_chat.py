@@ -4,11 +4,13 @@ import hashlib
 import hmac
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 import pytest
 
 from app.core.config import Settings, get_settings
+from app.domain_engine.models import DomainConfig
 from app.core.rate_limit import InMemoryRateLimiter
 from app.db.operational import ChatPersistenceResult
 from app.integrations.hermes.chat_transport import ESCAPE_STATE, HermesChatTransport
@@ -149,7 +151,9 @@ class _FakeDomainLoader:
 
     def load(self, domain_name: str):
         self.loaded.append(domain_name)
-        return object()
+        return DomainConfig(
+            name=domain_name, display_name=domain_name, root_path=Path(".")
+        )
 
 
 class _FakeChatService:

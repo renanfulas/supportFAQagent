@@ -13,6 +13,7 @@ from app.domain_engine.loader import DomainLoader
 from app.conversations.service import ConversationHistoryService
 from app.orchestration.chat_flow import ChatFlowService
 from app.db.operational import ChatAuditInput, HANDOFF_UNAVAILABLE, OperationalRepository
+from app.handoff.taxonomy import resolve_human_queue
 
 
 router = APIRouter()
@@ -64,6 +65,9 @@ def chat(
             references=list(response["references"]),
             error_code=response["error_code"],
             channel=payload.channel,
+            requires_human_queue=resolve_human_queue(
+                domain, list(response["handoff_reasons"])
+            ),
         )
     )
     response["handoff_status"] = persistence_result.handoff_status

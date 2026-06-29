@@ -53,7 +53,18 @@ class ChatAuditInput:
     error_code: str | None
     channel: str = "api"
     customer_id: str | None = None
+    # WS-3: whether this turn needs a human in the queue. None keeps the legacy
+    # behavior (enqueue == escalated); a bool decouples the queue from escalated so a
+    # low_confidence-only turn can stay escalated/logged without flooding the queue.
+    requires_human_queue: bool | None = None
     turn_id: str = field(default_factory=lambda: str(uuid4()))
+
+    @property
+    def human_queue_required(self) -> bool:
+        """Whether to enqueue a human handoff for this turn (falls back to escalated)."""
+        if self.requires_human_queue is None:
+            return self.escalated
+        return self.requires_human_queue
 
 
 @dataclass(frozen=True)
@@ -73,7 +84,7 @@ class OperationalRepository:
         if not self.runtime.persistence_enabled:
             return ChatPersistenceResult(
                 handoff_status=(
-                    HANDOFF_UNAVAILABLE if audit.escalated else HANDOFF_NOT_REQUIRED
+                    HANDOFF_UNAVAILABLE if audit.human_queue_required else HANDOFF_NOT_REQUIRED
                 ),
                 persistence_status=PERSISTENCE_DISABLED,
                 turn_id=audit.turn_id,
@@ -199,7 +210,7 @@ class OperationalRepository:
                             error_code=error_code,
                         )
                     handoff_status = HANDOFF_NOT_REQUIRED
-                    if audit.escalated:
+                    if audit.human_queue_required:
                         support_case_id = self._upsert_support_case(
                             cursor=cursor,
                             domain_id=row[0],
@@ -258,7 +269,7 @@ class OperationalRepository:
             )
             return ChatPersistenceResult(
                 handoff_status=(
-                    HANDOFF_UNAVAILABLE if audit.escalated else HANDOFF_NOT_REQUIRED
+                    HANDOFF_UNAVAILABLE if audit.human_queue_required else HANDOFF_NOT_REQUIRED
                 ),
                 persistence_status=PERSISTENCE_UNAVAILABLE,
                 turn_id=audit.turn_id,

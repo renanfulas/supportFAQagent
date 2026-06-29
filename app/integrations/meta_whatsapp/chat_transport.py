@@ -12,6 +12,7 @@ from app.db.operational import (
     OperationalRepository,
 )
 from app.db.runtime import DatabaseRuntime
+from app.handoff.taxonomy import resolve_human_queue
 from app.domain_engine.loader import DomainLoader
 from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage
@@ -137,6 +138,9 @@ class MetaWhatsAppChatTransport:
                 references=list(response["references"]),
                 error_code=response["error_code"],
                 channel="whatsapp",
+                requires_human_queue=resolve_human_queue(
+                    domain, list(response["handoff_reasons"])
+                ),
             )
         )
         answer = str(response["answer"])

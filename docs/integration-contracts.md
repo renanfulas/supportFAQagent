@@ -258,6 +258,16 @@ Saida minima:
 `handoff_not_required`, `handoff_queued` ou `handoff_unavailable`. O campo
 separa a decisao de escalar da confirmacao de que a notificacao foi enfileirada.
 
+`escalated=true` **nao garante por si so** uma entrada na fila humana. Quando a
+flag por dominio `soft_low_confidence` esta ligada (WS-3), um turno cujo unico
+motivo e `low_confidence` permanece `escalated=true` e registrado, mas **nao**
+gera `support_case` nem evento `handoff.requested` (`handoff_status=handoff_not_required`).
+A fila humana e acionada por motivos nao-soft (pedido humano explicito, tema
+sensivel, segredo, dado de cartao, regra de escalonamento do dominio, erro de
+provider, etc.). Com a flag desligada (default), o comportamento legado se mantem:
+qualquer `escalated=true` enfileira. Consumidores devem usar `handoff_status`, nao
+`escalated`, para decidir se um humano foi acionado.
+
 `persistence_status` pode ser `persisted`, `persistence_disabled` ou
 `persistence_unavailable`. Quando `escalated=true` e a persistencia PostgreSQL
 esta ativa, o backend cria ou reutiliza um `support_case` duravel antes de
