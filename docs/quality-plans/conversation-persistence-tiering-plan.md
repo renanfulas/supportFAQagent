@@ -103,6 +103,41 @@ incremental no hot path está custando latência percebida, o que hoje **não** 
 caso (`docs/cost-latency-profile.md`: orquestração soma single-digit de ms; quase
 toda a latência é o round-trip do modelo).
 
+### Decisão fechada (2026-06-29): **A**, com escada incremental para as ideias da B
+
+Avaliamos um desenho alternativo (Renan): RAM 45m → Redis 7d como **verdade
+operacional** → snapshot off-box → Postgres só de madrugada. É a Opção B com um hot
+tier na frente. Onde a B/Renan **falha no nosso cenário** e a A não:
+
+- **Backup por snapshot periódico do Redis** perde tudo desde o último snapshot se a
+  VPS inteira morrer (AOF não salva se a máquina sumiu). A A faz **append por-turno
+  off-box via outbox** (perda ≈ segundos).
+- **Madrugada como fronteira de durabilidade** já foi rejeitada (ver §3); a B reintroduz
+  isso para os turnos não-resolvidos do dia.
+- **Carga operacional**: a B transforma o Redis em dado crítico (AOF + snapshot +
+  eviction segura + restore + reconciliação noturna) — superfície demais para um time
+  de dois. A A reaproveita write-through + outbox + sink que **já existem**.
+
+Onde a B é genuinamente melhor (e por isso vira *escalada futura*, não descarte):
+aceitar writes com **Postgres fora** e **vazão em concorrência altíssima** — nenhum
+dos dois é a restrição de hoje (milhares/**dia**, não milhares **simultâneos**).
+
+**Regra de ouro (vale em toda escala): o que é síncrono é a âncora de durabilidade;
+o backup off-box é sempre append por-turno — nunca snapshot/flush diário como
+fronteira de durabilidade.**
+
+Escada de escalada (só sobe quando o gatilho aparecer, sem virar a B inteira):
+
+| Nível | Gatilho que justifica | O que liga (flag) | Vem da ideia |
+| --- | --- | --- | --- |
+| **0 (agora)** | — | Postgres write-through (âncora) + outbox (R2 por-turno + fan-out) + estado quente in-memory fail-open + resumo noturno | A |
+| **1** | restart/multi-worker perde estado de sessão | `RedisSessionStateStore` (estado quente em Redis, TTL, **não-autoritativo**, fail-open) | "RAM 45m / Redis 7d" da B |
+| **2** | leitura de histórico/triagem de tickets-em-aberto vira gargalo | cache de leitura 7d no Redis por cima do Postgres | "meio campo" operacional da B |
+| **3** | write-through vira gargalo **ou** requisito de aceitar com Postgres fora | promover **localmente** (só no domínio que provar) o caminho para Redis-first (Opção B) | âncora-Redis da B, localizada e por evidência |
+
+Assim a A **cresce para dentro da B** de forma incremental e reversível, em vez de
+pagar a complexidade adiantado por uma carga que ainda não existe.
+
 ---
 
 ## 5. Tradeoffs honestos / limites de MVP
@@ -232,7 +267,8 @@ backend (in-memory, Redis, S3) trocável por flag, sem mudar chamador nem schema
 
 ## 11. Decisões em aberto
 
-- Opção **A vs B** da §4 (recomendado A). Confirmar antes da fatia 4.
+- ~~Opção **A vs B** da §4~~ **RESOLVIDA (2026-06-29): A**, com escada de escalada
+  incremental para absorver as ideias da B sob gatilho (ver §4, "Decisão fechada").
 - Retenção exata de cada camada (45 min / 7 d são pontos de partida, não lei).
 - Política de `maxmemory`/eviction do Redis que **não** descarte turno não
   sumarizado.
