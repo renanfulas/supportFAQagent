@@ -6,15 +6,22 @@ fake cursor, and the HTTP contract (auth, gating, shapes) via TestClient.
 
 from __future__ import annotations
 
+import json
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
-from app.support.context import build_case_context
+from app.db.operational import ChatAuditInput, HANDOFF_QUEUED, OperationalRepository
+from app.support.context import build_case_context, build_snapshot_context
 from app.support.repository import SupportCaseRepository
+from app.support.transcript import (
+    build_support_snapshot_context,
+    fetch_conversation_transcript,
+)
 
 
 API_KEY_HEADER = {"X-API-Key": "local-dev-api-key"}
@@ -96,6 +103,47 @@ def test_build_case_context_handles_missing_conversation() -> None:
     assert context.transcript == []
     assert context.summary is None
     assert context.references == []
+
+
+# --------------------------------------------------------------------------- #
+# Phase B: bounded snapshot context (push-side reuse of the read seam)
+# --------------------------------------------------------------------------- #
+
+
+def _turn_dict(sequence: int, role: str, content: str, references=None) -> dict:
+    return {
+        "sequence": sequence,
+        "role": role,
+        "content": content,
+        "confidence": None,
+        "escalated": False,
+        "handoff_reasons": [],
+        "references": references or [],
+        "error_code": None,
+        "created_at": datetime(2026, 6, 28, tzinfo=timezone.utc),
+    }
+
+
+def test_build_snapshot_context_reports_total_and_caps_content() -> None:
+    recent = [
+        _turn_dict(1, "user", "x" * 50, references=["kb:a"]),
+        _turn_dict(2, "assistant", "y" * 50, references=["kb:a", "kb:b"]),
+    ]
+
+    block = build_snapshot_context(recent, total_turn_count=25, content_limit=10)
+
+    assert block["turn_count"] == 25
+    assert block["included_turn_count"] == 2
+    assert block["references"] == ["kb:a", "kb:b"]
+    assert all(len(turn["content"]) <= 10 for turn in block["recent_turns"])
+    assert [turn["role"] for turn in block["recent_turns"]] == ["user", "assistant"]
+
+
+def test_build_support_snapshot_context_without_conversation() -> None:
+    block = build_support_snapshot_context(cursor=None, conversation_id=None)
+
+    assert block["turn_count"] == 0
+    assert block["recent_turns"] == []
 
 
 # --------------------------------------------------------------------------- #
@@ -199,6 +247,35 @@ def test_get_case_with_context_follows_conversation() -> None:
     assert context.references == ["kb:a", "kb:b"]
 
 
+def test_fetch_conversation_transcript_returns_rows_with_limit() -> None:
+    rows = [
+        (1, "user", "oi", None, False, [], [], None, None),
+        (2, "assistant", "ola", 0.9, False, [], [], None, None),
+    ]
+    cursor = FakeCursor(fetchone_results=[], fetchall_results=[rows])
+
+    turns = fetch_conversation_transcript(cursor, "conv-1", limit=5)
+
+    assert [turn["role"] for turn in turns] == ["user", "assistant"]
+    # The bound is passed through to SQL as the LIMIT parameter.
+    _, params = cursor.executed[0]
+    assert params[-1] == 5
+
+
+def test_build_support_snapshot_context_with_cursor() -> None:
+    recent_rows = [
+        (1, "user", "oi", None, False, [], ["kb:a"], None, None),
+        (2, "assistant", "transferindo", 0.2, True, ["low_confidence"], ["kb:b"], None, None),
+    ]
+    cursor = FakeCursor(fetchone_results=[(7,)], fetchall_results=[recent_rows])
+
+    block = build_support_snapshot_context(cursor, "conv-1")
+
+    assert block["turn_count"] == 7
+    assert block["included_turn_count"] == 2
+    assert block["references"] == ["kb:a", "kb:b"]
+
+
 def test_get_case_with_context_returns_none_when_absent() -> None:
     cursor = FakeCursor(fetchone_results=[None], fetchall_results=[])
     repository = SupportCaseRepository(FakeRuntime(cursor))
@@ -229,6 +306,103 @@ def test_get_case_with_context_skips_transcript_without_conversation() -> None:
     assert context.turn_count == 0
     # No transcript query should have run (only the case SELECT).
     assert len(cursor.executed) == 1
+
+
+# --------------------------------------------------------------------------- #
+# Phase B write-path: organized_context reaches the persisted snapshot
+# --------------------------------------------------------------------------- #
+
+
+class _RecordingCursor:
+    def __init__(self, fetchone_rows: list, fetchall_rows: list) -> None:
+        self._fetchone = list(fetchone_rows)
+        self._fetchall = list(fetchall_rows)
+        self.calls: list[tuple] = []
+
+    def __enter__(self) -> "_RecordingCursor":
+        return self
+
+    def __exit__(self, *_) -> None:
+        return None
+
+    def execute(self, sql: str, params: tuple | None = None) -> None:
+        self.calls.append((sql, params))
+
+    def fetchone(self):
+        return self._fetchone.pop(0) if self._fetchone else None
+
+    def fetchall(self):
+        return self._fetchall.pop(0) if self._fetchall else []
+
+
+class _RecordingRuntime:
+    enabled = True
+    persistence_enabled = True
+
+    def __init__(self, cursor: _RecordingCursor) -> None:
+        self.settings = SimpleNamespace(
+            persistence_hash_secret="persistence-secret",
+            persistence_hash_version="hmac-sha256-v1",
+        )
+        self._cursor = cursor
+
+    @contextmanager
+    def transaction(self):
+        yield SimpleNamespace(cursor=lambda: self._cursor)
+
+
+def test_escalated_chat_persists_organized_context_in_snapshot() -> None:
+    transcript_rows = [
+        (1, "user", "minha vps caiu", None, False, [], [], None, None),
+        (2, "assistant", "vou te transferir", 0.2, True, ["low_confidence"], ["kb:b"], None, None),
+    ]
+    cursor = _RecordingCursor(
+        fetchone_rows=[
+            ("domain-id",),
+            (False,),
+            ("audit-id", "turn-id"),
+            ("conversation-id",),
+            (2,),  # count_conversation_turns
+            ("support-case-id",),
+            ("pending",),
+        ],
+        fetchall_rows=[transcript_rows],
+    )
+    repository = OperationalRepository(_RecordingRuntime(cursor))
+
+    status = repository.record_chat(
+        ChatAuditInput(
+            request_id="req-1",
+            domain="suporte-vps-whatsapp",
+            session_id="raw-session",
+            question="minha vps caiu",
+            answer="vou te transferir",
+            confidence=0.2,
+            escalated=True,
+            handoff_reasons=["low_confidence"],
+            references=["kb:b"],
+            error_code=None,
+        )
+    )
+
+    assert status.handoff_status == HANDOFF_QUEUED
+    insert = next(
+        call for call in cursor.calls if "INSERT INTO support_cases" in call[0]
+    )
+    snapshot = json.loads(insert[1][6])
+    organized = snapshot["organized_context"]
+    assert organized["turn_count"] == 2
+    assert organized["included_turn_count"] == 2
+    assert [turn["role"] for turn in organized["recent_turns"]] == [
+        "user",
+        "assistant",
+    ]
+    # The push (outbox) payload carries the same bounded context block.
+    outbox = next(
+        call for call in cursor.calls if "INSERT INTO operational_outbox" in call[0]
+    )
+    outbox_payload = json.loads(outbox[1][2])
+    assert outbox_payload["organized_context"]["turn_count"] == 2
 
 
 # --------------------------------------------------------------------------- #
@@ -291,6 +465,33 @@ def test_list_endpoint_returns_cases(monkeypatch: pytest.MonkeyPatch) -> None:
     assert body["count"] == 1
     assert body["cases"][0]["case_id"] == "case-1"
     assert body["cases"][0]["summary"] == "resumo"
+
+
+def test_list_endpoint_surfaces_turn_count_from_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        (
+            "case-1",
+            "suporte-vps-whatsapp",
+            "open",
+            "normal",
+            "whatsapp",
+            "req-1",
+            [],
+            {"summary": "resumo", "organized_context": {"turn_count": 9}},
+            datetime(2026, 6, 28, tzinfo=timezone.utc),
+            datetime(2026, 6, 28, tzinfo=timezone.utc),
+        )
+    ]
+    cursor = FakeCursor(fetchone_results=[], fetchall_results=[rows])
+    with _client_with_runtime(
+        monkeypatch, enabled=True, runtime=FakeRuntime(cursor)
+    ) as client:
+        response = client.get("/internal/support-cases", headers=API_KEY_HEADER)
+
+    assert response.status_code == 200
+    assert response.json()["cases"][0]["turn_count"] == 9
 
 
 def test_list_endpoint_rejects_unknown_status(monkeypatch: pytest.MonkeyPatch) -> None:

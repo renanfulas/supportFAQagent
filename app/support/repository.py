@@ -11,9 +11,9 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from app.core.persistence_sanitize import REDACTION_VERSION
 from app.db.runtime import DatabaseRuntime
 from app.support.context import SupportCaseContext, build_case_context
+from app.support.transcript import fetch_conversation_transcript
 
 
 MAX_PAGE_SIZE = 100
@@ -31,6 +31,7 @@ class SupportCaseSummary:
     request_id: str
     reason_codes: list[str]
     summary: str | None
+    turn_count: int | None
     opened_at: Any
     updated_at: Any
 
@@ -115,41 +116,20 @@ class SupportCaseRepository:
         cursor: Any,
         conversation_id: Any,
     ) -> list[dict[str, Any]]:
-        if conversation_id is None:
-            return []
-        cursor.execute(
-            """
-            SELECT m.message_sequence, m.role, m.content, m.confidence,
-                   m.escalated, m.handoff_reasons, m.message_references,
-                   m.error_code, m.created_at
-            FROM messages m
-            WHERE m.conversation_id = %s
-              AND m.role IN ('user', 'assistant')
-              AND m.redaction_version = %s
-            ORDER BY m.message_sequence ASC
-            LIMIT %s
-            """,
-            (conversation_id, REDACTION_VERSION, MAX_TRANSCRIPT_TURNS),
+        return fetch_conversation_transcript(
+            cursor, conversation_id, limit=MAX_TRANSCRIPT_TURNS
         )
-        rows = cursor.fetchall()
-        return [
-            {
-                "sequence": row[0],
-                "role": row[1],
-                "content": row[2],
-                "confidence": row[3],
-                "escalated": row[4],
-                "handoff_reasons": _load_json(row[5], default=[]),
-                "references": _load_json(row[6], default=[]),
-                "error_code": row[7],
-                "created_at": row[8],
-            }
-            for row in rows
-        ]
 
     def _to_summary(self, row: tuple) -> SupportCaseSummary:
         snapshot = _load_json(row[7], default={})
-        summary = snapshot.get("summary") if isinstance(snapshot, dict) else None
+        snapshot = snapshot if isinstance(snapshot, dict) else {}
+        summary = snapshot.get("summary")
+        organized = snapshot.get("organized_context")
+        turn_count = None
+        if isinstance(organized, dict) and isinstance(
+            organized.get("turn_count"), int
+        ):
+            turn_count = organized["turn_count"]
         return SupportCaseSummary(
             case_id=str(row[0]),
             domain=str(row[1]),
@@ -159,6 +139,7 @@ class SupportCaseRepository:
             request_id=str(row[5]),
             reason_codes=_load_json(row[6], default=[]),
             summary=str(summary) if summary is not None else None,
+            turn_count=turn_count,
             opened_at=row[8],
             updated_at=row[9],
         )

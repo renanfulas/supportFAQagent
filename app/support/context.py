@@ -15,6 +15,13 @@ from datetime import datetime
 from typing import Any, Mapping, Sequence
 
 
+# Bounds for the push-side snapshot copy. The read surface serves the full
+# transcript on demand; the snapshot embedded in the outbox payload stays small
+# so it fits well under the verified-webhook body budget.
+SNAPSHOT_MAX_TURNS = 12
+SNAPSHOT_TURN_CONTENT_LIMIT = 1000
+
+
 @dataclass(frozen=True)
 class TranscriptTurn:
     sequence: int
@@ -75,6 +82,37 @@ def build_case_context(
         opened_at=case.get("opened_at"),
         updated_at=case.get("updated_at"),
     )
+
+
+def build_snapshot_context(
+    recent_turn_rows: Sequence[Mapping[str, Any]],
+    *,
+    total_turn_count: int,
+    content_limit: int = SNAPSHOT_TURN_CONTENT_LIMIT,
+) -> dict[str, Any]:
+    """Build the bounded organized-context block stored on a support case.
+
+    ``recent_turn_rows`` are the already-bounded most-recent turns (oldest
+    first). ``total_turn_count`` is the true conversation length so a consumer
+    knows whether earlier turns were elided. Shares ``_to_turn`` and
+    ``_aggregate_references`` with :func:`build_case_context` so the push copy
+    describes the handoff the same way the read surface does.
+    """
+
+    turns = [_to_turn(row) for row in recent_turn_rows]
+    return {
+        "turn_count": int(total_turn_count),
+        "included_turn_count": len(turns),
+        "references": _aggregate_references({}, turns),
+        "recent_turns": [
+            {
+                "sequence": turn.sequence,
+                "role": turn.role,
+                "content": turn.content[:content_limit],
+            }
+            for turn in turns
+        ],
+    }
 
 
 def _to_turn(row: Mapping[str, Any]) -> TranscriptTurn:

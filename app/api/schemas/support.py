@@ -14,6 +14,7 @@ class SupportCaseSummaryResponse(BaseModel):
     request_id: str
     reason_codes: list[str] = Field(default_factory=list)
     summary: str | None = None
+    turn_count: int | None = None
     opened_at: datetime | None = None
     updated_at: datetime | None = None
 

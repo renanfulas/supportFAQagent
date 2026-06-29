@@ -652,12 +652,16 @@ Saida da lista:
       "request_id": "req-do-turno",
       "reason_codes": ["low_confidence"],
       "summary": "resumo curto do snapshot",
+      "turn_count": 9,
       "opened_at": "2026-06-28T00:00:00Z",
       "updated_at": "2026-06-28T00:00:00Z"
     }
   ]
 }
 ```
+
+`turn_count` vem do bloco `organized_context` do snapshot (ver abaixo) e e `null`
+para casos antigos gravados antes do enriquecimento.
 
 `GET /internal/support-cases/{case_id}` (detalhe com transcript):
 
@@ -706,9 +710,38 @@ Observacoes:
 - logs operacionais carregam apenas contagens e identificadores seguros
   (`case_id`, `request_id`, `status`, `turn_count`); nunca conteudo de turn,
   `session_hash` ou PII;
-- o montador `app/support/context.py:build_case_context` e o seam reusavel: a
-  evolucao push (enriquecer `context_snapshot_sanitized` / payload da outbox)
-  deve reusar o mesmo builder para descrever o handoff de forma identica.
+- o montador `app/support/context.py` e o seam reusavel entre read e push: o
+  read serve o transcript completo on-read; o write path do handoff
+  (`operational.py`) reusa os mesmos primitivos via
+  `app/support/transcript.py:build_support_snapshot_context` para gravar um bloco
+  `organized_context` limitado.
+
+Enriquecimento `organized_context` (Fase B, push):
+
+- gravado em `support_cases.context_snapshot_sanitized` e tambem no payload
+  `handoff.requested` da outbox, para read e push descreverem o handoff de forma
+  identica;
+- limitado para caber no orcamento do webhook (`MAX_BODY_BYTES` 65536): no maximo
+  `SNAPSHOT_MAX_TURNS=12` turns recentes, cada `content` truncado em
+  `SNAPSHOT_TURN_CONTENT_LIMIT=1000` caracteres;
+- shape:
+
+```json
+{
+  "turn_count": 23,
+  "included_turn_count": 12,
+  "references": ["kb:vps-restart"],
+  "recent_turns": [
+    { "sequence": 12, "role": "user", "content": "texto sanitizado" }
+  ]
+}
+```
+
+- `turn_count` e o total real da conversa; `included_turn_count` e quantos turns
+  recentes foram embarcados (o read serve o restante on-read);
+- **best-effort**: se a montagem do bloco falhar, o caso durable e o evento
+  `handoff.requested` ainda sao gravados sem `organized_context` — a garantia
+  "turno nao resolvido -> ticket durable" nunca enfraquece.
 
 Fronteira de responsabilidade:
 

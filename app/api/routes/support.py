@@ -134,6 +134,7 @@ def _summary_to_response(case: SupportCaseSummary) -> SupportCaseSummaryResponse
         request_id=case.request_id,
         reason_codes=case.reason_codes,
         summary=case.summary,
+        turn_count=case.turn_count,
         opened_at=case.opened_at,
         updated_at=case.updated_at,
     )

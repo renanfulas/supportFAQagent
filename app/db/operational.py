@@ -23,6 +23,7 @@ from app.core.persistence_sanitize import (
 from app.db.runtime import DatabaseRuntime
 from app.conversations.repository import ConversationRepository
 from app.conversations.service import hash_session
+from app.support.transcript import build_support_snapshot_context
 
 
 logger = logging.getLogger(__name__)
@@ -211,23 +212,30 @@ class OperationalRepository:
                         )
                     handoff_status = HANDOFF_NOT_REQUIRED
                     if audit.human_queue_required:
-                        support_case_id = self._upsert_support_case(
-                            cursor=cursor,
-                            domain_id=row[0],
-                            customer_id=audit.customer_id,
-                            conversation_id=conversation_id,
-                            turn_id=str(persisted_turn_id),
-                            request_id=safe_request_id,
-                            channel=audit.channel,
-                            handoff_reasons=handoff_reasons,
-                            references=references,
-                            error_code=error_code,
-                            summary=question[:500],
+                        support_case_id, organized_context = (
+                            self._upsert_support_case(
+                                cursor=cursor,
+                                domain_id=row[0],
+                                customer_id=audit.customer_id,
+                                conversation_id=conversation_id,
+                                turn_id=str(persisted_turn_id),
+                                request_id=safe_request_id,
+                                channel=audit.channel,
+                                handoff_reasons=handoff_reasons,
+                                references=references,
+                                error_code=error_code,
+                                summary=question[:500],
+                            )
                         )
                         payload = {
                             **payload,
                             "support_case_id": support_case_id,
                         }
+                        # Push carries the same bounded context the read surface
+                        # serves, so both describe the handoff identically. The
+                        # block is already sanitized inside the snapshot build.
+                        if organized_context is not None:
+                            payload["organized_context"] = organized_context
                         cursor.execute(
                             """
                             INSERT INTO operational_outbox (
@@ -345,17 +353,30 @@ class OperationalRepository:
         references: list[str],
         error_code: str | None,
         summary: str,
-    ) -> str:
-        context_snapshot = sanitize_payload(
-            {
-                "request_id": request_id,
-                "channel": channel,
-                "handoff_reasons": handoff_reasons,
-                "references": references,
-                "error_code": error_code,
-                "summary": summary,
-            }
-        )
+    ) -> tuple[str, dict | None]:
+        snapshot: dict = {
+            "request_id": request_id,
+            "channel": channel,
+            "handoff_reasons": handoff_reasons,
+            "references": references,
+            "error_code": error_code,
+            "summary": summary,
+        }
+        # Best-effort enrichment: the ticket and its handoff event must survive
+        # even if assembling the bounded conversation context fails, so the
+        # "unresolved turn -> durable ticket" guarantee never weakens.
+        try:
+            snapshot["organized_context"] = build_support_snapshot_context(
+                cursor, conversation_id
+            )
+        except Exception as exc:  # noqa: BLE001 - degrade, never drop the ticket
+            log_event(
+                logger,
+                "support_snapshot_context_unavailable",
+                request_id=request_id,
+                error_type=type(exc).__name__,
+            )
+        context_snapshot = sanitize_payload(snapshot)
         cursor.execute(
             """
             INSERT INTO support_cases (
@@ -380,7 +401,7 @@ class OperationalRepository:
                 f"support_case:{turn_id}",
             ),
         )
-        return str(cursor.fetchone()[0])
+        return str(cursor.fetchone()[0]), context_snapshot.get("organized_context")
 
     def record_feedback(self, feedback: FeedbackRequest) -> FeedbackResponse:
         if not self.runtime.persistence_enabled:
