@@ -1,11 +1,14 @@
 # Plano Tecnico - Memoria de Sessao Pegajosa para Roteamento de Dominio
 
-Status: seam + adapter durável implementados. Contrato + adapter efêmero +
-integração no transporte WhatsApp já estavam prontos; o storage durável
-(`PgSessionDomainStore`, migration `011`) entrou atrás de
-`SESSION_DOMAIN_STORE_BACKEND=postgres` (default `memory`, dark). Falta só medir/
-ligar em staging.
-Data de revisao: 2026-06-28.
+Status: seam + adapter durável implementados **e validados em CI**. Contrato +
+adapter efêmero + integração no transporte WhatsApp já estavam prontos; o storage
+durável (`PgSessionDomainStore`, migration `011`) entrou atrás de
+`SESSION_DOMAIN_STORE_BACKEND=postgres` (default `memory`, dark). A validação de
+persistência/expiração deixou de ser um check manual: o teste opt-in
+`tests/integration/test_session_domain_store_postgres.py` agora roda na gate
+`phase0-gates.yml` (Postgres real). Falta só o **flip operacional** em staging
+(aplicar a `011` + `SESSION_DOMAIN_STORE_BACKEND=postgres`) — frente do Juliano.
+Data de revisao: 2026-06-29.
 
 ## Problema
 
@@ -20,10 +23,11 @@ A correcao e lembrar o dominio escolhido por conversa: memoria de sessao pegajos
 
 - Orquestracao/contrato (Renan): define a interface, o adapter efimero em memoria, a
   logica de stickiness no transporte e os testes.
-- Persistencia (Alexandre): implementa o adapter duravel (PostgreSQL) com a mesma
-  interface, TTL e garantias de privacidade.
+- Persistencia (Renan, antes Alexandre): adapter duravel (PostgreSQL) com a mesma
+  interface, TTL e garantias de privacidade — **ja implementado** (`PgSessionDomainStore`,
+  migration 011).
 
-Assim ninguem atravessa a frente do outro: o transporte depende apenas do contrato.
+O transporte depende apenas do contrato; o ligar/medir em staging (runtime) e do Juliano.
 
 ## Contrato
 

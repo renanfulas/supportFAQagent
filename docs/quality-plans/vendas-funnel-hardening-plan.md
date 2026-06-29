@@ -1,16 +1,26 @@
 # Plano Tecnico - Hardening do Funil de Vendas no WhatsApp
 
-Status: parcialmente implementado. **WS-1 (cartao/PAN) completo**: detector Luhn +
-exclusoes em `app/core/persistence_sanitize.py`, recusa no checkout, reason
-`card_data` e `tests/test_pii_card.py` entraram pelo #81; a suite de eval de
-confinamento `domains/vendas/evals/confinement/payment_data.yaml` fecha o gap.
-**WS-0 metricas** ja saem do `chat_completed` (confidence/escalated/handoff_reasons
-por dominio); o harness de smoke segue bloqueado (schema scratch isolado =
-runtime/Juliano). **WS-2/WS-3** bloqueados na primitiva de flag por dominio
-(decisao 5; direcao: campo em `domain.yaml`). WS-4 depende do harness de WS-0.
-Data de revisao: 2026-06-28.
-Owner de coordenacao: Renan. Frentes envolvidas: Renan (handoff/orquestracao/seguranca),
-Alexandre (fila de handoff/persistencia), Silotto (deploy), Juliano (retrieval).
+Status: codigo de WS-1/WS-2/WS-3 entregue; falta so o harness de medicao (WS-0)
+para ligar WS-2/WS-3 com dado. **Primitiva de flag por dominio: existe** (campo em
+`domain.yaml`, #89) — a decisao 5 esta resolvida e WS-2/WS-3 deixaram de estar
+bloqueados nela. **WS-1 (cartao/PAN) completo**: detector Luhn + exclusoes em
+`app/core/persistence_sanitize.py`, recusa no checkout, reason `card_data` e
+`tests/test_pii_card.py` entraram pelo #81; a suite de confinamento
+`domains/vendas/evals/confinement/payment_data.yaml` entrou pelo #88. **WS-2
+(out_of_scope ciente de contexto) implementado dark** (#90, flag
+`context_aware_scope` off no vendas). **WS-3 (desacoplar fila humana de
+`escalated`) implementado dark** (#91, flag `soft_low_confidence` off no vendas;
+contrato atualizado em `docs/integration-contracts.md`). **WS-0**: metricas ja
+saem do `chat_completed` (confidence/escalated/handoff_reasons por dominio) e o
+driver ad-hoc `scripts/whatsapp_smoke_drive.py` ja esta commitado (#75), porem
+in-memory/persistencia off; falta o **harness repetivel com schema scratch
+isolado** (building block ja disponivel: Postgres descartavel `docker-compose.test.yml`,
+#84). WS-0 e o caminho critico que destrava ligar WS-2/WS-3 e atacar WS-4.
+WS-4 depende do harness de WS-0.
+Data de revisao: 2026-06-29.
+Owner de coordenacao: Renan. Time ativo: Renan (handoff/orquestracao/seguranca/
+persistencia/schema scratch) + Juliano (runtime/deploy/onde rodar + retrieval).
+Alexandre e Silotto sairam do projeto; suas frentes foram absorvidas pela dupla.
 
 Fontes relacionadas: `docs/domain-contract.md`, `docs/domain-evals.md`,
 `docs/integration-contracts.md`, `docs/observability.md`,
@@ -54,9 +64,10 @@ Fraquezas observadas e ja reconciliadas com o codigo:
    comportamento nao muda) e alteram apenas **o que fazemos** com o sinal.
 2. **Core reutilizavel.** Detector de PAN e taxonomia de reasons vivem em
    `app/core/` e `app/handoff/`, servindo web + Meta + Hermes.
-3. **Respeitar fronteiras de dono.** Cerebro/handoff/contratos = Renan; fila e
-   persistencia duravel = Alexandre (contrato/seam, nao reescrita); deploy =
-   Silotto; expansao de query no retrieval = Juliano (seam opcional).
+3. **Respeitar fronteiras de dono (time atual: Renan + Juliano).** Cerebro/handoff/
+   contratos/fila/persistencia duravel/schema scratch = Renan; deploy/runtime/onde
+   rodar = Juliano; expansao de query no retrieval = Juliano (seam opcional).
+   Manter o estilo seam/adapter+contrato mesmo dentro da dupla (boa arquitetura).
 4. **Toda mudanca comportamental em canal vivo entra atras de flag** (env ou por
    dominio) com rollback sem redeploy.
 5. **Evals do runner sao single-turn.** Comportamento multi-turno e coberto por
@@ -118,13 +129,16 @@ Mudanca:
   `docs/observability.md`): taxa de escalacao por reason, taxa de `out_of_scope`,
   fire do checkout, hits de `card_data`, distribuicao de `confidence` por dominio.
 - **Harness de smoke fiel e repetivel**: persistencia em schema/scratch isolado
-  (nao a tabela de prod), cobrindo multi-turno. Evolui o script ad-hoc
-  `scripts/whatsapp_smoke_drive.py` (hoje nao commitado) para algo versionado e
-  seguro, sem enfileirar handoff real.
+  (nao a tabela de prod), cobrindo multi-turno. O script ad-hoc
+  `scripts/whatsapp_smoke_drive.py` ja esta commitado (#75), mas hoje roda
+  in-memory com persistencia off; falta evolui-lo para gravar num schema scratch
+  isolado, versionado e seguro, sem enfileirar handoff real. Reaproveitar o
+  Postgres descartavel `docker-compose.test.yml` + guardas de
+  `tests/integration/conftest.py` (#84) como base do scratch.
 
 Seam de teste: o proprio harness vira a evidencia de aceitacao das demais WS.
-Dono: Renan (metricas) + alinhamento com Silotto (onde rodar) e Alexandre (schema
-scratch). Risco: baixo.
+Dono: Renan (metricas + schema scratch, que agora e frente do Renan) +
+Juliano (onde rodar/runtime). Risco: baixo.
 
 ### WS-2 - `out_of_scope` ciente de contexto (atras de flag)
 
@@ -259,11 +273,12 @@ medio (camada 3).
 
 ## 5. Pre-requisitos transversais
 
-- Mecanismo de **feature flag por dominio** para WS-1..WS-4.
+- ~~Mecanismo de **feature flag por dominio**~~ — entregue (#89).
 - **Schema/scratch isolado** para o harness de smoke (evitar escrever na auditoria
-  de prod e enfileirar handoff real) - alinhar com Alexandre.
-- **Janela de deploy + rollback** com Silotto, ciente do drift atual.
-- Atualizar `docs/integration-contracts.md` quando `escalated` mudar de semantica.
+  de prod e enfileirar handoff real) — frente do Renan; reaproveitar `docker-compose.test.yml` (#84).
+- **Janela de deploy + rollback** com Juliano, ciente do drift atual.
+- ~~Atualizar `docs/integration-contracts.md` quando `escalated` mudar de semantica.~~
+  feito em #91 (escalated nao garante fila humana; usar `handoff_status`).
 
 ## 6. Validacao (por PR)
 
@@ -307,22 +322,32 @@ Confirmado:
   de molde).
 - `record_chat` realmente enfileira handoff (premissa WS-3 valida).
 
-Ainda em aberto / merece atencao (nao resolvido pelo plano):
-- **Mecanismo de flag por dominio nao existe** como primitiva; ha so flags `enable_*`
-  globais e a lista `whatsapp_router_domains`. Decidir o mecanismo (campo em
-  `domain.yaml` vs lista por env) antes de WS-2/WS-3. Ver decisao 5.
-- **Sem ambiente de staging limpo** para o harness de WS-0 (memoria
-  `vps-runtime-topology`): o schema/scratch isolado precisa ser criado, e isso
-  depende do Alexandre. E o caminho critico que destrava a medicao de WS-2/WS-3/WS-4.
+Resolvido depois do teste do plano:
+- **Mecanismo de flag por dominio** entrou como primitiva (campo em `domain.yaml`,
+  #89). WS-2 (#90) e WS-3 (#91) ja usam, dark (flag off no vendas). Decisao 5
+  fechada.
+
+Ainda em aberto / merece atencao:
+- **Harness de WS-0 com schema scratch isolado** ainda nao existe (so o driver
+  ad-hoc in-memory, #75). O scratch isolado precisa ser criado reaproveitando o
+  Postgres descartavel (#84); com a saida do Alexandre, isso passou a ser frente do
+  Renan (sem sign-off de terceiros). E o caminho critico que destrava ligar
+  WS-2/WS-3 com dado e atacar WS-4.
 - **`compute_confidence` ignorar a pergunta** continua sendo divida de fundo nao
-  endereçada por nenhuma WS (seria seam do Juliano).
+  endereçada por nenhuma WS (apoio do Juliano no retrieval/LangChain).
 
-## 9. Decisoes abertas (precisam de dono antes de codar)
+## 9. Decisoes
 
-1. **Fila (WS-3):** parar de enfileirar `low_confidence` ou manter enfileirando
-   silencioso/throttled? (Alexandre + Renan)
+Resolvidas:
+1. ~~**Fila (WS-3):** parar de enfileirar `low_confidence` ou manter silencioso?~~
+   **Resolvida** (Renan): `low_confidence` virou SOFT_SIGNAL — escalated/logado,
+   **nao** enfileira (#91). Ver corpo de WS-3.
+5. ~~**Flags:** padronizar um mecanismo de flag por dominio antes de WS-2/WS-3?~~
+   **Resolvida**: campo por dominio em `domain.yaml` (#89).
+
+Ainda abertas (precisam de decisao antes de codar):
 2. **Threshold (WS-3):** manter 0.55 e resolver so por taxonomia, ou tambem baixar
    `confidence_threshold` do vendas apos dado do WS-0?
 3. **WS-4:** comecar so por verificacao + prompt e decidir slots depois?
-4. **Deploy:** quem opera o sync para prod e em que janela, dado o drift? (Silotto)
-5. **Flags:** padronizar um mecanismo de flag por dominio antes de WS-2/WS-3?
+4. **Deploy:** quem opera o sync para prod e em que janela, dado o drift? (Juliano,
+   apos a saida do Silotto)
