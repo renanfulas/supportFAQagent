@@ -11,8 +11,9 @@ Princípios herdados do projeto (não negociar):
 - **Nunca** persistir `session_id` cru nem PII livre; reusar `hash_session`,
   `sanitize_payload`, `redaction_version`.
 - Nada novo no **hot path** do `/chat` sem flag desligável e com *fail-open*.
-- Migrations **forward-only** com ledger (`python -m scripts.migrate`); próxima é a
-  `010_`.
+- Migrations **forward-only** com ledger (`python -m scripts.migrate`). A `011` já
+  está aplicada (em prod inclusive); `010` é um gap de numeração não usado. Para não
+  aplicar fora de ordem, a próxima migration nova é a **`012_`**.
 - `python -m pytest` + `python -m compileall app tests scripts` em toda fatia.
 
 Recomendação de durabilidade desta frente: **opção A** do plano de decisão —
@@ -22,6 +23,11 @@ turnos; Redis é cache/estado por cima. As fases abaixo respeitam isso.
 ---
 
 ## Fase 0 — Operacionalizar o sink off-box (sem código novo)
+
+Status (2026-06-29): **prep feita, bloqueada só por credenciais R2.** Na VPS o
+`boto3` já está no `.venv` e o worker systemd `supportfaq-outbox.service` existe
+dormente (disabled/inactive); a outbox está limpa. Falta só o destino R2
+(bucket + endpoint + Access Key/Secret) para ligar as flags abaixo e o worker.
 
 Fecha o gap de perda **antes** de qualquer Redis. Já documentado em
 `docs/conversation-archive-sink.md`; aqui só o checklist de execução.
@@ -165,10 +171,10 @@ def build_session_state_store_from_env() -> SessionStateStore:
 Postgres como base analítica/RAG, alimentada por batch idempotente às ~3h.
 
 ### Migration
-- **Novo** `migrations/010_conversation_summaries.sql` (forward-only, ledger):
+- **Novo** `migrations/012_conversation_summaries.sql` (forward-only, ledger):
   ```sql
   CREATE TABLE conversation_summaries (
-    id              BIGGENERATED ... PRIMARY KEY,
+    id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     domain          TEXT NOT NULL,
     customer_ref    TEXT NOT NULL,           -- id/hash estável, NUNCA cru
     problem         TEXT NOT NULL,
