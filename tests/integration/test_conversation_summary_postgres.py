@@ -99,6 +99,26 @@ def test_summary_batch_writes_and_is_idempotent() -> None:
             assert cursor.fetchone()[0] == 1
 
 
+def test_fetch_latest_summary_roundtrip() -> None:
+    from app.conversations.summary import fetch_latest_summary
+
+    with _connect() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO conversation_summaries
+                  (domain, customer_ref, problem, solution, status,
+                   source_turn_count, redaction_version, model, conversation_key)
+                VALUES ('itest-recall', 'cust-1', 'P', 'S', 'resolvido', 3, 'phase0-v1', 'm', 'conv-1')
+                ON CONFLICT (domain, conversation_key) DO UPDATE SET problem = EXCLUDED.problem
+                """
+            )
+        connection.commit()
+        record = fetch_latest_summary(connection, domain="itest-recall", customer_ref="cust-1")
+        assert record is not None and record.problem == "P" and record.status == "resolvido"
+        assert fetch_latest_summary(connection, domain="itest-recall", customer_ref="nobody") is None
+
+
 def test_summary_batch_skips_trivial_single_turn() -> None:
     provider = _FakeProvider('{"problem":"x","solution":"y","status":"resolvido"}')
     with _connect() as connection:

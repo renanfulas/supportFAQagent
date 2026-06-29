@@ -14,6 +14,7 @@ from app.orchestration.prompt_builder import build_prompt
 from app.retrieval.service import RetrievalService
 from app.conversations.service import ConversationHistoryService, hash_session
 from app.conversations.session_state import SessionState, SessionStateStore
+from app.conversations.summary import SummaryRecallService
 
 
 logger = logging.getLogger(__name__)
@@ -39,12 +40,14 @@ class ChatFlowService:
         *,
         history_service: ConversationHistoryService | None = None,
         session_state_store: SessionStateStore | None = None,
+        summary_recall: "SummaryRecallService | None" = None,
     ) -> None:
         self.retrieval_service = RetrievalService()
         self.llm_service = LLMService()
         self.handoff_service = HandoffService()
         self.history_service = history_service
         self.session_state_store = session_state_store
+        self.summary_recall = summary_recall
 
     def answer(
         self,
@@ -105,6 +108,35 @@ class ChatFlowService:
             )
         except Exception:  # noqa: BLE001 - hot state is non-authoritative; never break /chat.
             logger.debug("session_state_write_skipped", exc_info=False)
+
+    def _recall_customer_summary(
+        self,
+        *,
+        domain: DomainConfig,
+        session_id: str | None,
+        customer_id: str | None,
+    ) -> str | None:
+        recall = self.summary_recall
+        if recall is None:
+            return None
+        try:
+            from app.core.config import get_settings
+
+            settings = get_settings()
+            if not settings.enable_summary_recall:
+                return None
+            if customer_id:
+                customer_ref: str | None = str(customer_id)
+            elif session_id:
+                customer_ref = hash_session(
+                    session_id, settings.persistence_hash_secret or ""
+                )
+            else:
+                customer_ref = None
+            return recall.latest_for(domain=domain.name, customer_ref=customer_ref)
+        except Exception:  # noqa: BLE001 - recall is best-effort; never break /chat.
+            logger.debug("summary_recall_skipped", exc_info=False)
+            return None
 
     def _answer_inner(
         self,
@@ -246,6 +278,11 @@ class ChatFlowService:
                     question=question,
                     chunks=chunks,
                     history=history,
+                    customer_summary=self._recall_customer_summary(
+                        domain=domain,
+                        session_id=session_id,
+                        customer_id=customer_id,
+                    ),
                 )
                 llm_started_at = perf_counter()
                 answer = self.llm_service.get_provider(

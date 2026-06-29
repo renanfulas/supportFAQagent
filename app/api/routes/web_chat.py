@@ -19,6 +19,7 @@ from app.core.web_session import (
 from app.identity.current import CurrentIdentityResolver
 from app.domain_engine.loader import DomainLoader
 from app.conversations.service import ConversationHistoryService
+from app.conversations.summary import SummaryRecallService
 from app.feedback.service import FeedbackService
 from app.orchestration.chat_flow import ChatFlowService
 from app.core.errors import DatabaseUnavailableError
@@ -53,9 +54,15 @@ def create_web_chat(
         if settings.persistence_backend == "postgres"
         else None
     )
+    summary_recall = (
+        SummaryRecallService(database_runtime)
+        if settings.persistence_backend == "postgres" and settings.enable_summary_recall
+        else None
+    )
     chat_response = ChatFlowService(
         history_service=ConversationHistoryService(database_runtime),
         session_state_store=session_state_store,
+        summary_recall=summary_recall,
     ).answer(
         domain=domain,
         question=payload.message,

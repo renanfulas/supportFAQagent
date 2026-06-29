@@ -11,6 +11,7 @@ from app.core.request_context import get_request_id
 from app.core.security import API_KEY_HEADER_NAME, is_valid_secret
 from app.domain_engine.loader import DomainLoader
 from app.conversations.service import ConversationHistoryService
+from app.conversations.summary import SummaryRecallService
 from app.orchestration.chat_flow import ChatFlowService
 from app.db.operational import ChatAuditInput, HANDOFF_UNAVAILABLE, OperationalRepository
 from app.handoff.taxonomy import resolve_human_queue
@@ -47,9 +48,15 @@ def chat(
         if settings.persistence_backend == "postgres"
         else None
     )
+    summary_recall = (
+        SummaryRecallService(database_runtime)
+        if settings.persistence_backend == "postgres" and settings.enable_summary_recall
+        else None
+    )
     response = ChatFlowService(
         history_service=ConversationHistoryService(database_runtime),
         session_state_store=session_state_store,
+        summary_recall=summary_recall,
     ).answer(
         domain=domain,
         question=payload.message,

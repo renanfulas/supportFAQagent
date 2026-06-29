@@ -138,3 +138,22 @@ python scripts/profile_cost_latency.py --markdown
 - Renan: este perfil, evals, contratos, criterios de promocao, qualidade.
 - Alexandre: pgvector, ingestao, persistencia, indices.
 - Silotto: runtime, rede, TLS, logs de operacao em staging/producao.
+
+## Sumarização noturna + recall (persistência em camadas, Fase 3/4)
+
+Custo **fora do hot path** (batch noturno), dark por default
+(`ENABLE_CONVERSATION_SUMMARY`/`ENABLE_SUMMARY_RECALL` off).
+
+- **Sumarização (`scripts/summarize_conversations.py`):** 1 chamada `gpt-4o-mini`
+  por conversa fechada/elegível, `temperature=0`. Ordem de ~US$0,0004–0,0005 por
+  conversa; no volume informado (milhares/dia) ⇒ poucos US$/dia. Controles de custo:
+  só conversas **inativas** (`--inactivity-hours`), `--min-turns` (pula triviais),
+  idempotência (não re-sumariza), `--limit` por execução, `--dry-run` (não chama o
+  modelo — só conta elegíveis). Medir o gasto real com `--dry-run` antes de ligar.
+- **Recall no hot path (Fase 4):** quando `ENABLE_SUMMARY_RECALL=on`, **uma leitura
+  Postgres** (índice `(domain, customer_ref)`) por turno para injetar o resumo mais
+  recente do cliente — sem chamada de LLM extra. Fail-open (Postgres fora ⇒ sem
+  recall, `/chat` segue). O resumo entra como bloco **não-confiável** no prompt
+  (`<untrusted_customer_history>`); aumenta levemente os tokens de entrada.
+- **Ligar só após eval de qualidade** (amostrar resumos vs conversa real:
+  problema/solução/status) — um resumo errado polui o RAG do próximo ticket.
