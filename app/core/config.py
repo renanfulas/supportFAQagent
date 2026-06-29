@@ -42,6 +42,10 @@ class Settings(BaseSettings):
         default=False,
         alias="ENABLE_CONVERSATION_ARCHIVE",
     )
+    enable_support_inbox: bool = Field(
+        default=False,
+        alias="ENABLE_SUPPORT_INBOX",
+    )
     verified_handoff_webhook_url: str | None = Field(
         default=None,
         alias="VERIFIED_HANDOFF_WEBHOOK_URL",

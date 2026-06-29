@@ -601,6 +601,121 @@ Regras:
   `408`, `409`, `425` e `429`;
 - token, telefone e corpo da mensagem nao devem aparecer em log operacional.
 
+## Inbox interno de support cases
+
+Status: superficie de leitura para o time de atendimento ver e triar tickets
+durables de handoff com contexto rico. Dark por padrao: so responde quando
+`ENABLE_SUPPORT_INBOX=true`; com a flag desligada as rotas retornam `404`.
+
+```text
+GET /internal/support-cases
+GET /internal/support-cases/{case_id}
+```
+
+Objetivo:
+
+- entregar a "ponta de integracao" do fluxo de handoff: o ticket durable
+  (`support_cases`, migration 009) ja existe, mas nao havia superficie para o
+  time ler/triar nem o contexto organizado da conversa.
+- montar o contexto rico on-read seguindo `support_cases.conversation_id` ate o
+  transcript ja sanitizado em `messages`. Nada e re-persistido nem
+  re-sanitizado; o builder so organiza valores ja sanitizados na escrita.
+
+Autenticacao e gating:
+
+- exige `X-API-Key` (mesmo segredo das demais rotas internas);
+- exige `ENABLE_SUPPORT_INBOX=true`; caso contrario `404`.
+
+`GET /internal/support-cases` (lista/triagem):
+
+- query params: `domain` (opcional, max 80), `status` (opcional, um de
+  `open|in_progress|waiting_customer|closed|cancelled`; valor invalido vira
+  `422`), `limit` (1..100, padrao 25), `offset` (>= 0, padrao 0);
+- ordenado por `opened_at DESC`, usando o indice
+  `idx_support_cases_domain_status_opened`.
+
+Saida da lista:
+
+```json
+{
+  "request_id": "uuid-ou-header",
+  "count": 1,
+  "limit": 25,
+  "offset": 0,
+  "cases": [
+    {
+      "case_id": "uuid",
+      "domain": "suporte-vps-whatsapp",
+      "status": "open",
+      "priority": "normal",
+      "channel": "whatsapp",
+      "request_id": "req-do-turno",
+      "reason_codes": ["low_confidence"],
+      "summary": "resumo curto do snapshot",
+      "opened_at": "2026-06-28T00:00:00Z",
+      "updated_at": "2026-06-28T00:00:00Z"
+    }
+  ]
+}
+```
+
+`GET /internal/support-cases/{case_id}` (detalhe com transcript):
+
+- `404` (`support_case_not_found`) quando o caso nao existe;
+- transcript ordenado por `message_sequence ASC`, limitado a 200 turns, apenas
+  papeis `user`/`assistant` na `redaction_version` corrente;
+- `references` e a uniao ordenada e deduplicada das referencias do snapshot e de
+  cada turn.
+
+Saida do detalhe (resumida):
+
+```json
+{
+  "request_id": "uuid-ou-header",
+  "case_id": "uuid",
+  "domain": "suporte-vps-whatsapp",
+  "status": "open",
+  "priority": "normal",
+  "channel": "whatsapp",
+  "case_request_id": "req-do-turno",
+  "reason_codes": ["low_confidence"],
+  "summary": "resumo curto do snapshot",
+  "references": ["kb:vps-restart", "kb:handoff"],
+  "turn_count": 2,
+  "opened_at": "2026-06-28T00:00:00Z",
+  "updated_at": "2026-06-28T00:00:00Z",
+  "transcript": [
+    {
+      "sequence": 1,
+      "role": "user",
+      "content": "texto sanitizado",
+      "confidence": null,
+      "escalated": false,
+      "handoff_reasons": [],
+      "references": [],
+      "error_code": null,
+      "created_at": "2026-06-28T00:00:00Z"
+    }
+  ]
+}
+```
+
+Observacoes:
+
+- `DatabaseUnavailableError` vira `503` (`support_inbox_storage_unavailable`);
+- logs operacionais carregam apenas contagens e identificadores seguros
+  (`case_id`, `request_id`, `status`, `turn_count`); nunca conteudo de turn,
+  `session_hash` ou PII;
+- o montador `app/support/context.py:build_case_context` e o seam reusavel: a
+  evolucao push (enriquecer `context_snapshot_sanitized` / payload da outbox)
+  deve reusar o mesmo builder para descrever o handoff de forma identica.
+
+Fronteira de responsabilidade:
+
+- Renan: contrato HTTP, repositorio de leitura, montador de contexto, testes;
+- esta rota nao escreve em banco e nao altera o caminho de escrita do handoff
+  (`operational.py`) nem o relay de outbox (`internal_webhooks.py`).
+
 ## Webhook Meta WhatsApp Cloud API
 
 Status: fundacao nativa implementada por feature flag, sem ativacao operacional
