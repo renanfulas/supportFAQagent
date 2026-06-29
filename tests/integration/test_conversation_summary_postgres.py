@@ -67,7 +67,8 @@ def _seed_conversation(connection, *, name: str, n_messages: int, hours_old: int
         for i in range(n_messages):
             role = "user" if i % 2 == 0 else "assistant"
             cursor.execute(
-                "INSERT INTO messages (conversation_id, role, content) VALUES (%s, %s, %s)",
+                "INSERT INTO messages (conversation_id, role, content, redaction_version) "
+                "VALUES (%s, %s, %s, 'phase0-v1')",
                 (conv_id, role, f"mensagem {i}"),
             )
     connection.commit()
