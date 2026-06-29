@@ -164,6 +164,64 @@ def run_summary_batch(
     return stats
 
 
+def fetch_latest_summary(
+    connection: Any, *, domain: str, customer_ref: str
+) -> ConversationSummaryRecord | None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT domain, customer_ref, problem, solution, status,
+                   source_turn_count, redaction_version, model, conversation_key
+            FROM conversation_summaries
+            WHERE domain = %s AND customer_ref = %s
+            ORDER BY summarized_at DESC
+            LIMIT 1
+            """,
+            (domain, customer_ref),
+        )
+        row = cursor.fetchone()
+    if row is None:
+        return None
+    return ConversationSummaryRecord(
+        domain=str(row[0]),
+        customer_ref=str(row[1]),
+        problem=str(row[2]),
+        solution=str(row[3]),
+        status=str(row[4]),
+        source_turn_count=int(row[5]),
+        redaction_version=str(row[6]),
+        model=str(row[7]),
+        conversation_key=str(row[8]),
+    )
+
+
+def format_summary_for_prompt(record: ConversationSummaryRecord) -> str:
+    return (
+        f"Problema: {record.problem} | Solucao: {record.solution} "
+        f"| Status: {record.status}"
+    )
+
+
+class SummaryRecallService:
+    """Fetches the customer's most recent summary for prompt injection. Fail-open:
+    the warehouse is non-authoritative, so any error degrades to no recall."""
+
+    def __init__(self, runtime: Any) -> None:
+        self.runtime = runtime
+
+    def latest_for(self, *, domain: str, customer_ref: str | None) -> str | None:
+        if not customer_ref:
+            return None
+        try:
+            with self.runtime.transaction() as connection:
+                record = fetch_latest_summary(
+                    connection, domain=domain, customer_ref=customer_ref
+                )
+            return format_summary_for_prompt(record) if record else None
+        except Exception:  # noqa: BLE001 - recall is best-effort, never breaks /chat.
+            return None
+
+
 def _upsert_summary(connection: Any, record: ConversationSummaryRecord) -> None:
     with connection.cursor() as cursor:
         cursor.execute(

@@ -56,6 +56,10 @@ class Settings(BaseSettings):
         default=False,
         alias="ENABLE_CONVERSATION_SUMMARY",
     )
+    enable_summary_recall: bool = Field(
+        default=False,
+        alias="ENABLE_SUMMARY_RECALL",
+    )
     verified_handoff_webhook_url: str | None = Field(
         default=None,
         alias="VERIFIED_HANDOFF_WEBHOOK_URL",
