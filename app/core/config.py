@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     session_domain_store_backend: str = Field(
         default="memory", alias="SESSION_DOMAIN_STORE_BACKEND"
     )
+    session_state_backend: str = Field(
+        default="memory", alias="SESSION_STATE_BACKEND"
+    )
+    session_state_ttl_seconds: int = Field(
+        default=2700, alias="SESSION_STATE_TTL_SECONDS"
+    )
     persistence_hash_secret: str | None = Field(
         default=None,
         alias="PERSISTENCE_HASH_SECRET",
@@ -356,6 +362,9 @@ class Settings(BaseSettings):
             raise ValueError(
                 "SESSION_DOMAIN_STORE_BACKEND=postgres requires PERSISTENCE_BACKEND=postgres"
             )
+        self.session_state_backend = self.session_state_backend.strip().lower()
+        if self.session_state_backend not in {"memory", "redis"}:
+            raise ValueError("SESSION_STATE_BACKEND must be memory or redis")
         self.retrieval_backend = self.retrieval_backend.strip().lower()
         if self.retrieval_backend not in {"lexical", "pgvector"}:
             raise ValueError("RETRIEVAL_BACKEND must be lexical or pgvector")

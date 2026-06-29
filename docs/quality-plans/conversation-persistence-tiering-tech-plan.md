@@ -47,6 +47,17 @@ Sem mudança de código. Fases 1–4 são as entregas de engenharia.
 
 ## Fase 1 — `SessionStateStore` seam + impl in-memory
 
+Status: **implementada (2026-06-29)**, default no-op. O seam ficou em
+`app/conversations/session_state.py` (`SessionState` + `SessionStateStore` Protocol +
+`InMemorySessionStateStore` com TTL + `build_session_state_store_from_env`). Config:
+`SESSION_STATE_BACKEND` (memory|redis) + `SESSION_STATE_TTL_SECONDS` (2700). O
+`ChatFlowService` grava o estado via wrapper `answer()`→`_answer_inner()` +
+`_record_session_state` (fail-open, chaveado por `hash_session`), e `chat.py`/`web_chat.py`
+injetam o store de `app.state.chat_session_state_store` só quando
+`persistence_backend==postgres`. Cobertura em `tests/test_session_state_store.py`.
+Pendente (próximas fatias): o **leitor** do estado (consumo), o backend Redis
+(Nível 1), e migrar o estado de escape do transporte Hermes para o mesmo seam.
+
 Menor incremento de código. Sem Redis, sem infra.
 
 ### Arquivos

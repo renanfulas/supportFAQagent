@@ -1,4 +1,6 @@
+import logging
 import re
+import time
 import unicodedata
 from time import perf_counter
 
@@ -10,7 +12,11 @@ from app.llm.service import LLMService
 from app.orchestration.confidence import compute_confidence
 from app.orchestration.prompt_builder import build_prompt
 from app.retrieval.service import RetrievalService
-from app.conversations.service import ConversationHistoryService
+from app.conversations.service import ConversationHistoryService, hash_session
+from app.conversations.session_state import SessionState, SessionStateStore
+
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize(text: str) -> str:
@@ -32,13 +38,75 @@ class ChatFlowService:
         self,
         *,
         history_service: ConversationHistoryService | None = None,
+        session_state_store: SessionStateStore | None = None,
     ) -> None:
         self.retrieval_service = RetrievalService()
         self.llm_service = LLMService()
         self.handoff_service = HandoffService()
         self.history_service = history_service
+        self.session_state_store = session_state_store
 
     def answer(
+        self,
+        domain: DomainConfig,
+        question: str,
+        session_id: str | None = None,
+        request_id: str | None = None,
+        provider_api_key: str | None = None,
+        channel: str = "api",
+        customer_id: str | None = None,
+    ) -> dict[str, object]:
+        result = self._answer_inner(
+            domain,
+            question,
+            session_id=session_id,
+            request_id=request_id,
+            provider_api_key=provider_api_key,
+            channel=channel,
+            customer_id=customer_id,
+        )
+        # Hot-tier state write (non-authoritative, fail-open). No-op without a store.
+        self._record_session_state(
+            domain=domain, session_id=session_id, channel=channel, result=result
+        )
+        return result
+
+    def _record_session_state(
+        self,
+        *,
+        domain: DomainConfig,
+        session_id: str | None,
+        channel: str,
+        result: dict[str, object],
+    ) -> None:
+        store = self.session_state_store
+        if store is None or not session_id:
+            return
+        try:
+            from app.core.config import get_settings
+
+            settings = get_settings()
+            session_hash = hash_session(
+                session_id, settings.persistence_hash_secret or ""
+            )
+            state = SessionState(
+                state="escalated" if result.get("escalated") else "answered",
+                domain=str(result.get("domain") or domain.name),
+                confidence=float(result.get("confidence") or 0.0),
+                updated_at=time.time(),
+                redaction_version=getattr(settings, "persistence_hash_version", None),
+            )
+            store.put(
+                domain=domain.name,
+                channel=channel,
+                session_hash=session_hash,
+                state=state,
+                ttl_seconds=settings.session_state_ttl_seconds,
+            )
+        except Exception:  # noqa: BLE001 - hot state is non-authoritative; never break /chat.
+            logger.debug("session_state_write_skipped", exc_info=False)
+
+    def _answer_inner(
         self,
         domain: DomainConfig,
         question: str,

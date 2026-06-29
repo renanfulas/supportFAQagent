@@ -48,8 +48,14 @@ def create_web_chat(
     domain = _load_default_domain(settings)
 
     database_runtime = request.app.state.database_runtime
+    session_state_store = (
+        getattr(request.app.state, "chat_session_state_store", None)
+        if settings.persistence_backend == "postgres"
+        else None
+    )
     chat_response = ChatFlowService(
         history_service=ConversationHistoryService(database_runtime),
+        session_state_store=session_state_store,
     ).answer(
         domain=domain,
         question=payload.message,

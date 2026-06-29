@@ -38,6 +38,7 @@ from app.orchestration.session_domain_store import (
     build_session_domain_store,
 )
 from app.web_auth.runtime import create_web_auth_runtime
+from app.conversations.session_state import build_session_state_store_from_env
 from app.db.runtime import DatabaseRuntime
 from app.core.errors import DatabaseUnavailableError
 
@@ -83,6 +84,10 @@ def create_app() -> FastAPI:
     application.state.session_state_store = InMemorySessionDomainStore(ttl_seconds=900)
     # Last outbound text per session, to avoid repeating the exact same message.
     application.state.session_last_out_store = InMemorySessionDomainStore(ttl_seconds=900)
+    # Hot-tier chat session state (layered-persistence Nível 0): per-process,
+    # non-authoritative, fail-open. Redis backend drops in at Nível 1 via
+    # SESSION_STATE_BACKEND. Source of truth stays the Postgres write-through.
+    application.state.chat_session_state_store = build_session_state_store_from_env()
     # Best-effort replay protection for the inbound Hermes chat forward (the HMAC
     # covers only the body, so an identical request is otherwise replayable).
     application.state.hermes_replay_guard = HermesReplayGuard()
