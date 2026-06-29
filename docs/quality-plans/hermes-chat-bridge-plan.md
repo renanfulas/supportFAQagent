@@ -1,9 +1,18 @@
 # Plano Tecnico - Ponte de Chat Conversacional via Hermes (Piloto)
 
-Status: nosso lado pronto e dormente atras de `ENABLE_HERMES_CHAT`. Falta o cutover
-no bridge (patch gated por env) + a decisao de produto. Runbook em
-`docs/runbooks/hermes-chat-cutover.md`.
-Data de revisao: 2026-06-24.
+Status: **cutover concluido e verificado end-to-end na VPS (2026-06-29)**. O bridge
+faz forward do inbound pro nosso webhook (`HERMES_CHAT_FORWARD_URL` setada,
+`ENABLE_HERMES_CHAT=true`, allowlist `WHATSAPP_ALLOWED_USERS=*`). Teste real: "oi" ->
+menu; "quero contratar um plano de hospedagem" -> resposta consultiva de vendas
+(2x `hermes_chat_webhook_received` + HTTP 200; resposta entregue no WhatsApp).
+Runbook em `docs/runbooks/hermes-chat-cutover.md`.
+Pendencias conhecidas (nao bloqueiam o piloto): (1) a sessao Baileys do bridge pode
+**travar** (loop `408/428` + `AwaitingInitialSync timeout`) e parar de processar
+inbound sem matar o processo — remediado com `systemctl restart hermes-gateway.service`
+(reconecta das credenciais, sem QR); (2) o canal Hermes ainda **nao emite
+`chat_completed`**, entao falta observabilidade por turno no WhatsApp (so
+`chat.py`/`web_chat.py` emitem).
+Data de revisao: 2026-06-29.
 
 ## Arquitetura real (investigada na VPS)
 
@@ -48,8 +57,7 @@ DEDICADO para o bot, deixando o numero de OTP/agente intacto.
 - Caminho nao-oficial de WhatsApp tem risco de bloqueio/banimento do numero.
 - Restart do bridge derruba a sessao por segundos (afeta OTP nesse intervalo);
   reconecta das credenciais (backup feito).
-- Stickiness em producao precisa do store duravel — **disponivel** via
-  `PgSessionDomainStore` (migration `011`) atras de `SESSION_DOMAIN_STORE_BACKEND=postgres`
-  (default `memory`). O piloto single-worker roda com o efemero; producao multi-worker
-  liga a flag. Ver `whatsapp-sticky-domain-routing-plan.md`.
+- Stickiness em producao usa o store duravel `PgSessionDomainStore` (migration `011`):
+  **`SESSION_DOMAIN_STORE_BACKEND=postgres` ja esta ligado na VPS** (verificado em
+  2026-06-29). Ver `whatsapp-sticky-domain-routing-plan.md`.
 - Meta WhatsApp Cloud API segue sendo o caminho estrategico; Hermes e ponte temporaria.

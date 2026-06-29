@@ -6,8 +6,10 @@ durável (`PgSessionDomainStore`, migration `011`) entrou atrás de
 `SESSION_DOMAIN_STORE_BACKEND=postgres` (default `memory`, dark). A validação de
 persistência/expiração deixou de ser um check manual: o teste opt-in
 `tests/integration/test_session_domain_store_postgres.py` agora roda na gate
-`phase0-gates.yml` (Postgres real). Falta só o **flip operacional** em staging
-(aplicar a `011` + `SESSION_DOMAIN_STORE_BACKEND=postgres`) — frente do Juliano.
+`phase0-gates.yml` (Postgres real). **Flip operacional concluído (2026-06-29)**: a
+`011` está aplicada e `SESSION_DOMAIN_STORE_BACKEND=postgres` ligado na VPS; o app
+carrega o `PgSessionDomainStore` durável (verificado por roundtrip set/get/clear).
+Frente essencialmente fechada.
 Data de revisao: 2026-06-29.
 
 ## Problema
@@ -84,9 +86,10 @@ Entregue dark por default (`SESSION_DOMAIN_STORE_BACKEND=memory`):
    não um segundo esquema de identidade. Ver
    `customer-identity-whatsapp-handoff-plan.md`.
 
-Pendente: ligar `SESSION_DOMAIN_STORE_BACKEND=postgres` em staging (aplicar a `011`)
-e validar persistência entre instâncias/expiração — coberto pelo teste opt-in
-`tests/integration/test_session_domain_store_postgres.py`.
+Concluído (2026-06-29): `011` aplicada e `SESSION_DOMAIN_STORE_BACKEND=postgres`
+ligado na VPS; `PgSessionDomainStore` durável verificado por roundtrip. Persistência/
+expiração cobertas pelo teste opt-in `tests/integration/test_session_domain_store_postgres.py`
+(na gate `phase0-gates.yml`).
 
 ## Validacao
 
