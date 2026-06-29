@@ -1,8 +1,15 @@
 # Plano Tecnico - Identidade Do Cliente, Historico E Handoff WhatsApp
 
-Status: planejamento tecnico ativo; Sprints 1 a 4 iniciais implementadas
-localmente, com validacao PostgreSQL ainda opt-in.
-Data de revisao: 2026-06-20.
+Status: Sprints 1 a 4 iniciais implementadas; **validacao PostgreSQL opt-in OK**
+(2026-06-29) — a suite de integracao `tests/integration` (inclui customer
+identity/`support_cases` da migration 009, handoff, feedback privacy, conversation
+migration upgrade, session domain store, support inbox) passou **31/31** contra
+Postgres real, rodada num banco descartavel no servidor da VPS (sequencia de
+migration da CI: `apply --target 006` -> backfill de privacidade -> `apply` ->
+`verify` = 10 migrations). Migration 009 ja aplicada na box de prod. Em prod, os
+`support_cases` ja sao consumidos pelo support inbox (read) e enriquecidos no push
+(`ENABLE_SUPPORT_INBOX` ligado; ver `docs/integration-contracts.md`).
+Data de revisao: 2026-06-29.
 
 ## Diagnostico
 
