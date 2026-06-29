@@ -76,27 +76,24 @@ def _seed_conversation(connection, *, name: str, n_messages: int, hours_old: int
 
 
 def test_summary_batch_writes_and_is_idempotent() -> None:
+    # Assertions are scoped to the seeded conversation_key so other integration
+    # tests sharing the database never interfere.
     provider = _FakeProvider('{"problem":"vps caiu","solution":"reiniciada","status":"resolvido"}')
     with _connect() as connection:
-        with connection.cursor() as cursor:
-            cursor.execute("TRUNCATE conversation_summaries")
-        connection.commit()
         conv_id = _seed_conversation(connection, name="itest-sum-a", n_messages=2, hours_old=48)
 
-        stats = run_summary_batch(connection, provider, model="test-model", inactivity_hours=24, min_turns=2, limit=10)
-        assert stats["summarized"] == 1 and stats["errors"] == 0
-
+        run_summary_batch(connection, provider, model="test-model", inactivity_hours=24, min_turns=2, limit=100)
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT problem, status, source_turn_count FROM conversation_summaries WHERE conversation_key = %s",
                 (conv_id,),
             )
-            row = cursor.fetchone()
-        assert row == ("vps caiu", "resolvido", 2)
+            assert cursor.fetchone() == ("vps caiu", "resolvido", 2)
 
-        # Re-run: already summarized -> not eligible, still exactly one row.
-        stats2 = run_summary_batch(connection, provider, model="test-model", inactivity_hours=24, min_turns=2, limit=10)
-        assert stats2["eligible"] == 0
+        # Re-run is idempotent: the conversation is already summarized, so it stays
+        # exactly one row (and the UNIQUE constraint would reject a duplicate).
+        stats2 = run_summary_batch(connection, provider, model="test-model", inactivity_hours=24, min_turns=2, limit=100)
+        assert stats2["errors"] == 0
         with connection.cursor() as cursor:
             cursor.execute("SELECT count(*) FROM conversation_summaries WHERE conversation_key = %s", (conv_id,))
             assert cursor.fetchone()[0] == 1
@@ -105,9 +102,9 @@ def test_summary_batch_writes_and_is_idempotent() -> None:
 def test_summary_batch_skips_trivial_single_turn() -> None:
     provider = _FakeProvider('{"problem":"x","solution":"y","status":"resolvido"}')
     with _connect() as connection:
+        conv_id = _seed_conversation(connection, name="itest-sum-b", n_messages=1, hours_old=48)
+        run_summary_batch(connection, provider, model="test-model", inactivity_hours=24, min_turns=2, limit=100)
+        # The single-turn conversation must not be summarized.
         with connection.cursor() as cursor:
-            cursor.execute("TRUNCATE conversation_summaries")
-        connection.commit()
-        _seed_conversation(connection, name="itest-sum-b", n_messages=1, hours_old=48)
-        stats = run_summary_batch(connection, provider, model="test-model", inactivity_hours=24, min_turns=2, limit=10)
-        assert stats["eligible"] == 0 and stats["summarized"] == 0
+            cursor.execute("SELECT count(*) FROM conversation_summaries WHERE conversation_key = %s", (conv_id,))
+            assert cursor.fetchone()[0] == 0
