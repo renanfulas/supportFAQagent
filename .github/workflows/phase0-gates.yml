@@ -97,4 +97,4 @@ jobs:
           python -m scripts.migrate apply
           python -m scripts.migrate verify
           python -m scripts.check_readiness
-          python -m pytest tests/integration/test_phase0_postgres.py tests/integration/test_conversation_migration_upgrade.py tests/integration/test_feedback_privacy_integrity_postgres.py tests/integration/test_session_domain_store_postgres.py tests/integration/test_support_inbox_postgres.py -q
+          python -m pytest tests/integration/test_phase0_postgres.py tests/integration/test_conversation_migration_upgrade.py tests/integration/test_feedback_privacy_integrity_postgres.py tests/integration/test_session_domain_store_postgres.py tests/integration/test_support_inbox_postgres.py tests/integration/test_conversation_summary_postgres.py -q

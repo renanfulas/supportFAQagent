@@ -52,6 +52,10 @@ class Settings(BaseSettings):
         default=False,
         alias="ENABLE_SUPPORT_INBOX",
     )
+    enable_conversation_summary: bool = Field(
+        default=False,
+        alias="ENABLE_CONVERSATION_SUMMARY",
+    )
     verified_handoff_webhook_url: str | None = Field(
         default=None,
         alias="VERIFIED_HANDOFF_WEBHOOK_URL",
