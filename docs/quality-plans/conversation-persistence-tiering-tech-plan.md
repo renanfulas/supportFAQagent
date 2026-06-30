@@ -30,7 +30,7 @@ dormente (disabled/inactive); a outbox está limpa. Falta só o destino R2
 (bucket + endpoint + Access Key/Secret) para ligar as flags abaixo e o worker.
 
 Fecha o gap de perda **antes** de qualquer Redis. Já documentado em
-`docs/conversation-archive-sink.md`; aqui só o checklist de execução.
+`docs/architecture/conversation-archive-sink.md`; aqui só o checklist de execução.
 
 - VPS `.env`: `PERSISTENCE_BACKEND=postgres`, `ENABLE_CONVERSATION_ARCHIVE=true`,
   `OUTBOX_CONVERSATION_ARCHIVE_TRANSPORT=append_only_sink`,
@@ -242,7 +242,7 @@ Postgres como base analítica/RAG, alimentada por batch idempotente às ~3h.
     em `app/llm/` — não cria caminho de LLM paralelo.
   - `UPSERT ... ON CONFLICT (domain, conversation_key)` → reexecução sobrescreve o
     mesmo registro (idempotente).
-  - Logs sem PII (`docs/observability.md`); métrica de custo/contagem em stderr JSON.
+  - Logs sem PII (`docs/architecture/observability.md`); métrica de custo/contagem em stderr JSON.
 - Flag de ativação: `ENABLE_CONVERSATION_SUMMARY=false` por default.
 
 ### Agendamento
@@ -281,14 +281,14 @@ com `persistence=postgres` + flag on. Cobertura: confinamento estrutural
 (`tests/test_prompt_builder.py` — texto adversário fica confinado no bloco),
 gating do recall (`tests/test_conversation_summary.py`) e fetch real-Postgres
 (`tests/integration/test_conversation_summary_postgres.py`). Custo documentado em
-`docs/cost-latency-profile.md`. **Pendente (subjetivo, não automatizável no runner
+`docs/architecture/cost-latency-profile.md`. **Pendente (subjetivo, não automatizável no runner
 determinístico):** a **amostragem de qualidade** (resumo vs conversa real) como passo
 operacional antes de ligar a flag em staging.
 
 - Amostragem de resumos conferida contra a conversa real (problema/solução/status).
 - Caso de eval no domínio (`domains/suporte-vps-whatsapp/evals/`) que valida que o
   resumo recuperado melhora — e não polui — a próxima resposta.
-- Métrica de custo da sumarização adicionada a `docs/cost-latency-profile.md`.
+- Métrica de custo da sumarização adicionada a `docs/architecture/cost-latency-profile.md`.
 - Só depois disso ligar o consumo do resumo no RAG em staging.
 
 ---

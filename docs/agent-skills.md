@@ -186,7 +186,7 @@ Use supportfaq-next-step-planner para cruzar main, ultimos PRs, plano tecnico, i
 Para tarefas de conhecimento/RAG:
 
 ```text
-Use supportfaq-project-navigator e leia tambem docs/knowledge-authoring.md e docs/domain-evals.md.
+Use supportfaq-project-navigator e leia tambem docs/architecture/knowledge-authoring.md e docs/architecture/domain-evals.md.
 ```
 
 ## Manutencao

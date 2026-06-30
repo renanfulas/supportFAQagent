@@ -41,8 +41,8 @@ Usuario/downstream:
 
 Inputs:
 
-- Contratos atuais em `docs/integration-contracts.md`.
-- Observabilidade atual em `docs/observability.md`.
+- Contratos atuais em `docs/architecture/integration-contracts.md`.
+- Observabilidade atual em `docs/architecture/observability.md`.
 - Codigo atual em `app/api/routes/internal_webhooks.py`,
   `app/core/config.py`, `scripts/dispatch_outbox.py`,
   `app/web_auth/delivery.py` e `app/web_auth/runtime.py`.
@@ -161,8 +161,8 @@ Arquivos alvo:
 - `app/core/config.py`
 - `app/api/routes/internal_webhooks.py`
 - `.env.example`
-- `docs/integration-contracts.md`
-- `docs/observability.md`
+- `docs/architecture/integration-contracts.md`
+- `docs/architecture/observability.md`
 - testes de config e ingress interno
 
 Criterio de pronto:
@@ -205,8 +205,8 @@ Mudancas planejadas:
 Arquivos alvo:
 
 - `scripts/dispatch_outbox.py`
-- `docs/integration-contracts.md`
-- `docs/observability.md`
+- `docs/architecture/integration-contracts.md`
+- `docs/architecture/observability.md`
 - testes do dispatcher com envs falsos e HTTP mockado
 
 Criterio de pronto:

@@ -25,7 +25,7 @@ V3: Operacao madura com dashboard, qualidade e expansao multi-dominio.
 
 Detalhamento de implementacao da primeira fase:
 
-- [Plano arquivado de implementacao V0](archive/implementation-plans/web-chat-v0-implementation-plan.md)
+- [Plano arquivado de implementacao V0](../archive/implementation-plans/web-chat-v0-implementation-plan.md)
 - [Especificacao V1 De Identidade Por WhatsApp OTP](web-chat-v1-whatsapp-otp-spec.md)
 
 O ponto mais importante:
@@ -535,8 +535,8 @@ Mitigacao:
 - `app/static/chat/app.js`
 - `app/static/chat/styles.css`
 - `tests/`
-- `docs/integration-contracts.md`
-- `docs/observability.md`
+- `docs/architecture/integration-contracts.md`
+- `docs/architecture/observability.md`
 
 ## Validacao
 

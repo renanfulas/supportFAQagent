@@ -7,7 +7,7 @@ gpt-4o-mini for a structured record and upserts it idempotently into
 conversations and never calls the model).
 
 Run via a systemd timer (~3h), never a cron inside the app. Logs sanitized
-metrics only; no PII, no raw session_id (see docs/observability.md).
+metrics only; no PII, no raw session_id (see docs/architecture/observability.md).
 """
 from __future__ import annotations
 

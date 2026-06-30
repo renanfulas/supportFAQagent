@@ -8,7 +8,7 @@ Postgres real, rodada num banco descartavel no servidor da VPS (sequencia de
 migration da CI: `apply --target 006` -> backfill de privacidade -> `apply` ->
 `verify` = 10 migrations). Migration 009 ja aplicada na box de prod. Em prod, os
 `support_cases` ja sao consumidos pelo support inbox (read) e enriquecidos no push
-(`ENABLE_SUPPORT_INBOX` ligado; ver `docs/integration-contracts.md`).
+(`ENABLE_SUPPORT_INBOX` ligado; ver `docs/architecture/integration-contracts.md`).
 Data de revisao: 2026-06-29.
 
 ## Diagnostico
@@ -74,10 +74,10 @@ Usuarios/downstream:
 
 Inputs:
 
-- `docs/integration-contracts.md`
-- `docs/architecture.md`
-- `docs/observability.md`
-- `docs/technical-implementation-plan.md`
+- `docs/architecture/integration-contracts.md`
+- `docs/architecture/architecture.md`
+- `docs/architecture/observability.md`
+- `docs/MVP/technical-implementation-plan.md`
 - `app/api/routes/web_auth.py`
 - `app/web_auth/service.py`
 - `app/web_auth/storage.py`
@@ -573,7 +573,7 @@ Arquivos provaveis:
 - `app/db/operational.py`
 - novo repositorio/servico `app/support_cases/`
 - `tests/test_handoff.py` ou testes de operational repository
-- `docs/integration-contracts.md`
+- `docs/architecture/integration-contracts.md`
 
 Entregas:
 

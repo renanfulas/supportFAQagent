@@ -6,7 +6,9 @@ basico: objetivo, escopo, arquivos alvo, validacao, criterios de pronto e
 riscos de fronteira.
 
 Use os planos ainda presentes nesta pasta antes de abrir codigo novo em uma
-frente especifica. O plano concluido de retrieval vetorial foi movido para
+frente especifica. Para o estado consolidado de todas as frentes (feito, em
+andamento, falta), veja [`docs/project-map.md`](../project-map.md). O plano
+concluido de retrieval vetorial foi movido para
 [`docs/archive/implementation-plans/`](../archive/implementation-plans/vector-retrieval-quality-plan.md).
 
 Planos ativos:
@@ -18,6 +20,12 @@ Planos ativos:
 - [`meta-whatsapp-native-integration-plan.md`](meta-whatsapp-native-integration-plan.md):
   refatoracao de entrega externa para Meta WhatsApp Cloud API nativa, com
   Hermes apenas como adapter temporario.
+
+- [`web-chat-evolution-plan.md`](web-chat-evolution-plan.md): evolucao do chat
+  web (V0 publica ja incorporada; fases seguintes de identidade e WhatsApp).
+
+- [`web-chat-v1-whatsapp-otp-spec.md`](web-chat-v1-whatsapp-otp-spec.md):
+  contrato, threat model e fronteiras da identidade de canal por WhatsApp OTP.
 
 Quando uma parte da frente ja tiver sido implementada e mergeada, o plano deve:
 

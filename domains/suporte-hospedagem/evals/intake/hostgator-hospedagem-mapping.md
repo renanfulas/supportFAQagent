@@ -18,7 +18,7 @@ a base de conhecimento aqui (classificacao 🏠 no mapeamento geral) sao:
   ERR_TOO_MANY_REDIRECTS, ERR_CONNECTION_CLOSED.
 - **Criador de Sites** e **Plano WordPress** (operacao do produto).
 
-Fora deste dominio (ver `docs/domain-architecture-roadmap.md`): VPS/Dedicado,
+Fora deste dominio (ver `docs/architecture/domain-architecture-roadmap.md`): VPS/Dedicado,
 contratacao/preco, financeiro/conta, produtos de IA (SuperGator) e e-mail Titan.
 
 ## Estado
@@ -32,4 +32,4 @@ deterministico dos dominios vivos.
 Proximos passos: ampliar a base com mais temas do cluster (banco MySQL/phpMyAdmin,
 FTP, .htaccess, PHP, cron, Criador de Sites, erros de site) e versionar um banco
 sintetico amplo de descoberta em `intake/`, seguindo
-`docs/runbooks/anonymous-eval-intake.md` e `docs/knowledge-authoring.md`.
+`docs/runbooks/anonymous-eval-intake.md` e `docs/architecture/knowledge-authoring.md`.

@@ -18,22 +18,27 @@ Novos contribuidores nao precisam ler toda a documentacao. Para formar o mapa
 mental minimo:
 
 1. Leia `README.md` para entender produto e status.
-2. Leia `docs/architecture.md` para entender o fluxo e os limites.
-3. Leia `CONTRIBUTING.md` para preparar e validar uma mudanca.
-4. Escolha sua tarefa na tabela abaixo e leia apenas as fontes indicadas.
+2. Leia `docs/project-map.md` para ver o estado de cada frente (feito, em
+   andamento, falta) e a organizacao das pastas de documentacao.
+3. Leia `docs/architecture/architecture.md` para entender o fluxo e os limites.
+4. Leia `CONTRIBUTING.md` para preparar e validar uma mudanca.
+5. Escolha sua tarefa na tabela abaixo e leia apenas as fontes indicadas.
+
+Este documento e o roteador por tarefa; `docs/project-map.md` e o mapa de
+estado das frentes. Os dois se complementam.
 
 ## Leitura Por Tarefa
 
 | Quero mudar | Leia primeiro | Onde trabalhar |
 | --- | --- | --- |
-| API ou contrato externo | `docs/integration-contracts.md` | `app/api/`, `tests/` |
-| Fluxo de resposta, LLM ou handoff | `docs/domain-contract.md`, `docs/technical-implementation-plan.md` | `app/orchestration/`, `app/llm/`, `app/handoff/` |
-| Artigos, FAQs ou calibragem | `docs/knowledge-authoring.md`, `docs/domain-evals.md` | `domains/`, `app/evals/` |
-| Fronteira core vs dominio, seams, extensao (framework) | `docs/framework-boundary.md`, `docs/domain-contract.md`, `docs/architecture.md` | `app/`, `domains/` |
-| Banco, migrations ou pgvector | `docs/technical-implementation-plan.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `migrations/`, `app/retrieval/` |
-| Staging, VPS, Meta WhatsApp, Hermes ou operacao | `docs/environments.md`, `docs/integration-contracts.md`, runbook especifico em `docs/runbooks/` | `scripts/`, configuracao de runtime |
-| Seguranca ou observabilidade | `SECURITY.md`, `docs/observability.md` | `app/core/`, `app/api/`, `tests/security/` |
-| Planejamento ou status do MVP | `docs/documentation-status.md`, `docs/mvp-plan.md` | documentos ativos indicados por eles |
+| API ou contrato externo | `docs/architecture/integration-contracts.md` | `app/api/`, `tests/` |
+| Fluxo de resposta, LLM ou handoff | `docs/architecture/domain-contract.md`, `docs/MVP/technical-implementation-plan.md` | `app/orchestration/`, `app/llm/`, `app/handoff/` |
+| Artigos, FAQs ou calibragem | `docs/architecture/knowledge-authoring.md`, `docs/architecture/domain-evals.md` | `domains/`, `app/evals/` |
+| Fronteira core vs dominio, seams, extensao (framework) | `docs/architecture/framework-boundary.md`, `docs/architecture/domain-contract.md`, `docs/architecture/architecture.md` | `app/`, `domains/` |
+| Banco, migrations ou pgvector | `docs/MVP/technical-implementation-plan.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `migrations/`, `app/retrieval/` |
+| Staging, VPS, Meta WhatsApp, Hermes ou operacao | `docs/setup/environments.md`, `docs/architecture/integration-contracts.md`, runbook especifico em `docs/runbooks/` | `scripts/`, configuracao de runtime |
+| Seguranca ou observabilidade | `SECURITY.md`, `docs/architecture/observability.md` | `app/core/`, `app/api/`, `tests/security/` |
+| Planejamento ou status do MVP | `docs/project-map.md`, `docs/documentation-status.md`, `docs/MVP/mvp-plan.md` | documentos ativos indicados por eles |
 | Contribuicao com agente de IA | `docs/agent-skills.md` | `.agents/skills/` |
 
 Se um documento estiver em `docs/archive/`, ele e contexto historico, nao uma
@@ -44,7 +49,7 @@ instrucao operacional atual.
 Quando a mudanca for uma frente executavel ainda em aberto, use estes planos
 curtos antes de codar:
 
-- `docs/web-chat-v1-whatsapp-otp-spec.md`: contrato, threat model e fronteiras
+- `docs/quality-plans/web-chat-v1-whatsapp-otp-spec.md`: contrato, threat model e fronteiras
   da identidade de canal por WhatsApp OTP.
 - `docs/quality-plans/customer-identity-whatsapp-handoff-plan.md`: plano
   tecnico para ligar Auth WhatsApp, identidade do cliente, historico,
@@ -103,7 +108,7 @@ Define entrada e saida da API.
 
 ## `app/domain_engine/`
 
-Mostra como um dominio e carregado do disco para a aplicacao. O contrato esperado esta em `docs/domain-contract.md`.
+Mostra como um dominio e carregado do disco para a aplicacao. O contrato esperado esta em `docs/architecture/domain-contract.md`.
 
 ## `app/ingestion/`
 
@@ -165,9 +170,21 @@ Chat UI local/staging para validacao controlada. Nao substitui integracoes exter
 
 Comandos operacionais e validacoes pontuais, incluindo ingestao pgvector, preflight de runtime, smoke de staging e fetch de documento GitHub.
 
-## `docs/security/`, `docs/runbooks/` e `docs/quality-plans/`
+## Pastas de `docs/`
 
-Guardam hardening, operacao, ambientes, checks de qualidade e planos por frente. Use esses diretorios antes de mexer em seguranca, staging, VPS, pgvector ou criterios de qualidade.
+A documentacao e organizada por tipo. Use `docs/project-map.md` para o estado
+das frentes e esta tabela para saber em qual pasta procurar:
+
+| Pasta | O que vive aqui |
+| --- | --- |
+| `docs/` (raiz) | Indices transversais: `project-map.md`, `navigation.md`, `documentation-status.md`, `product-positioning.md`, `agent-skills.md`, `references-legacy.md` |
+| `docs/architecture/` | Design, fronteiras, contratos e padroes do sistema |
+| `docs/setup/` | Guias de instalacao e configuracao de ambiente |
+| `docs/MVP/` | Planos tecnicos majoritarios do MVP (visao geral) |
+| `docs/quality-plans/` | Planos detalhados por frente do MVP |
+| `docs/runbooks/` | Procedimentos operacionais de execucao |
+| `docs/security/` | Planos e contratos de seguranca |
+| `docs/archive/` | Concluido, substituido ou obsoleto (contexto historico) |
 
 ## `.agents/skills/`
 
@@ -179,7 +196,7 @@ Mostra como um dominio e definido hoje. Use essa pasta como referencia para cria
 
 ## `domains/suporte-vps-whatsapp/knowledge/`
 
-Base de conhecimento do dominio inicial. Use `docs/knowledge-authoring.md` antes de adicionar ou revisar artigos.
+Base de conhecimento do dominio inicial. Use `docs/architecture/knowledge-authoring.md` antes de adicionar ou revisar artigos.
 
 ## Como pensar uma nova mudanca
 

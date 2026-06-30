@@ -58,8 +58,8 @@ Read these first:
 
 1. `README.md`
 2. `docs/product-positioning.md`
-3. `docs/technical-implementation-plan.md`
-4. `docs/mvp-plan.md`
+3. `docs/MVP/technical-implementation-plan.md`
+4. `docs/MVP/mvp-plan.md`
 5. `docs/navigation.md`
 
 Then read only the task-specific docs:
@@ -67,14 +67,14 @@ Then read only the task-specific docs:
 | Intended area | Additional docs |
 | --- | --- |
 | README/docs/product narrative | `docs/product-positioning.md`, `docs/agent-skills.md` |
-| API/Meta WhatsApp/Hermes/contracts | `docs/integration-contracts.md`, `docs/observability.md` |
-| Domain config | `docs/domain-contract.md` |
-| Knowledge/RAG content | `docs/knowledge-authoring.md`, `docs/domain-evals.md` |
-| GitHub document loader or external source loading | `docs/knowledge-authoring.md`, `docs/technical-implementation-plan.md`, `app/ingestion/github_loader.py`, `scripts/fetch_github_document.py` |
-| Evals/calibration | `docs/domain-evals.md` |
-| Observability/security | `docs/observability.md`, `docs/code-standards.md` |
-| PostgreSQL/pgvector | `docs/technical-implementation-plan.md` SQL sections |
-| LangChain/splitters/loaders | `docs/technical-implementation-plan.md`, ingestion sections |
+| API/Meta WhatsApp/Hermes/contracts | `docs/architecture/integration-contracts.md`, `docs/architecture/observability.md` |
+| Domain config | `docs/architecture/domain-contract.md` |
+| Knowledge/RAG content | `docs/architecture/knowledge-authoring.md`, `docs/architecture/domain-evals.md` |
+| GitHub document loader or external source loading | `docs/architecture/knowledge-authoring.md`, `docs/MVP/technical-implementation-plan.md`, `app/ingestion/github_loader.py`, `scripts/fetch_github_document.py` |
+| Evals/calibration | `docs/architecture/domain-evals.md` |
+| Observability/security | `docs/architecture/observability.md`, `docs/architecture/code-standards.md` |
+| PostgreSQL/pgvector | `docs/MVP/technical-implementation-plan.md` SQL sections |
+| LangChain/splitters/loaders | `docs/MVP/technical-implementation-plan.md`, ingestion sections |
 | Dependency management/security audit | `pyproject.toml`, `.github/workflows/security.yml`, `CONTRIBUTING.md` |
 | Contribution/commit/PR | `CONTRIBUTING.md`, `.agents/skills/supportfaq-git-flow/SKILL.md` |
 

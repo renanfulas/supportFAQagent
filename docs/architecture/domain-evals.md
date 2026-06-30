@@ -40,7 +40,7 @@ Para os novos dominios em Fase 1, com base de conhecimento real e provider
 `openai` (mesmo padrao deterministico dos dominios vivos). `suporte-hospedagem`
 ja entra no roteador (`WHATSAPP_ROUTER_DOMAINS`); `suporte-vps` segue fora do
 roteador por colisao de vocabulario com `suporte-vps-whatsapp` (ver
-`docs/domain-architecture-roadmap.md`):
+`docs/architecture/domain-architecture-roadmap.md`):
 
 ```bash
 python -m app.evals.run_domain_eval suporte-hospedagem

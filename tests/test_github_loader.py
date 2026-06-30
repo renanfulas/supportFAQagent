@@ -47,13 +47,13 @@ def test_parse_blob_url_builds_file_ref() -> None:
 
 def test_parse_raw_url_builds_file_ref() -> None:
     file_ref = parse_github_file_url(
-        "https://raw.githubusercontent.com/renanfulas/supportFAQagent/main/docs/integration-contracts.md",
+        "https://raw.githubusercontent.com/renanfulas/supportFAQagent/main/docs/navigation.md",
     )
 
     assert file_ref.owner == "renanfulas"
     assert file_ref.repo == "supportFAQagent"
     assert file_ref.ref == "main"
-    assert file_ref.path == "docs/integration-contracts.md"
+    assert file_ref.path == "docs/navigation.md"
 
 
 def test_loader_fetches_file_via_contents_api() -> None:

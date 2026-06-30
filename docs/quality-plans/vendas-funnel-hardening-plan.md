@@ -21,8 +21,8 @@ Owner de coordenacao: Renan. Time ativo: Renan (handoff/orquestracao/seguranca/
 persistencia/schema scratch) + Juliano (runtime/deploy/onde rodar + retrieval).
 Alexandre e Silotto sairam do projeto; suas frentes foram absorvidas pela dupla.
 
-Fontes relacionadas: `docs/domain-contract.md`, `docs/domain-evals.md`,
-`docs/integration-contracts.md`, `docs/observability.md`,
+Fontes relacionadas: `docs/architecture/domain-contract.md`, `docs/architecture/domain-evals.md`,
+`docs/architecture/integration-contracts.md`, `docs/architecture/observability.md`,
 `docs/quality-plans/whatsapp-sticky-domain-routing-plan.md`,
 `docs/quality-plans/customer-identity-whatsapp-handoff-plan.md`,
 memoria de sessao `whatsapp-vendas-smoke-findings`.
@@ -125,7 +125,7 @@ por reason em prod, qualquer threshold sai de 10 conversas (overfit).
 
 Mudanca:
 - Contadores/metricas (via logging estruturado ja existente, ver
-  `docs/observability.md`): taxa de escalacao por reason, taxa de `out_of_scope`,
+  `docs/architecture/observability.md`): taxa de escalacao por reason, taxa de `out_of_scope`,
   fire do checkout, hits de `card_data`, distribuicao de `confidence` por dominio.
 - **Harness de smoke fiel e repetivel**: persistencia em schema/scratch isolado
   (nao a tabela de prod), cobrindo multi-turno. O script ad-hoc
@@ -223,7 +223,7 @@ Mudanca: taxonomia de reasons em `app/handoff/` / `app/orchestration/chat_flow.p
 
 Risco de contrato: `escalated` e usado por log `chat_completed`, campo da
 `ChatResponse` e consumidor de fila/automacao externa. Decouplar `escalated` de "precisa humano"
-e **mudanca de contrato** -> atualizar `docs/integration-contracts.md` e comunicar.
+e **mudanca de contrato** -> atualizar `docs/architecture/integration-contracts.md` e comunicar.
 
 Seam de teste: `tests/test_chat_flow_errors.py` + teste de `operational` com
 runtime fake provando que `low_confidence` sozinho nao enfileira.
@@ -237,7 +237,7 @@ nao-soft"; `resolve_human_queue` aplica a flag por dominio). O enfileiramento em
 volta em `escalated` quando a flag esta off), cobrindo os **dois** sumidouros
 (`support_cases` + `operational_outbox`). As 5 superficies que gravam audit
 (chat, web_chat, zoom, hermes, meta) passam `requires_human_queue`. Contrato
-documentado em `docs/integration-contracts.md` (escalated nao garante fila humana;
+documentado em `docs/architecture/integration-contracts.md` (escalated nao garante fila humana;
 use `handoff_status`). Cobertura: `tests/test_handoff_taxonomy.py` +
 `tests/test_phase0_operational_safety.py` (low_confidence-only nao enfileira;
 escalated legado segue enfileirando). Decisao 1 resolvida na direcao do plano:
@@ -308,7 +308,7 @@ converge para plano nomeado + fechamento. Layer 3 (slots) **nao justificada**.
   boleto) e falso-negativo trivial (cartao por extenso/quebrado). E mitigacao
   parcial; nao criar falsa sensacao de "tratamos cartao 100%".
 - **Custo/latencia:** menos out_of_scope + menos escala = mais chamadas pagas ao
-  OpenAI. Acompanhar via `docs/cost-latency-profile.md`; rate limiter e a unica
+  OpenAI. Acompanhar via `docs/architecture/cost-latency-profile.md`; rate limiter e a unica
   trava hoje.
 
 ## 5. Pre-requisitos transversais
@@ -317,7 +317,7 @@ converge para plano nomeado + fechamento. Layer 3 (slots) **nao justificada**.
 - **Schema/scratch isolado** para o harness de smoke (evitar escrever na auditoria
   de prod e enfileirar handoff real) — frente do Renan; reaproveitar `docker-compose.test.yml` (#84).
 - **Janela de deploy + rollback** com Juliano, ciente do drift atual.
-- ~~Atualizar `docs/integration-contracts.md` quando `escalated` mudar de semantica.~~
+- ~~Atualizar `docs/architecture/integration-contracts.md` quando `escalated` mudar de semantica.~~
   feito em #91 (escalated nao garante fila humana; usar `handoff_status`).
 
 ## 6. Validacao (por PR)

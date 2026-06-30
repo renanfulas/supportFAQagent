@@ -35,28 +35,45 @@ Always start with:
 
 Do not load every doc by default.
 
+### Mapa de documentação (onde achar cada coisa)
+
+Primeiro destino: `docs/project-map.md` (estado das frentes) e `docs/navigation.md` (roteador por tarefa). Docs organizados por pasta:
+
+| Pasta | O que vive aqui |
+| --- | --- |
+| `docs/` (raiz) | Índices: `project-map.md`, `navigation.md`, `documentation-status.md`, `product-positioning.md`, `agent-skills.md`, `references-legacy.md` |
+| `docs/architecture/` | Design, fronteiras, contratos e padrões |
+| `docs/setup/` | Guias de instalação/configuração de ambiente |
+| `docs/MVP/` | Planos técnicos majoritários do MVP |
+| `docs/quality-plans/` | Planos detalhados por frente |
+| `docs/runbooks/` | Procedimentos operacionais |
+| `docs/security/` | Planos e contratos de segurança |
+| `docs/archive/` | Concluído, substituído ou obsoleto |
+
+Lookup por assunto (ex.): Hermes → `docs/architecture/integration-contracts.md` (contrato) + `docs/quality-plans/hermes-chat-bridge-plan.md` (plano) + `docs/runbooks/hermes-chat-cutover.md` (operação). Caminhos antigos de docs movidos: `docs/references-legacy.md`.
+
 ### Area Map
 
 | Change area | Read before editing | Likely folders |
 | --- | --- | --- |
 | Product positioning, README, public docs, PR narrative, agent instructions | `docs/product-positioning.md`, `README.md`, `docs/agent-skills.md` | `README.md`, `docs/`, `.agents/skills/` |
-| Architecture or module boundaries | `docs/architecture.md`, `docs/technical-implementation-plan.md`, `docs/navigation.md` | `app/`, `docs/` |
-| API contracts | `docs/integration-contracts.md`, `docs/observability.md` | `app/api/routes/`, `app/api/schemas/`, `app/feedback/`, `tests/` |
-| Domain behavior | `docs/domain-contract.md`, `docs/navigation.md` | `domains/<domain>/domain.yaml`, `app/domain_engine/` |
-| Knowledge base or FAQs | `docs/knowledge-authoring.md`, `docs/domain-evals.md` | `domains/<domain>/knowledge/`, `domains/<domain>/evals/` |
-| Evals or calibration | `docs/domain-evals.md`, `docs/knowledge-authoring.md` | `app/evals/`, `domains/<domain>/evals/`, `tests/` |
-| Ingestion | `docs/integration-contracts.md`, `docs/technical-implementation-plan.md` | `app/ingestion/`, `app/api/routes/ingestion.py`, `app/api/schemas/ingestion.py` |
-| GitHub document loader | `docs/knowledge-authoring.md`, `docs/technical-implementation-plan.md`, `docs/navigation.md` | `app/ingestion/github_loader.py`, `scripts/fetch_github_document.py`, `tests/test_github_loader.py` |
-| Retrieval or vector store | `docs/architecture.md`, `docs/technical-implementation-plan.md` | `app/retrieval/`, `app/orchestration/` |
-| LLM/provider/prompt | `docs/technical-implementation-plan.md`, `docs/domain-contract.md` | `app/llm/`, `app/orchestration/`, `domains/<domain>/prompts/` |
-| Handoff or escalation | `docs/domain-contract.md`, `docs/integration-contracts.md`, `docs/domain-evals.md` | `app/handoff/`, `app/orchestration/`, `domains/<domain>/domain.yaml`, `tests/` |
-| Observability/logging | `docs/observability.md`, `docs/technical-implementation-plan.md` | `app/core/`, `app/main.py`, route files |
-| Security or public surface hardening | `SECURITY.md`, `docs/security/`, `docs/observability.md`, `docs/code-standards.md` | `app/core/`, `app/api/`, `tests/security/`, `.github/workflows/` |
-| External transport/automation (Meta WhatsApp, Hermes) | `docs/integration-contracts.md`, `docs/observability.md`, `docs/technical-implementation-plan.md` | docs first; do not move intelligence into external transport |
-| PostgreSQL/pgvector | `docs/technical-implementation-plan.md`, `docs/architecture.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `app/retrieval/`, `app/ingestion/pgvector_writer.py`, `migrations/`, `scripts/ingest_domain_pgvector.py` |
-| VPS/deploy/runtime | `docs/environments.md`, `docs/technical-implementation-plan.md`, `docs/observability.md`, `docs/runbooks/` | `scripts/`, config/docs |
+| Architecture or module boundaries | `docs/architecture/architecture.md`, `docs/MVP/technical-implementation-plan.md`, `docs/navigation.md` | `app/`, `docs/` |
+| API contracts | `docs/architecture/integration-contracts.md`, `docs/architecture/observability.md` | `app/api/routes/`, `app/api/schemas/`, `app/feedback/`, `tests/` |
+| Domain behavior | `docs/architecture/domain-contract.md`, `docs/navigation.md` | `domains/<domain>/domain.yaml`, `app/domain_engine/` |
+| Knowledge base or FAQs | `docs/architecture/knowledge-authoring.md`, `docs/architecture/domain-evals.md` | `domains/<domain>/knowledge/`, `domains/<domain>/evals/` |
+| Evals or calibration | `docs/architecture/domain-evals.md`, `docs/architecture/knowledge-authoring.md` | `app/evals/`, `domains/<domain>/evals/`, `tests/` |
+| Ingestion | `docs/architecture/integration-contracts.md`, `docs/MVP/technical-implementation-plan.md` | `app/ingestion/`, `app/api/routes/ingestion.py`, `app/api/schemas/ingestion.py` |
+| GitHub document loader | `docs/architecture/knowledge-authoring.md`, `docs/MVP/technical-implementation-plan.md`, `docs/navigation.md` | `app/ingestion/github_loader.py`, `scripts/fetch_github_document.py`, `tests/test_github_loader.py` |
+| Retrieval or vector store | `docs/architecture/architecture.md`, `docs/MVP/technical-implementation-plan.md` | `app/retrieval/`, `app/orchestration/` |
+| LLM/provider/prompt | `docs/MVP/technical-implementation-plan.md`, `docs/architecture/domain-contract.md` | `app/llm/`, `app/orchestration/`, `domains/<domain>/prompts/` |
+| Handoff or escalation | `docs/architecture/domain-contract.md`, `docs/architecture/integration-contracts.md`, `docs/architecture/domain-evals.md` | `app/handoff/`, `app/orchestration/`, `domains/<domain>/domain.yaml`, `tests/` |
+| Observability/logging | `docs/architecture/observability.md`, `docs/MVP/technical-implementation-plan.md` | `app/core/`, `app/main.py`, route files |
+| Security or public surface hardening | `SECURITY.md`, `docs/security/`, `docs/architecture/observability.md`, `docs/architecture/code-standards.md` | `app/core/`, `app/api/`, `tests/security/`, `.github/workflows/` |
+| External transport/automation (Meta WhatsApp, Hermes) | `docs/architecture/integration-contracts.md`, `docs/architecture/observability.md`, `docs/MVP/technical-implementation-plan.md` | docs first; do not move intelligence into external transport |
+| PostgreSQL/pgvector | `docs/MVP/technical-implementation-plan.md`, `docs/architecture/architecture.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `app/retrieval/`, `app/ingestion/pgvector_writer.py`, `migrations/`, `scripts/ingest_domain_pgvector.py` |
+| VPS/deploy/runtime | `docs/setup/environments.md`, `docs/MVP/technical-implementation-plan.md`, `docs/architecture/observability.md`, `docs/runbooks/` | `scripts/`, config/docs |
 | Dependency management or security audit | `pyproject.toml`, `CONTRIBUTING.md`, `.github/workflows/security.yml` | `pyproject.toml`, `.github/workflows/` |
-| Local chat UI or static assets | `README.md`, `docs/environments.md`, `docs/technical-implementation-plan.md` | `app/static/`, `app/main.py`, `app/core/config.py` |
+| Local chat UI or static assets | `README.md`, `docs/setup/environments.md`, `docs/MVP/technical-implementation-plan.md` | `app/static/`, `app/main.py`, `app/core/config.py` |
 
 ### Ownership Boundaries
 
@@ -96,7 +113,7 @@ Answer these internally:
 - Any code change: `python -m pytest`
 - Any Python module change: `python -m compileall app tests scripts`
 - Domain, prompt, retrieval, handoff, or knowledge change: `python -m app.evals.run_domain_eval suporte-vps-whatsapp`
-- API contract change: add/update endpoint tests and update `docs/integration-contracts.md`
+- API contract change: add/update endpoint tests and update `docs/architecture/integration-contracts.md`
 - Knowledge article change: update eval references when expected behavior changes
 - Dependency change: `python -m pip_audit .`, `python -m pip check`
 
@@ -179,6 +196,16 @@ Resumo curto da entrega e por que ela existe.
 - `python -m compileall app tests`
 - `python -m app.evals.run_domain_eval suporte-vps-whatsapp` quando aplicável
 ```
+
+### Atualizar o estado dos planos (antes de finalizar)
+
+Ao terminar uma fase/frente, antes do commit/PR, atualize a documentação de estado:
+
+1. Plano da frente em `docs/quality-plans/<frente>.md`: o que foi entregue e o que falta (plano encerrado vai para `docs/archive/`).
+2. `docs/project-map.md`: status da frente (✅ feito / 🟡 em andamento / ⬜ falta).
+3. `docs/documentation-status.md`: só quando mudar status, ownership, contrato, migration ou operação.
+
+Registre concreto, ex.: "Frente handoff: Fase 2 concluída; implementado ticket no support inbox e notificação WhatsApp; falta enriquecimento de push". A guarda `tests/test_docs_links.py` falha se um link de doc quebrar.
 
 ---
 

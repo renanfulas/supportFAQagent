@@ -119,8 +119,8 @@ tests/db/test_04_vector_search.sql
 tests/db/test_05_isolation.sql
 tests/db/validate_pgvector_search.sql
 docs/runbooks/pgvector-retrieval-contract.md
-docs/integration-contracts.md
-docs/technical-implementation-plan.md
+docs/architecture/integration-contracts.md
+docs/MVP/technical-implementation-plan.md
 ```
 
 Observacao de ownership:
