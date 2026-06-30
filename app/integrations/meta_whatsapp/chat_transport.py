@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.conversations.service import ConversationHistoryService
+from app.conversations.session_state import SessionStateStore
+from app.conversations.summary import SummaryRecallService
 from app.core.config import Settings
 from app.core.privacy import hash_sensitive_value
 from app.db.operational import (
@@ -52,6 +54,7 @@ class MetaWhatsAppChatTransport:
         repository: OperationalRepository | None = None,
         router: DomainRouter | None = None,
         session_store: SessionDomainStore | None = None,
+        chat_session_state_store: SessionStateStore | None = None,
     ) -> None:
         self.settings = settings
         self.database_runtime = database_runtime
@@ -59,6 +62,17 @@ class MetaWhatsAppChatTransport:
         self.domain_loader = domain_loader or DomainLoader(settings.domains_path)
         self.chat_service = chat_service or ChatFlowService(
             history_service=ConversationHistoryService(database_runtime),
+            session_state_store=(
+                chat_session_state_store
+                if settings.persistence_backend == "postgres"
+                else None
+            ),
+            summary_recall=(
+                SummaryRecallService(database_runtime)
+                if settings.persistence_backend == "postgres"
+                and settings.enable_summary_recall
+                else None
+            ),
         )
         self.repository = repository or OperationalRepository(database_runtime)
         self.router = (

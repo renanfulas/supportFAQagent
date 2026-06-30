@@ -88,6 +88,9 @@ async def receive_webhook(request: Request) -> dict[str, str]:
                 graph_api_version=settings.meta_whatsapp_graph_api_version,
                 timeout_seconds=settings.meta_whatsapp_request_timeout_seconds,
             ),
+            chat_session_state_store=getattr(
+                request.app.state, "chat_session_state_store", None
+            ),
         )
         try:
             for message in parsed.messages:
