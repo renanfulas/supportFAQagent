@@ -85,9 +85,77 @@ def test_build_from_env_rejects_unknown_backend() -> None:
         build_session_state_store_from_env(getenv=lambda k, d="": "mongodb")
 
 
-def test_build_from_env_redis_not_implemented_yet() -> None:
-    with pytest.raises(NotImplementedError):
-        build_session_state_store_from_env(getenv=lambda k, d="": "redis")
+def test_build_from_env_redis_requires_url() -> None:
+    # backend=redis with no SESSION_STATE_REDIS_URL -> ValueError before importing redis.
+    getenv = lambda k, d="": "redis" if k == "SESSION_STATE_BACKEND" else ""
+    with pytest.raises(ValueError):
+        build_session_state_store_from_env(getenv=getenv)
+
+
+# --- RedisSessionStateStore (Nível 1; fake client, no redis dependency) ------
+
+class _FakeRedis:
+    def __init__(self) -> None:
+        self.store: dict[str, str] = {}
+        self.last_ex = None
+
+    def get(self, key):
+        return self.store.get(key)
+
+    def set(self, key, value, ex=None):
+        self.store[key] = value
+        self.last_ex = ex
+
+    def delete(self, key):
+        self.store.pop(key, None)
+
+
+def test_redis_store_put_get_roundtrip_with_ttl() -> None:
+    from app.conversations.session_state_redis import RedisSessionStateStore
+
+    fake = _FakeRedis()
+    store = RedisSessionStateStore(fake)
+    st = _state()
+    store.put(domain="vendas", channel="whatsapp", session_hash="abc", state=st, ttl_seconds=60)
+    assert fake.last_ex == 60
+    assert store.get(domain="vendas", channel="whatsapp", session_hash="abc") == st
+
+
+def test_redis_store_key_isolation_and_clear() -> None:
+    from app.conversations.session_state_redis import RedisSessionStateStore
+
+    store = RedisSessionStateStore(_FakeRedis())
+    store.put(domain="vendas", channel="whatsapp", session_hash="abc", state=_state(), ttl_seconds=60)
+    assert store.get(domain="suporte", channel="whatsapp", session_hash="abc") is None
+    store.clear(domain="vendas", channel="whatsapp", session_hash="abc")
+    assert store.get(domain="vendas", channel="whatsapp", session_hash="abc") is None
+
+
+def test_redis_store_ttl_zero_sets_no_expiry() -> None:
+    from app.conversations.session_state_redis import RedisSessionStateStore
+
+    fake = _FakeRedis()
+    RedisSessionStateStore(fake).put(domain="d", channel="c", session_hash="h", state=_state(), ttl_seconds=0)
+    assert fake.last_ex is None
+
+
+def test_redis_store_is_fail_open() -> None:
+    from app.conversations.session_state_redis import RedisSessionStateStore
+
+    class _Boom:
+        def get(self, key):
+            raise RuntimeError("redis down")
+
+        def set(self, key, value, ex=None):
+            raise RuntimeError("redis down")
+
+        def delete(self, key):
+            raise RuntimeError("redis down")
+
+    store = RedisSessionStateStore(_Boom())
+    assert store.get(domain="d", channel="c", session_hash="h") is None
+    store.put(domain="d", channel="c", session_hash="h", state=_state(), ttl_seconds=60)  # no raise
+    store.clear(domain="d", channel="c", session_hash="h")  # no raise
 
 
 # --- ChatFlowService integration (write path, fail-open) ---------------------

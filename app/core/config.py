@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     session_state_ttl_seconds: int = Field(
         default=2700, alias="SESSION_STATE_TTL_SECONDS"
     )
+    session_state_redis_url: str | None = Field(
+        default=None, alias="SESSION_STATE_REDIS_URL"
+    )
     persistence_hash_secret: str | None = Field(
         default=None,
         alias="PERSISTENCE_HASH_SECRET",
@@ -373,6 +376,8 @@ class Settings(BaseSettings):
         self.session_state_backend = self.session_state_backend.strip().lower()
         if self.session_state_backend not in {"memory", "redis"}:
             raise ValueError("SESSION_STATE_BACKEND must be memory or redis")
+        if self.session_state_backend == "redis" and not (self.session_state_redis_url or "").strip():
+            raise ValueError("SESSION_STATE_BACKEND=redis requires SESSION_STATE_REDIS_URL")
         self.retrieval_backend = self.retrieval_backend.strip().lower()
         if self.retrieval_backend not in {"lexical", "pgvector"}:
             raise ValueError("RETRIEVAL_BACKEND must be lexical or pgvector")
