@@ -20,7 +20,7 @@ default_language: pt-BR
 #
 # AINDA fora do roteador: as keywords de VPS colidem com suporte-vps-whatsapp,
 # entao a entrada no roteador depende de uma decisao de produto sobre a fronteira
-# entre os dois dominios. Ver docs/domain-architecture-roadmap.md.
+# entre os dois dominios. Ver docs/architecture/domain-architecture-roadmap.md.
 
 behavior:
   persona: agente de suporte de gerenciamento de VPS e Servidor Dedicado, claro e direto

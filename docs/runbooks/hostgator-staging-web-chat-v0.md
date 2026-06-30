@@ -192,7 +192,7 @@ Interrompa a exposicao da V0 publica se ocorrer qualquer um destes:
 
 ## Referencias
 
-- [Mapa oficial de ambientes](../environments.md)
-- [Contratos de integracao](../integration-contracts.md)
+- [Mapa oficial de ambientes](../setup/environments.md)
+- [Contratos de integracao](../architecture/integration-contracts.md)
 - [Smoke HTTP automatizado em staging](staging-http-smoke.md)
 - [Plano arquivado V0 do chat web](../archive/implementation-plans/web-chat-v0-implementation-plan.md)

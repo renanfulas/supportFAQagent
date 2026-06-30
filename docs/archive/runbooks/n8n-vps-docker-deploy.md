@@ -248,5 +248,5 @@ Parar e registrar bloqueio privado se ocorrer:
 ## Referencias
 
 - [Contrato n8n/WhatsApp para `/chat`](n8n-whatsapp-chat-contract.md)
-- [Mapa oficial de ambientes](../../environments.md)
+- [Mapa oficial de ambientes](../../setup/environments.md)
 - [Runtime controlado da VPS](../../runbooks/vps-controlled-runtime.md)

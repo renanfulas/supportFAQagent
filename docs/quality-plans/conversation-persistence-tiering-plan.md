@@ -5,11 +5,11 @@ Origem: conversa com Silotto (TekZoom HG) indicando **milhares de pedidos de
 suporte por dia**. Dono atual da frente: Renan (persistência e VPS passaram a ser
 nossas — ver `team-ownership-change`).
 
-Este documento **evolui** a direção fechada em `docs/conversation-archive-sink.md`
+Este documento **evolui** a direção fechada em `docs/architecture/conversation-archive-sink.md`
 e na memória de projeto; ele não a substitui sem dizer o que mudou (ver
-"Reconciliação" abaixo). Leia antes: `docs/architecture.md` (seção
-`app/conversations`), `docs/conversation-archive-sink.md`,
-`docs/cost-latency-profile.md`, `docs/observability.md`.
+"Reconciliação" abaixo). Leia antes: `docs/architecture/architecture.md` (seção
+`app/conversations`), `docs/architecture/conversation-archive-sink.md`,
+`docs/architecture/cost-latency-profile.md`, `docs/architecture/observability.md`.
 
 ---
 
@@ -100,7 +100,7 @@ write-through não é gargalo** — então a opção A entrega quase todo o bene
 latência (via cache de leitura + estado no Redis) sem abrir mão da fonte da verdade
 transacional. B só se justifica se aparecer evidência de que o write-through
 incremental no hot path está custando latência percebida, o que hoje **não** é o
-caso (`docs/cost-latency-profile.md`: orquestração soma single-digit de ms; quase
+caso (`docs/architecture/cost-latency-profile.md`: orquestração soma single-digit de ms; quase
 toda a latência é o round-trip do modelo).
 
 ### Decisão fechada (2026-06-29): **A**, com escada incremental para as ideias da B
@@ -200,7 +200,7 @@ Alinhado a `docs/product-positioning.md` (comercial-técnico, honesto sobre limi
    Mesmo com milhares de conversas/dia, ordem de poucos dólares/dia — barato, mas
    não-zero e cresce com volume. Sumarizar **por conversa fechada**, não por
    mensagem, e pular conversas triviais (1 turno, resolvidas por atalho) corta a
-   conta. Métrica de custo deve entrar no `docs/cost-latency-profile.md`.
+   conta. Métrica de custo deve entrar no `docs/architecture/cost-latency-profile.md`.
 6. **Qualidade do resumo é aposta de retrieval.** Um resumo errado polui o RAG para
    o próximo ticket do mesmo cliente. Precisa de eval: amostrar resumos e conferir
    problema/solução/status contra a conversa real antes de confiar no caminho.
@@ -263,7 +263,7 @@ do `/chat`.
 
 1. **Operacionalizar o que já existe.** Ligar o append-only sink off-box em staging
    (bucket S3 + worker `dispatch_outbox --loop` no systemd) — fecha o gap de perda
-   **antes** de qualquer Redis. Já documentado em `docs/conversation-archive-sink.md`.
+   **antes** de qualquer Redis. Já documentado em `docs/architecture/conversation-archive-sink.md`.
 2. **`SessionStateStore` seam + impl in-memory + testes.** Sem Redis ainda. Liga o
    `ChatFlowService` para ler/escrever estado por um caminho desligável.
 3. **`RedisSessionStateStore`** atrás de flag, com TTL e fallback para in-memory se
@@ -289,7 +289,7 @@ de perda já; a 2 é o menor incremento de código com seam testável.
 - Integração gated (Postgres real, harness #84) para o caminho warehouse.
 - `python -m app.evals.run_domain_eval suporte-vps-whatsapp` quando o resumo entrar
   no caminho de RAG.
-- Nenhum log de PII/`session_id` cru — checagem de privacidade em `docs/observability.md`.
+- Nenhum log de PII/`session_id` cru — checagem de privacidade em `docs/architecture/observability.md`.
 
 ---
 

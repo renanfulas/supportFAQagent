@@ -118,4 +118,4 @@ systemctl restart supportfaq.service
 - O batch é **idempotente** (`UNIQUE(domain, conversation_key)`): re-rodar não duplica.
 - Texto é **redigido (PAN/PII) antes** de ir ao modelo (`sanitize_for_persistence`).
 - `customer_ref` = `customer_id` quando há identidade, senão `session_hash` — nunca
-  telefone cru. Logs só com contagens (ver `docs/observability.md`).
+  telefone cru. Logs só com contagens (ver `docs/architecture/observability.md`).

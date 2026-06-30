@@ -5,8 +5,8 @@ vai cada tema do suporte HostGator. Serve para decidir o que construir sem
 atropelar outra frente. Nao e um compromisso de implementar tudo; e o mapa que
 diz qual e o proximo passo seguro e quem precisa ser envolvido.
 
-Fontes relacionadas: `docs/architecture.md`, `docs/domain-contract.md`,
-`docs/domain-evals.md`,
+Fontes relacionadas: `docs/architecture/architecture.md`, `docs/architecture/domain-contract.md`,
+`docs/architecture/domain-evals.md`,
 `domains/suporte-vps-whatsapp/evals/intake/hostgator-categories-mapping.md`.
 
 ## Dominios atuais

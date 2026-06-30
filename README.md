@@ -175,8 +175,14 @@ domains/
     domain.yaml
     knowledge/
     prompts/
-docs/                # arquitetura, produto, contratos, runbooks e seguranca
-  archive/           # planos concluidos, relatorios substituidos e roadmaps historicos
+docs/                # documentacao por pasta (mapa em docs/project-map.md)
+  architecture/      # design, fronteiras, contratos e padroes do sistema
+  setup/             # guias de instalacao e configuracao de ambiente
+  MVP/               # planos tecnicos majoritarios do MVP
+  quality-plans/     # planos detalhados por frente do MVP
+  runbooks/          # procedimentos operacionais de execucao
+  security/          # planos e contratos de seguranca
+  archive/           # planos concluidos, relatorios substituidos e historicos
 migrations/          # scripts SQL e artefatos de evolucao do banco
 scripts/             # comandos operacionais
 tests/               # testes unitarios e de integracao
@@ -218,15 +224,19 @@ python -m pytest
 
 ## Documentacao
 
-Comece por [Como navegar no projeto](docs/navigation.md). Ele apresenta um
-percurso inicial curto e direciona cada tipo de tarefa para os documentos
-necessarios, sem exigir a leitura de toda a base.
+Comece pelo [Mapa do projeto](docs/project-map.md): estado de cada frente (o
+que ja foi feito, o que esta em andamento e o que falta) e a organizacao das
+pastas de documentacao. Para roteamento por tarefa, use
+[Como navegar no projeto](docs/navigation.md), que direciona cada tipo de
+mudanca para os documentos necessarios sem exigir a leitura de toda a base.
 
+- [Mapa do projeto](docs/project-map.md): frentes, status e mapa das pastas.
 - [Como contribuir](CONTRIBUTING.md): setup, regras e validacoes.
-- [Arquitetura](docs/architecture.md): limites e fluxo do sistema.
+- [Arquitetura](docs/architecture/architecture.md): limites e fluxo do sistema.
 - [Estado da documentacao](docs/documentation-status.md): fontes ativas de verdade.
-- [Plano unico do MVP](docs/mvp-plan.md): status e proxima fase.
+- [Plano unico do MVP](docs/MVP/mvp-plan.md): status e proxima fase.
 - [Archive](docs/archive/README.md): planos concluidos e registros historicos.
+- [Indice de redirecionamento](docs/references-legacy.md): caminhos antigos -> novos.
 
 ## Contribuicao
 

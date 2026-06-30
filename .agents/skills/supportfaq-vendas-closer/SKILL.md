@@ -108,7 +108,7 @@ python -m app.evals.run_domain_eval vendas --file evals/confinement/redefinition
 python -m app.evals.run_domain_eval vendas --file evals/confinement/secrets.yaml
 ```
 
-Eval design rules (mirror `docs/domain-evals.md`):
+Eval design rules (mirror `docs/architecture/domain-evals.md`):
 - Keep cases deterministic; do not depend on a real provider or private keys.
 - Cover the whole funnel: rapport, discovery, recommendation, objection, close.
 - Always include commercial-sensitive cases (card, contract, refund) that must

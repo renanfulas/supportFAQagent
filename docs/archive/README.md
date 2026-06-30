@@ -17,8 +17,8 @@ sem confirmar seu substituto ativo.
 
 | Documento arquivado | Motivo | Fonte atual |
 | --- | --- | --- |
-| [Chat web V0](implementation-plans/web-chat-v0-implementation-plan.md) | V0 incorporada ao produto | [`docs/web-chat-evolution-plan.md`](../web-chat-evolution-plan.md) |
-| [Retrieval vetorial](implementation-plans/vector-retrieval-quality-plan.md) | adapter e gate incorporados ao MVP | [`docs/technical-implementation-plan.md`](../technical-implementation-plan.md) |
+| [Chat web V0](implementation-plans/web-chat-v0-implementation-plan.md) | V0 incorporada ao produto | [`docs/quality-plans/web-chat-evolution-plan.md`](../quality-plans/web-chat-evolution-plan.md) |
+| [Retrieval vetorial](implementation-plans/vector-retrieval-quality-plan.md) | adapter e gate incorporados ao MVP | [`docs/MVP/technical-implementation-plan.md`](../MVP/technical-implementation-plan.md) |
 | [Chat web V1B (ponte OTP n8n/Evolution)](implementation-plans/web-chat-v1b-postgres-n8n-plan.md) | `n8n` removido do projeto; ponte superseded por Meta WhatsApp nativo | [`docs/quality-plans/meta-whatsapp-native-integration-plan.md`](../quality-plans/meta-whatsapp-native-integration-plan.md) |
 
 ## Runbooks De Tecnologia Removida
@@ -26,7 +26,7 @@ sem confirmar seu substituto ativo.
 | Documento arquivado | Motivo | Fonte atual |
 | --- | --- | --- |
 | [Subir n8n em Docker na VPS](runbooks/n8n-vps-docker-deploy.md) | `n8n` removido; assets `deploy/n8n/` excluidos do repo | [`docs/quality-plans/meta-whatsapp-native-integration-plan.md`](../quality-plans/meta-whatsapp-native-integration-plan.md) |
-| [Contrato n8n/WhatsApp para `/chat`](runbooks/n8n-whatsapp-chat-contract.md) | `n8n` removido; contrato `/chat` vive na fonte atual | [`docs/integration-contracts.md`](../integration-contracts.md) |
+| [Contrato n8n/WhatsApp para `/chat`](runbooks/n8n-whatsapp-chat-contract.md) | `n8n` removido; contrato `/chat` vive na fonte atual | [`docs/architecture/integration-contracts.md`](../architecture/integration-contracts.md) |
 | [Workflows n8n versionados](runbooks/n8n-versioned-workflows.md) | `n8n` removido; templates `deploy/n8n/workflows/` excluidos | [`docs/quality-plans/meta-whatsapp-native-integration-plan.md`](../quality-plans/meta-whatsapp-native-integration-plan.md) |
 
 ## Relatorios Historicos

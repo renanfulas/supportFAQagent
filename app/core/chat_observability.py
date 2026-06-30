@@ -6,7 +6,7 @@ regardless of transport (web, API, Meta WhatsApp, Hermes WhatsApp, zoom).
 
 The web and API routes assemble these fields inline; this helper exists so the
 transports outside ``app/api/routes`` do not drift from the documented field set
-in ``docs/observability.md`` or leak raw PII/session ids. Privacy rules: the
+in ``docs/architecture/observability.md`` or leak raw PII/session ids. Privacy rules: the
 external session identifier is only ever logged as ``session_id_hash``.
 """
 

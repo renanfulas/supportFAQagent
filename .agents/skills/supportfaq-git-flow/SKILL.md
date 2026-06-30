@@ -156,3 +156,30 @@ Include:
 - validation commands that passed
 
 If tests were not run, say exactly why.
+
+## Atualizar o estado dos planos (antes de finalizar)
+
+Ao terminar uma fase ou frente, **antes do commit/PR**, atualize a documentação
+de estado para o time nunca se perder:
+
+1. Plano da frente em `docs/quality-plans/<frente>.md`: marque o que foi
+   entregue e o que ainda falta. Plano totalmente encerrado vai para
+   `docs/archive/`.
+2. `docs/project-map.md`: ajuste o status da frente (✅ feito / 🟡 em andamento
+   / ⬜ falta) e a nota da linha correspondente.
+3. `docs/documentation-status.md`: só quando mudar status, ownership, contrato
+   HTTP, migration ou operação.
+
+Registre de forma concreta o que mudou. Exemplo:
+
+> Frente handoff: Fase 2 concluída. Implementado: ticket no support inbox
+> (`ENABLE_SUPPORT_INBOX`) e notificação WhatsApp ao time. Falta: enriquecimento
+> de push (Fase B) reusando `build_case_context`.
+
+Assim, quando a próxima frente começar, o agente já fica situado: lê o
+`project-map.md`, vai ao plano da frente e sabe exatamente onde parou.
+
+Regra de pastas: documento novo entra na pasta certa da taxonomia (ver
+`docs/project-map.md` e `docs/navigation.md`); não deixe docs soltos na raiz. A
+guarda `tests/test_docs_links.py` falha se um link de doc quebrar — rode-a
+quando mover ou renomear documentos.

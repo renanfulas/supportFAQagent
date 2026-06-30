@@ -1,7 +1,7 @@
 # Configuracao da VPS - supportFAQagent
 
 Guia de instalacao e configuracao do ambiente de staging na nova VPS.
-Baseado em `docs/environments.md`, `docs/runbooks/vps-controlled-runtime.md`,
+Baseado em `docs/setup/environments.md`, `docs/runbooks/vps-controlled-runtime.md`,
 `docs/runbooks/hostgator-staging-web-chat-v0.md` e
 `docs/security/vps-security-plan.md`.
 
@@ -332,11 +332,11 @@ Parar e registrar bloqueio privado se ocorrer:
 
 ## Referencias
 
-- [Mapa oficial de ambientes](../environments.md)
-- [Runbook de runtime controlado](vps-controlled-runtime.md)
-- [Smoke HTTP automatizado](staging-http-smoke.md)
-- [Web chat V0 HostGator staging](hostgator-staging-web-chat-v0.md)
+- [Mapa oficial de ambientes](environments.md)
+- [Runbook de runtime controlado](../runbooks/vps-controlled-runtime.md)
+- [Smoke HTTP automatizado](../runbooks/staging-http-smoke.md)
+- [Web chat V0 HostGator staging](../runbooks/hostgator-staging-web-chat-v0.md)
 - [Plano de seguranca da VPS](../security/vps-security-plan.md)
 - [Relatorio historico de validacao anterior](../archive/historical-reports/staging-runtime-validation-report.md)
 - [Plano V1B WhatsApp OTP (arquivado)](../archive/implementation-plans/web-chat-v1b-postgres-n8n-plan.md)
-- [Checklist de promocao da Fase 0](phase0-staging-promotion-evidence.md)
+- [Checklist de promocao da Fase 0](../runbooks/phase0-staging-promotion-evidence.md)

@@ -46,7 +46,7 @@ rastreavel e honesto sobre limites do MVP.
 - `app/evals/`: calibragem local por dominio com casos reais.
 - `domains/`: configuracao e conhecimento por setor.
 
-Antes de adicionar artigos ou FAQs, leia `docs/knowledge-authoring.md`.
+Antes de adicionar artigos ou FAQs, leia `docs/architecture/knowledge-authoring.md`.
 
 Se estiver usando um agente de IA para ajudar no projeto, leia `docs/agent-skills.md` e use as instrucoes em `.agents/skills/`.
 

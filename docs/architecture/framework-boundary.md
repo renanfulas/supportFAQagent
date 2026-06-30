@@ -7,10 +7,10 @@ plugin), cataloga os **seams** (pontos de extensão de infraestrutura) e fixa as
 **regras** que mantêm isso framework-able conforme cresce.
 
 Complementa — não substitui:
-- [`docs/domain-contract.md`](domain-contract.md) — o plugin de domínio em detalhe
+- [`docs/architecture/domain-contract.md`](domain-contract.md) — o plugin de domínio em detalhe
   (campos de `domain.yaml`, como criar um domínio).
-- [`docs/architecture.md`](architecture.md) — os módulos e camadas.
-- [`docs/quality-plans/conversation-persistence-tiering-plan.md`](quality-plans/conversation-persistence-tiering-plan.md)
+- [`docs/architecture/architecture.md`](architecture.md) — os módulos e camadas.
+- [`docs/quality-plans/conversation-persistence-tiering-plan.md`](../quality-plans/conversation-persistence-tiering-plan.md)
   — a decisão de persistência (âncora síncrona + cache).
 
 ---

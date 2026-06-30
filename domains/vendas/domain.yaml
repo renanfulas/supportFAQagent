@@ -49,7 +49,7 @@ routing:
   # substantivos-ancora do comercial e dao sinal aos openers de venda; como
   # consequencia, uma frase tecnica que cite "hospedagem"/"vps" sem termo de
   # compra empata e cai no menu (fallback seguro). Ver
-  # docs/domain-architecture-roadmap.md. Mudanca proposta para revisao do
+  # docs/architecture/domain-architecture-roadmap.md. Mudanca proposta para revisao do
   # Comercial; coberta por eval de regressao em tests/test_domain_router.py.
   keywords:
     - vps

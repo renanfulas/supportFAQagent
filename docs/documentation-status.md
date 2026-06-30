@@ -5,13 +5,15 @@
 Use estes documentos para tomar decisoes atuais:
 
 - `README.md`: status publico resumido;
-- `docs/mvp-plan.md`: escopo e fase atual;
-- `docs/technical-implementation-plan.md`: estado tecnico e ownership;
+- `docs/project-map.md`: estado de cada frente (feito, em andamento, falta) e
+  mapa das pastas de documentacao;
+- `docs/MVP/mvp-plan.md`: escopo e fase atual;
+- `docs/MVP/technical-implementation-plan.md`: estado tecnico e ownership;
 - `docs/quality-plans/phase0-operational-risk-reduction.md`: gates da Fase 0;
 - `docs/runbooks/phase0-staging-promotion-evidence.md`: evidencia obrigatoria
   para promocao;
-- `docs/environments.md`: fronteiras entre local, staging e producao;
-- `docs/integration-contracts.md`: contratos HTTP e de integracao;
+- `docs/setup/environments.md`: fronteiras entre local, staging e producao;
+- `docs/architecture/integration-contracts.md`: contratos HTTP e de integracao;
 - `docs/navigation.md`: mapa atual do repositorio.
 - `docs/archive/README.md`: indice de planos concluidos e documentos
   historicos, com seus substitutos ativos.

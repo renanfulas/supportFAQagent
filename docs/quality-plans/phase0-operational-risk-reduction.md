@@ -118,7 +118,7 @@ por feedback ainda retido nunca e apagada.
 O saneamento offline desses casos esta registrado em
 `docs/quality-plans/pgvector-gate-backlog-2026-06-11.md`.
 As evidencias e bloqueios do host local estao registrados em
-`docs/runbooks/local-phase0-validation-report-2026-06-12.md`.
+`docs/archive/historical-reports/local-phase0-validation-report-2026-06-12.md`.
 
 Enquanto essas evidencias nao existirem, a Fase 0 esta implementada no
 repositorio, mas nao validada operacionalmente.

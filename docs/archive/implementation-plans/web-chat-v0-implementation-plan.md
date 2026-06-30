@@ -12,7 +12,7 @@ curto foram adicionados posteriormente por feature flag.
 
 Documento pai:
 
-- [Plano De Evolucao Do Chat Web](../../web-chat-evolution-plan.md)
+- [Plano De Evolucao Do Chat Web](../../quality-plans/web-chat-evolution-plan.md)
 
 ## Decisao De Escopo
 

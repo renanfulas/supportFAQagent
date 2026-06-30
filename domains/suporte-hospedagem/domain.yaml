@@ -9,7 +9,7 @@ default_language: pt-BR
 # HostGator). Usa provider openai como os dominios vivos: no caminho de eval
 # deterministico (sem chave) o provider_error garante escalonamento; com a chave
 # real configurada, o dominio responde usando os artigos. Ainda fora do roteador
-# (entra na Fase 2, ver docs/domain-architecture-roadmap.md).
+# (entra na Fase 2, ver docs/architecture/domain-architecture-roadmap.md).
 # Escopo: operacao TECNICA de hospedagem compartilhada ("como faco / esta
 # quebrado / como configuro"). NAO cobre VPS/Servidor Dedicado (dominios
 # suporte-vps e suporte-vps-whatsapp), contratacao/preco (vendas) nem
@@ -19,7 +19,7 @@ default_language: pt-BR
 # site) hoje tambem estao em domains/vendas/domain.yaml. Este dominio NAO entra
 # no roteador na Fase 0. Antes de adiciona-lo a WHATSAPP_ROUTER_DOMAINS (Fase 2),
 # e preciso podar as genericas em vendas e criar eval de regressao de
-# roteamento. Ver docs/domain-architecture-roadmap.md.
+# roteamento. Ver docs/architecture/domain-architecture-roadmap.md.
 
 behavior:
   persona: agente de suporte tecnico de hospedagem de sites, claro e direto
@@ -49,7 +49,7 @@ routing:
   # Keywords TECNICAS distintivas de hospedagem. Evitam o termo generico
   # "hospedagem" sozinho (que continua em vendas para intencao de compra); aqui o
   # sinal e o problema tecnico (cpanel, webmail, htaccess, wordpress, erro 500).
-  # Ver docs/domain-architecture-roadmap.md e o eval de regressao em
+  # Ver docs/architecture/domain-architecture-roadmap.md e o eval de regressao em
   # tests/test_domain_router.py.
   keywords:
     - cpanel

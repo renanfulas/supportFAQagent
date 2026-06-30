@@ -2,7 +2,7 @@
 
 Documento que explica, com numeros reais e reproduziveis, por que o bot responde
 rapido e custa pouco por request, e quanto isso muda ao subir para `pgvector`.
-Complementa `docs/observability.md` (campos `total_ms`, `retrieval_ms`, `llm_ms`
+Complementa `docs/architecture/observability.md` (campos `total_ms`, `retrieval_ms`, `llm_ms`
 emitidos em cada resposta) e `docs/runbooks/pgvector-promotion-checklist.md`.
 
 Posicionamento: alinhado a `docs/product-positioning.md` — comercial-tecnico e
@@ -109,12 +109,12 @@ torna-lo obsoleto faltam:
 
 1. **pgvector disponivel em local/CI/testes** sem exigir `DATABASE_URL` + chave de
    embeddings de cada dev. Hoje os testes dependem do determinismo lexical; sem um
-   pgvector local (ver `docs/runbooks/local-wsl1-pgvector-phase0.md`) ou um fake
+   pgvector local (ver `docs/setup/local-wsl1-pgvector-phase0.md`) ou um fake
    backend, remover o lexical quebra a suite.
 2. **Todos os dominios roteados ingeridos no pgvector** com gate verde
    (`>=74/78`). Feito para `suporte-vps-whatsapp` e `vendas`; `suporte-hospedagem`
    e `suporte-vps` ainda na Fase 3 (ingestao pgvector pendente — ver
-   `docs/domain-architecture-roadmap.md`).
+   `docs/architecture/domain-architecture-roadmap.md`).
 3. **Custo/segredo de embeddings em CI** resolvido (CI hoje evita chave de
    propósito) ou substituido por um fake de embeddings deterministico.
 4. **Plano de rollback alternativo.** Hoje o rollback E voltar para `lexical`;
