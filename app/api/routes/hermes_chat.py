@@ -114,6 +114,9 @@ async def receive_chat_webhook(request: Request) -> dict[str, str]:
         session_store=getattr(request.app.state, "session_domain_store", None),
         state_store=getattr(request.app.state, "session_state_store", None),
         last_out_store=getattr(request.app.state, "session_last_out_store", None),
+        chat_session_state_store=getattr(
+            request.app.state, "chat_session_state_store", None
+        ),
     )
     try:
         for message in messages:

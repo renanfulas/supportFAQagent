@@ -531,3 +531,44 @@ def test_chat_webhook_rejects_too_many_messages(monkeypatch: pytest.MonkeyPatch)
     )
     assert resp.status_code == 400
     get_settings.cache_clear()
+
+
+def _postgres_settings(recall: str) -> Settings:
+    return Settings(
+        _env_file=None,
+        APP_ENV="development",
+        PERSISTENCE_BACKEND="postgres",
+        DATABASE_URL="postgresql://u:p@localhost/db",
+        PERSISTENCE_HASH_SECRET="s",
+        ENABLE_SUMMARY_RECALL=recall,
+        ENABLE_WHATSAPP_DOMAIN_ROUTER="true",
+        WHATSAPP_ROUTER_DOMAINS="suporte-vps-whatsapp,vendas",
+    )
+
+
+def _wiring_transport(settings: Settings, *, chat_state):
+    return HermesChatTransport(
+        settings=settings,
+        database_runtime=object(),
+        client=_FakeClient(),
+        domain_loader=_FakeDomainLoader(),
+        repository=_FakeRepository(),
+        router=DomainRouter(domains=(SUPPORT, VENDAS), default_domain="suporte-vps-whatsapp"),
+        chat_session_state_store=chat_state,
+    )
+
+
+def test_transport_wires_recall_and_state_when_postgres_and_flag_on() -> None:
+    from app.conversations.session_state import InMemorySessionStateStore
+
+    state = InMemorySessionStateStore()
+    transport = _wiring_transport(_postgres_settings("true"), chat_state=state)
+    assert transport.chat_service.session_state_store is state
+    assert transport.chat_service.summary_recall is not None
+
+
+def test_transport_no_recall_when_flag_off() -> None:
+    from app.conversations.session_state import InMemorySessionStateStore
+
+    transport = _wiring_transport(_postgres_settings("false"), chat_state=InMemorySessionStateStore())
+    assert transport.chat_service.summary_recall is None

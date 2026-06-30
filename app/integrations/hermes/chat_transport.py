@@ -32,6 +32,8 @@ from app.orchestration.channel_routing import (
     build_domain_router,
     resolve_sticky_domain,
 )
+from app.conversations.session_state import SessionStateStore
+from app.conversations.summary import SummaryRecallService
 from app.orchestration.chat_flow import ChatFlowService
 from app.orchestration.domain_router import DomainRouter
 from app.orchestration.session_domain_store import (
@@ -103,6 +105,7 @@ class HermesChatTransport:
         session_store: SessionDomainStore | None = None,
         state_store: SessionDomainStore | None = None,
         last_out_store: SessionDomainStore | None = None,
+        chat_session_state_store: SessionStateStore | None = None,
         rate_limiter: InMemoryRateLimiter | None = None,
     ) -> None:
         self.settings = settings
@@ -120,6 +123,17 @@ class HermesChatTransport:
         self.domain_loader = domain_loader or DomainLoader(settings.domains_path)
         self.chat_service = chat_service or ChatFlowService(
             history_service=ConversationHistoryService(database_runtime),
+            session_state_store=(
+                chat_session_state_store
+                if settings.persistence_backend == "postgres"
+                else None
+            ),
+            summary_recall=(
+                SummaryRecallService(database_runtime)
+                if settings.persistence_backend == "postgres"
+                and settings.enable_summary_recall
+                else None
+            ),
         )
         self.repository = repository or OperationalRepository(database_runtime)
         self.router = (
