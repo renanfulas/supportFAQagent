@@ -144,6 +144,18 @@ def build_session_state_store_from_env() -> SessionStateStore:
 
 ## Fase 2 — `RedisSessionStateStore` (operacional, 7d via AOF)
 
+Status: **implementada (2026-06-29)**, dark por `SESSION_STATE_BACKEND=memory`.
+`app/conversations/session_state_redis.py` (`RedisSessionStateStore`, client
+injetável, `from_env` lê `SESSION_STATE_REDIS_URL`, key `sess:{domain}:{channel}:{hash}`,
+`SET ... EX ttl`, JSON de `SessionState`, **fail-open** em get/put/clear);
+`build_session_state_store_from_env` roteia `redis`; config valida que
+`backend=redis` exige a URL (fail-fast); extra `redis` no `pyproject.toml`; runbook
+`docs/runbooks/redis-session-state.md`. Testes com fake client (roundtrip+TTL,
+isolamento, clear, ttl=0 sem EX, fail-open). **Pendente:** instalar/operar o Redis na
+VPS (runbook) para ligar a flag; o ping de readiness ao Redis ficou deferido
+(não-fatal). Lembrar: nada lê o estado ainda (o consumidor/reader é fatia futura) —
+isto torna a escrita durável, pronta para o reader.
+
 ### Arquivos
 - **Novo** `app/conversations/session_state_redis.py`:
   - `RedisSessionStateStore` satisfaz `SessionStateStore`.

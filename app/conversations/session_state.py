@@ -114,7 +114,7 @@ def build_session_state_store_from_env(
         raise ValueError(f"unsupported session state backend: {backend}")
     if backend == "memory":
         return InMemorySessionStateStore()
-    # backend == "redis": RedisSessionStateStore is the next slice (Nível 1).
-    raise NotImplementedError(
-        "SESSION_STATE_BACKEND=redis requires RedisSessionStateStore (Nível 1, not yet implemented)"
-    )
+    # backend == "redis" (Nível 1): durable hot tier, fail-open.
+    from app.conversations.session_state_redis import RedisSessionStateStore
+
+    return RedisSessionStateStore.from_env(getenv)
