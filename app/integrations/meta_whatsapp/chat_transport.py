@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
 from app.conversations.service import ConversationHistoryService
 from app.conversations.session_state import SessionStateStore
 from app.conversations.summary import SummaryRecallService
+from app.core.chat_observability import log_chat_completed
 from app.core.config import Settings
 from app.core.privacy import hash_sensitive_value
 from app.db.operational import (
@@ -28,6 +30,9 @@ from app.orchestration.session_domain_store import (
     InMemorySessionDomainStore,
     SessionDomainStore,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class MetaWhatsAppChatTransportError(RuntimeError):
@@ -156,6 +161,17 @@ class MetaWhatsAppChatTransport:
                     domain, list(response["handoff_reasons"])
                 ),
             )
+        )
+        log_chat_completed(
+            logger,
+            request_id=request_id,
+            session_id=session_id,
+            channel="whatsapp",
+            response=response,
+            handoff_status=persistence.handoff_status,
+            persistence_status=persistence.persistence_status,
+            request_id_reused=persistence.request_id_reused,
+            settings=self.settings,
         )
         answer = str(response["answer"])
         if persistence.handoff_status == HANDOFF_UNAVAILABLE:

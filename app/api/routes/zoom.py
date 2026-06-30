@@ -6,6 +6,7 @@ import requests
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
+from app.core.chat_observability import log_chat_completed
 from app.core.config import get_settings
 from app.core.logging import log_event
 from app.core.privacy import hash_sensitive_value
@@ -115,6 +116,17 @@ def process_and_reply(
                     domain, list(response["handoff_reasons"])
                 ),
             )
+        )
+        log_chat_completed(
+            logger,
+            request_id=request_id,
+            session_id=bot_id,
+            channel="zoom",
+            response=response,
+            handoff_status=persistence_result.handoff_status,
+            persistence_status=persistence_result.persistence_status,
+            request_id_reused=persistence_result.request_id_reused,
+            settings=settings,
         )
         answer_text = response.get(
             "answer",
