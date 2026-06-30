@@ -589,3 +589,49 @@ def test_meta_chat_transport_settings_require_send_credentials() -> None:
             ENABLE_META_WHATSAPP_CHAT="true",
             META_WHATSAPP_PHONE_NUMBER_ID="phone-id",
         )
+
+
+def _meta_wiring_transport(recall: str, chat_state):
+    from app.orchestration.domain_router import DomainRouter, RoutableDomain
+
+    settings = Settings(
+        _env_file=None,
+        APP_ENV="development",
+        PERSISTENCE_BACKEND="postgres",
+        DATABASE_URL="postgresql://u:p@localhost/db",
+        PERSISTENCE_HASH_SECRET="s",
+        ENABLE_SUMMARY_RECALL=recall,
+    )
+
+    class _Client:
+        pass
+
+    router = DomainRouter(
+        domains=(RoutableDomain(name="suporte-vps-whatsapp", display_name="S", keywords=("vps",)),),
+        default_domain="suporte-vps-whatsapp",
+    )
+    return MetaWhatsAppChatTransport(
+        settings=settings,
+        database_runtime=object(),
+        client=_Client(),
+        domain_loader=object(),
+        repository=object(),
+        router=router,
+        chat_session_state_store=chat_state,
+    )
+
+
+def test_meta_transport_wires_recall_and_state_when_flag_on() -> None:
+    from app.conversations.session_state import InMemorySessionStateStore
+
+    state = InMemorySessionStateStore()
+    transport = _meta_wiring_transport("true", state)
+    assert transport.chat_service.session_state_store is state
+    assert transport.chat_service.summary_recall is not None
+
+
+def test_meta_transport_no_recall_when_flag_off() -> None:
+    from app.conversations.session_state import InMemorySessionStateStore
+
+    transport = _meta_wiring_transport("false", InMemorySessionStateStore())
+    assert transport.chat_service.summary_recall is None
