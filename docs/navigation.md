@@ -29,6 +29,7 @@ mental minimo:
 | API ou contrato externo | `docs/integration-contracts.md` | `app/api/`, `tests/` |
 | Fluxo de resposta, LLM ou handoff | `docs/domain-contract.md`, `docs/technical-implementation-plan.md` | `app/orchestration/`, `app/llm/`, `app/handoff/` |
 | Artigos, FAQs ou calibragem | `docs/knowledge-authoring.md`, `docs/domain-evals.md` | `domains/`, `app/evals/` |
+| Fronteira core vs dominio, seams, extensao (framework) | `docs/framework-boundary.md`, `docs/domain-contract.md`, `docs/architecture.md` | `app/`, `domains/` |
 | Banco, migrations ou pgvector | `docs/technical-implementation-plan.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `migrations/`, `app/retrieval/` |
 | Staging, VPS, Meta WhatsApp, Hermes ou operacao | `docs/environments.md`, `docs/integration-contracts.md`, runbook especifico em `docs/runbooks/` | `scripts/`, configuracao de runtime |
 | Seguranca ou observabilidade | `SECURITY.md`, `docs/observability.md` | `app/core/`, `app/api/`, `tests/security/` |
