@@ -63,6 +63,14 @@ class Settings(BaseSettings):
         default=False,
         alias="ENABLE_SUMMARY_RECALL",
     )
+    enable_support_team_whatsapp_notify: bool = Field(
+        default=False,
+        alias="ENABLE_SUPPORT_TEAM_WHATSAPP_NOTIFY",
+    )
+    support_team_whatsapp_recipients: str = Field(
+        default="",
+        alias="SUPPORT_TEAM_WHATSAPP_RECIPIENTS",
+    )
     verified_handoff_webhook_url: str | None = Field(
         default=None,
         alias="VERIFIED_HANDOFF_WEBHOOK_URL",
@@ -249,6 +257,15 @@ class Settings(BaseSettings):
             name = item.strip()
             if name:
                 seen.setdefault(name, None)
+        return list(seen)
+
+    @property
+    def support_team_whatsapp_recipient_list(self) -> list[str]:
+        seen: dict[str, None] = {}
+        for item in self.support_team_whatsapp_recipients.split(","):
+            recipient = item.strip()
+            if recipient:
+                seen.setdefault(recipient, None)
         return list(seen)
 
     @model_validator(mode="after")

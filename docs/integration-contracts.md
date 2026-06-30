@@ -321,6 +321,25 @@ Contrato atual de `support_cases`:
   `payload_sanitized`;
 - outbox continua sendo fila de entrega, nao banco de ticket.
 
+Notificacao WhatsApp para o time (Sprint 5):
+
+- dark por padrao: so dispara com `ENABLE_SUPPORT_TEAM_WHATSAPP_NOTIFY=true` e
+  `SUPPORT_TEAM_WHATSAPP_RECIPIENTS` preenchido (lista separada por virgula de
+  numeros internos verificados);
+- na mesma transacao que cria o `support_case`, o handoff enfileira um evento
+  `whatsapp.message.requested` por destinatario interno, alem do
+  `handoff.requested`;
+- a renderizacao do alerta e best-effort: se falhar, o ticket e o
+  `handoff.requested` continuam gravados (a notificacao nunca derruba o caso);
+- idempotencia por turno + destinatario (`support_notify:<turn_id>:<hash>`), entao
+  retry do mesmo turno nao duplica alerta;
+- o texto do alerta usa apenas campos ja sanitizados (caso, dominio, motivos,
+  resumo, referencias); o numero `to` do destinatario interno e gravado verbatim
+  para a entrega e por isso nao passa por `sanitize_payload`;
+- a entrega real usa a rota `whatsapp_message` ja existente; defina
+  `OUTBOX_WHATSAPP_MESSAGE_DELIVERY_TRANSPORT=meta_whatsapp` para enviar e
+  `disabled` para manter os eventos apenas auditaveis sem enviar.
+
 Contrato de persistencia de resposta:
 
 - `request_id`: identificador tecnico da resposta, obrigatorio para correlacao
