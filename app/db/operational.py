@@ -23,6 +23,7 @@ from app.core.persistence_sanitize import (
 from app.db.runtime import DatabaseRuntime
 from app.conversations.repository import ConversationRepository
 from app.conversations.service import hash_session
+from app.notifications.support_team import render_support_team_notifications
 from app.support.transcript import build_support_snapshot_context
 
 
@@ -258,6 +259,16 @@ class OperationalRepository:
                             if outbox_row is not None and outbox_row[0] != "dead_letter"
                             else HANDOFF_UNAVAILABLE
                         )
+                        self._enqueue_support_team_notifications(
+                            cursor=cursor,
+                            turn_id=str(persisted_turn_id),
+                            support_case_id=support_case_id,
+                            request_id=safe_request_id,
+                            domain=audit.domain,
+                            handoff_reasons=handoff_reasons,
+                            summary=question[:500],
+                            references=references,
+                        )
             return ChatPersistenceResult(
                 handoff_status=handoff_status,
                 persistence_status=PERSISTENCE_PERSISTED,
@@ -402,6 +413,80 @@ class OperationalRepository:
             ),
         )
         return str(cursor.fetchone()[0]), context_snapshot.get("organized_context")
+
+    def _enqueue_support_team_notifications(
+        self,
+        *,
+        cursor,
+        turn_id: str,
+        support_case_id: str,
+        request_id: str,
+        domain: str,
+        handoff_reasons: list[str],
+        summary: str,
+        references: list[str],
+    ) -> None:
+        """Fan a handoff out to internal WhatsApp recipients, one event each.
+
+        Dark by default: only runs when ``ENABLE_SUPPORT_TEAM_WHATSAPP_NOTIFY`` is
+        on and recipients are configured. Each ``whatsapp.message.requested`` event
+        is idempotent per turn + recipient, so a retried turn never double-alerts.
+
+        Rendering is best-effort so the durable ticket and its ``handoff.requested``
+        event never depend on it. The recipient ``to`` is written verbatim (not via
+        ``sanitize_payload``, which would redact the phone number) so the dispatcher
+        can deliver it; ``text`` is built from already-sanitized snapshot fields.
+        """
+
+        settings = self.runtime.settings
+        if not getattr(settings, "enable_support_team_whatsapp_notify", False):
+            return
+        recipients = list(
+            getattr(settings, "support_team_whatsapp_recipient_list", []) or []
+        )
+        if not recipients:
+            return
+        try:
+            notifications = render_support_team_notifications(
+                turn_id=turn_id,
+                support_case_id=support_case_id,
+                domain=domain,
+                handoff_reasons=handoff_reasons,
+                summary=summary,
+                references=references,
+                recipients=recipients,
+            )
+        except Exception as exc:  # noqa: BLE001 - degrade, never drop the ticket
+            log_event(
+                logger,
+                "support_team_notify_render_unavailable",
+                request_id=request_id,
+                error_type=type(exc).__name__,
+            )
+            return
+        for notification in notifications:
+            cursor.execute(
+                """
+                INSERT INTO operational_outbox (
+                  event_type, idempotency_key, request_id, payload_sanitized
+                )
+                VALUES ('whatsapp.message.requested', %s, %s, %s::jsonb)
+                ON CONFLICT (idempotency_key)
+                DO UPDATE SET idempotency_key = EXCLUDED.idempotency_key
+                """,
+                (
+                    notification.idempotency_key,
+                    request_id,
+                    json.dumps(
+                        {
+                            "to": notification.to,
+                            "text": notification.text,
+                            "support_case_id": support_case_id,
+                            "request_id": request_id,
+                        }
+                    ),
+                ),
+            )
 
     def record_feedback(self, feedback: FeedbackRequest) -> FeedbackResponse:
         if not self.runtime.persistence_enabled:

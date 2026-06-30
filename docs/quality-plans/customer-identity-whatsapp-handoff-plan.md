@@ -454,9 +454,9 @@ Criterio de pronto:
 
 Status:
 
-- implementado localmente em `migrations/009_customer_identity_support_cases.sql`
+- implementado em `migrations/009_customer_identity_support_cases.sql`
   e `app/db/schema_contract.py`.
-- pendente validar em PostgreSQL descartavel com `PHASE0_TEST_DATABASE_URL`.
+- validado em PostgreSQL descartavel (suite opt-in 31/31, 2026-06-29).
 
 Objetivo:
 
@@ -526,7 +526,7 @@ Status:
 - historico anonimo nao le conversa ligada a cliente autenticado.
 - troca de identidade na mesma sessao arquiva a conversa para a sessao, mas
   preserva o historico do cliente.
-- pendente validar em PostgreSQL descartavel com `PHASE0_TEST_DATABASE_URL`.
+- validado em PostgreSQL descartavel (suite opt-in 31/31, 2026-06-29).
 
 Objetivo:
 
@@ -562,7 +562,7 @@ Status:
 - `support_cases` e criado ou reutilizado antes da outbox.
 - `handoff.requested` passa a carregar `support_case_id`.
 - retry do mesmo turno usa idempotencia do caso e da outbox.
-- pendente validar em PostgreSQL descartavel com `PHASE0_TEST_DATABASE_URL`.
+- validado em PostgreSQL descartavel (suite opt-in 31/31, 2026-06-29).
 
 Objetivo:
 
@@ -590,23 +590,28 @@ Criterio de pronto:
 
 ### Sprint 5 - Notificacao WhatsApp Para O Time
 
+Status:
+
+- implementado. Renderer puro `app/notifications/support_team.py`; o write path
+  (`app/db/operational.py`) enfileira um `whatsapp.message.requested` por
+  destinatario na mesma transacao do `support_case`, atras das flags
+  `ENABLE_SUPPORT_TEAM_WHATSAPP_NOTIFY` (default off) e
+  `SUPPORT_TEAM_WHATSAPP_RECIPIENTS`. Entrega reaproveita a rota
+  `whatsapp_message` ja existente (sem mudar o dispatcher).
+- testes em `tests/test_support_team_notifications.py` (renderer + write path).
+- runbook em `docs/runbooks/support-team-whatsapp-notify-smoke.md`.
+- pendente: smoke privado de envio real (depende dos secrets/runtime Meta da
+  outra frente).
+
 Objetivo:
 
 - Avisar a equipe com contexto suficiente e sem vazar dados indevidos.
-
-Arquivos provaveis:
-
-- `scripts/dispatch_outbox.py`
-- novo renderer de notificacao em `app/notifications/`
-- `app/core/config.py`
-- testes do dispatcher/outbox
-- `docs/runbooks/`
 
 Entregas:
 
 - renderer `support_case -> whatsapp.message.requested`.
 - um evento por destinatario interno.
-- idempotencia por caso e destinatario.
+- idempotencia por caso e destinatario (`support_notify:<turn_id>:<hash>`).
 - feature flag/transport disabled por padrao.
 - runbook de smoke privado.
 

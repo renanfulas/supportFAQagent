@@ -61,6 +61,9 @@ Eventos atuais:
 - `meta_whatsapp_webhook_received`: webhook Meta aceito, registrando apenas contagem
   de mensagens e status.
 - `outbox_dead_letter`: evento externo esgotou tentativas ou recebeu rejeicao definitiva.
+- `support_team_notify_render_unavailable`: falha sanitizada ao montar o alerta
+  WhatsApp do time no handoff; o ticket e o `handoff.requested` continuam
+  gravados, apenas a notificacao do turno e omitida.
 
 Eventos e sinais importantes para a trilha de seguranca:
 
