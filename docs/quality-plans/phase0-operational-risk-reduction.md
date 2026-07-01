@@ -115,6 +115,13 @@ por feedback ainda retido nunca e apagada.
   reconciliacao manual por causa da semantica at-least-once. Este item nao
   bloqueia a Fase 0 enquanto nao houver consumidor externo ativo.
 
+Para o restore cronometrado, o passo a passo turnkey no host restaurado e o
+agregador de evidencia (RTO/RPO com metas `<= 4h` / `<= 24h`) estao na secao
+"Run-Sheet Do Host Restaurado" de `docs/runbooks/phase0-snapshot-restore.md`,
+apoiados pelo helper somente leitura `scripts/phase0_restore_validate.py`. Isso
+prepara a execucao do Juliano; a decisao so vira `approved` depois do restore
+real medido em ambiente isolado.
+
 O saneamento offline desses casos esta registrado em
 `docs/quality-plans/pgvector-gate-backlog-2026-06-11.md`.
 As evidencias e bloqueios do host local estao registrados em
