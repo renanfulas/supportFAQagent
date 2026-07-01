@@ -216,6 +216,32 @@ def test_list_cases_maps_rows_and_summary() -> None:
     assert cases[0].reason_codes == ["low_confidence"]
 
 
+def test_list_cases_excludes_pending_consent_without_explicit_filter() -> None:
+    # Sprint 4b: a support_case awaiting LGPD consent must never surface to the
+    # team's default (unfiltered) inbox view -- only an explicit status filter
+    # (e.g. for debugging) should be able to see it.
+    cursor = FakeCursor(fetchone_results=[], fetchall_results=[[]])
+    repository = SupportCaseRepository(FakeRuntime(cursor))
+
+    repository.list_cases(domain=None, status=None, limit=25, offset=0)
+
+    sql, params = cursor.executed[0]
+    assert "pending_consent" in sql
+    assert "!=" in sql
+    assert params[2] is None  # status param still None: filter is unfiltered by design
+
+
+def test_list_cases_still_allows_explicit_pending_consent_filter() -> None:
+    cursor = FakeCursor(fetchone_results=[], fetchall_results=[[]])
+    repository = SupportCaseRepository(FakeRuntime(cursor))
+
+    repository.list_cases(domain=None, status="pending_consent", limit=25, offset=0)
+
+    _, params = cursor.executed[0]
+    assert params[2] == "pending_consent"
+    assert params[3] == "pending_consent"
+
+
 def test_get_case_with_context_follows_conversation() -> None:
     case_row = (
         "case-1",

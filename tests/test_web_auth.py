@@ -56,6 +56,10 @@ def test_start_returns_pending_challenge_and_sets_http_only_cookie(
     assert response.json()["status"] == "pending"
     assert response.json()["expires_in_seconds"] == 300
     assert response.json()["retry_after_seconds"] == 60
+    # Sprint 4b: lets the widget show a client-side "still there?" nudge without
+    # a server-side reminder job (the raw phone is never persisted long enough
+    # for one to know who to re-contact).
+    assert response.json()["abandonment_reminder_seconds"] == 15 * 60
     assert "HttpOnly" in response.headers["set-cookie"]
     delivery = enabled_client.app.state.web_auth_runtime.delivery.requests[-1]
     assert delivery.phone == PHONE
