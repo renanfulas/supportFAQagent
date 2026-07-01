@@ -1,6 +1,11 @@
 # Persistência de conversa em camadas (RAM → Redis → sink off-box → Postgres noturno)
 
-Status: **decisão de arquitetura registrada; execução em fatias, default desligado.**
+Status (2026-07-01): **Fases 0–4 implementadas; Fases 2–4 confirmadas vivas em
+produção na VPS** (Redis instalado e `SESSION_STATE_BACKEND=redis`; batch noturno
+rodando desde 2026-06-29 com 39 resumos gravados sem erro; `ENABLE_SUMMARY_RECALL=true`
+agora também no canal Hermes/WhatsApp após deploy dos commits que faltavam). Falta
+só a Fase 0 (sink off-box), bloqueada por credenciais R2. Ver detalhamento por fase
+em `conversation-persistence-tiering-tech-plan.md`.
 Origem: conversa com Silotto (TekZoom HG) indicando **milhares de pedidos de
 suporte por dia**. Dono atual da frente: Renan (persistência e VPS passaram a ser
 nossas — ver `team-ownership-change`).
@@ -305,5 +310,13 @@ backend (in-memory, Redis, S3) trocável por flag, sem mudar chamador nem schema
   incremental para absorver as ideias da B sob gatilho (ver §4, "Decisão fechada").
 - Retenção exata de cada camada (45 min / 7 d são pontos de partida, não lei).
 - Política de `maxmemory`/eviction do Redis que **não** descarte turno não
-  sumarizado.
+  sumarizado. **Confirmado em produção (2026-07-01)**: `maxmemory 256mb`,
+  `maxmemory-policy volatile-ttl`, `appendonly yes`/`appendfsync everysec`.
 - Quais conversas pular na sumarização (triviais/atalho) para conter custo.
+- ~~Achado (2026-07-01): `ENABLE_SUMMARY_RECALL` ligado sem amostragem de
+  qualidade registrada~~ **RESOLVIDO (2026-07-01, retroativo)**: amostragem feita
+  sobre os 39 resumos existentes — 0 achados de PII/PAN (varredura automática +
+  leitura manual de 8 casos), problema/solução batem com a conversa real em 7/8.
+  Limitação documentada: conversas longas/multi-assunto retêm só o último tópico
+  no resumo (ver tech-plan §Fase 4). Recall segue ligado; falta o caso de eval no
+  domínio e a métrica de custo.
