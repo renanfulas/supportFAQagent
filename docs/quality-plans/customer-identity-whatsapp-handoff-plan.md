@@ -35,12 +35,18 @@ Duas coisas ficaram **em aberto** e bloqueiam o design detalhado:
 
 Sem risco de atropelo enquanto isso: `suporte-hospedagem` ainda nao esta no
 roteador (Fase 2 pendente, ver `domains/suporte-hospedagem/domain.yaml`), entao
-nao ha trafego real hoje. Quando o minion estiver pronto e o escopo leitura/escrita
-fechado, o trabalho do lado supportFAQagent e (a) o **contrato** dos dois
-endpoints do minion em `docs/architecture/integration-contracts.md` — nao
-implementar o minion em si, que e frente do Juliano (VPS/externo) — e (b) o hook
-de branching por dominio no `HandoffService`/`ChatFlowService`. Reforcar tambem:
-a autenticacao minion<->agente (string de identificacao unica) e uma camada
+nao ha trafego real hoje.
+
+**Contrato HTTP ja adiantado (2026-07-01), sem esperar o minion existir**: o
+pairing token, `GET /internal/minion/{token}/manifest` e
+`POST /internal/minion/{token}/submit` estao especificados em
+`docs/architecture/integration-contracts.md` ("Minion de diagnostico (dominio
+hospedagem)") — v1 **somente leitura/diagnostico**, escopo de escrita fica como
+extensao futura explicita, marcada como nao-implementada ate o alinhamento
+leitura-vs-escrita com o Juliano. O que ainda falta e apenas: (a) o Juliano
+construir o minion contra esse contrato, e (b) o hook de branching por dominio
+no `HandoffService`/`ChatFlowService` do lado supportFAQagent (ainda nao
+escrito). Reforcar: a autenticacao minion<->agente (pairing token) e uma camada
 separada da autorizacao cliente via OTP — nao confundir as duas.
 
 **Escopo esclarecido (2026-07-01):** o Auth via WhatsApp/OTP neste plano **nao**

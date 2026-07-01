@@ -939,6 +939,137 @@ Regras:
   corpo bruto do provider
 
 
+## Minion de diagnostico (dominio hospedagem)
+
+Status: **contrato planejado, sem implementacao.** Escrito adiantado (2026-07-01)
+para o Juliano construir contra uma interface travada, em vez de o contrato ser
+extraido depois do script pronto. Origem: conversa registrada em
+`docs/quality-plans/customer-identity-whatsapp-handoff-plan.md` ("Extensao futura
+BLOQUEADA"). O minion em si (script bash, depois plugin cPanel/EasyPanel) e frente
+do Juliano (VPS/externo); este contrato HTTP e frente do Renan.
+
+Objetivo:
+
+- permitir que um script/app rodando no servidor do **cliente** (dominio
+  `suporte-hospedagem`) busque arquivos de configuracao ja sanitizados na origem
+  (ex.: Dovecot, Postfix) e entregue ao agente para diagnostico, sem trafegar
+  dado sensivel do cliente pela rede em nenhum momento.
+- v1 e **somente leitura/diagnostico**. Acao de aplicar correcao (escrita no
+  servidor do cliente) fica como extensao futura explicita (ver subsecao),
+  **nao** faz parte deste contrato ainda — pendente de alinhamento entre Renan e
+  Juliano sobre escopo leitura-vs-escrita da v1.
+
+Duas camadas de confianca, nao confundir:
+
+1. **Minion <-> agente** (maquina-a-maquina): o pairing token abaixo. Prova que
+   quem chama e o script rodando no servidor daquele cliente especifico.
+2. **Cliente <-> OTP** (humano): a autorizacao LGPD do Sprint 4b. Autoriza o
+   *contato*/uso da informacao, nao substitui o pairing token.
+
+### Pairing
+
+O `ChatFlowService`, ao decidir (dominio `suporte-hospedagem`, confianca baixa
+ou padrao que sugere problema de configuracao) que vale rodar o minion, gera um
+**pairing token** de uso unico e devolve ao cliente **dentro da propria
+resposta do chat** (nao e um endpoint separado que o navegador chama) — o texto
+inclui o comando para o cliente rodar no servidor:
+
+```
+curl -fsSL https://.../minion.sh | bash -s -- --token=<pairing_token>
+```
+
+Regras do token:
+
+- TTL curto (ex.: 15 min, mesma ordem de grandeza do OTP);
+- uso unico — primeira chamada valida consome; reentrega usa o mesmo `manifest`
+  idempotente, mas o `submit` so aceita uma vez por token;
+- escopado a `(customer_ref, domain, request_id)` — nunca reaproveitavel entre
+  conversas;
+- nunca logado em texto puro (mesmo tratamento de `challenge_id`/segredo ja
+  usado em `app/web_auth/`).
+
+### `GET /internal/minion/{token}/manifest`
+
+Objetivo: o minion pergunta o que o agente precisa.
+
+Saida:
+
+```json
+{
+  "domain": "suporte-hospedagem",
+  "requested": [
+    { "id": "dovecot-main", "hint": "arquivo de configuracao principal do Dovecot" },
+    { "id": "postfix-main", "hint": "arquivo de configuracao principal do Postfix" }
+  ]
+}
+```
+
+Regras:
+
+- `401` (`invalid_or_expired_pairing_token`) para token invalido/expirado/consumido —
+  mesmo padrao de nao revelar detalhe de qual condicao falhou (espelha
+  `invalid_or_expired_code` do OTP);
+- lista de `requested` decidida pelo dominio/handoff, nao pelo minion — o minion
+  nunca escolhe o que enviar, so responde ao que foi pedido;
+- **nao** requer `X-API-Key` (o pairing token e a credencial desta rota, o
+  chamador e externo ao dominio de rede protegido).
+
+### `POST /internal/minion/{token}/submit`
+
+Objetivo: o minion entrega o conteudo ja sanitizado na origem.
+
+Entrada:
+
+```json
+{
+  "files": [
+    { "id": "dovecot-main", "path": "/etc/dovecot/dovecot.conf", "content_sanitized": "..." }
+  ]
+}
+```
+
+Regras:
+
+- consome o token (uso unico) e enfileira o diagnostico — a resposta final vai
+  para o **cliente**, pelo canal de chat normal (WhatsApp/web), nao de volta
+  para o minion; este endpoint so confirma recebimento (`202`);
+- **defesa em profundidade obrigatoria**: mesmo o minion alegando que ja
+  sanitizou na origem, o backend roda `sanitize_payload`/deteccao de
+  segredo/PAN de novo antes de qualquer conteudo ir ao prompt do modelo —
+  mesmo principio ja aplicado no batch de sumarizacao (nunca confiar
+  cegamente no upstream);
+- `path` e metadado (para a resposta poder dizer "esse arquivo fica em
+  ...") e nao deve, sozinho, ser tratado como PII, mas o log operacional
+  registra apenas contagem de arquivos e `id`s, nunca `path`/`content`;
+- limite de tamanho por arquivo e por request (mesmo espirito de
+  `MAX_BODY_BYTES` ja usado no ingress assinado da outbox);
+- token expirado/ja consumido -> `401`/`409`, sem detalhar motivo.
+
+Campos e dados proibidos em log (mesma disciplina do webhook Meta):
+
+- conteudo de arquivo, `path` bruto, pairing token bruto, qualquer segredo
+  extraido do arquivo (senha, chave privada, connection string).
+
+### Extensao futura (nao implementada): acoes sensiveis via OTP
+
+Ideia registrada, **sem contrato fechado**: quando o agente propuser uma
+correcao que exige escrita no servidor do cliente, o pairing token sozinho
+**nao basta** — precisa da segunda camada (OTP do Sprint 4b) como confirmacao
+explicita do cliente antes do minion aplicar a mudanca. Pendente de decisao:
+Juliano queria a v1 do script bash restrita a leitura; essa extensao so faz
+sentido depois desse alinhamento e, possivelmente, so para os adapters de
+API de painel (cPanel/EasyPanel), nao para o script bash generico.
+
+Fronteira de responsabilidade:
+
+- Renan: contrato HTTP, pairing token, sanitizacao de entrada, ponte com o
+  `ChatFlowService`/dominio `suporte-hospedagem`;
+- Juliano: o minion em si (script bash, depois plugin cPanel/EasyPanel), coleta
+  e sanitizacao na origem, distribuicao/instalacao no servidor do cliente;
+- nenhuma logica de dominio (o que e "config valida", como corrigir) deve viver
+  no minion — ele so busca e entrega, espelhando a regra ja aplicada a
+  Hermes/Meta ("nao mover inteligencia para o transporte externo").
+
 ## Roteamento de dominio no WhatsApp (palavra-chave + menu)
 
 Quando um unico numero WhatsApp atende mais de um dominio (por exemplo

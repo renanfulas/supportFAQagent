@@ -96,11 +96,12 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    plano tecnico fechados (`quality-plans/customer-identity-whatsapp-handoff-plan.md`,
    `...-tech-plan.md`), sem codigo ainda — pronto para implementar quando alguem
    pegar a frente.
-7. **BLOQUEADO no Juliano**: extensao "minion" (script/plugin de hospedagem que
-   busca configs sanitizadas do servidor do cliente) integrando com o OTP do
-   Sprint 4b para o dominio `suporte-hospedagem`. Aguardando o minion ficar
-   pronto e alinhamento sobre escopo leitura-vs-escrita na v1 (ver secao
-   "Extensao futura BLOQUEADA" em `customer-identity-whatsapp-handoff-plan.md`).
+7. **Minion de hospedagem**: contrato HTTP ja escrito adiantado
+   (`architecture/integration-contracts.md`, "Minion de diagnostico"), v1
+   somente leitura/diagnostico. BLOQUEADO no Juliano so para a implementacao do
+   minion em si e o alinhamento leitura-vs-escrita da v1 (ver
+   `customer-identity-whatsapp-handoff-plan.md`). O hook de branching por
+   dominio no `HandoffService`/`ChatFlowService` ainda nao foi escrito.
 
 ---
 
