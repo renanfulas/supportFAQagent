@@ -6,6 +6,10 @@ const quickPromptsList = document.querySelector("#quick-prompts-list");
 
 const CHAT_ENDPOINT = "/web/chat";
 const FEEDBACK_ENDPOINT = "/web/feedback";
+const AUTH_SESSION_ENDPOINT = "/web/auth/session";
+const AUTH_START_ENDPOINT = "/web/auth/whatsapp/start";
+const AUTH_CONFIRM_ENDPOINT = "/web/auth/whatsapp/confirm";
+const HANDOFF_CONSENT_ENDPOINT = "/web/handoff/consent";
 const MAX_VISIBLE_SUPPORT_CODE = 80;
 
 const QUICK_PROMPTS = [
@@ -240,6 +244,10 @@ function addAgentResponse(response) {
     row.appendChild(renderFeedbackCard(response));
   }
 
+  if (response.escalated && response.request_id) {
+    row.appendChild(renderConsentPrompt(response.request_id));
+  }
+
   scrollToBottom();
 }
 
@@ -438,6 +446,322 @@ function showFeedbackError(wrapper, message) {
   error.className = "feedback-error";
   error.textContent = message;
   wrapper.appendChild(error);
+}
+
+// --- Consent gate (Sprint 4b): ask -> phone -> OTP -> name/email -> ticket. ---
+// Auth is only requested here, at the moment a human handoff is actually on the
+// table -- never up front. There is no server-side reminder job (the raw phone
+// is never persisted); instead, the OTP step shows a local "still there?" nudge
+// after the server-configured window, reusing the same resend endpoint.
+
+function renderConsentPrompt(requestId) {
+  const wrapper = document.createElement("section");
+  wrapper.className = "consent-card";
+
+  const title = document.createElement("p");
+  title.className = "consent-title";
+  title.textContent =
+    "Quer que eu conecte você com um atendente humano agora? Vou pedir para confirmar seu WhatsApp antes, por segurança.";
+
+  const actions = document.createElement("div");
+  actions.className = "consent-actions";
+
+  const yesButton = document.createElement("button");
+  yesButton.type = "button";
+  yesButton.className = "consent-button consent-button-primary";
+  yesButton.textContent = "Sim, conectar";
+
+  const noButton = document.createElement("button");
+  noButton.type = "button";
+  noButton.className = "consent-button";
+  noButton.textContent = "Agora não";
+
+  yesButton.addEventListener("click", () => {
+    wrapper.replaceChildren();
+    beginConsentFlow(wrapper, requestId);
+  });
+  noButton.addEventListener("click", () => {
+    wrapper.replaceChildren(buildConsentNotice("Sem problema. Se mudar de ideia, é só pedir de novo."));
+  });
+
+  actions.append(yesButton, noButton);
+  wrapper.append(title, actions);
+  return wrapper;
+}
+
+async function beginConsentFlow(container, requestId) {
+  container.appendChild(buildConsentNotice("Verificando sua sessão..."));
+  let sessionStatus = { status: "anonymous" };
+  try {
+    const response = await fetch(AUTH_SESSION_ENDPOINT);
+    sessionStatus = (await parseJsonSafely(response)) || sessionStatus;
+  } catch {
+    // Falls back to anonymous below -- the phone step re-establishes the session.
+  }
+  container.replaceChildren();
+  if (sessionStatus.status === "verified") {
+    renderContactForm(container, requestId);
+  } else {
+    renderPhoneForm(container, requestId);
+  }
+}
+
+function renderPhoneForm(container, requestId) {
+  const form = document.createElement("form");
+  form.className = "consent-form";
+
+  const label = document.createElement("label");
+  label.className = "consent-label";
+  label.textContent = "Seu WhatsApp, com DDI (ex: +5511999999999)";
+
+  const input = document.createElement("input");
+  input.type = "tel";
+  input.className = "consent-input";
+  input.placeholder = "+5511999999999";
+  input.autocomplete = "tel";
+  input.required = true;
+
+  const errorNode = buildConsentError();
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.className = "consent-button consent-button-primary";
+  submit.textContent = "Enviar código";
+
+  form.append(label, input, errorNode, submit);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setConsentError(errorNode, "");
+    submit.disabled = true;
+    try {
+      const response = await fetch(AUTH_START_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: input.value.trim() }),
+      });
+      const data = await parseJsonSafely(response);
+      if (!response.ok) {
+        throw buildConsentHttpError(response, data);
+      }
+      form.replaceWith(renderOtpForm(container, requestId, data));
+    } catch (error) {
+      setConsentError(errorNode, normalizeConsentError(error));
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  container.appendChild(form);
+}
+
+function renderOtpForm(container, requestId, startResponse) {
+  const form = document.createElement("form");
+  form.className = "consent-form";
+
+  const label = document.createElement("label");
+  label.className = "consent-label";
+  label.textContent = "Código de 6 dígitos que chegou no seu WhatsApp";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.inputMode = "numeric";
+  input.pattern = "\\d{6}";
+  input.maxLength = 6;
+  input.className = "consent-input";
+  input.placeholder = "123456";
+  input.autocomplete = "one-time-code";
+  input.required = true;
+
+  const errorNode = buildConsentError();
+  const nudgeNode = document.createElement("p");
+  nudgeNode.className = "consent-hint";
+  nudgeNode.hidden = true;
+  nudgeNode.textContent = "Ainda não recebeu? Você pode pedir um novo código.";
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.className = "consent-button consent-button-primary";
+  submit.textContent = "Confirmar código";
+
+  const resend = document.createElement("button");
+  resend.type = "button";
+  resend.className = "consent-button";
+  resend.textContent = "Reenviar código";
+  resend.hidden = true;
+  resend.addEventListener("click", () => {
+    clearTimeout(nudgeTimer);
+    form.remove();
+    renderPhoneForm(container, requestId);
+  });
+
+  form.append(label, input, errorNode, nudgeNode, submit, resend);
+
+  const nudgeTimer = setTimeout(() => {
+    nudgeNode.hidden = false;
+    resend.hidden = false;
+  }, Math.max(1, Number(startResponse?.abandonment_reminder_seconds) || 900) * 1000);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setConsentError(errorNode, "");
+    submit.disabled = true;
+    try {
+      const response = await fetch(AUTH_CONFIRM_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_id: startResponse.challenge_id,
+          code: input.value.trim(),
+        }),
+      });
+      const data = await parseJsonSafely(response);
+      if (!response.ok) {
+        throw buildConsentHttpError(response, data);
+      }
+      clearTimeout(nudgeTimer);
+      form.replaceWith(renderContactForm(container, requestId));
+    } catch (error) {
+      setConsentError(errorNode, normalizeConsentError(error));
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  container.appendChild(form);
+  return form;
+}
+
+function renderContactForm(container, requestId) {
+  const form = document.createElement("form");
+  form.className = "consent-form";
+
+  const label = document.createElement("label");
+  label.className = "consent-label";
+  label.textContent = "Quase lá! Qual seu nome e e-mail para o atendente?";
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.className = "consent-input";
+  nameInput.placeholder = "Seu nome";
+  nameInput.autocomplete = "name";
+  nameInput.maxLength = 120;
+
+  const emailInput = document.createElement("input");
+  emailInput.type = "email";
+  emailInput.className = "consent-input";
+  emailInput.placeholder = "seu@email.com";
+  emailInput.autocomplete = "email";
+  emailInput.maxLength = 200;
+
+  const errorNode = buildConsentError();
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.className = "consent-button consent-button-primary";
+  submit.textContent = "Abrir ticket";
+
+  form.append(label, nameInput, emailInput, errorNode, submit);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setConsentError(errorNode, "");
+    submit.disabled = true;
+    try {
+      const response = await fetch(HANDOFF_CONSENT_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          request_id: requestId,
+          name: nameInput.value.trim() || null,
+          email: emailInput.value.trim() || null,
+        }),
+      });
+      const data = await parseJsonSafely(response);
+      if (!response.ok) {
+        throw buildConsentHttpError(response, data);
+      }
+      form.replaceWith(buildTicketConfirmation(data));
+    } catch (error) {
+      setConsentError(errorNode, normalizeConsentError(error));
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  container.appendChild(form);
+  return form;
+}
+
+function buildTicketConfirmation(ticket) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "consent-ticket";
+
+  const title = document.createElement("p");
+  title.className = "consent-ticket-title";
+  title.textContent = `Ticket aberto: ${clipSupportCode(ticket.support_case_id)}`;
+
+  const meta = document.createElement("dl");
+  meta.className = "support-meta";
+  meta.append(makeMetaItem("Domínio", ticket.domain));
+  if (ticket.opened_at) {
+    meta.append(makeMetaItem("Aberto em", formatConsentTimestamp(ticket.opened_at)));
+  }
+  if (ticket.summary) {
+    meta.append(makeMetaItem("Resumo", ticket.summary));
+  }
+
+  const note = document.createElement("p");
+  note.className = "consent-hint";
+  note.textContent = "Um atendente humano vai continuar por aqui.";
+
+  wrapper.append(title, meta, note);
+  return wrapper;
+}
+
+function buildConsentNotice(text) {
+  const node = document.createElement("p");
+  node.className = "consent-hint";
+  node.textContent = text;
+  return node;
+}
+
+function buildConsentError() {
+  const node = document.createElement("p");
+  node.className = "consent-error";
+  node.hidden = true;
+  return node;
+}
+
+function setConsentError(node, message) {
+  node.textContent = message;
+  node.hidden = !message;
+}
+
+function buildConsentHttpError(response, payload) {
+  const detail = (payload && payload.detail) || "";
+  const messages = {
+    invalid_phone: "Esse número não parece válido. Confira o formato (+DDI DDD número).",
+    too_many_requests: "Muitas tentativas. Espere um pouco antes de tentar de novo.",
+    otp_delivery_unavailable: "Não consegui enviar o código agora. Tente novamente em instantes.",
+    invalid_or_expired_code: "Código inválido ou expirado. Peça um novo código.",
+    otp_confirmation_required: "Sua sessão expirou. Vamos confirmar seu WhatsApp de novo.",
+    support_case_not_found: "Não encontrei esse atendimento. Tente pedir para falar com um atendente de novo.",
+    invalid_email: "Esse e-mail não parece válido.",
+  };
+  return new Error(messages[detail] || "Não consegui concluir agora. Tente novamente em instantes.");
+}
+
+function normalizeConsentError(error) {
+  return error instanceof Error ? error.message : "Não consegui concluir agora. Tente novamente em instantes.";
+}
+
+function formatConsentTimestamp(value) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString("pt-BR");
 }
 
 function renderSafeMessageText(container, text) {
