@@ -625,7 +625,9 @@ Criterio de pronto:
 ### Sprint 4b - Gate De Consentimento LGPD No Handoff (decidido 2026-07-01, nao implementado)
 
 Status: ⬜ desenho fechado com o Renan, sem codigo ainda. Fecha o gap descrito
-no topo do documento ("Gap real encontrado").
+no topo do documento ("Gap real encontrado"). Plano tecnico detalhado (mapa de
+superficies, migrations, riscos concretos, criticas ao desenho original):
+[`customer-identity-whatsapp-handoff-tech-plan.md`](./customer-identity-whatsapp-handoff-tech-plan.md).
 
 Objetivo:
 
