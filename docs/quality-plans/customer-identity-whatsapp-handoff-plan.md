@@ -11,6 +11,38 @@ migration da CI: `apply --target 006` -> backfill de privacidade -> `apply` ->
 (`ENABLE_SUPPORT_INBOX` ligado; ver `docs/architecture/integration-contracts.md`).
 Data de revisao: 2026-06-29.
 
+**Extensao futura BLOQUEADA (registrada 2026-07-01, aguardando o Juliano):**
+combinado em conversa fora do repo (WhatsApp) entre Juliano e Renan sobre um
+componente novo, o **"minion"** — um script bash (depois plugin cPanel/EasyPanel)
+que o cliente roda no proprio servidor de **hospedagem**, chama um endpoint do
+agente perguntando o que precisa (ex.: configs do Dovecot/Postfix), busca esses
+arquivos **ja sanitizados no cliente** e manda de volta por outro endpoint para o
+agente analisar e responder com o diagnostico/correcao. Ideia de conexao com este
+plano: reaproveitar a infraestrutura de OTP como **autorizacao de acao sensivel**
+(nao so "posso contatar", mas "posso aplicar esta mudanca") — e, no dominio
+`suporte-hospedagem` especificamente, inverter a ordem do fluxo padrao: em vez de
+escalar->OTP->ticket, seria detectar problema->acionar minion+OTP->tenta resolver
+automaticamente->se resolveu, fim (sem ticket); se nao, cai no handoff normal
+(mesmo gate de consentimento do Sprint 4b).
+
+Duas coisas ficaram **em aberto** e bloqueiam o design detalhado:
+1. O minion ainda nao existe (Juliano: "acho que ate amanha finalizo").
+2. **Divergencia de escopo nao resolvida**: Juliano foi explicito que a v1 (script
+   bash) seria **so leitura** ("nao quero chegar nesse ponto [escrita], pelo menos
+   ainda"); Renan sugeriu entrar com OTP + escrita ja na v1 ("onde o agente faz as
+   alteracoes e o usuario autoriza"). Nao ficou confirmado se o Juliano topou ou so
+   reagiu com entusiasmo geral. **Precisa alinhamento explicito antes de desenhar.**
+
+Sem risco de atropelo enquanto isso: `suporte-hospedagem` ainda nao esta no
+roteador (Fase 2 pendente, ver `domains/suporte-hospedagem/domain.yaml`), entao
+nao ha trafego real hoje. Quando o minion estiver pronto e o escopo leitura/escrita
+fechado, o trabalho do lado supportFAQagent e (a) o **contrato** dos dois
+endpoints do minion em `docs/architecture/integration-contracts.md` — nao
+implementar o minion em si, que e frente do Juliano (VPS/externo) — e (b) o hook
+de branching por dominio no `HandoffService`/`ChatFlowService`. Reforcar tambem:
+a autenticacao minion<->agente (string de identificacao unica) e uma camada
+separada da autorizacao cliente via OTP — nao confundir as duas.
+
 **Escopo esclarecido (2026-07-01):** o Auth via WhatsApp/OTP neste plano **nao**
 existe para unificar identidade entre o WhatsApp nativo (Hermes/Meta) e o web
 chat — sao propositalmente canais separados. O objetivo real e mais estreito:

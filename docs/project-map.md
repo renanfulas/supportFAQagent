@@ -57,7 +57,7 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
 | Fase 0 — persistencia/migrations/outbox | ✅ implementado · 🟡 promocao `not_approved` (restore drill turnkey pronto) | [`quality-plans/phase0-operational-risk-reduction.md`](quality-plans/phase0-operational-risk-reduction.md), [`runbooks/phase0-snapshot-restore.md`](runbooks/phase0-snapshot-restore.md), [`runbooks/phase0-staging-promotion-evidence.md`](runbooks/phase0-staging-promotion-evidence.md) | `app/db/`, `app/conversations/`, `app/health/`, `migrations/001-008`, `scripts/phase0_restore_validate.py` | integração PostgreSQL opt-in, `test_phase0_restore_validate` |
 | pgvector (retrieval vetorial) | ✅ default de staging, rollback lexical | [`MVP/technical-implementation-plan.md`](MVP/technical-implementation-plan.md), [`runbooks/pgvector-promotion-checklist.md`](runbooks/pgvector-promotion-checklist.md) | `app/retrieval/`, `app/ingestion/pgvector_writer.py` | `pgvector_gate.yaml` |
 | Persistencia em camadas (tiering) | 🟡 seams implementados, dark por flag (2026-06-29) | [`quality-plans/conversation-persistence-tiering-plan.md`](quality-plans/conversation-persistence-tiering-plan.md), [`...-tech-plan.md`](quality-plans/conversation-persistence-tiering-tech-plan.md) | `app/conversations/`, `architecture/conversation-archive-sink.md`, `runbooks/redis-session-state.md`, `runbooks/conversation-summary-batch.md` | testes fake-client + integração postgres |
-| Identidade do cliente + handoff WhatsApp | 🟡 Sprints 1–4 iniciais OK (PG opt-in); falta enriquecimento de push | [`quality-plans/customer-identity-whatsapp-handoff-plan.md`](quality-plans/customer-identity-whatsapp-handoff-plan.md) | `app/handoff/`, support inbox, `runbooks/support-team-whatsapp-notify-smoke.md` | `test_support_inbox*`, `test_support_team_notifications` |
+| Identidade do cliente + handoff WhatsApp | 🟡 Sprints 0-5 implementados (identidade, historico, ticket, notificacao WhatsApp); Sprint 4b (gate de consentimento LGPD) desenhado, sem codigo; extensao "minion" bloqueada no Juliano | [`quality-plans/customer-identity-whatsapp-handoff-plan.md`](quality-plans/customer-identity-whatsapp-handoff-plan.md), [`...-tech-plan.md`](quality-plans/customer-identity-whatsapp-handoff-tech-plan.md) | `app/handoff/`, `app/web_auth/`, `app/identity/`, support inbox, `runbooks/support-team-whatsapp-notify-smoke.md` | `test_support_inbox*`, `test_support_team_notifications`, `test_web_auth` |
 | Roteamento de dominio pegajoso (sticky) | ✅ seam + adapter duravel, validado em CI | [`quality-plans/whatsapp-sticky-domain-routing-plan.md`](quality-plans/whatsapp-sticky-domain-routing-plan.md) | `app/domain_engine/` (session domain store) | `test_session_domain_store(_postgres)` |
 | Funil de vendas (hardening) | 🟡 em andamento (achados de smoke) | [`quality-plans/vendas-funnel-hardening-plan.md`](quality-plans/vendas-funnel-hardening-plan.md) | `domains/vendas/`, `app/handoff/`, `app/orchestration/` | `test_vendas_checkout`, `test_pii_card`, eval `vendas` |
 | Meta WhatsApp nativo | 🟡 fundacao por flag (Ondas 1–3, 6); falta smoke + ativacao | [`quality-plans/meta-whatsapp-native-integration-plan.md`](quality-plans/meta-whatsapp-native-integration-plan.md), [`runbooks/meta-whatsapp-private-smoke.md`](runbooks/meta-whatsapp-private-smoke.md) | transporte Meta (`client.py`, `webhook.py`), desativado por padrao | `test_meta_whatsapp*`, activation suite |
@@ -92,6 +92,15 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    sessao, batch de sumarizacao) conforme o tech-plan, quando o operacional pedir.
 5. **Fechar frentes parciais**: enriquecimento de push do support inbox
    (identidade + handoff) e hardening restante do funil de vendas.
+6. **Sprint 4b (gate de consentimento LGPD no handoff do web chat)**: desenho e
+   plano tecnico fechados (`quality-plans/customer-identity-whatsapp-handoff-plan.md`,
+   `...-tech-plan.md`), sem codigo ainda — pronto para implementar quando alguem
+   pegar a frente.
+7. **BLOQUEADO no Juliano**: extensao "minion" (script/plugin de hospedagem que
+   busca configs sanitizadas do servidor do cliente) integrando com o OTP do
+   Sprint 4b para o dominio `suporte-hospedagem`. Aguardando o minion ficar
+   pronto e alinhamento sobre escopo leitura-vs-escrita na v1 (ver secao
+   "Extensao futura BLOQUEADA" em `customer-identity-whatsapp-handoff-plan.md`).
 
 ---
 
