@@ -76,6 +76,14 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    foram ensaiados localmente (dump→restore real); falta a execucao no host
    isolado, que depende do provedor/runtime (Juliano)
    (`runbooks/phase0-snapshot-restore.md`, `runbooks/phase0-staging-promotion-evidence.md`).
+
+   > **Observacao:** o ensaio local usou um cluster PostgreSQL descartavel e
+   > sintetico (nao o snapshot real do provedor nem o host isolado da VPS).
+   > Isso comprova a ferramenta (run-sheet + helper + calculo de RTO/RPO), nao
+   > o gate em si. A Fase 0 continua `not_approved` ate o Juliano rodar o
+   > restore real. Esta frente esta **encerrada do lado de preparacao** (#113,
+   > #114); o proximo passo e execucao pura, fora do escopo de arquitetura,
+   > contratos ou testes.
 2. **Smoke privado da Meta WhatsApp** antes de qualquer ativacao real
    (`runbooks/meta-whatsapp-private-smoke.md`).
 3. **Capacidade de disco da VPS**: alerta + politica de limpeza de cache Docker,
