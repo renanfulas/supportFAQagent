@@ -660,12 +660,28 @@ Criterio de pronto:
 - caso existe mesmo se notificacao externa falhar.
 - payload nao contem telefone bruto, prompt bruto ou session id bruto.
 
-### Sprint 4b - Gate De Consentimento LGPD No Handoff (decidido 2026-07-01, nao implementado)
+### Sprint 4b - Gate De Consentimento LGPD No Handoff (implementado 2026-07-01)
 
-Status: ⬜ desenho fechado com o Renan, sem codigo ainda. Fecha o gap descrito
-no topo do documento ("Gap real encontrado"). Plano tecnico detalhado (mapa de
-superficies, migrations, riscos concretos, criticas ao desenho original):
+Status: ✅ implementado, dark por `ENABLE_HANDOFF_CONSENT_GATE` (default
+`false`). Fecha o gap descrito no topo do documento ("Gap real encontrado").
+Migration `013_customer_contact_and_consent.sql` (`customers.email` +
+`pending_consent` no status de `support_cases`). Endpoint novo
+`POST /web/handoff/consent` (`app/api/routes/web_handoff.py`,
+`OperationalRepository.promote_pending_consent`). Vazamento no support inbox
+corrigido (`GET /internal/support-cases` sem filtro nunca devolve
+`pending_consent`). Widget (`app/static/chat/app.js`) implementa o fluxo
+completo: convite → telefone → OTP → nome/e-mail → confirmacao do ticket.
+Verificado manualmente no navegador (fluxo completo ate a promocao final, que
+degrada graciosamente com `503` quando o Postgres esta fora, sem quebrar a
+pagina). Cobertura: `tests/test_phase0_operational_safety.py`,
+`tests/test_support_inbox.py`, `tests/test_web_handoff.py`,
+`tests/integration/test_phase0_postgres.py` (gated). Detalhes tecnicos (mapa
+de superficies, migrations, riscos, decisao de arquitetura sobre o lembrete):
 [`customer-identity-whatsapp-handoff-tech-plan.md`](./customer-identity-whatsapp-handoff-tech-plan.md).
+
+**Pendente**: ligar a flag em staging (smoke real) e o hook de branching por
+dominio para o "minion" de hospedagem (ver secao "Extensao futura BLOQUEADA"
+no topo deste documento).
 
 Objetivo:
 
@@ -694,18 +710,22 @@ Fluxo alvo:
 
 Decisoes de design fechadas (2026-07-01):
 
-- **Abandono do OTP**: se o cliente confirmar intencao mas nao completar o
-  codigo, o sistema **lembra em 15 minutos** com uma nova mensagem automatica
-  pedindo para completar o codigo. A conversa/intencao de escalacao continua
-  sendo persistida normalmente (sinal preservado para metricas internas via
-  `escalated=true` no turno); o `support_case` formal e a notificacao ao time
-  so nascem apos o OTP confirmado. Implementacao provavel: job/scan (mesmo
-  padrao do systemd timer da sumarizacao) que varre desafios `pending` sem
-  lembrete enviado, mais velhos que 15 min, e dispara reenvio pelo mesmo
-  transporte da entrega original (`WEB_AUTH_OTP_DELIVERY_TRANSPORT`), 
-  respeitando `otp_resend_cooldown_seconds`/`otp_code_ttl_seconds` (se o
-  desafio original ja expirou, o lembrete deve gerar um novo desafio, nao
-  tentar reusar um codigo morto).
+- **Abandono do OTP — corrigido durante a implementacao (2026-07-01)**: a ideia
+  original era um job de backend reenviando o codigo apos 15 min. Isso **nao e
+  implementavel** com a disciplina de privacidade atual do projeto:
+  `otp_challenges` so guarda `identity_candidate_hash` (HMAC do telefone,
+  irreversivel por design — `migrations/002_web_auth.sql` e explicito que
+  "phone_e164 nunca persiste nessas tabelas"), entao nenhum job assincrono
+  saberia para qual numero reenviar. **Desenho final: lembrete client-side.**
+  `POST /web/auth/whatsapp/start` devolve `abandonment_reminder_seconds` (15
+  min); o widget mostra localmente "ainda nao recebeu? reenviar codigo" apos
+  essa janela, reaproveitando o mesmo endpoint de start — sem job novo, sem
+  dado sensivel novo em repouso. Limitacao aceita: se o cliente fechar a aba,
+  nao ha como avisa-lo (nao existe canal para isso sem guardar o telefone).
+  A conversa/intencao de escalacao continua sendo persistida normalmente
+  (sinal preservado via `escalated=true` no turno); o `support_case` formal
+  ja nasce (status `pending_consent`), so a notificacao ao time fica adiada
+  ate o OTP confirmar.
 - **Origem do nome — investigado e descartado o "get automatico"**: o
   WhatsApp so entra no fluxo de OTP como canal de **envio** (`send_text`); a
   confirmacao do codigo acontece pelo cliente digitando na tela do web chat
@@ -738,16 +758,23 @@ Decisoes de design fechadas (2026-07-01):
   "do nada"). Por isso o gate de consentimento fica restrito ao web chat;
   handoff no WhatsApp nativo continua funcionando como hoje, sem esse passo
   extra.
-- Onde este passo entra no codigo: provavelmente um novo estado no
-  `ChatFlowService` (equivalente ao `ESCAPE_STATE` do Hermes, mas para o web
-  chat) que segura o turno em "aguardando nome + OTP" antes de chamar
-  `_upsert_support_case`, em vez de criar o caso incondicionalmente como hoje.
+- **Onde este passo entra no codigo — decidido durante a implementacao**:
+  **nao** um estado tipo `ESCAPE_STATE` dentro do `ChatFlowService` (isso
+  quebraria a garantia de atomicidade "turno escalado = ticket criado na mesma
+  transacao", ver achado no tech-plan §1). Em vez disso: `_upsert_support_case`
+  continua rodando sempre, incondicionalmente, dentro de `record_chat`; só o
+  `status` inicial muda (`pending_consent` em vez de `open`) e a notificacao
+  fica adiada. A orquestracao dos passos (telefone → OTP → nome/e-mail) fica
+  inteiramente no **widget** chamando endpoints ja existentes mais o novo
+  `POST /web/handoff/consent` — nenhuma maquina de estados nova no backend.
 
 Criterio de pronto:
 
-- sem OTP confirmado, nenhum `support_case`/notificacao nasce para o web chat.
+- sem OTP confirmado, o `support_case` existe (`pending_consent`) mas nenhuma
+  notificacao ao time nasce para o web chat.
 - conversa/intencao de escalacao nao se perde mesmo se o cliente abandonar o OTP.
-- cliente recebe lembrete automatico em 15 min se nao completar o codigo.
+- cliente ve um lembrete local (client-side) apos 15 min se nao completar o
+  codigo e ainda estiver na pagina (sem push proativo — ver achado acima).
 - mensagem de confirmacao ao cliente reflete exatamente o que foi enviado ao
   time (sem PII alem do que ja e sanitizado), incluindo o nome quando
   informado.

@@ -57,7 +57,7 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
 | Fase 0 — persistencia/migrations/outbox | ✅ implementado · 🟡 promocao `not_approved` (restore drill turnkey pronto) | [`quality-plans/phase0-operational-risk-reduction.md`](quality-plans/phase0-operational-risk-reduction.md), [`runbooks/phase0-snapshot-restore.md`](runbooks/phase0-snapshot-restore.md), [`runbooks/phase0-staging-promotion-evidence.md`](runbooks/phase0-staging-promotion-evidence.md) | `app/db/`, `app/conversations/`, `app/health/`, `migrations/001-008`, `scripts/phase0_restore_validate.py` | integração PostgreSQL opt-in, `test_phase0_restore_validate` |
 | pgvector (retrieval vetorial) | ✅ default de staging, rollback lexical | [`MVP/technical-implementation-plan.md`](MVP/technical-implementation-plan.md), [`runbooks/pgvector-promotion-checklist.md`](runbooks/pgvector-promotion-checklist.md) | `app/retrieval/`, `app/ingestion/pgvector_writer.py` | `pgvector_gate.yaml` |
 | Persistencia em camadas (tiering) | 🟡 Fases 2-4 vivas na VPS + amostragem de qualidade concluida (2026-07-01, 0 achados de PII/PAN); falta so Fase 0 (sink R2, bloqueado por credenciais) e o caso de eval no dominio | [`quality-plans/conversation-persistence-tiering-plan.md`](quality-plans/conversation-persistence-tiering-plan.md), [`...-tech-plan.md`](quality-plans/conversation-persistence-tiering-tech-plan.md) | `app/conversations/`, `architecture/conversation-archive-sink.md`, `runbooks/redis-session-state.md`, `runbooks/conversation-summary-batch.md` | testes fake-client + integração postgres |
-| Identidade do cliente + handoff WhatsApp | 🟡 Sprints 0-5 implementados (identidade, historico, ticket, notificacao WhatsApp); Sprint 4b (gate de consentimento LGPD) desenhado, sem codigo; extensao "minion" bloqueada no Juliano | [`quality-plans/customer-identity-whatsapp-handoff-plan.md`](quality-plans/customer-identity-whatsapp-handoff-plan.md), [`...-tech-plan.md`](quality-plans/customer-identity-whatsapp-handoff-tech-plan.md) | `app/handoff/`, `app/web_auth/`, `app/identity/`, support inbox, `runbooks/support-team-whatsapp-notify-smoke.md` | `test_support_inbox*`, `test_support_team_notifications`, `test_web_auth` |
+| Identidade do cliente + handoff WhatsApp | 🟡 Sprints 0-5 e 4b implementados (identidade, historico, ticket, notificacao WhatsApp, gate de consentimento LGPD); falta ligar `ENABLE_HANDOFF_CONSENT_GATE` em staging + smoke real; extensao "minion" bloqueada no Juliano | [`quality-plans/customer-identity-whatsapp-handoff-plan.md`](quality-plans/customer-identity-whatsapp-handoff-plan.md), [`...-tech-plan.md`](quality-plans/customer-identity-whatsapp-handoff-tech-plan.md) | `app/handoff/`, `app/web_auth/`, `app/identity/`, `app/api/routes/web_handoff.py`, support inbox, `runbooks/support-team-whatsapp-notify-smoke.md` | `test_support_inbox*`, `test_support_team_notifications`, `test_web_auth`, `test_web_handoff`, `test_phase0_operational_safety` |
 | Roteamento de dominio pegajoso (sticky) | ✅ seam + adapter duravel, validado em CI | [`quality-plans/whatsapp-sticky-domain-routing-plan.md`](quality-plans/whatsapp-sticky-domain-routing-plan.md) | `app/domain_engine/` (session domain store) | `test_session_domain_store(_postgres)` |
 | Funil de vendas (hardening) | 🟡 em andamento (achados de smoke) | [`quality-plans/vendas-funnel-hardening-plan.md`](quality-plans/vendas-funnel-hardening-plan.md) | `domains/vendas/`, `app/handoff/`, `app/orchestration/` | `test_vendas_checkout`, `test_pii_card`, eval `vendas` |
 | Meta WhatsApp nativo | 🟡 fundacao por flag (Ondas 1–3, 6); falta smoke + ativacao | [`quality-plans/meta-whatsapp-native-integration-plan.md`](quality-plans/meta-whatsapp-native-integration-plan.md), [`runbooks/meta-whatsapp-private-smoke.md`](runbooks/meta-whatsapp-private-smoke.md) | transporte Meta (`client.py`, `webhook.py`), desativado por padrao | `test_meta_whatsapp*`, activation suite |
@@ -96,10 +96,13 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    `quality-plans/conversation-persistence-tiering-tech-plan.md` Fase 4).
 5. **Fechar frentes parciais**: enriquecimento de push do support inbox
    (identidade + handoff) e hardening restante do funil de vendas.
-6. **Sprint 4b (gate de consentimento LGPD no handoff do web chat)**: desenho e
-   plano tecnico fechados (`quality-plans/customer-identity-whatsapp-handoff-plan.md`,
-   `...-tech-plan.md`), sem codigo ainda — pronto para implementar quando alguem
-   pegar a frente.
+6. **Sprint 4b (gate de consentimento LGPD no handoff do web chat)**:
+   implementado (migration 013, endpoint `POST /web/handoff/consent`, gate no
+   `record_chat`, correcao do vazamento no support inbox, widget completo,
+   verificado manualmente no navegador). Falta: ligar
+   `ENABLE_HANDOFF_CONSENT_GATE` em staging + smoke real com Postgres/WhatsApp
+   de verdade, e rodar `run_domain_eval` com chave real por disciplina antes de
+   ativar.
 7. **Minion de hospedagem**: contrato HTTP ja escrito adiantado
    (`architecture/integration-contracts.md`, "Minion de diagnostico"), v1
    somente leitura/diagnostico. BLOQUEADO no Juliano so para a implementacao do

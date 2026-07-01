@@ -55,7 +55,11 @@ Objetivo:
 
 Rotas:
 
-- `POST /web/auth/whatsapp/start` recebe `{"phone":"+5511999999999"}` e retorna `202` com `challenge_id`, `status`, TTL e cooldown
+- `POST /web/auth/whatsapp/start` recebe `{"phone":"+5511999999999"}` e retorna
+  `202` com `challenge_id`, `status`, TTL, cooldown e
+  `abandonment_reminder_seconds` (Sprint 4b: janela sugerida, hoje 15 min, para
+  o widget mostrar um lembrete local de "ainda não recebeu?" — não existe job
+  de lembrete no backend, ver seção do gate de consentimento abaixo)
 - `POST /web/auth/whatsapp/confirm` recebe `{"challenge_id":"uuid","code":"123456"}` e retorna `{"status":"verified","phone_last4":"9999"}`
 - `GET /web/auth/session` retorna `{"status":"anonymous"}` ou a identidade verificada mascarada
 - `POST /web/auth/logout` remove o vinculo da sessao e retorna `{"status":"anonymous"}`
@@ -101,6 +105,78 @@ Erro esperado sem chave valida:
   "detail": "Invalid API key"
 }
 ```
+
+## `POST /web/handoff/consent` (gate de consentimento LGPD, Sprint 4b)
+
+Status: implementado, dark por `ENABLE_HANDOFF_CONSENT_GATE` (default `false`;
+oculto com `404` quando desligado). Requer `ENABLE_WEB_WHATSAPP_AUTH=true`
+(validado em `Settings`, falha no boot se não estiver).
+
+Objetivo:
+
+- autorizar a equipe a contatar diretamente o cliente do **web chat** (que
+  chega anônimo) só depois que ele confirma o WhatsApp via OTP — não é sobre
+  identidade em geral, é consentimento explícito no momento do handoff
+- WhatsApp nativo (Hermes/Meta) fica **fora** deste gate: o número já é
+  conhecido pelo próprio canal e a equipe responde na mesma conversa que o
+  cliente iniciou, não é contato novo
+
+Fluxo:
+
+1. `POST /web/chat` responde `escalated: true` (comportamento já existente,
+   inalterado) — o widget mostra um convite local para conectar com humano.
+2. Se o cliente aceitar: `POST /web/auth/whatsapp/start` +
+   `POST /web/auth/whatsapp/confirm` (rotas já existentes, sem mudança de
+   contrato) confirmam o WhatsApp.
+3. `POST /web/handoff/consent` com `{"request_id": "<do turno escalado>", "name": "...", "email": "..."}`.
+
+Entrada:
+
+```json
+{ "request_id": "uuid-do-turno-escalado", "name": "Renan", "email": "renan@example.com" }
+```
+
+- `request_id`: obrigatório, o mesmo já devolvido pelo `/web/chat` daquele turno.
+- `name`/`email`: opcionais; gravados em `customers` só se ainda não
+  preenchidos (primeira vez vence — não sobrescreve dado já existente,
+  reaproveitado em tickets futuros do mesmo cliente).
+
+Saída (`200`):
+
+```json
+{ "support_case_id": "uuid", "status": "open", "opened_at": "2026-07-01T00:00:00+00:00", "summary": "...", "domain": "suporte-vps-whatsapp" }
+```
+
+Erros:
+
+- `401 otp_confirmation_required`: sessão ainda não autenticada — nunca deixa
+  chegar a um `support_case` sem OTP confirmado.
+- `404 support_case_not_found`: `request_id` não corresponde a um caso
+  `pending_consent` do `customer_id` da sessão. Usado tanto para "não existe"
+  quanto para "pertence a outro cliente" — nunca revela qual dos dois é o caso
+  real.
+- `422 invalid_email`: formato de e-mail inválido.
+- `503 handoff_consent_storage_unavailable`: banco indisponível; idempotente,
+  tentar de novo depois.
+
+Contrato de dados (decisão de arquitetura importante):
+
+- o `support_case` **já nasce** na mesma transação do turno escalado, como
+  sempre (preserva a garantia "nenhum turno escalado fica sem ticket") — o que
+  muda é o status inicial: `pending_consent` em vez de `open` quando o gate
+  está ativo (e o canal é `web`; WhatsApp nativo sempre nasce `open`)
+- o que fica **adiado** até este endpoint é só a notificação ao time
+  (`whatsapp.message.requested`) e o evento `handoff.requested` na outbox —
+  nunca a criação do caso em si
+- reprocessar o mesmo `request_id` depois de já promovido é idempotente
+  (retorna o estado atual, não duplica notificação)
+- migration `013_customer_contact_and_consent.sql`: adiciona `customers.email`
+  e o valor `pending_consent` ao `CHECK` de `support_cases.status`
+
+Superfície de leitura afetada — `GET /internal/support-cases` (inbox do time):
+sem filtro explícito de `status`, casos `pending_consent` **nunca** aparecem
+por padrão (ver seção do inbox abaixo); só aparecem com
+`?status=pending_consent` explícito, para depuração.
 
 ## Header `X-Request-ID`
 
@@ -648,10 +724,15 @@ Autenticacao e gating:
 `GET /internal/support-cases` (lista/triagem):
 
 - query params: `domain` (opcional, max 80), `status` (opcional, um de
-  `open|in_progress|waiting_customer|closed|cancelled`; valor invalido vira
-  `422`), `limit` (1..100, padrao 25), `offset` (>= 0, padrao 0);
+  `open|in_progress|waiting_customer|closed|cancelled|pending_consent`; valor
+  invalido vira `422`), `limit` (1..100, padrao 25), `offset` (>= 0, padrao 0);
 - ordenado por `opened_at DESC`, usando o indice
   `idx_support_cases_domain_status_opened`.
+- **Sprint 4b**: sem `status` explicito, casos `pending_consent` (aguardando
+  confirmacao de LGPD do cliente no web chat, ver `POST /web/handoff/consent`)
+  **nunca** aparecem — o time so os ve pedindo `?status=pending_consent`
+  explicitamente. Existe pra nao vazar contexto de um caso antes do cliente
+  autorizar o contato.
 
 Saida da lista:
 
