@@ -101,6 +101,69 @@ python -m scripts.check_runtime_capacity --path / --warning 75 --critical 85 --m
 O relatorio deve confirmar explicitamente que o host validado e uma VPS
 restaurada isolada, nao o staging oficial.
 
+## Run-Sheet Do Host Restaurado
+
+Execute na VPS restaurada isolada, na ordem. Todos os comandos abaixo sao
+somente leitura: nenhum cria snapshot, restaura ou apaga dado. Anote
+`restore_started_at` antes do passo 1 e `restore_finished_at` depois do passo 5
+(ISO-8601 UTC, ex.: `2026-07-01T03:10:00Z`).
+
+```bash
+# 1. capacidade do filesystem
+python -m scripts.check_runtime_capacity --path / --warning 75 --critical 85 --min-free-gb 2
+
+# 2. migrations integras e sem drift
+python -m scripts.migrate verify
+
+# 3. readiness (banco, migrations, retrieval, outbox)
+python -m scripts.check_readiness
+
+# 4. smoke HTTP sanitizado (base URL privada do host restaurado)
+python -m scripts.staging_smoke --base-url http://127.0.0.1:8000
+
+# 5. pgvector, outbox e volumes: confirmar manualmente (chunks respondem,
+#    eventos pendentes drenam, volumes PostgreSQL presentes).
+```
+
+Depois agregue a evidencia. O helper e somente leitura: calcula RTO/RPO, aplica
+`RTO <= 4h` / `RPO <= 24h` e imprime o veredito `restore`. Troque cada status
+pelo resultado real e informe os quatro timestamps:
+
+```bash
+python -m scripts.phase0_restore_validate \
+  --snapshot-timestamp <ISO> \
+  --restore-started-at <ISO> \
+  --restore-finished-at <ISO> \
+  --latest-data-timestamp <ISO> \
+  --capacity passed --migrate-verify passed --readiness passed \
+  --pgvector passed --outbox passed --volumes passed --smoke passed \
+  --output /tmp/supportfaq-phase0-restore.md
+```
+
+Alimente o veredito no relatorio de decisao:
+
+```bash
+python -m scripts.phase0_operational_report \
+  --snapshot passed --preflight passed --migrations passed \
+  --postgres-concurrency passed --pgvector-gate passed \
+  --restore <veredito-do-helper> \
+  --output /tmp/supportfaq-phase0-decision.md
+```
+
+Tabela de evidencia (preencher e anexar sanitizado ao PR):
+
+| Campo | Valor |
+| --- | --- |
+| snapshot_timestamp | |
+| restore_started_at | |
+| restore_finished_at | |
+| RTO (h) / RPO (h) | |
+| capacity / migrate_verify / readiness | |
+| pgvector / outbox / volumes / smoke | |
+| restore verdict | |
+
+Nunca inclua nome de snapshot, IP, hostname, usuario ou credencial na evidencia.
+
 ## Criterio
 
 - aprovado: RPO ate 24 horas e RTO ate 4 horas;
