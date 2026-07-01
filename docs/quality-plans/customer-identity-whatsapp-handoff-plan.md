@@ -11,6 +11,35 @@ migration da CI: `apply --target 006` -> backfill de privacidade -> `apply` ->
 (`ENABLE_SUPPORT_INBOX` ligado; ver `docs/architecture/integration-contracts.md`).
 Data de revisao: 2026-06-29.
 
+**Escopo esclarecido (2026-07-01):** o Auth via WhatsApp/OTP neste plano **nao**
+existe para unificar identidade entre o WhatsApp nativo (Hermes/Meta) e o web
+chat — sao propositalmente canais separados. O objetivo real e mais estreito:
+dar ao cliente do **web chat** um fluxo de autenticacao para abrir ticket, e o
+motivo de existir Auth **e** exatamente o gate de consentimento LGPD antes de a
+equipe poder entrar em contato direto com o cliente. Ou seja: Auth nao e sobre
+"saber quem e o cliente" de forma geral, e sim sobre **autorizacao explicita
+para contato direto no momento do handoff**. O WhatsApp nativo ja tem
+continuidade de historico "boa o suficiente" via hash deterministico do
+telefone (`_safe_hermes_session_id`), sem depender de `customer_id`/Auth — isso
+e aceito como permanente, nao e gap a fechar.
+
+**Cripto do web chat validada (2026-07-01):** telefone via HMAC-SHA256 chaveado
+(`IDENTITY_HASH_SECRET`), OTP de 6 digitos com `secrets.randbelow` (CSPRNG),
+digest do codigo nunca em texto puro e escopado por `challenge_id`
+(`OTP_DIGEST_SECRET`), `attempts_remaining` decrementa e trava o desafio,
+expiracao checada, rate limit por IP e por telefone na geracao. Considerado
+aceitavel. Nitpick nao bloqueante: `consume_challenge` compara o digest com
+`!=` em vez de `hmac.compare_digest` (constant-time) — o `attempts_remaining`
+ja fecha a janela de forca bruta, entao nao e risco pratico, so troca
+recomendada por defesa em profundidade.
+
+**Gap real encontrado (2026-07-01):** a intencao acima ("handoff so autoriza
+contato direto apos LGPD/Auth") **nao esta implementada**. Hoje
+`_upsert_support_case` (`app/db/operational.py`) cria o `support_case` e
+enfileira a notificacao ao time incondicionalmente quando `escalated=True` —
+`customer_id` e aceito `None` sem nenhum gate. Decisao pendente com o Renan
+sobre o desenho exato do gate (ver secao de proximos passos abaixo).
+
 ## Diagnostico
 
 O projeto ja tem pecas importantes para esta frente:
@@ -587,6 +616,60 @@ Criterio de pronto:
 - retry da mesma escalacao nao cria dois tickets.
 - caso existe mesmo se notificacao externa falhar.
 - payload nao contem telefone bruto, prompt bruto ou session id bruto.
+
+### Sprint 4b - Gate De Consentimento LGPD No Handoff (decidido 2026-07-01, nao implementado)
+
+Status: ⬜ desenho fechado com o Renan, sem codigo ainda. Fecha o gap descrito
+no topo do documento ("Gap real encontrado").
+
+Objetivo:
+
+- Handoff no **web chat** so autoriza contato direto da equipe apos o cliente
+  autenticar via OTP, disparado no momento exato da intencao de escalar (nao
+  upfront). Fora de escopo por agora: WhatsApp nativo (Hermes/Meta), onde o
+  numero ja e conhecido pelo proprio canal — OTP ali seria redundante.
+
+Fluxo alvo:
+
+1. Cliente conversa normalmente no web chat (anonimo, sem Auth).
+2. Cliente sinaliza que quer falar com atendente (intencao de handoff, deteccao
+   atual do `ChatFlowService`).
+3. Bot pergunta explicitamente se o cliente confirma que quer atendimento
+   humano.
+4. Se sim, dispara OTP (reaproveita `WebWhatsAppAuthService.start`).
+5. Cliente digita o codigo (`confirm`).
+6. **So apos OTP confirmado**: `support_case` e criado (ou confirmado) e a
+   notificacao ao time e enfileirada. Mensagem automatica de confirmacao volta
+   ao cliente com numero do ticket, tema, data/hora e o contexto sanitizado que
+   sera passado ao atendente (transparencia = parte do consentimento
+   informado).
+
+Decisoes de design que faltam fechar:
+
+- **Abandono do OTP**: se o cliente confirmar intencao mas nao completar o
+  codigo (esquece, nao recebe, desiste), a conversa/intencao de escalacao
+  continua sendo persistida normalmente (sinal preservado para metricas
+  internas via `escalated=true` no turno), mas o `support_case` formal e a
+  notificacao ao time **nao** nascem sem OTP confirmado — ninguem do time
+  recebe contato sem autorizacao. Precisa de timeout/expiracao do desafio
+  (reaproveita `otp_code_ttl_seconds`) e uma mensagem clara ao cliente se o
+  prazo passar.
+- **Origem do nome** (ex.: "Ola Renan" na mensagem de confirmacao): OTP so
+  prova o numero, nao o nome. Ou pergunta simples no fluxo de handoff, ou
+  aceitar sem nome no MVP (`customers.display_label` ja e opcional).
+- Onde este passo entra no codigo: provavelmente um novo estado no
+  `ChatFlowService` (equivalente ao `ESCAPE_STATE` do Hermes, mas para o web
+  chat) que segura o turno em "aguardando OTP" antes de chamar
+  `_upsert_support_case`, em vez de criar o caso incondicionalmente como hoje.
+
+Criterio de pronto:
+
+- sem OTP confirmado, nenhum `support_case`/notificacao nasce para o web chat.
+- conversa/intencao de escalacao nao se perde mesmo se o cliente abandonar o OTP.
+- mensagem de confirmacao ao cliente reflete exatamente o que foi enviado ao
+  time (sem PII alem do que ja e sanitizado).
+- WhatsApp nativo (Hermes/Meta) continua sem esse gate — handoff la funciona
+  como hoje.
 
 ### Sprint 5 - Notificacao WhatsApp Para O Time
 
