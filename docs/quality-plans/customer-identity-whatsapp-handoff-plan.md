@@ -644,30 +644,54 @@ Fluxo alvo:
    sera passado ao atendente (transparencia = parte do consentimento
    informado).
 
-Decisoes de design que faltam fechar:
+Decisoes de design fechadas (2026-07-01):
 
 - **Abandono do OTP**: se o cliente confirmar intencao mas nao completar o
-  codigo (esquece, nao recebe, desiste), a conversa/intencao de escalacao
-  continua sendo persistida normalmente (sinal preservado para metricas
-  internas via `escalated=true` no turno), mas o `support_case` formal e a
-  notificacao ao time **nao** nascem sem OTP confirmado — ninguem do time
-  recebe contato sem autorizacao. Precisa de timeout/expiracao do desafio
-  (reaproveita `otp_code_ttl_seconds`) e uma mensagem clara ao cliente se o
-  prazo passar.
-- **Origem do nome** (ex.: "Ola Renan" na mensagem de confirmacao): OTP so
-  prova o numero, nao o nome. Ou pergunta simples no fluxo de handoff, ou
-  aceitar sem nome no MVP (`customers.display_label` ja e opcional).
+  codigo, o sistema **lembra em 15 minutos** com uma nova mensagem automatica
+  pedindo para completar o codigo. A conversa/intencao de escalacao continua
+  sendo persistida normalmente (sinal preservado para metricas internas via
+  `escalated=true` no turno); o `support_case` formal e a notificacao ao time
+  so nascem apos o OTP confirmado. Implementacao provavel: job/scan (mesmo
+  padrao do systemd timer da sumarizacao) que varre desafios `pending` sem
+  lembrete enviado, mais velhos que 15 min, e dispara reenvio pelo mesmo
+  transporte da entrega original (`WEB_AUTH_OTP_DELIVERY_TRANSPORT`), 
+  respeitando `otp_resend_cooldown_seconds`/`otp_code_ttl_seconds` (se o
+  desafio original ja expirou, o lembrete deve gerar um novo desafio, nao
+  tentar reusar um codigo morto).
+- **Origem do nome — investigado e descartado o "get automatico"**: o
+  WhatsApp so entra no fluxo de OTP como canal de **envio** (`send_text`); a
+  confirmacao do codigo acontece pelo cliente digitando na tela do web chat
+  (`POST /web/auth/whatsapp/confirm`), entao o sistema nunca recebe uma
+  mensagem *de volta* pelo WhatsApp nesse fluxo — e e so numa mensagem
+  recebida que a Cloud API entrega `contacts[].profile.name` (que hoje nem e
+  parseado em `app/integrations/meta_whatsapp/schemas.py`, mesmo no canal
+  nativo). Pegar o nome automatico exigiria mudar a confirmacao para acontecer
+  via resposta no WhatsApp em vez de digitar no widget — mudanca de
+  arquitetura maior, e o nome capturado seria um apelido nao verificado, nao
+  identidade real. **Decisao: pedir o nome como campo simples no fluxo do
+  handoff** (ex.: "qual seu nome?"), dado explicitamente pelo cliente,
+  gravado em `customers.display_label` (ja opcional no schema).
+- **WhatsApp nativo confirmado fora do escopo do gate**: no web chat o
+  visitante e anonimo ate provar o telefone via OTP; no WhatsApp nativo
+  (Hermes/Meta) o numero ja e conhecido desde a primeira mensagem — a propria
+  plataforma garante que quem manda e dono daquele WhatsApp, e a equipe
+  responde **na mesma conversa que o cliente iniciou** (nao e contato novo
+  "do nada"). Por isso o gate de consentimento fica restrito ao web chat;
+  handoff no WhatsApp nativo continua funcionando como hoje, sem esse passo
+  extra.
 - Onde este passo entra no codigo: provavelmente um novo estado no
   `ChatFlowService` (equivalente ao `ESCAPE_STATE` do Hermes, mas para o web
-  chat) que segura o turno em "aguardando OTP" antes de chamar
+  chat) que segura o turno em "aguardando nome + OTP" antes de chamar
   `_upsert_support_case`, em vez de criar o caso incondicionalmente como hoje.
 
 Criterio de pronto:
 
 - sem OTP confirmado, nenhum `support_case`/notificacao nasce para o web chat.
 - conversa/intencao de escalacao nao se perde mesmo se o cliente abandonar o OTP.
+- cliente recebe lembrete automatico em 15 min se nao completar o codigo.
 - mensagem de confirmacao ao cliente reflete exatamente o que foi enviado ao
-  time (sem PII alem do que ja e sanitizado).
+  time (sem PII alem do que ja e sanitizado), incluindo o nome quando
+  informado.
 - WhatsApp nativo (Hermes/Meta) continua sem esse gate — handoff la funciona
   como hoje.
 
