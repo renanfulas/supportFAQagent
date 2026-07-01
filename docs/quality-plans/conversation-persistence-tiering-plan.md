@@ -1,6 +1,11 @@
 # Persistência de conversa em camadas (RAM → Redis → sink off-box → Postgres noturno)
 
-Status: **decisão de arquitetura registrada; execução em fatias, default desligado.**
+Status (2026-07-01): **Fases 0–4 implementadas; Fases 2–4 confirmadas vivas em
+produção na VPS** (Redis instalado e `SESSION_STATE_BACKEND=redis`; batch noturno
+rodando desde 2026-06-29 com 39 resumos gravados sem erro; `ENABLE_SUMMARY_RECALL=true`
+agora também no canal Hermes/WhatsApp após deploy dos commits que faltavam). Falta
+só a Fase 0 (sink off-box), bloqueada por credenciais R2. Ver detalhamento por fase
+em `conversation-persistence-tiering-tech-plan.md`.
 Origem: conversa com Silotto (TekZoom HG) indicando **milhares de pedidos de
 suporte por dia**. Dono atual da frente: Renan (persistência e VPS passaram a ser
 nossas — ver `team-ownership-change`).
@@ -305,5 +310,11 @@ backend (in-memory, Redis, S3) trocável por flag, sem mudar chamador nem schema
   incremental para absorver as ideias da B sob gatilho (ver §4, "Decisão fechada").
 - Retenção exata de cada camada (45 min / 7 d são pontos de partida, não lei).
 - Política de `maxmemory`/eviction do Redis que **não** descarte turno não
-  sumarizado.
+  sumarizado. **Confirmado em produção (2026-07-01)**: `maxmemory 256mb`,
+  `maxmemory-policy volatile-ttl`, `appendonly yes`/`appendfsync everysec`.
 - Quais conversas pular na sumarização (triviais/atalho) para conter custo.
+- **Achado (2026-07-01)**: `ENABLE_SUMMARY_RECALL` foi ligado em produção sem
+  registro explícito da amostragem de qualidade que o runbook
+  (`docs/runbooks/conversation-summary-batch.md` §3) define como pré-requisito.
+  Pendente: confirmar se a amostragem foi feita informalmente ou fazê-la agora
+  sobre os resumos já gravados, antes de considerar o recall totalmente validado.
