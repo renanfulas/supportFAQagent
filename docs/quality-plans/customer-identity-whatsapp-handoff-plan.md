@@ -239,6 +239,8 @@ Campos sugeridos:
 - `id uuid primary key`
 - `status text not null default 'active'`
 - `display_label text null`
+- `email text null` — **adicionado 2026-07-01** (migration `013_`), coletado no
+  gate de consentimento do Sprint 4b, junto com `display_label`.
 - `default_channel text null`
 - `last_seen_at timestamptz null`
 - `created_at timestamptz not null`
@@ -247,6 +249,9 @@ Campos sugeridos:
 Observacoes:
 
 - `display_label` deve ser opcional e sanitizado.
+- `email`, quando preenchido, fica legivel (nao hash) porque a equipe usa para
+  contato real — diferente do telefone. Validar formato basico no backend
+  antes de salvar; nao logar em observabilidade geral.
 - Nao salvar telefone bruto.
 - Evitar campos de CRM grandes nesta fase.
 
@@ -638,11 +643,14 @@ Fluxo alvo:
    humano.
 4. Se sim, dispara OTP (reaproveita `WebWhatsAppAuthService.start`).
 5. Cliente digita o codigo (`confirm`).
-6. **So apos OTP confirmado**: `support_case` e criado (ou confirmado) e a
-   notificacao ao time e enfileirada. Mensagem automatica de confirmacao volta
-   ao cliente com numero do ticket, tema, data/hora e o contexto sanitizado que
-   sera passado ao atendente (transparencia = parte do consentimento
-   informado).
+6. **Apos OTP confirmado**: se o `customer_id` resolvido ainda nao tem
+   `display_label`/`email` salvos, bot pergunta "Qual seu nome? E-mail?" e
+   grava em `customers` (fica salvo para os proximos tickets desse mesmo
+   cliente — nao pergunta de novo). Se ja tiver, pula direto para o passo 7.
+7. `support_case` e criado (ou confirmado) e a notificacao ao time e
+   enfileirada. Mensagem automatica de confirmacao volta ao cliente com numero
+   do ticket, tema, data/hora e o contexto sanitizado que sera passado ao
+   atendente (transparencia = parte do consentimento informado).
 
 Decisoes de design fechadas (2026-07-01):
 
@@ -668,9 +676,20 @@ Decisoes de design fechadas (2026-07-01):
   nativo). Pegar o nome automatico exigiria mudar a confirmacao para acontecer
   via resposta no WhatsApp em vez de digitar no widget — mudanca de
   arquitetura maior, e o nome capturado seria um apelido nao verificado, nao
-  identidade real. **Decisao: pedir o nome como campo simples no fluxo do
-  handoff** (ex.: "qual seu nome?"), dado explicitamente pelo cliente,
-  gravado em `customers.display_label` (ja opcional no schema).
+  identidade real. **Decisao: pedir nome e e-mail como campos simples no fluxo
+  do handoff** (ex.: "qual seu nome? e-mail?"), dados explicitamente pelo
+  cliente apos o OTP.
+- **Persistencia de nome/e-mail (2026-07-01)**: gravados em `customers` (nao
+  so no ticket), para reaproveitar em tickets futuros do mesmo cliente sem
+  perguntar de novo. `display_label` ja existe e e opcional no schema atual;
+  falta adicionar `customers.email text null` — proxima migration disponivel
+  e a `013_` (ultima aplicada e a `012_conversation_summaries.sql`).
+  Diferente do telefone (que so guarda `phone_hash`+`phone_last4`), o
+  e-mail precisa ficar **legivel** porque o time vai usa-lo de verdade para
+  contato — nao faz sentido so um hash aqui. Validar formato basico de e-mail
+  no backend antes de salvar; nao expor em logs gerais (só dentro do
+  `context_snapshot_sanitized` do `support_case` e do proprio registro em
+  `customers`, que ja seguem a mesma disciplina de acesso restrito).
 - **WhatsApp nativo confirmado fora do escopo do gate**: no web chat o
   visitante e anonimo ate provar o telefone via OTP; no WhatsApp nativo
   (Hermes/Meta) o numero ja e conhecido desde a primeira mensagem — a propria
