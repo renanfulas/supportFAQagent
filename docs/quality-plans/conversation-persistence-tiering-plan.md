@@ -313,8 +313,10 @@ backend (in-memory, Redis, S3) trocável por flag, sem mudar chamador nem schema
   sumarizado. **Confirmado em produção (2026-07-01)**: `maxmemory 256mb`,
   `maxmemory-policy volatile-ttl`, `appendonly yes`/`appendfsync everysec`.
 - Quais conversas pular na sumarização (triviais/atalho) para conter custo.
-- **Achado (2026-07-01)**: `ENABLE_SUMMARY_RECALL` foi ligado em produção sem
-  registro explícito da amostragem de qualidade que o runbook
-  (`docs/runbooks/conversation-summary-batch.md` §3) define como pré-requisito.
-  Pendente: confirmar se a amostragem foi feita informalmente ou fazê-la agora
-  sobre os resumos já gravados, antes de considerar o recall totalmente validado.
+- ~~Achado (2026-07-01): `ENABLE_SUMMARY_RECALL` ligado sem amostragem de
+  qualidade registrada~~ **RESOLVIDO (2026-07-01, retroativo)**: amostragem feita
+  sobre os 39 resumos existentes — 0 achados de PII/PAN (varredura automática +
+  leitura manual de 8 casos), problema/solução batem com a conversa real em 7/8.
+  Limitação documentada: conversas longas/multi-assunto retêm só o último tópico
+  no resumo (ver tech-plan §Fase 4). Recall segue ligado; falta o caso de eval no
+  domínio e a métrica de custo.

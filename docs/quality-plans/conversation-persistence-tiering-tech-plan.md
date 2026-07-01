@@ -291,12 +291,41 @@ confinado no bloco), gating do recall (`tests/test_conversation_summary.py`) e
 fetch real-Postgres (`tests/integration/test_conversation_summary_postgres.py`).
 Custo documentado em `docs/architecture/cost-latency-profile.md`.
 
-**Gap real encontrado (2026-07-01):** a flag foi ligada em produção sem registro
-formal da amostragem de qualidade abaixo — não há evidência de que o passo tenha
-sido feito antes de ligar. Falta:
+**Amostragem de qualidade concluída (2026-07-01, retroativa):** a flag tinha sido
+ligada em produção sem registro formal do passo abaixo. Feito agora sobre os 39
+resumos existentes em `conversation_summaries`:
 
-- Amostragem de resumos conferida contra a conversa real (problema/solução/status) —
-  39 resumos já disponíveis em `conversation_summaries` para essa checagem.
+- Varredura automática (regex) nos 39 registros por `problem`+`solution`: cartão
+  (13-19 dígitos), telefone, e-mail, marcador de sessão crua, e `customer_ref` fora
+  do formato hash. **0 ocorrências** — nenhum PII/PAN/`session_id` cru encontrado;
+  todos os `customer_ref` são hash.
+- Leitura manual de 8 resumos (amostra cobrindo os dois domínios, status
+  resolvido/em_aberto/escalado, 2 a 84 turnos) contra a transcrição real
+  (`messages` por `conversation_id=conversation_key`): problema/solução batem com a
+  conversa em 7/8 casos.
+- **Achado (limitação, não bug):** no caso de 84 turnos (id 44), a conversa real
+  contém múltiplos assuntos não relacionados em sequência (aparenta ser sessão de
+  teste/QA reaproveitando o mesmo número, testando vários cenários de venda) — o
+  resumo capturou só o **último** assunto coerente, descartando os anteriores. Para
+  uma conversa real de cliente com múltiplos temas ao longo do tempo, o resumo
+  pode perder contexto de temas mais antigos na mesma sessão.
+- **Achado (comportamento esperado, vale documentar):** numa conversa com tentativa
+  de prompt injection/jailbreak (id 7 — "ignore instruções anteriores", "modo
+  DEBUG", pedido de `CANARY_SECRET`), o bot recusou corretamente e o resumo omitiu
+  por completo a tentativa adversária, registrando só a intenção comercial
+  legítima. Consistente com o design de "recall não-confiável" (não deve carregar
+  conteúdo adversário adiante), mas significa que o resumo não serve como sinal de
+  abuso — isso só existe no dado bruto.
+- Status (`resolvido`/`em_aberto`/`escalado`) parece **inferido pelo modelo**, não
+  confirmado explicitamente pelo cliente em vários casos — não é erro, mas a
+  confiança no campo `status` deve ser calibrada como "melhor estimativa", não fato
+  confirmado.
+
+**Veredito:** gate de segurança (PII/PAN) passa com folga; gate de utilidade passa
+para conversas curtas/médias (a maioria). Recomendação: manter `ENABLE_SUMMARY_RECALL`
+ligado, mas tratar a limitação de conversas longas/multi-assunto como item de
+backlog (não bloqueia o recall atual). Ainda falta:
+
 - Caso de eval no domínio (`domains/suporte-vps-whatsapp/evals/`) que valida que o
   resumo recuperado melhora — e não polui — a próxima resposta.
 - Métrica de custo da sumarização adicionada a `docs/architecture/cost-latency-profile.md`.
