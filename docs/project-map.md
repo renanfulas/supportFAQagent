@@ -56,7 +56,7 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
 | Nucleo RAG (Fases 1–4) | ✅ | [`MVP/mvp-plan.md`](MVP/mvp-plan.md), [`MVP/technical-implementation-plan.md`](MVP/technical-implementation-plan.md) | `app/orchestration/`, `app/retrieval/`, `app/llm/`, `app/ingestion/` | `pytest`, `run_domain_eval`, gate `76/78` |
 | Fase 0 — persistencia/migrations/outbox | ✅ implementado · 🟡 promocao `not_approved` (restore drill turnkey pronto) | [`quality-plans/phase0-operational-risk-reduction.md`](quality-plans/phase0-operational-risk-reduction.md), [`runbooks/phase0-snapshot-restore.md`](runbooks/phase0-snapshot-restore.md), [`runbooks/phase0-staging-promotion-evidence.md`](runbooks/phase0-staging-promotion-evidence.md) | `app/db/`, `app/conversations/`, `app/health/`, `migrations/001-008`, `scripts/phase0_restore_validate.py` | integração PostgreSQL opt-in, `test_phase0_restore_validate` |
 | pgvector (retrieval vetorial) | ✅ default de staging, rollback lexical | [`MVP/technical-implementation-plan.md`](MVP/technical-implementation-plan.md), [`runbooks/pgvector-promotion-checklist.md`](runbooks/pgvector-promotion-checklist.md) | `app/retrieval/`, `app/ingestion/pgvector_writer.py` | `pgvector_gate.yaml` |
-| Persistencia em camadas (tiering) | 🟡 seams implementados, dark por flag (2026-06-29) | [`quality-plans/conversation-persistence-tiering-plan.md`](quality-plans/conversation-persistence-tiering-plan.md), [`...-tech-plan.md`](quality-plans/conversation-persistence-tiering-tech-plan.md) | `app/conversations/`, `architecture/conversation-archive-sink.md`, `runbooks/redis-session-state.md`, `runbooks/conversation-summary-batch.md` | testes fake-client + integração postgres |
+| Persistencia em camadas (tiering) | 🟡 Fases 2-4 vivas na VPS + amostragem de qualidade concluida (2026-07-01, 0 achados de PII/PAN); falta so Fase 0 (sink R2, bloqueado por credenciais) e o caso de eval no dominio | [`quality-plans/conversation-persistence-tiering-plan.md`](quality-plans/conversation-persistence-tiering-plan.md), [`...-tech-plan.md`](quality-plans/conversation-persistence-tiering-tech-plan.md) | `app/conversations/`, `architecture/conversation-archive-sink.md`, `runbooks/redis-session-state.md`, `runbooks/conversation-summary-batch.md` | testes fake-client + integração postgres |
 | Identidade do cliente + handoff WhatsApp | 🟡 Sprints 0-5 implementados (identidade, historico, ticket, notificacao WhatsApp); Sprint 4b (gate de consentimento LGPD) desenhado, sem codigo; extensao "minion" bloqueada no Juliano | [`quality-plans/customer-identity-whatsapp-handoff-plan.md`](quality-plans/customer-identity-whatsapp-handoff-plan.md), [`...-tech-plan.md`](quality-plans/customer-identity-whatsapp-handoff-tech-plan.md) | `app/handoff/`, `app/web_auth/`, `app/identity/`, support inbox, `runbooks/support-team-whatsapp-notify-smoke.md` | `test_support_inbox*`, `test_support_team_notifications`, `test_web_auth` |
 | Roteamento de dominio pegajoso (sticky) | ✅ seam + adapter duravel, validado em CI | [`quality-plans/whatsapp-sticky-domain-routing-plan.md`](quality-plans/whatsapp-sticky-domain-routing-plan.md) | `app/domain_engine/` (session domain store) | `test_session_domain_store(_postgres)` |
 | Funil de vendas (hardening) | 🟡 em andamento (achados de smoke) | [`quality-plans/vendas-funnel-hardening-plan.md`](quality-plans/vendas-funnel-hardening-plan.md) | `domains/vendas/`, `app/handoff/`, `app/orchestration/` | `test_vendas_checkout`, `test_pii_card`, eval `vendas` |
@@ -88,8 +88,12 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    (`runbooks/meta-whatsapp-private-smoke.md`).
 3. **Capacidade de disco da VPS**: alerta + politica de limpeza de cache Docker,
    preservando volumes do PostgreSQL (`runbooks/vps-capacity-and-docker-cleanup.md`).
-4. **Promover as camadas de persistencia hoje dark** (archive sink, Redis de
-   sessao, batch de sumarizacao) conforme o tech-plan, quando o operacional pedir.
+4. **Fase 0 do tiering (archive sink R2)**: unico item de persistencia em camadas
+   ainda desligado, bloqueado por credenciais Cloudflare R2 (bucket/endpoint/chaves).
+   Redis (Fase 2) e batch+recall (Fases 3-4) ja estao live na VPS desde 2026-07-01,
+   com amostragem de qualidade dos resumos ja feita (0 achados de PII/PAN). Falta
+   so o caso de eval no dominio para o recall (ver
+   `quality-plans/conversation-persistence-tiering-tech-plan.md` Fase 4).
 5. **Fechar frentes parciais**: enriquecimento de push do support inbox
    (identidade + handoff) e hardening restante do funil de vendas.
 6. **Sprint 4b (gate de consentimento LGPD no handoff do web chat)**: desenho e
