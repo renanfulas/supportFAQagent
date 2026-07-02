@@ -22,6 +22,7 @@ from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
 from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage
 from app.orchestration.channel_routing import (
     build_domain_router,
+    fallback_routing_text,
     resolve_sticky_domain,
 )
 from app.orchestration.chat_flow import ChatFlowService
@@ -60,10 +61,16 @@ class MetaWhatsAppChatTransport:
         router: DomainRouter | None = None,
         session_store: SessionDomainStore | None = None,
         chat_session_state_store: SessionStateStore | None = None,
+        last_out_store: SessionDomainStore | None = None,
     ) -> None:
         self.settings = settings
         self.database_runtime = database_runtime
         self.client = client
+        # Last routing text sent per session, so a still-ambiguous reply gets the
+        # clarification question instead of the same greeting again. Unlike the
+        # Hermes transport, only routing turns are recorded here (the Meta path
+        # has no general outbound dedup yet).
+        self.last_out_store = last_out_store
         self.domain_loader = domain_loader or DomainLoader(settings.domains_path)
         self.chat_service = chat_service or ChatFlowService(
             history_service=ConversationHistoryService(database_runtime),
@@ -106,9 +113,24 @@ class MetaWhatsAppChatTransport:
                 session_id=session_id,
             )
             if resolution.show_menu or resolution.domain is None:
+                # Unrouted turn: institutional greeting on first contact, then the
+                # clarification question. Status stays "routing_menu" to preserve
+                # the observability contract even though the text is conversational.
+                last_outbound = (
+                    self.last_out_store.get(session_id)
+                    if self.last_out_store is not None
+                    else None
+                )
+                text = fallback_routing_text(
+                    self.router,
+                    last_outbound=last_outbound,
+                    reset=resolution.reset,
+                )
+                if self.last_out_store is not None:
+                    self.last_out_store.set(session_id, text)
                 outbound = self.client.send_text(
                     to=message.from_wa_id,
-                    text=self.router.menu_text(),
+                    text=text,
                 )
                 return MetaWhatsAppChatResult(
                     request_id=request_id,

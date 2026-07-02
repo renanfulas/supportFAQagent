@@ -13,7 +13,11 @@ from app.core.config import Settings, get_settings
 from app.domain_engine.models import DomainConfig
 from app.core.rate_limit import InMemoryRateLimiter
 from app.db.operational import ChatPersistenceResult
-from app.integrations.hermes.chat_transport import ESCAPE_STATE, HermesChatTransport
+from app.integrations.hermes.chat_transport import (
+    ESCAPE_STATE,
+    REPEAT_NUDGE,
+    HermesChatTransport,
+)
 from app.integrations.hermes.client import HermesBridgeClient, HermesSendResult
 from app.integrations.hermes.inbound import (
     HermesInboundMessage,
@@ -264,7 +268,7 @@ def test_transport_routes_sales_and_reuses_brain() -> None:
     assert result.outbound_message_id == "hermes-out"
 
 
-def test_transport_greeting_sends_menu_without_brain() -> None:
+def test_transport_greeting_sends_natural_greeting_without_brain() -> None:
     client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
     transport = _transport(client, chat, loader)
 
@@ -272,7 +276,44 @@ def test_transport_greeting_sends_menu_without_brain() -> None:
 
     assert chat.calls == 0
     assert result.handoff_status == "routing_menu"
-    assert "Vendas HostGator" in client.sent[0]
+    assert "HostGator Brasil" in client.sent[0]
+    assert "assistente virtual" in client.sent[0]
+    assert "1)" not in client.sent[0]
+
+
+def test_transport_ambiguous_flow_greets_then_clarifies_then_nudges() -> None:
+    client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
+    settings = Settings(
+        _env_file=None,
+        APP_ENV="development",
+        ENABLE_WHATSAPP_DOMAIN_ROUTER="true",
+        WHATSAPP_ROUTER_DOMAINS="suporte-vps-whatsapp,vendas",
+    )
+    router = DomainRouter(domains=(SUPPORT, VENDAS), default_domain="suporte-vps-whatsapp")
+    transport = HermesChatTransport(
+        settings=settings,
+        database_runtime=object(),
+        client=client,
+        domain_loader=loader,
+        chat_service=chat,
+        repository=_FakeRepository(),
+        router=router,
+        last_out_store=InMemorySessionDomainStore(),
+        rate_limiter=InMemoryRateLimiter(max_requests=1000),
+    )
+
+    # 1st contact: institutional greeting
+    transport.handle_text_message(message=_msg("Oi"), request_id="r1")
+    # still ambiguous: clarification question, not the greeting again
+    transport.handle_text_message(message=_msg("preciso de uma coisa"), request_id="r2")
+    # ambiguous again: dedup catches the repeated clarification -> repeat nudge
+    third = transport.handle_text_message(message=_msg("hmm nao sei"), request_id="r3")
+
+    assert chat.calls == 0
+    assert "HostGator Brasil" in client.sent[0]
+    assert client.sent[1] == router.clarification_text()
+    assert third.handoff_status == "repeat_reflection"
+    assert client.sent[2] == REPEAT_NUDGE
 
 
 def test_transport_menu_selection_sends_welcome_without_brain() -> None:

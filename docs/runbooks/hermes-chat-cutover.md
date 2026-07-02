@@ -103,7 +103,9 @@ Hermes para de responder nesse numero.
 
 Mandar uma mensagem de um numero da allowlist:
 
-- "oi" -> deve vir o menu (suporte/vendas).
+- "oi" -> deve vir a saudacao institucional (HostGator Brasil + assistente
+  virtual); uma resposta ainda generica ("preciso de ajuda") -> pergunta de
+  esclarecimento (suporte tecnico ou planos).
 - "quero contratar um plano de hospedagem" -> resposta de vendas.
 - "minha vps caiu" -> resposta de suporte.
 

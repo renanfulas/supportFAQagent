@@ -49,7 +49,8 @@ Eventos atuais:
   `request_id`, backend de retrieval, quantidade de referencias e tempos
   agregados do fluxo. Emitido por todos os canais que chamam o cerebro
   (`/chat`, WhatsApp via Meta e via Hermes, e zoom); o canal web usa o evento
-  equivalente `web_chat_completed`. Turnos de roteamento (menu/selecao) que nao
+  equivalente `web_chat_completed`. Turnos de roteamento (saudacao,
+  esclarecimento ou selecao, status `routing_menu`/`routing_selected`) que nao
   chamam o cerebro nao emitem `chat_completed`.
 - quando houver falha do provider de LLM, `chat_completed` tambem pode registrar `provider_failure_kind` como metadado interno seguro, por exemplo `missing_credentials`, `provider_timeout`, `provider_request_error`, `empty_response` ou `initialization_error`.
 - `chat_persistence_unavailable`: falha sanitizada ao gravar audit, conversa

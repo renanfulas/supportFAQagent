@@ -32,6 +32,7 @@ from app.integrations.hermes.client import HermesClient
 from app.integrations.hermes.inbound import HermesInboundMessage
 from app.orchestration.channel_routing import (
     build_domain_router,
+    fallback_routing_text,
     resolve_sticky_domain,
 )
 from app.conversations.session_state import SessionStateStore
@@ -194,10 +195,22 @@ class HermesChatTransport:
                 session_id=session_id,
             )
             if resolution.show_menu or resolution.domain is None:
+                # Unrouted turn: institutional greeting on first contact, then the
+                # clarification question. Status stays "routing_menu" to preserve
+                # the observability contract even though the text is conversational.
+                last_outbound = (
+                    self.last_out_store.get(session_id)
+                    if self.last_out_store is not None
+                    else None
+                )
                 return self._send_dedup(
                     session_id=session_id,
                     message=message,
-                    text=self.router.menu_text(),
+                    text=fallback_routing_text(
+                        self.router,
+                        last_outbound=last_outbound,
+                        reset=resolution.reset,
+                    ),
                     request_id=request_id,
                     status="routing_menu",
                 )

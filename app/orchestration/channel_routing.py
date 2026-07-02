@@ -20,6 +20,10 @@ class RouteResolution:
     domain: str | None
     show_menu: bool = False
     selected: bool = False
+    # True when the user explicitly asked to switch/restart ("menu", "trocar"):
+    # the fallback should go straight to the clarification question instead of
+    # re-introducing the company.
+    reset: bool = False
 
 
 def build_domain_router(
@@ -62,7 +66,7 @@ def resolve_sticky_domain(
 
     if store is not None and router.is_reset(text):
         store.clear(session_id)
-        return RouteResolution(domain=None, show_menu=True)
+        return RouteResolution(domain=None, show_menu=True, reset=True)
 
     decision = router.route(text)
     intentful = {"menu_selection", "keyword_match", "single_domain"}
@@ -82,3 +86,23 @@ def resolve_sticky_domain(
     if decision.domain is None:
         return RouteResolution(domain=None, show_menu=True)
     return RouteResolution(domain=decision.domain)
+
+
+def fallback_routing_text(
+    router: DomainRouter,
+    *,
+    last_outbound: str | None,
+    reset: bool = False,
+) -> str:
+    """Pick the customer-facing text for an unrouted (``show_menu``) turn.
+
+    First contact gets the institutional greeting. When the greeting or the
+    clarification was the last thing sent (the reply is still ambiguous), or the
+    user explicitly asked to switch (reset), send the clarification question so
+    the conversation moves forward instead of repeating the company intro.
+    """
+    if reset:
+        return router.clarification_text()
+    if last_outbound in (router.greeting_text(), router.clarification_text()):
+        return router.clarification_text()
+    return router.greeting_text()

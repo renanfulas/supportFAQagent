@@ -41,15 +41,17 @@ dominios e tratada como vocabulario *ambiente* e ignorada no roteamento; so
 keywords exclusivas de um dominio decidem. Assim `vps` (compartilhado) nao gera
 empate, e os discriminadores roteiam - `reinstalar`/`rebuild`/`rdp`/`kvm` ->
 `suporte-vps`; `evolution`/`n8n`/`qrcode`/`ssh` -> `suporte-vps-whatsapp`. Uma
-mensagem so com termo ambiente cai no menu (fallback seguro). Isso e apenas de
+mensagem so com termo ambiente cai no fallback conversacional (saudacao ou
+pergunta de esclarecimento - fallback seguro). Isso e apenas de
 roteamento: a mesma keyword compartilhada continua sendo sinal valido de escopo
 dentro de um dominio ja escolhido (`HandoffService._has_domain_signal`).
 
-Fronteiras conhecidas (caem no menu, por seguranca): frase so com `vps`;
+Fronteiras conhecidas (caem no fallback de esclarecimento, por seguranca):
+frase so com `vps`;
 `servidor dedicado` vs a ancora comercial `servidor` do `vendas`; `<tema> da
 hospedagem` vs a ancora `hospedagem`. Cobertas por testes em
 `tests/test_domain_router.py`. Um dominio cujas keywords sejam todas
-compartilhadas so seria alcancavel por menu/numero.
+compartilhadas so seria alcancavel por selecao explicita (numero/nome).
 
 ## Destino de cada bloco do suporte HostGator
 
@@ -99,7 +101,7 @@ Resumo do mapeamento completo em
   Comercial (owner do dominio), embora coberta por eval de regressao.
 - Sobreposicao de escopo entre `suporte-vps` e `suporte-vps-whatsapp`: manter a
   fronteira por camada acima e nao duplicar conhecimento.
-- Selecao de menu por rotulo so usa a primeira palavra do display; com varios
+- Selecao explicita por rotulo so usa a primeira palavra do display; com varios
   dominios "Suporte ...", a selecao confiavel e pelo numero. Por isso o
   `suporte-vps` usa display "Gerenciamento de VPS e Dedicado".
 - Conteudo e o gargalo real, nao o codigo: dominio sem base de conhecimento so

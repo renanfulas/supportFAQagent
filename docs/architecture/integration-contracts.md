@@ -1175,25 +1175,40 @@ Fronteira de responsabilidade:
   no minion — ele so busca e entrega, espelhando a regra ja aplicada a
   Hermes/Meta ("nao mover inteligencia para o transporte externo").
 
-## Roteamento de dominio no WhatsApp (palavra-chave + menu)
+## Roteamento de dominio no WhatsApp (palavra-chave + saudacao natural)
 
 Quando um unico numero WhatsApp atende mais de um dominio (por exemplo
-`suporte-vps-whatsapp` e `vendas`), o transporte Meta usa `DomainRouter`
-(`app/orchestration/domain_router.py`) para decidir qual dominio responde cada
-mensagem.
+`suporte-vps-whatsapp` e `vendas`), os transportes Meta e Hermes usam
+`DomainRouter` (`app/orchestration/domain_router.py`) para decidir qual dominio
+responde cada mensagem.
 
 Contrato:
 
 - desligado por padrao (`ENABLE_WHATSAPP_DOMAIN_ROUTER=false`); ligado, exige
-  `WHATSAPP_ROUTER_DOMAINS` com 2+ dominios validos, na ordem do menu.
+  `WHATSAPP_ROUTER_DOMAINS` com 2+ dominios validos, na ordem de selecao
+  (`1`, `2`, ...).
 - selecao explicita por numero (`1`, `2`) ou pelo nome da opcao (`suporte`,
-  `vendas`) escolhe o dominio.
+  `vendas`) segue funcionando como atalho e escolhe o dominio.
 - sem selecao, a mensagem e pontuada contra `routing.keywords` de cada dominio
   (match por palavra inteira, acentos normalizados); o melhor unico vence.
-- saudacao, texto vazio, empate ou nenhum match -> o transporte envia o menu e
-  nao chama o motor de resposta.
-- com 1 dominio configurado, nunca mostra menu (atende sempre esse dominio).
-- decisao stateless: nao lembra a escolha entre mensagens. Memoria de sessao
-  (escolha pegajosa por conversa) e incremento futuro e depende de persistencia.
+- saudacao, texto vazio, empate ou nenhum match -> o transporte NAO chama o
+  motor de resposta e envia o fallback conversacional
+  (`fallback_routing_text` em `app/orchestration/channel_routing.py`):
+  - primeiro contato: saudacao institucional (HostGator Brasil + assistente
+    virtual + areas atendidas), que induz uma resposta roteavel;
+  - resposta ainda ambigua apos a saudacao, ou reset explicito
+    (`menu`/`trocar`/`voltar`): pergunta de esclarecimento
+    ("suporte tecnico ou planos?");
+  - esclarecimento repetido em sequencia: o dedup do transporte Hermes troca
+    pelo nudge anti-loop existente.
+  - o status de observabilidade desses turnos continua `routing_menu`
+    (contrato preservado; so o texto mudou).
+- a alternancia saudacao -> esclarecimento usa o ultimo texto enviado por
+  sessao (`session_last_out_store`); no transporte Meta apenas os turnos de
+  roteamento sao registrados nesse store.
+- com 1 dominio configurado, nunca envia fallback (atende sempre esse dominio).
+- o `DomainRouter` em si e stateless por mensagem; a memoria pegajosa por
+  conversa vive no `SessionDomainStore` (duravel em PostgreSQL quando
+  `SESSION_DOMAIN_STORE_BACKEND=postgres`).
 - o roteador apenas escolhe o dominio; toda a politica de seguranca, handoff e
   confinamento continua no `ChatFlowService` do dominio escolhido.
