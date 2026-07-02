@@ -88,10 +88,21 @@ def test_single_domain_never_shows_menu() -> None:
     assert decision.domain == "suporte-vps-whatsapp"
 
 
-def test_menu_text_lists_options() -> None:
-    text = _router().menu_text()
-    assert "1) Suporte VPS e WhatsApp" in text
-    assert "2) Vendas HostGator" in text
+def test_greeting_text_introduces_company_and_steers_domains() -> None:
+    text = _router().greeting_text()
+    assert "HostGator Brasil" in text
+    assert "assistente virtual" in text
+    assert "suporte técnico" in text
+    assert "planos" in text
+    # The greeting is conversational: no numbered menu lines.
+    assert "1)" not in text
+
+
+def test_clarification_text_asks_support_or_sales() -> None:
+    text = _router().clarification_text()
+    assert "suporte técnico" in text
+    assert "planos" in text
+    assert text != _router().greeting_text()
 
 
 def test_welcome_text_uses_custom_when_set() -> None:
@@ -282,7 +293,7 @@ class _FakeClient:
         return MetaSendResult(message_id="wamid.outbound")
 
 
-def _transport(client, chat, loader):
+def _transport(client, chat, loader, last_out_store=None):
     settings = Settings(
         _env_file=None,
         APP_ENV="development",
@@ -298,6 +309,7 @@ def _transport(client, chat, loader):
         chat_service=chat,
         repository=_FakeRepository(),
         router=router,
+        last_out_store=last_out_store,
     )
 
 
@@ -310,7 +322,7 @@ def _message(text: str) -> MetaInboundTextMessage:
     )
 
 
-def test_transport_greeting_sends_menu_without_calling_engine() -> None:
+def test_transport_greeting_sends_natural_greeting_without_calling_engine() -> None:
     client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
     transport = _transport(client, chat, loader)
 
@@ -318,7 +330,24 @@ def test_transport_greeting_sends_menu_without_calling_engine() -> None:
 
     assert chat.called is False
     assert result.handoff_status == "routing_menu"
-    assert "Vendas HostGator" in client.sent[0]
+    assert "HostGator Brasil" in client.sent[0]
+    assert "1)" not in client.sent[0]
+
+
+def test_transport_second_ambiguous_turn_sends_clarification() -> None:
+    client, chat, loader = _FakeClient(), _FakeChatService(), _FakeDomainLoader()
+    transport = _transport(
+        client, chat, loader, last_out_store=InMemorySessionDomainStore()
+    )
+
+    transport.handle_text_message(message=_message("Oi"), request_id="r1")
+    transport.handle_text_message(
+        message=_message("preciso de uma coisa"), request_id="r2"
+    )
+
+    assert chat.called is False
+    assert "HostGator Brasil" in client.sent[0]
+    assert client.sent[1] == transport.router.clarification_text()
 
 
 def test_transport_routes_sales_message_to_vendas_domain() -> None:
@@ -420,14 +449,16 @@ def test_reset_drops_stickiness_and_shows_menu() -> None:
     assert "5511999999999" not in session_key  # key is the sanitized hash, not raw wa_id
     assert store.get(session_key) == "vendas"
 
-    # reset -> menu, engine not called, binding cleared
+    # reset -> clarification question (not the full greeting), engine not
+    # called, binding cleared
     calls_before = chat.calls
     result = transport.handle_text_message(message=_message("menu"), request_id="r2")
     assert result.handoff_status == "routing_menu"
+    assert client.sent[-1] == transport.router.clarification_text()
     assert chat.calls == calls_before
     assert store.get(session_key) is None
 
-    # after reset, a generic message has no sticky domain -> menu again
+    # after reset, a generic message has no sticky domain -> fallback again
     result2 = transport.handle_text_message(
         message=_message("pode me explicar melhor?"),
         request_id="r3",

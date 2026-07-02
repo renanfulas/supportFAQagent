@@ -1,4 +1,4 @@
-"""Channel domain routing by keyword and initial menu.
+"""Channel domain routing by keyword and natural greeting.
 
 Selects which domain should answer an inbound conversational message when a single
 channel (for example one WhatsApp number) serves more than one domain, such as
@@ -6,11 +6,14 @@ channel (for example one WhatsApp number) serves more than one domain, such as
 
 This is a pure, deterministic, stateless seam:
 
-- an explicit menu selection (a number or an option name) picks that domain;
+- an explicit selection (a number or an option name, kept as hidden shortcuts)
+  picks that domain;
 - otherwise the message is scored against each domain's routing keywords and the
   unique best match wins;
-- when nothing matches (greeting, ambiguous, or a tie) the caller is told to show
-  the menu.
+- when nothing matches (greeting, ambiguous, or a tie) the caller is told to send
+  the fallback text: the institutional greeting on first contact, or the
+  clarification question when the conversation is already past the greeting
+  (see ``fallback_routing_text`` in ``channel_routing``).
 
 Stateless on purpose: it does not remember a previous choice across messages.
 Sticky session memory (remember the chosen domain per conversation) is a follow-up
@@ -76,14 +79,31 @@ class RouteDecision:
     reason: str
 
 
+GREETING_TEXT = (
+    "Olá! Somos a HostGator Brasil, provedora de hospedagem de sites e servidores.\n\n"
+    "Sou o assistente virtual e posso te ajudar com suporte técnico ou com nossos "
+    "planos de hospedagem e VPS. Se precisar, também te encaminho para um "
+    "atendente humano.\n\n"
+    "Como posso te ajudar?"
+)
+CLARIFICATION_TEXT = (
+    "Você já é cliente e precisa de suporte técnico, ou quer conhecer nossos "
+    "planos de hospedagem e VPS?"
+)
+
+
 @dataclass(frozen=True)
 class DomainRouter:
     domains: tuple[RoutableDomain, ...]
     default_domain: str
-    menu_intro: str = "Ola! Posso te ajudar com:"
-    menu_outro: str = "Responda com o numero ou o nome da opcao."
+    # Customer-facing fallback texts for unrouted turns. The greeting introduces
+    # the company and steers toward routable vocabulary ("suporte tecnico",
+    # "planos", "hospedagem"); the clarification re-asks without repeating the
+    # institutional intro. Numbered selection ("1", "2") keeps working as a
+    # hidden shortcut even though the texts no longer show a numbered menu.
+    greeting: str = GREETING_TEXT
+    clarification: str = CLARIFICATION_TEXT
 
-    MENU_TRIGGERS = ("menu", "opcoes", "opcao", "ajuda", "oi", "ola", "inicio")
     RESET_TRIGGERS = ("menu", "trocar", "voltar", "recomecar")
 
     def is_reset(self, text: str) -> bool:
@@ -106,15 +126,15 @@ class DomainRouter:
         configs: list[object],
         *,
         default_domain: str,
-        menu_intro: str | None = None,
-        menu_outro: str | None = None,
+        greeting: str | None = None,
+        clarification: str | None = None,
     ) -> "DomainRouter":
         routable = tuple(RoutableDomain.from_config(c) for c in configs)
         kwargs: dict[str, object] = {"domains": routable, "default_domain": default_domain}
-        if menu_intro is not None:
-            kwargs["menu_intro"] = menu_intro
-        if menu_outro is not None:
-            kwargs["menu_outro"] = menu_outro
+        if greeting is not None:
+            kwargs["greeting"] = greeting
+        if clarification is not None:
+            kwargs["clarification"] = clarification
         return cls(**kwargs)  # type: ignore[arg-type]
 
     def route(self, text: str) -> RouteDecision:
@@ -136,19 +156,18 @@ class DomainRouter:
 
         return RouteDecision(domain=None, show_menu=True, reason="menu_prompt")
 
-    def menu_text(self) -> str:
-        lines = [self.menu_intro]
-        for position, domain in enumerate(self.domains, start=1):
-            lines.append(f"{position}) {domain.display_name}")
-        lines.append(self.menu_outro)
-        return "\n".join(lines)
+    def greeting_text(self) -> str:
+        return self.greeting
+
+    def clarification_text(self) -> str:
+        return self.clarification
 
     def welcome_text(self, domain_name: str) -> str:
         domain = next((d for d in self.domains if d.name == domain_name), None)
         if domain is not None and domain.welcome:
             return domain.welcome
         display = domain.display_name if domain is not None else domain_name
-        return f"Perfeito! Voce esta no atendimento de {display}. Como posso te ajudar?"
+        return f"Perfeito! Você está no atendimento de {display}. Como posso te ajudar?"
 
     def _match_menu_selection(self, normalized: str) -> str | None:
         tokens = set(re.split(r"[\s\-]+", normalized))

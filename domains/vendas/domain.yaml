@@ -77,11 +77,11 @@ response:
   welcome_message: |-
     Somos a HostGator, uma empresa multinacional especializada em infraestrutura de servidores web.
 
-    Aqui oferecemos solucoes para voce e sua empresa com hospedagens de site, servidores VPS e muito mais.
+    Aqui oferecemos soluções para você e sua empresa com hospedagens de site, servidores VPS e muito mais.
 
     Como posso te ajudar hoje?
-  no_context_message: Nao encontrei detalhe suficiente sobre esse plano na base atual. Para nao te passar informacao errada, o ideal e confirmar com um especialista comercial humano antes de avancar.
-  provider_error_message: Nao consegui finalizar essa etapa da venda automaticamente agora. Vou acionar um especialista comercial humano para concluir com voce com seguranca.
+  no_context_message: Não encontrei detalhe suficiente sobre esse plano na base atual. Para não te passar informação errada, o ideal é confirmar com um especialista comercial humano antes de avançar.
+  provider_error_message: Não consegui finalizar essa etapa da venda automaticamente agora. Vou acionar um especialista comercial humano para concluir com você com segurança.
 
 handoff:
   # Decisao 2 do hardening do funil (2026-07-01): 0.55 -> 0.45. O WS-0 mediu

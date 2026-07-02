@@ -38,11 +38,11 @@ class DomainResponseConfig(DomainModel):
     max_answer_length: str = "short"
     welcome_message: str | None = None
     no_context_message: str = (
-        "Nao encontrei contexto suficiente na base atual. "
-        "Vale revisar os artigos deste dominio ou escalar para humano."
+        "Não encontrei contexto suficiente na base atual. "
+        "Vale revisar os artigos deste domínio ou escalar para humano."
     )
     provider_error_message: str = (
-        "Nao consegui gerar uma resposta automatica agora. "
+        "Não consegui gerar uma resposta automática agora. "
         "Escalando para atendimento humano."
     )
 

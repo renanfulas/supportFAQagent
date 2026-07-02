@@ -74,7 +74,7 @@ def test_checkout_yields_and_does_not_echo_card_number() -> None:
     assert res["escalated"] is True
     assert "card_data" in res["handoff_reasons"]
     # coaching message present, without echoing the data
-    assert "cartao" in res["answer"].lower()
+    assert "cartão" in res["answer"].lower()
 
 
 def test_checkout_yields_to_safety_when_storing_card_number() -> None:

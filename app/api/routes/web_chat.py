@@ -95,8 +95,8 @@ def create_web_chat(
     chat_response["persistence_status"] = persistence_result.persistence_status
     if chat_response["handoff_status"] == HANDOFF_UNAVAILABLE:
         chat_response["answer"] = (
-            f"{chat_response['answer']} O atendimento humano esta temporariamente indisponivel; "
-            "guarde o codigo de suporte."
+            f"{chat_response['answer']} O atendimento humano está temporariamente indisponível; "
+            "guarde o código de suporte."
         )
     _log_web_chat_event(
         request_id=request_id,

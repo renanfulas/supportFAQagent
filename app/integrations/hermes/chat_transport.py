@@ -32,6 +32,7 @@ from app.integrations.hermes.client import HermesClient
 from app.integrations.hermes.inbound import HermesInboundMessage
 from app.orchestration.channel_routing import (
     build_domain_router,
+    fallback_routing_text,
     resolve_sticky_domain,
 )
 from app.conversations.session_state import SessionStateStore
@@ -66,16 +67,16 @@ ESCAPE_STATE = "awaiting_escape"
 ESCAPE_OPTIONS = "\n\n1) Resolver com um atendente\n2) Encerrar atendimento"
 REPEAT_NUDGE = (
     "Acho que me embolei aqui. Pra eu te ajudar melhor, me conta em uma frase: "
-    "qual o tipo de site, o objetivo e quantas visitas voce espera por dia? "
-    "Com isso eu ja te indico o plano certo e a gente fecha."
+    "qual o tipo de site, o objetivo e quantas visitas você espera por dia? "
+    "Com isso eu já te indico o plano certo e a gente fecha."
 )
 MSG_TO_HUMAN = (
     "Certo! Vou te transferir para um atendente humano. "
-    "Em instantes alguem continua o atendimento por aqui."
+    "Em instantes alguém continua o atendimento por aqui."
 )
 MSG_CLOSED = (
-    "Atendimento encerrado. Quando precisar, e so mandar um *oi* que eu "
-    "recomeco por aqui. Ate logo!"
+    "Atendimento encerrado. Quando precisar, é só mandar um *oi* que eu "
+    "recomeço por aqui. Até logo!"
 )
 
 
@@ -194,10 +195,22 @@ class HermesChatTransport:
                 session_id=session_id,
             )
             if resolution.show_menu or resolution.domain is None:
+                # Unrouted turn: institutional greeting on first contact, then the
+                # clarification question. Status stays "routing_menu" to preserve
+                # the observability contract even though the text is conversational.
+                last_outbound = (
+                    self.last_out_store.get(session_id)
+                    if self.last_out_store is not None
+                    else None
+                )
                 return self._send_dedup(
                     session_id=session_id,
                     message=message,
-                    text=self.router.menu_text(),
+                    text=fallback_routing_text(
+                        self.router,
+                        last_outbound=last_outbound,
+                        reset=resolution.reset,
+                    ),
                     request_id=request_id,
                     status="routing_menu",
                 )
@@ -258,7 +271,7 @@ class HermesChatTransport:
         answer = str(response["answer"])
         if persistence.handoff_status == HANDOFF_UNAVAILABLE:
             answer = (
-                f"{answer} O atendimento humano esta temporariamente indisponivel; "
+                f"{answer} O atendimento humano está temporariamente indisponível; "
                 "guarde o request_id para acompanhamento."
             )
         # When the bot cannot help (out of scope), offer a clear escape and remember

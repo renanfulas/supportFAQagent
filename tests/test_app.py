@@ -89,7 +89,7 @@ def test_chat_blocks_secret_request_with_hardened_response() -> None:
     assert payload["escalated"] is True
     assert "secret_request" in payload["handoff_reasons"]
     assert "sensitive_topic" in payload["handoff_reasons"]
-    assert "nao posso" in payload["answer"].lower()
+    assert "não posso" in payload["answer"].lower()
     assert payload["references"] == []
 
 
@@ -108,7 +108,7 @@ def test_chat_blocks_prompt_injection_with_hardened_response() -> None:
     payload = response.json()
     assert payload["escalated"] is True
     assert "prompt_injection_attempt" in payload["handoff_reasons"]
-    assert "nao posso" in payload["answer"].lower()
+    assert "não posso" in payload["answer"].lower()
     assert payload["references"] == []
 
 
@@ -127,7 +127,7 @@ def test_chat_blocks_identity_redefinition_with_hardened_response() -> None:
     payload = response.json()
     assert payload["escalated"] is True
     assert "prompt_injection_attempt" in payload["handoff_reasons"]
-    assert "nao posso" in payload["answer"].lower()
+    assert "não posso" in payload["answer"].lower()
     assert "mock provider" not in payload["answer"].lower()
     assert payload["references"] == []
 
@@ -147,7 +147,7 @@ def test_chat_blocks_out_of_scope_question_with_hardened_response() -> None:
     payload = response.json()
     assert payload["escalated"] is True
     assert "out_of_scope" in payload["handoff_reasons"]
-    assert "escopo deste dominio" in payload["answer"].lower()
+    assert "escopo deste domínio" in payload["answer"].lower()
     assert "mock provider" not in payload["answer"].lower()
 
 
@@ -210,10 +210,10 @@ def test_chat_ui_is_available_in_development() -> None:
 
     assert response.status_code == 200
     assert "Suporte VPS & WhatsApp" in response.text
-    assert "Perguntas rapidas" in response.text
-    assert "Descreva sua duvida sobre VPS, WhatsApp ou automacoes com o maximo de" in response.text
-    assert "devolvo um codigo para continuidade no suporte" in response.text
-    assert "Escalonamento humano quando necessario" in response.text or "Escalonamento humano quando necessario".lower() in response.text.lower()
+    assert "Perguntas rápidas" in response.text
+    assert "Descreva sua dúvida sobre VPS, WhatsApp ou automações com o máximo de" in response.text
+    assert "devolvo um código para continuidade no suporte" in response.text
+    assert "Escalonamento humano quando necessário" in response.text
 
 
 def test_chat_ui_static_renderer_uses_text_content() -> None:
@@ -236,7 +236,7 @@ def test_chat_ui_static_renderer_uses_text_content() -> None:
     assert "error_code" in response.text
     assert "handoff_reasons" in response.text
     assert "Ajudou" in response.text
-    assert "Nao ajudou" in response.text
+    assert "Não ajudou" in response.text
     assert "Lendo seu caso e montando a triagem..." in response.text
 
 
