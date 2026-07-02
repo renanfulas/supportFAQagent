@@ -3,6 +3,23 @@ from app.evals.models import EvalCase, EvalCaseResult, EvalRunResult, EvalSuite
 from app.orchestration.chat_flow import ChatFlowService
 
 
+class _StaticSummaryRecall:
+    """Recall stub that returns the case's seeded summary (tiering Fase 4).
+
+    Duck-types ``SummaryRecallService.latest_for`` so the case exercises the
+    real recall path in ``ChatFlowService`` (including the
+    ``ENABLE_SUMMARY_RECALL`` gate and the untrusted prompt block) without
+    needing a warehouse row.
+    """
+
+    def __init__(self, summary: str) -> None:
+        self._summary = summary
+
+    def latest_for(self, *, domain: str, customer_ref: str | None) -> str | None:
+        _ = (domain, customer_ref)
+        return self._summary
+
+
 class DomainEvalRunner:
     def __init__(self, chat_flow: ChatFlowService | None = None) -> None:
         self.chat_flow = chat_flow or ChatFlowService()
@@ -23,11 +40,7 @@ class DomainEvalRunner:
         )
 
     def _run_case(self, domain: DomainConfig, case: EvalCase) -> EvalCaseResult:
-        response = self.chat_flow.answer(
-            domain=domain,
-            question=case.question,
-            request_id=f"eval:{case.id}",
-        )
+        response = self._answer_case(domain=domain, case=case)
         answer = str(response["answer"]).lower()
         references = [str(reference) for reference in response["references"]]
         handoff_reasons = [str(reason) for reason in response["handoff_reasons"]]
@@ -39,6 +52,10 @@ class DomainEvalRunner:
         for term in case.expectation.required_terms:
             if term.lower() not in answer:
                 failures.append(f"missing_required_term:{term}")
+
+        for term in case.expectation.forbidden_terms:
+            if term.lower() in answer:
+                failures.append(f"forbidden_term_present:{term}")
 
         for expected_reference in case.expectation.expected_references:
             if not any(expected_reference in reference for reference in references):
@@ -62,3 +79,26 @@ class DomainEvalRunner:
             handoff_reasons=handoff_reasons,
             references=references,
         )
+
+    def _answer_case(self, *, domain: DomainConfig, case: EvalCase) -> dict:
+        if case.customer_summary is None:
+            return self.chat_flow.answer(
+                domain=domain,
+                question=case.question,
+                request_id=f"eval:{case.id}",
+            )
+        # Seeded-summary case: swap the recall source for this case only, and
+        # give the flow a customer ref so the recall path actually fires. The
+        # ENABLE_SUMMARY_RECALL gate still applies inside the flow -- the suite
+        # is meant to run against the same config the live channel uses.
+        original_recall = self.chat_flow.summary_recall
+        self.chat_flow.summary_recall = _StaticSummaryRecall(case.customer_summary)
+        try:
+            return self.chat_flow.answer(
+                domain=domain,
+                question=case.question,
+                request_id=f"eval:{case.id}",
+                customer_id=f"eval-customer:{case.id}",
+            )
+        finally:
+            self.chat_flow.summary_recall = original_recall
