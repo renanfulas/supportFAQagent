@@ -33,8 +33,9 @@ Este projeto resolve isso com um nucleo Python modular que:
 - multiplos dominios no mesmo nucleo: suporte tecnico (VPS/WhatsApp/automacoes)
   e vendas consultivas, cada um com persona, escopo, conhecimento e politica de
   escalonamento proprios, mais flags de comportamento por dominio
-- roteamento de dominio por mensagem no WhatsApp, com stickiness duravel de
-  sessao (PostgreSQL) para o cliente nao ser rebaixado ao menu a cada turno
+- roteamento de dominio por mensagem no WhatsApp com saudacao conversacional
+  (sem menu numerado) e stickiness duravel de sessao (PostgreSQL) para o
+  cliente nao ser rebaixado a saudacao a cada turno
 - retrieval lexical como padrao seguro para local/CI
 - retrieval PostgreSQL/pgvector como default operacional do staging por
   `RETRIEVAL_BACKEND=pgvector`
