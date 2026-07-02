@@ -104,14 +104,24 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    > servir trafego** desde que o deploy real migrou para
    > `/opt/ask-host-genius` + `systemd` + `bun` (o mapeamento de porta `5173`
    > do container conflitava com o processo do host, sem healthcheck nem log
-   > em 48h) — parado com `docker stop` (nao removido; reversivel). Achado
-   > **ainda pendente, nao resolvido**: o `ask-host-genius.service` do systemd
-   > rastreia como `MainPID` um processo de 19/06 que ja nao serve mais
-   > trafego (um segundo processo de 23/06, fora do controle do systemd, e
-   > quem responde hoje); um `systemctl restart` provavelmente falharia por
-   > porta ja em uso ate alguem matar o processo de 23/06 primeiro. Fora do
-   > escopo de codigo/arquitetura desta doc; requer o Juliano (ou uma janela
-   > coordenada) para restart limpo do site `chat.ordens.com.br`.
+   > em 48h) — parado com `docker stop` (nao removido; reversivel).
+   > **Processo orfao do `ask-host-genius.service` removido**: o `MainPID`
+   > que o systemd rastreava era um processo de 19/06 que, no proprio log,
+   > nunca serviu trafego real — na subida encontrou a porta `5173` ja
+   > ocupada (pelo container Docker acima, criado antes, em 11/06) e caiu
+   > para outra porta (`"Port 5173 is in use, trying another one..."`); quem
+   > sempre serviu de fato foi um segundo processo de 23/06, iniciado fora do
+   > systemd. `systemctl stop ask-host-genius.service` removeu a arvore
+   > orfa (verificado: PIDs extintos) sem tocar no processo de 23/06 — dois
+   > grupos de processo isolados, confirmado via `ps --forest` antes de agir.
+   > `chat.ordens.com.br` verificado `HTTP 200` antes e depois, mesmo `pid`
+   > ainda escutando a `5173`. Estado do systemd agora reflete a realidade
+   > (`failed`, nao mais `active` falso). Reversao: `systemctl start
+   > ask-host-genius.service` (nao houve loop de restart porque `stop`
+   > explicito nao aciona o `Restart=always`). Residual, fora do escopo desta
+   > doc: o processo de 23/06 que serve de verdade continua sem supervisao do
+   > systemd; corrigir isso (recriar o `ExecStart` apontando pra ele, ou
+   > redeploy limpo) e trabalho do Juliano quando quiser.
 4. **Fase 0 do tiering (archive sink R2)**: unico item de persistencia em camadas
    ainda desligado, bloqueado por credenciais Cloudflare R2 (bucket/endpoint/chaves).
    Redis (Fase 2), batch+recall (Fases 3-4) e o eval do recall (2026-07-02,
