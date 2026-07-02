@@ -94,9 +94,24 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    `supportfaq-alerts`) so em `critical`, guarda de volumes PostgreSQL/pgvector
    contra `docker volume prune`. Estado atual verificado: `65,3%` usado,
    `5,3 GiB` livres, status `ok`, 0 disparos — sem risco ativo. Ver
-   `runbooks/vps-capacity-and-docker-cleanup.md`. Achado paralelo, nao coberto
-   por esta politica (que so trata Docker): `/root/.npm` (1,2G) + `/root/.bun`
-   (314M) sao cache de package manager reclamavel, baixa prioridade.
+   `runbooks/vps-capacity-and-docker-cleanup.md`.
+
+   > **Achados paralelos investigados e resolvidos em 2026-07-02** (fora do
+   > escopo do supportFAQagent, app `ask_host_genius` no mesmo host):
+   > `npm cache clean --force` + limpeza de `~/.bun/install/cache` liberaram
+   > ~1,2 GiB (disco foi de `69%`/5,5 GiB livres para `63%`/6,5 GiB livres).
+   > Container Docker `ask_host_genius` (criado 11/06) estava **parado de
+   > servir trafego** desde que o deploy real migrou para
+   > `/opt/ask-host-genius` + `systemd` + `bun` (o mapeamento de porta `5173`
+   > do container conflitava com o processo do host, sem healthcheck nem log
+   > em 48h) — parado com `docker stop` (nao removido; reversivel). Achado
+   > **ainda pendente, nao resolvido**: o `ask-host-genius.service` do systemd
+   > rastreia como `MainPID` um processo de 19/06 que ja nao serve mais
+   > trafego (um segundo processo de 23/06, fora do controle do systemd, e
+   > quem responde hoje); um `systemctl restart` provavelmente falharia por
+   > porta ja em uso ate alguem matar o processo de 23/06 primeiro. Fora do
+   > escopo de codigo/arquitetura desta doc; requer o Juliano (ou uma janela
+   > coordenada) para restart limpo do site `chat.ordens.com.br`.
 4. **Fase 0 do tiering (archive sink R2)**: unico item de persistencia em camadas
    ainda desligado, bloqueado por credenciais Cloudflare R2 (bucket/endpoint/chaves).
    Redis (Fase 2), batch+recall (Fases 3-4) e o eval do recall (2026-07-02,
