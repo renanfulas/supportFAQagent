@@ -38,6 +38,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
+          # Deliberately pinned to the VPS production runtime (3.11):
+          # pip-audit resolves the dependency set for the interpreter in
+          # use, so auditing under 3.11 audits what production installs.
+          # Both supported versions (3.11/3.12) are exercised in ci.yml.
           python-version: "3.11"
           cache: pip
 
