@@ -94,7 +94,9 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    com amostragem de qualidade dos resumos ja feita (0 achados de PII/PAN). O caso
    de eval do recall foi entregue em 2026-07-02 (`evals/summary_recall.yaml`, 3/3
    estavel com LLM real; o run revelou e corrigiu o rotulo do bloco de resumo no
-   prompt, que fazia o modelo ignorar o recall). Resta a metrica de custo da
+   prompt, que fazia o modelo ignorar o recall) e **confirmado na VPS no mesmo
+   dia** (box reconciliada em `c57248e`, `supportfaq.service` saudavel, suite
+   3/3 contra pgvector + LLM reais). Resta a metrica de custo da
    sumarizacao (ver `quality-plans/conversation-persistence-tiering-tech-plan.md`
    Fase 4).
 5. ~~**Fechar frentes parciais**~~ — **ambas fechadas**. O hardening do funil
