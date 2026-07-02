@@ -84,7 +84,13 @@ response:
   provider_error_message: Nao consegui finalizar essa etapa da venda automaticamente agora. Vou acionar um especialista comercial humano para concluir com voce com seguranca.
 
 handoff:
-  confidence_threshold: 0.55
+  # Decisao 2 do hardening do funil (2026-07-01): 0.55 -> 0.45. O WS-0 mediu
+  # 21/34 turnos consultivos legitimos presos na faixa 0.30-0.55 (media 0.509,
+  # mediana 0.49) gerando sinal falso de low_confidence; 0.45 corta o ruido sem
+  # afrouxar o confinamento (out_of_scope lexical fica em 0.27-0.38, abaixo do
+  # novo corte). Rollback: voltar a 0.55 + restart. Ver
+  # docs/quality-plans/vendas-funnel-hardening-plan.md (WS-0 e decisao 2).
+  confidence_threshold: 0.45
   escalate_on:
     - billing
     - contract
