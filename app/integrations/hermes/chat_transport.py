@@ -67,16 +67,16 @@ ESCAPE_STATE = "awaiting_escape"
 ESCAPE_OPTIONS = "\n\n1) Resolver com um atendente\n2) Encerrar atendimento"
 REPEAT_NUDGE = (
     "Acho que me embolei aqui. Pra eu te ajudar melhor, me conta em uma frase: "
-    "qual o tipo de site, o objetivo e quantas visitas voce espera por dia? "
-    "Com isso eu ja te indico o plano certo e a gente fecha."
+    "qual o tipo de site, o objetivo e quantas visitas você espera por dia? "
+    "Com isso eu já te indico o plano certo e a gente fecha."
 )
 MSG_TO_HUMAN = (
     "Certo! Vou te transferir para um atendente humano. "
-    "Em instantes alguem continua o atendimento por aqui."
+    "Em instantes alguém continua o atendimento por aqui."
 )
 MSG_CLOSED = (
-    "Atendimento encerrado. Quando precisar, e so mandar um *oi* que eu "
-    "recomeco por aqui. Ate logo!"
+    "Atendimento encerrado. Quando precisar, é só mandar um *oi* que eu "
+    "recomeço por aqui. Até logo!"
 )
 
 
@@ -271,7 +271,7 @@ class HermesChatTransport:
         answer = str(response["answer"])
         if persistence.handoff_status == HANDOFF_UNAVAILABLE:
             answer = (
-                f"{answer} O atendimento humano esta temporariamente indisponivel; "
+                f"{answer} O atendimento humano está temporariamente indisponível; "
                 "guarde o request_id para acompanhamento."
             )
         # When the bot cannot help (out of scope), offer a clear escape and remember

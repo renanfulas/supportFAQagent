@@ -87,7 +87,7 @@ def chat(
     response["persistence_status"] = persistence_result.persistence_status
     if response["handoff_status"] == HANDOFF_UNAVAILABLE:
         response["answer"] = (
-            f"{response['answer']} O atendimento humano esta temporariamente indisponivel; "
+            f"{response['answer']} O atendimento humano está temporariamente indisponível; "
             "guarde o request_id para acompanhamento."
         )
     observability = response.get("observability", {})

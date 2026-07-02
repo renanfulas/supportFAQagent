@@ -1,6 +1,19 @@
+import unicodedata
+
 from app.domain_engine.models import DomainConfig
 from app.evals.models import EvalCase, EvalCaseResult, EvalRunResult, EvalSuite
 from app.orchestration.chat_flow import ChatFlowService
+
+
+def _fold(text: str) -> str:
+    """Casefold and strip accents so term matching ignores orthography.
+
+    Answers are written in proper pt-BR ("não posso"), while eval terms may be
+    ASCII ("nao posso") or accented; both must keep matching.
+    """
+    decomposed = unicodedata.normalize("NFKD", text)
+    without_accents = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return without_accents.casefold()
 
 
 class _StaticSummaryRecall:
@@ -41,7 +54,7 @@ class DomainEvalRunner:
 
     def _run_case(self, domain: DomainConfig, case: EvalCase) -> EvalCaseResult:
         response = self._answer_case(domain=domain, case=case)
-        answer = str(response["answer"]).lower()
+        answer = _fold(str(response["answer"]))
         references = [str(reference) for reference in response["references"]]
         handoff_reasons = [str(reason) for reason in response["handoff_reasons"]]
         failures: list[str] = []
@@ -50,11 +63,11 @@ class DomainEvalRunner:
             failures.append("unexpected_escalation")
 
         for term in case.expectation.required_terms:
-            if term.lower() not in answer:
+            if _fold(term) not in answer:
                 failures.append(f"missing_required_term:{term}")
 
         for term in case.expectation.forbidden_terms:
-            if term.lower() in answer:
+            if _fold(term) in answer:
                 failures.append(f"forbidden_term_present:{term}")
 
         for expected_reference in case.expectation.expected_references:

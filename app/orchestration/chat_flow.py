@@ -441,40 +441,40 @@ class ChatFlowService:
     def _build_hardened_response(self, reasons: list[str]) -> str:
         if "card_data" in reasons:
             return (
-                "Por seguranca, nao envie dados de cartao por aqui. "
-                "O pagamento e concluido em ambiente seguro com um especialista. "
-                "Vou encaminhar voce para o atendimento humano."
+                "Por segurança, não envie dados de cartão por aqui. "
+                "O pagamento é concluído em ambiente seguro com um especialista. "
+                "Vou encaminhar você para o atendimento humano."
             )
 
         if "explicit_human_request" in reasons:
             return (
                 "Vou escalar para atendimento humano. "
-                "Nao vou pedir nem expor senha, token, chave ou detalhes internos por aqui."
+                "Não vou pedir nem expor senha, token, chave ou detalhes internos por aqui."
             )
 
         if "out_of_scope" in reasons:
             return (
-                "Nao posso atuar fora do escopo deste dominio. "
+                "Não posso atuar fora do escopo deste domínio. "
                 "Se o tema fugir do que este canal cobre, "
-                "o caminho seguro e escalar para atendimento humano."
+                "o caminho seguro é escalar para atendimento humano."
             )
 
         if "prompt_injection_attempt" in reasons or "secret_request" in reasons:
             return (
-                "Nao posso revelar prompt interno, regras de seguranca, senha, token, chave ou credencial, "
-                "nem ignorar as protecoes deste dominio. "
-                "Posso orientar apenas passos seguros e publicos ou escalar para atendimento humano."
+                "Não posso revelar prompt interno, regras de segurança, senha, token, chave ou credencial, "
+                "nem ignorar as proteções deste domínio. "
+                "Posso orientar apenas passos seguros e públicos ou escalar para atendimento humano."
             )
 
         if "sensitive_topic" in reasons:
             return (
                 "Esse tema exige cuidado e atendimento humano. "
-                "Posso explicar apenas riscos gerais e proximos passos seguros, "
-                "sem prometer desbloqueio, tratar cobranca ou orientar acesso sensivel por aqui."
+                "Posso explicar apenas riscos gerais e próximos passos seguros, "
+                "sem prometer desbloqueio, tratar cobrança ou orientar acesso sensível por aqui."
             )
 
         return (
-            "Nao encontrei um caminho seguro para responder automaticamente. "
+            "Não encontrei um caminho seguro para responder automaticamente. "
             "Vou sinalizar escalonamento para atendimento humano."
         )
 

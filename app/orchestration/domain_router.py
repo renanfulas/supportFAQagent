@@ -80,14 +80,14 @@ class RouteDecision:
 
 
 GREETING_TEXT = (
-    "Ola! Somos a HostGator Brasil, provedora de hospedagem de sites e servidores.\n\n"
-    "Sou o assistente virtual e posso te ajudar com suporte tecnico ou com nossos "
-    "planos de hospedagem e VPS. Se precisar, tambem te encaminho para um "
+    "Olá! Somos a HostGator Brasil, provedora de hospedagem de sites e servidores.\n\n"
+    "Sou o assistente virtual e posso te ajudar com suporte técnico ou com nossos "
+    "planos de hospedagem e VPS. Se precisar, também te encaminho para um "
     "atendente humano.\n\n"
     "Como posso te ajudar?"
 )
 CLARIFICATION_TEXT = (
-    "Voce ja e cliente e precisa de suporte tecnico, ou quer conhecer nossos "
+    "Você já é cliente e precisa de suporte técnico, ou quer conhecer nossos "
     "planos de hospedagem e VPS?"
 )
 
@@ -167,7 +167,7 @@ class DomainRouter:
         if domain is not None and domain.welcome:
             return domain.welcome
         display = domain.display_name if domain is not None else domain_name
-        return f"Perfeito! Voce esta no atendimento de {display}. Como posso te ajudar?"
+        return f"Perfeito! Você está no atendimento de {display}. Como posso te ajudar?"
 
     def _match_menu_selection(self, normalized: str) -> str | None:
         tokens = set(re.split(r"[\s\-]+", normalized))

@@ -92,7 +92,7 @@ def test_greeting_text_introduces_company_and_steers_domains() -> None:
     text = _router().greeting_text()
     assert "HostGator Brasil" in text
     assert "assistente virtual" in text
-    assert "suporte tecnico" in text
+    assert "suporte técnico" in text
     assert "planos" in text
     # The greeting is conversational: no numbered menu lines.
     assert "1)" not in text
@@ -100,7 +100,7 @@ def test_greeting_text_introduces_company_and_steers_domains() -> None:
 
 def test_clarification_text_asks_support_or_sales() -> None:
     text = _router().clarification_text()
-    assert "suporte tecnico" in text
+    assert "suporte técnico" in text
     assert "planos" in text
     assert text != _router().greeting_text()
 

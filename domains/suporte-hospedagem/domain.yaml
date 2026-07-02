@@ -73,11 +73,11 @@ response:
   max_context_chunks: 5
   max_answer_length: short
   welcome_message: |-
-    Suporte tecnico de Hospedagem de Sites da HostGator.
+    Suporte técnico de Hospedagem de Sites da HostGator.
 
     Posso ajudar com cPanel, e-mail, WordPress, DNS do site, SSL e banco de dados. Como posso ajudar?
-  no_context_message: Nao encontrei contexto suficiente na base atual deste dominio. Posso orientar o proximo passo, mas o ideal e escalar para humano ou revisar os artigos.
-  provider_error_message: Nao consegui gerar uma resposta automatica agora. Vou sinalizar escalonamento para atendimento humano.
+  no_context_message: Não encontrei contexto suficiente na base atual deste domínio. Posso orientar o próximo passo, mas o ideal é escalar para humano ou revisar os artigos.
+  provider_error_message: Não consegui gerar uma resposta automática agora. Vou sinalizar escalonamento para atendimento humano.
 
 handoff:
   confidence_threshold: 0.55

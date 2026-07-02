@@ -198,7 +198,7 @@ class MetaWhatsAppChatTransport:
         answer = str(response["answer"])
         if persistence.handoff_status == HANDOFF_UNAVAILABLE:
             answer = (
-                f"{answer} O atendimento humano esta temporariamente indisponivel; "
+                f"{answer} O atendimento humano está temporariamente indisponível; "
                 "guarde o request_id para acompanhamento."
             )
         outbound = self.client.send_text(to=message.from_wa_id, text=answer)

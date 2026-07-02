@@ -16,28 +16,28 @@ const QUICK_PROMPTS = [
   {
     id: "iniciante-primeiros-passos",
     title: "Primeiros passos",
-    preview: "Fluxo seguro para comecar pequeno.",
+    preview: "Fluxo seguro para começar pequeno.",
     message:
-      "Estou comecando com VPS, Evolution API, WhatsApp e n8n. Por onde devo comecar?",
+      "Estou começando com VPS, Evolution API, WhatsApp e n8n. Por onde devo começar?",
   },
   {
     id: "qrcode-whatsapp",
     title: "QR Code WhatsApp",
-    preview: "Sessao, pareamento e conexao.",
-    message: "O QR Code do WhatsApp nao aparece ou nao conecta. O que devo verificar?",
+    preview: "Sessão, pareamento e conexão.",
+    message: "O QR Code do WhatsApp não aparece ou não conecta. O que devo verificar?",
   },
   {
     id: "risco-bloqueio-whatsapp",
     title: "Risco de bloqueio",
-    preview: "Boas praticas e limites seguros.",
+    preview: "Boas práticas e limites seguros.",
     message: "Quais cuidados devo tomar para reduzir risco de bloqueio do WhatsApp?",
   },
   {
     id: "webhook-n8n-zapi",
     title: "Webhook n8n + Z-API",
-    preview: "Checklist para eventos que nao chegam.",
+    preview: "Checklist para eventos que não chegam.",
     message:
-      "Meu webhook do n8n com Z-API nao recebe eventos. Como devo diagnosticar?",
+      "Meu webhook do n8n com Z-API não recebe eventos. Como devo diagnosticar?",
   },
 ];
 
@@ -107,7 +107,7 @@ async function sendChatMessage(message) {
     throw {
       kind: "network",
       message:
-        "Nao consegui conectar ao atendimento agora. Confira sua conexao e tente novamente.",
+        "Não consegui conectar ao atendimento agora. Confira sua conexão e tente novamente.",
     };
   }
 
@@ -133,7 +133,7 @@ async function sendFeedback(payload) {
   const data = await parseJsonSafely(response);
   if (!response.ok) {
     const detail = getDetailMessage(data);
-    throw new Error(detail || "Nao consegui registrar seu feedback agora.");
+    throw new Error(detail || "Não consegui registrar seu feedback agora.");
   }
 
   return data;
@@ -196,7 +196,7 @@ function normalizeHttpError(response, payload) {
       support_code: payload.support_code,
       error_code: payload.error_code || "invalid_request",
       message:
-        "Nao consegui enviar sua mensagem porque o pedido ficou invalido. Recarregue a pagina e tente novamente.",
+        "Não consegui enviar sua mensagem porque o pedido ficou inválido. Recarregue a página e tente novamente.",
     };
   }
 
@@ -206,7 +206,7 @@ function normalizeHttpError(response, payload) {
     support_code: payload.support_code,
     error_code: payload.error_code || `http_${response.status}`,
       message:
-        "Nao consegui fechar uma resposta segura agora. Tente novamente em instantes.",
+        "Não consegui fechar uma resposta segura agora. Tente novamente em instantes.",
   };
 }
 
@@ -223,7 +223,7 @@ function normalizeClientError(error) {
 
   return {
     kind: "client",
-    message: "Nao consegui responder agora. Tente novamente em instantes.",
+    message: "Não consegui responder agora. Tente novamente em instantes.",
   };
 }
 
@@ -307,7 +307,7 @@ function renderEscalationNotice(response) {
 
   const supportCode = clipSupportCode(response.support_code || response.request_id);
   handoff.textContent = supportCode
-    ? `Talvez seja melhor um humano revisar este caso. Guarde o codigo de suporte: ${supportCode}.`
+    ? `Talvez seja melhor um humano revisar este caso. Guarde o código de suporte: ${supportCode}.`
     : "Talvez seja melhor um humano revisar este caso.";
 
   return handoff;
@@ -341,7 +341,7 @@ function renderSupportMeta(response, tone) {
   wrapper.className = `support-meta${tone === "error" ? " support-meta-error" : ""}`;
 
   if (response.request_id) {
-    wrapper.append(makeMetaItem("Codigo", clipSupportCode(response.request_id)));
+    wrapper.append(makeMetaItem("Código", clipSupportCode(response.request_id)));
   }
 
   if (response.error_code) {
@@ -377,7 +377,7 @@ function renderFeedbackCard(response) {
   actions.className = "feedback-actions";
 
   const positiveButton = buildFeedbackButton("Ajudou", true, response, wrapper);
-  const negativeButton = buildFeedbackButton("Nao ajudou", false, response, wrapper);
+  const negativeButton = buildFeedbackButton("Não ajudou", false, response, wrapper);
 
   actions.append(positiveButton, negativeButton);
   wrapper.append(title, actions);
@@ -412,7 +412,7 @@ function buildFeedbackButton(label, helpful, response, wrapper) {
       const message =
         error instanceof Error
           ? error.message
-          : "Nao consegui registrar seu feedback agora.";
+          : "Não consegui registrar seu feedback agora.";
       showFeedbackError(wrapper, message);
     }
   });
@@ -430,7 +430,7 @@ function buildFeedbackResult(helpful) {
   const result = document.createElement("p");
   result.className = "feedback-result";
   result.textContent = helpful
-    ? "Obrigado. Isso ajuda a manter a triagem mais util."
+    ? "Obrigado. Isso ajuda a manter a triagem mais útil."
     : "Obrigado. Vou marcar que esta resposta precisa de ajuste.";
   return result;
 }
@@ -834,17 +834,17 @@ function selectQuickPrompt(message) {
 function renderWelcomeMessage() {
   addMessage(
     "agent",
-    "Explique o problema, o erro visto e o que voce ja tentou. Eu priorizo orientacao segura e digo com clareza quando o caso precisa continuar com humano.",
+    "Explique o problema, o erro visto e o que você já tentou. Eu priorizo orientação segura e digo com clareza quando o caso precisa continuar com humano.",
   );
 }
 
 function buildFallbackAnswer(response) {
   const supportCode = response.support_code || response.request_id;
   if (supportCode) {
-    return `Nao recebi uma resposta completa agora. Tente novamente em instantes. Codigo de suporte: ${clipSupportCode(supportCode)}.`;
+    return `Não recebi uma resposta completa agora. Tente novamente em instantes. Código de suporte: ${clipSupportCode(supportCode)}.`;
   }
 
-  return "Nao recebi uma resposta completa agora. Tente novamente em instantes.";
+  return "Não recebi uma resposta completa agora. Tente novamente em instantes.";
 }
 
 function buildSupportMessage(message, supportCode) {
@@ -852,7 +852,7 @@ function buildSupportMessage(message, supportCode) {
     return message;
   }
 
-  return `${message} Codigo de suporte: ${clipSupportCode(supportCode)}.`;
+  return `${message} Código de suporte: ${clipSupportCode(supportCode)}.`;
 }
 
 function getDetailMessage(payload) {
@@ -865,7 +865,7 @@ function getDetailMessage(payload) {
   }
 
   if (Array.isArray(payload.detail) && payload.detail.length) {
-    return "Nao consegui validar o feedback enviado.";
+    return "Não consegui validar o feedback enviado.";
   }
 
   return "";

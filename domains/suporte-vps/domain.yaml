@@ -71,9 +71,9 @@ response:
   welcome_message: |-
     Suporte de gerenciamento de VPS e Servidor Dedicado da HostGator.
 
-    Posso ajudar com reinstalacao de sistema, painel e aplicacoes, upgrade de plano e acesso ao servidor. Como posso ajudar?
-  no_context_message: Nao encontrei contexto suficiente na base atual deste dominio. Posso orientar o proximo passo, mas o ideal e escalar para humano ou revisar os artigos.
-  provider_error_message: Nao consegui gerar uma resposta automatica agora. Vou sinalizar escalonamento para atendimento humano.
+    Posso ajudar com reinstalação de sistema, painel e aplicações, upgrade de plano e acesso ao servidor. Como posso ajudar?
+  no_context_message: Não encontrei contexto suficiente na base atual deste domínio. Posso orientar o próximo passo, mas o ideal é escalar para humano ou revisar os artigos.
+  provider_error_message: Não consegui gerar uma resposta automática agora. Vou sinalizar escalonamento para atendimento humano.
 
 handoff:
   confidence_threshold: 0.55

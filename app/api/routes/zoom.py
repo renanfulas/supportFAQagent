@@ -130,12 +130,12 @@ def process_and_reply(
         )
         answer_text = response.get(
             "answer",
-            "Desculpe, nao consegui processar sua duvida.",
+            "Desculpe, não consegui processar sua dúvida.",
         )
         if persistence_result.handoff_status == HANDOFF_UNAVAILABLE:
             answer_text = (
-                f"{answer_text} O atendimento humano esta temporariamente "
-                "indisponivel; guarde o request_id para acompanhamento."
+                f"{answer_text} O atendimento humano está temporariamente "
+                "indisponível; guarde o request_id para acompanhamento."
             )
         send_chat_to_zoom(bot_id, answer_text)
     except Exception as exc:
@@ -217,7 +217,7 @@ def join_meeting(
 
         return {
             "status": "success",
-            "message": "Comando enviado. O bot esta a caminho da sala de espera.",
+            "message": "Comando enviado. O bot está a caminho da sala de espera.",
             "bot_id": bot_data.get("id"),
             "meeting_url": payload.meeting_url,
         }
