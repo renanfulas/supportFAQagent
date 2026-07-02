@@ -890,6 +890,22 @@ def test_consent_gate_creates_pending_case_hidden_from_default_inbox(
         assert display_label == "Renan"
         assert email == "renan@example.com"
         assert handoff_outbox_count == 1
+        # The promotion reports the effective name so the widget can mirror it.
+        assert promotion.customer_name == "Renan"
+
+        # The read inbox exposes the authorized contact block, joined live from
+        # `customers` (no verified identity in this fixture, so no phone_last4).
+        case_id = next(
+            case.case_id
+            for case in explicit_view
+            if case.request_id == "req-consent-gate-e2e"
+        )
+        detail = inbox.get_case_with_context(case_id)
+        assert detail is not None
+        assert detail.customer is not None
+        assert detail.customer.display_label == "Renan"
+        assert detail.customer.email == "renan@example.com"
+        assert detail.customer.phone_last4 is None
 
         # Re-promoting the same request_id is a no-op, not a second notification.
         repeat = repository.promote_pending_consent(

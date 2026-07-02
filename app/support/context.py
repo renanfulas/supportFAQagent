@@ -36,6 +36,21 @@ class TranscriptTurn:
 
 
 @dataclass(frozen=True)
+class SupportCaseCustomer:
+    """Contact the customer authorized for direct follow-up (LGPD consent).
+
+    Sourced from the ``customers`` row joined on read (single source of truth,
+    so a replayed turn overwriting the case snapshot can never lose it). The
+    e-mail is stored readable on purpose — the team uses it for real contact —
+    and is exposed only on this authenticated internal surface.
+    """
+
+    display_label: str | None
+    email: str | None
+    phone_last4: str | None
+
+
+@dataclass(frozen=True)
 class SupportCaseContext:
     case_id: str
     domain: str
@@ -50,6 +65,7 @@ class SupportCaseContext:
     turn_count: int
     opened_at: datetime | None
     updated_at: datetime | None
+    customer: SupportCaseCustomer | None = None
 
 
 def build_case_context(
@@ -67,6 +83,19 @@ def build_case_context(
     transcript = [_to_turn(row) for row in transcript_rows]
     references = _aggregate_references(snapshot, transcript)
 
+    customer = None
+    customer_fields = (
+        _optional_str(case.get("customer_display_label")),
+        _optional_str(case.get("customer_email")),
+        _optional_str(case.get("customer_phone_last4")),
+    )
+    if any(customer_fields):
+        customer = SupportCaseCustomer(
+            display_label=customer_fields[0],
+            email=customer_fields[1],
+            phone_last4=customer_fields[2],
+        )
+
     return SupportCaseContext(
         case_id=str(case["id"]),
         domain=str(case["domain"]),
@@ -81,6 +110,7 @@ def build_case_context(
         turn_count=len(transcript),
         opened_at=case.get("opened_at"),
         updated_at=case.get("updated_at"),
+        customer=customer,
     )
 
 

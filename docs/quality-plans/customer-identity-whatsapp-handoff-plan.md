@@ -809,6 +809,19 @@ Status:
   `whatsapp_message` ja existente (sem mudar o dispatcher).
 - testes em `tests/test_support_team_notifications.py` (renderer + write path).
 - runbook em `docs/runbooks/support-team-whatsapp-notify-smoke.md`.
+- **enriquecimento de identidade entregue (2026-07-01)**: a notificacao adiada
+  do caminho de consent (`promote_pending_consent`) agora carrega o contato que
+  o cliente autorizou — `Cliente: <nome>`, `Contato autorizado (LGPD): <e-mail>`
+  e `WhatsApp verificado: final <last4>` (contato **efetivo** pos-`COALESCE`;
+  um consent anterior vence um redigitado). O inbox de leitura expoe o mesmo
+  bloco no detalhe (`customer`), lido on-read via `LEFT JOIN customers` +
+  identidade verificada mais recente (fonte unica de verdade, imune ao
+  overwrite de snapshot por replay de turno). `POST /web/handoff/consent`
+  devolve `customer_name` para o widget espelhar ao cliente exatamente o que o
+  time recebeu (criterio de pronto do Sprint 4b "incluindo o nome quando
+  informado"). O canal WhatsApp nativo segue sem bloco de contato (a equipe
+  responde na propria thread). Contratos em
+  `docs/architecture/integration-contracts.md`.
 - pendente: smoke privado de envio real (depende dos secrets/runtime Meta da
   outra frente).
 

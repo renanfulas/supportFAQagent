@@ -39,6 +39,18 @@ class SupportCaseTranscriptTurn(BaseModel):
     created_at: datetime | None = None
 
 
+class SupportCaseCustomerResponse(BaseModel):
+    """Contact the customer authorized for direct follow-up (LGPD consent).
+
+    Served only on this authenticated internal surface; the e-mail is readable
+    on purpose because the team uses it for real contact.
+    """
+
+    display_label: str | None = None
+    email: str | None = None
+    phone_last4: str | None = None
+
+
 class SupportCaseDetailResponse(BaseModel):
     request_id: str | None = None
     case_id: str
@@ -53,4 +65,5 @@ class SupportCaseDetailResponse(BaseModel):
     turn_count: int
     opened_at: datetime | None = None
     updated_at: datetime | None = None
+    customer: SupportCaseCustomerResponse | None = None
     transcript: list[SupportCaseTranscriptTurn] = Field(default_factory=list)

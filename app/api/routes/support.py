@@ -13,6 +13,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.schemas.support import (
+    SupportCaseCustomerResponse,
     SupportCaseDetailResponse,
     SupportCaseListResponse,
     SupportCaseSummaryResponse,
@@ -162,6 +163,15 @@ def _context_to_response(
         turn_count=context.turn_count,
         opened_at=context.opened_at,
         updated_at=context.updated_at,
+        customer=(
+            SupportCaseCustomerResponse(
+                display_label=context.customer.display_label,
+                email=context.customer.email,
+                phone_last4=context.customer.phone_last4,
+            )
+            if context.customer is not None
+            else None
+        ),
         transcript=[
             SupportCaseTranscriptTurn(
                 sequence=turn.sequence,

@@ -83,14 +83,26 @@ class SupportCaseRepository:
     def get_case_with_context(self, case_id: str) -> SupportCaseContext | None:
         with self.runtime.transaction() as connection:
             with connection.cursor() as cursor:
+                # LEFT JOIN customers: the contact block the customer authorized
+                # via the LGPD consent path is read from its single source of
+                # truth (`customers` + latest verified identity), so a replayed
+                # turn overwriting the case snapshot can never lose it.
                 cursor.execute(
                     """
                     SELECT sc.id, d.name, sc.status, sc.priority, sc.channel,
                            sc.request_id, sc.reason_codes,
                            sc.context_snapshot_sanitized, sc.conversation_id,
-                           sc.opened_at, sc.updated_at
+                           sc.opened_at, sc.updated_at,
+                           c.display_label, c.email,
+                           (SELECT vi.phone_last4
+                            FROM verified_identities vi
+                            WHERE vi.customer_id = c.id
+                              AND vi.status = 'verified'
+                            ORDER BY vi.verified_at DESC
+                            LIMIT 1)
                     FROM support_cases sc
                     JOIN domains d ON d.id = sc.domain_id
+                    LEFT JOIN customers c ON c.id = sc.customer_id
                     WHERE sc.id = %s
                     """,
                     (case_id,),
@@ -111,6 +123,9 @@ class SupportCaseRepository:
             "context_snapshot": _load_json(case_row[7], default={}),
             "opened_at": case_row[9],
             "updated_at": case_row[10],
+            "customer_display_label": case_row[11],
+            "customer_email": case_row[12],
+            "customer_phone_last4": case_row[13],
         }
         return build_case_context(case, transcript_rows)
 

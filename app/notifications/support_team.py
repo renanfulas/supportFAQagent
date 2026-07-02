@@ -15,6 +15,10 @@ Privacy:
   on purpose, because the dispatcher needs them to deliver the message. They must
   therefore bypass ``sanitize_payload`` (which redacts phone-shaped strings) when
   the event is enqueued.
+- The optional customer block (name/e-mail/phone last4) is only supplied by the
+  LGPD consent path (``promote_pending_consent``): the customer proved the phone
+  via OTP and explicitly authorized direct contact, and the e-mail was provided
+  for exactly this use. It never comes from unverified chat input.
 """
 
 from __future__ import annotations
@@ -45,12 +49,16 @@ def render_support_team_notifications(
     summary: str | None,
     references: list[str],
     recipients: list[str],
+    customer_name: str | None = None,
+    customer_email: str | None = None,
+    customer_phone_last4: str | None = None,
 ) -> list[SupportTeamNotification]:
     """Build one notification per distinct recipient for a handoff turn.
 
     The idempotency key is stable for a given ``turn_id`` + recipient, so a retry
     of the same escalated turn never produces a duplicate alert per recipient.
-    Returns an empty list when there are no usable recipients.
+    Returns an empty list when there are no usable recipients. The customer
+    fields are only passed on the consent path (see module privacy note).
     """
 
     clean_recipients = _dedupe_recipients(recipients)
@@ -62,6 +70,9 @@ def render_support_team_notifications(
         handoff_reasons=handoff_reasons,
         summary=summary,
         references=references,
+        customer_name=customer_name,
+        customer_email=customer_email,
+        customer_phone_last4=customer_phone_last4,
     )
     return [
         SupportTeamNotification(
@@ -95,6 +106,9 @@ def _build_alert_text(
     handoff_reasons: list[str],
     summary: str | None,
     references: list[str],
+    customer_name: str | None = None,
+    customer_email: str | None = None,
+    customer_phone_last4: str | None = None,
 ) -> str:
     motivo = ", ".join(reason for reason in handoff_reasons if reason)
     lines = [
@@ -103,6 +117,15 @@ def _build_alert_text(
         f"Dominio: {domain}",
         f"Motivo: {motivo or 'acao humana necessaria'}",
     ]
+    name = (customer_name or "").strip()
+    if name:
+        lines.append(f"Cliente: {name}")
+    email = (customer_email or "").strip()
+    if email:
+        lines.append(f"Contato autorizado (LGPD): {email}")
+    last4 = (customer_phone_last4 or "").strip()
+    if last4:
+        lines.append(f"WhatsApp verificado: final {last4}")
     if summary:
         trimmed = summary.strip()[:MAX_SUMMARY_CHARS]
         if trimmed:

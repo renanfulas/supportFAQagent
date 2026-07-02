@@ -44,6 +44,45 @@ def test_render_one_notification_per_distinct_recipient() -> None:
     assert "5511999990001" not in notifications[0].idempotency_key
 
 
+def test_render_includes_customer_contact_when_supplied() -> None:
+    notifications = render_support_team_notifications(
+        turn_id="turn-1",
+        support_case_id="case-1",
+        domain="suporte-vps-whatsapp",
+        handoff_reasons=["explicit_human_request"],
+        summary="quero falar com atendente",
+        references=[],
+        recipients=["5511999990001"],
+        customer_name="Ana",
+        customer_email="ana@example.com",
+        customer_phone_last4="1234",
+    )
+
+    text = notifications[0].text
+    assert "Cliente: Ana" in text
+    assert "Contato autorizado (LGPD): ana@example.com" in text
+    assert "WhatsApp verificado: final 1234" in text
+    # Identity block sits between the case header and the summary.
+    assert text.index("Motivo:") < text.index("Cliente:") < text.index("Resumo:")
+
+
+def test_render_omits_customer_lines_without_contact() -> None:
+    notifications = render_support_team_notifications(
+        turn_id="turn-1",
+        support_case_id="case-1",
+        domain="vendas",
+        handoff_reasons=["sensitive_topic"],
+        summary="resumo",
+        references=[],
+        recipients=["5511999990001"],
+    )
+
+    text = notifications[0].text
+    assert "Cliente:" not in text
+    assert "Contato autorizado" not in text
+    assert "WhatsApp verificado" not in text
+
+
 def test_render_returns_empty_without_recipients() -> None:
     assert (
         render_support_team_notifications(
@@ -219,3 +258,86 @@ def test_handoff_does_not_enqueue_without_recipients() -> None:
     status = _record_escalated(repository)
     assert status.handoff_status == HANDOFF_QUEUED
     assert _whatsapp_inserts(cursor) == []
+
+
+# --------------------------------------------------------------------------- #
+# Consent path: the deferred notification carries the authorized contact
+# --------------------------------------------------------------------------- #
+
+
+def test_consent_promotion_notifies_with_authorized_contact() -> None:
+    cursor = _RecordingCursor(
+        fetchone_rows=[
+            (
+                "case-1",
+                "pending_consent",
+                None,
+                "2026-07-01T00:00:00Z",
+                {
+                    "summary": "quero falar com atendente",
+                    "references": [],
+                    "handoff_reasons": ["explicit_human_request"],
+                },
+                "suporte-vps-whatsapp",
+            ),
+            # Effective contact resolved from customers + verified identity.
+            ("Ana", "ana@example.com", "1234"),
+        ],
+        fetchall_rows=[],
+    )
+    repository = OperationalRepository(
+        _RecordingRuntime(
+            cursor,
+            settings=_settings(notify=True, recipients=["5511999990001"]),
+        )
+    )
+
+    result = repository.promote_pending_consent(
+        request_id="req-consent",
+        customer_id="customer-1",
+        name="Ana",
+        email="ana@example.com",
+    )
+
+    assert result.status == "open"
+    assert result.customer_name == "Ana"
+    inserts = _whatsapp_inserts(cursor)
+    assert len(inserts) == 1
+    payload = json.loads(inserts[0][1][2])
+    assert "Cliente: Ana" in payload["text"]
+    assert "Contato autorizado (LGPD): ana@example.com" in payload["text"]
+    assert "WhatsApp verificado: final 1234" in payload["text"]
+
+
+def test_consent_promotion_notifies_without_contact_lines_when_none_given() -> None:
+    cursor = _RecordingCursor(
+        fetchone_rows=[
+            (
+                "case-2",
+                "pending_consent",
+                None,
+                "2026-07-01T00:00:00Z",
+                {"summary": "resumo", "references": [], "handoff_reasons": []},
+                "suporte-vps-whatsapp",
+            ),
+            (None, None, None),  # customer row exists but has no contact yet
+        ],
+        fetchall_rows=[],
+    )
+    repository = OperationalRepository(
+        _RecordingRuntime(
+            cursor,
+            settings=_settings(notify=True, recipients=["5511999990001"]),
+        )
+    )
+
+    result = repository.promote_pending_consent(
+        request_id="req-consent", customer_id="customer-1", name=None, email=None
+    )
+
+    assert result.customer_name is None
+    inserts = _whatsapp_inserts(cursor)
+    assert len(inserts) == 1
+    payload = json.loads(inserts[0][1][2])
+    assert "Cliente:" not in payload["text"]
+    assert "Contato autorizado" not in payload["text"]

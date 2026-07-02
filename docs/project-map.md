@@ -94,8 +94,13 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    com amostragem de qualidade dos resumos ja feita (0 achados de PII/PAN). Falta
    so o caso de eval no dominio para o recall (ver
    `quality-plans/conversation-persistence-tiering-tech-plan.md` Fase 4).
-5. **Fechar frentes parciais**: enriquecimento de push do support inbox
-   (identidade + handoff) e hardening restante do funil de vendas.
+5. **Fechar frentes parciais**: hardening restante do funil de vendas. O
+   enriquecimento de push do support inbox (identidade + handoff) fechou em
+   2026-07-01: notificacao do consent carrega o contato autorizado (nome,
+   e-mail, final do WhatsApp), o detalhe do inbox expoe o bloco `customer`
+   via join com `customers`, e `POST /web/handoff/consent` devolve
+   `customer_name` (ver Sprint 5 em
+   `quality-plans/customer-identity-whatsapp-handoff-plan.md`).
 6. ~~Sprint 4b (gate de consentimento LGPD no handoff do web chat)~~ —
    **concluido em 2026-07-01**: migration 013 aplicada na VPS,
    `ENABLE_HANDOFF_CONSENT_GATE=true` em staging, smoke real ponta a ponta

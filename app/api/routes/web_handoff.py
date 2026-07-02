@@ -80,4 +80,5 @@ def confirm_handoff_consent(
         opened_at=result.opened_at.isoformat() if result.opened_at else "",
         summary=result.summary,
         domain=result.domain,
+        customer_name=result.customer_name,
     )

@@ -144,8 +144,13 @@ Entrada:
 Saída (`200`):
 
 ```json
-{ "support_case_id": "uuid", "status": "open", "opened_at": "2026-07-01T00:00:00+00:00", "summary": "...", "domain": "suporte-vps-whatsapp" }
+{ "support_case_id": "uuid", "status": "open", "opened_at": "2026-07-01T00:00:00+00:00", "summary": "...", "domain": "suporte-vps-whatsapp", "customer_name": "Renan" }
 ```
+
+- `customer_name`: nome **efetivo** no registro do cliente após a promoção (um
+  consent anterior vence um redigitado, pelo `COALESCE`), para o widget espelhar
+  ao cliente exatamente o que foi dito ao time. `null` no replay idempotente e
+  quando nenhum nome existe.
 
 Erros:
 
@@ -168,6 +173,13 @@ Contrato de dados (decisão de arquitetura importante):
 - o que fica **adiado** até este endpoint é só a notificação ao time
   (`whatsapp.message.requested`) e o evento `handoff.requested` na outbox —
   nunca a criação do caso em si
+- a notificação adiada sai **enriquecida com o contato autorizado**: linhas
+  `Cliente: <nome>`, `Contato autorizado (LGPD): <e-mail>` e
+  `WhatsApp verificado: final <last4>` quando presentes. O e-mail aparece
+  legível **só** nesse alerta interno ao time e no registro `customers` — nunca
+  em payload sanitizado, log ou superfície pública. O canal WhatsApp nativo não
+  passa por aqui e segue sem bloco de contato (a equipe responde na própria
+  thread)
 - reprocessar o mesmo `request_id` depois de já promovido é idempotente
   (retorna o estado atual, não duplica notificação)
 - migration `013_customer_contact_and_consent.sql`: adiciona `customers.email`
@@ -769,7 +781,14 @@ para casos antigos gravados antes do enriquecimento.
 - transcript ordenado por `message_sequence ASC`, limitado a 200 turns, apenas
   papeis `user`/`assistant` na `redaction_version` corrente;
 - `references` e a uniao ordenada e deduplicada das referencias do snapshot e de
-  cada turn.
+  cada turn;
+- `customer` e o bloco de contato que o cliente autorizou no gate LGPD
+  (`POST /web/handoff/consent`), lido on-read via `LEFT JOIN customers` +
+  identidade verificada mais recente (fonte unica de verdade — um replay de
+  turno que sobrescreva o snapshot do caso nunca perde o contato). `null`
+  quando o caso nao tem `customer_id` (ex.: WhatsApp nativo). O e-mail e
+  legivel de proposito — o time usa para contato real — e so aparece nesta
+  superficie interna autenticada.
 
 Saida do detalhe (resumida):
 
@@ -788,6 +807,11 @@ Saida do detalhe (resumida):
   "turn_count": 2,
   "opened_at": "2026-06-28T00:00:00Z",
   "updated_at": "2026-06-28T00:00:00Z",
+  "customer": {
+    "display_label": "Renan",
+    "email": "renan@example.com",
+    "phone_last4": "1234"
+  },
   "transcript": [
     {
       "sequence": 1,
