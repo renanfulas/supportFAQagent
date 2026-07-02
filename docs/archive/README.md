@@ -20,6 +20,7 @@ sem confirmar seu substituto ativo.
 | [Chat web V0](implementation-plans/web-chat-v0-implementation-plan.md) | V0 incorporada ao produto | [`docs/quality-plans/web-chat-evolution-plan.md`](../quality-plans/web-chat-evolution-plan.md) |
 | [Retrieval vetorial](implementation-plans/vector-retrieval-quality-plan.md) | adapter e gate incorporados ao MVP | [`docs/MVP/technical-implementation-plan.md`](../MVP/technical-implementation-plan.md) |
 | [Chat web V1B (ponte OTP n8n/Evolution)](implementation-plans/web-chat-v1b-postgres-n8n-plan.md) | `n8n` removido do projeto; ponte superseded por Meta WhatsApp nativo | [`docs/quality-plans/meta-whatsapp-native-integration-plan.md`](../quality-plans/meta-whatsapp-native-integration-plan.md) |
+| [Roteamento de dominio pegajoso (sticky)](implementation-plans/whatsapp-sticky-domain-routing-plan.md) | seam + adapter duravel `PgSessionDomainStore` entregues e validados em CI, sem tarefa executavel restante | [`docs/project-map.md`](../project-map.md) (linha da frente), `tests/test_domain_router.py`, `tests/integration/test_session_domain_store_postgres.py` |
 
 ## Runbooks De Tecnologia Removida
 
@@ -34,6 +35,7 @@ sem confirmar seu substituto ativo.
 | Documento arquivado | Motivo | Fonte atual |
 | --- | --- | --- |
 | [Validacao inicial de staging](historical-reports/staging-runtime-validation-report.md) | evidencia de maio substituida pela Fase 0 | [`docs/runbooks/phase0-staging-promotion-evidence.md`](../runbooks/phase0-staging-promotion-evidence.md) |
+| [Revisao da base de conhecimento - 2026-05-17](historical-reports/knowledge-base-review-2026-05-17.md) | premissa do documento ("aguardando relatorio anonimo da HostGator") ja superada; a base cresceu de 8 para 13 fontes desde entao | [`docs/architecture/knowledge-authoring.md`](../architecture/knowledge-authoring.md), [`docs/architecture/domain-evals.md`](../architecture/domain-evals.md) |
 
 ## Roadmaps Historicos De Seguranca
 
