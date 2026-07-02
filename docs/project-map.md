@@ -23,8 +23,9 @@ Legenda de status: ✅ feito · 🟡 em andamento / parcial · ⬜ planejado / f
   ambiente isolado passar.
 - **pgvector: ✅ default operacional do staging** (`pgvector_gate.yaml` em
   `76/78`), com rollback documentado para `RETRIEVAL_BACKEND=lexical`.
-- **Fase 5 (operacao/VPS/runtime): 🟡 em andamento.** Capacidade de disco,
-  monitoramento, smoke privado da Meta e acompanhamento do pgvector.
+- **Fase 5 (operacao/VPS/runtime): 🟡 em andamento.** Alerta de capacidade de
+  disco ja entregue e ativo; falta smoke privado da Meta e acompanhamento do
+  pgvector.
 
 `n8n` foi removido do projeto e nao e gate do MVP. Ownership atual: Renan
 (arquitetura, orquestracao, persistencia, pgvector, testes, seguranca, docs) e
@@ -58,7 +59,7 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
 | pgvector (retrieval vetorial) | ✅ default de staging, rollback lexical | [`MVP/technical-implementation-plan.md`](MVP/technical-implementation-plan.md), [`runbooks/pgvector-promotion-checklist.md`](runbooks/pgvector-promotion-checklist.md) | `app/retrieval/`, `app/ingestion/pgvector_writer.py` | `pgvector_gate.yaml` |
 | Persistencia em camadas (tiering) | 🟡 Fases 2-4 vivas na VPS + amostragem de qualidade concluida (2026-07-01, 0 achados de PII/PAN) + eval do recall entregue (2026-07-02, `summary_recall.yaml` 3/3 com LLM real, rotulo do prompt corrigido); falta so Fase 0 (sink R2, bloqueado por credenciais) e a metrica de custo | [`quality-plans/conversation-persistence-tiering-plan.md`](quality-plans/conversation-persistence-tiering-plan.md), [`...-tech-plan.md`](quality-plans/conversation-persistence-tiering-tech-plan.md) | `app/conversations/`, `architecture/conversation-archive-sink.md`, `runbooks/redis-session-state.md`, `runbooks/conversation-summary-batch.md` | testes fake-client + integração postgres |
 | Identidade do cliente + handoff WhatsApp | ✅ Sprints 0-5 e 4b entregues e validados em staging (2026-07-01: `ENABLE_HANDOFF_CONSENT_GATE` ligado na VPS, smoke real ponta a ponta com Postgres + OTP via WhatsApp, eval com chave real 0 falhas); resta so a extensao "minion" (bloqueada no Juliano) e o hook de branching por dominio | [`quality-plans/customer-identity-whatsapp-handoff-plan.md`](quality-plans/customer-identity-whatsapp-handoff-plan.md), [`...-tech-plan.md`](quality-plans/customer-identity-whatsapp-handoff-tech-plan.md) | `app/handoff/`, `app/web_auth/`, `app/identity/`, `app/api/routes/web_handoff.py`, support inbox, `runbooks/support-team-whatsapp-notify-smoke.md` | `test_support_inbox*`, `test_support_team_notifications`, `test_web_auth`, `test_web_handoff`, `test_phase0_operational_safety` |
-| Roteamento de dominio pegajoso (sticky) | ✅ seam + adapter duravel, validado em CI | [`quality-plans/whatsapp-sticky-domain-routing-plan.md`](quality-plans/whatsapp-sticky-domain-routing-plan.md) | `app/domain_engine/` (session domain store) | `test_session_domain_store(_postgres)` |
+| Roteamento de dominio pegajoso (sticky) | ✅ seam + adapter duravel, validado em CI; plano arquivado (sem tarefa restante) | [`archive/implementation-plans/whatsapp-sticky-domain-routing-plan.md`](archive/implementation-plans/whatsapp-sticky-domain-routing-plan.md) | `app/domain_engine/` (session domain store) | `test_session_domain_store(_postgres)` |
 | Funil de vendas (hardening) | ✅ WS-0..WS-4 entregues e flags ligadas; decisao 2 resolvida em 2026-07-01 (`confidence_threshold` 0.55 → 0.45); falta so chegar em prod no proximo deploy | [`quality-plans/vendas-funnel-hardening-plan.md`](quality-plans/vendas-funnel-hardening-plan.md) | `domains/vendas/`, `app/handoff/`, `app/orchestration/` | `test_vendas_checkout`, `test_pii_card`, eval `vendas` |
 | Meta WhatsApp nativo | 🟡 fundacao por flag (Ondas 1–3, 6); falta smoke + ativacao | [`quality-plans/meta-whatsapp-native-integration-plan.md`](quality-plans/meta-whatsapp-native-integration-plan.md), [`runbooks/meta-whatsapp-private-smoke.md`](runbooks/meta-whatsapp-private-smoke.md) | transporte Meta (`client.py`, `webhook.py`), desativado por padrao | `test_meta_whatsapp*`, activation suite |
 | Hermes (adapter temporario) | ✅ cutover e2e na VPS (2026-06-29); ponte temporaria | [`quality-plans/hermes-chat-bridge-plan.md`](quality-plans/hermes-chat-bridge-plan.md), [`runbooks/hermes-chat-cutover.md`](runbooks/hermes-chat-cutover.md) | adapter Hermes (transporte externo) | `test_hermes_adapter`, `test_hermes_chat` |
@@ -86,8 +87,16 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    > contratos ou testes.
 2. **Smoke privado da Meta WhatsApp** antes de qualquer ativacao real
    (`runbooks/meta-whatsapp-private-smoke.md`).
-3. **Capacidade de disco da VPS**: alerta + politica de limpeza de cache Docker,
-   preservando volumes do PostgreSQL (`runbooks/vps-capacity-and-docker-cleanup.md`).
+3. ~~Capacidade de disco da VPS: alerta + politica de limpeza de cache Docker~~ —
+   **ja entregue** (PR #68) e **confirmado ativo em 2026-07-02**:
+   `supportfaq-capacity-alert.timer` roda a cada ~15min na VPS via systemd,
+   thresholds `75%`/`85%`/`<2GiB livre`, alerta por WhatsApp (rota Hermes
+   `supportfaq-alerts`) so em `critical`, guarda de volumes PostgreSQL/pgvector
+   contra `docker volume prune`. Estado atual verificado: `65,3%` usado,
+   `5,3 GiB` livres, status `ok`, 0 disparos — sem risco ativo. Ver
+   `runbooks/vps-capacity-and-docker-cleanup.md`. Achado paralelo, nao coberto
+   por esta politica (que so trata Docker): `/root/.npm` (1,2G) + `/root/.bun`
+   (314M) sao cache de package manager reclamavel, baixa prioridade.
 4. **Fase 0 do tiering (archive sink R2)**: unico item de persistencia em camadas
    ainda desligado, bloqueado por credenciais Cloudflare R2 (bucket/endpoint/chaves).
    Redis (Fase 2), batch+recall (Fases 3-4) e o eval do recall (2026-07-02,

@@ -29,7 +29,7 @@ Alexandre e Silotto sairam do projeto; suas frentes foram absorvidas pela dupla.
 
 Fontes relacionadas: `docs/architecture/domain-contract.md`, `docs/architecture/domain-evals.md`,
 `docs/architecture/integration-contracts.md`, `docs/architecture/observability.md`,
-`docs/quality-plans/whatsapp-sticky-domain-routing-plan.md`,
+`docs/archive/implementation-plans/whatsapp-sticky-domain-routing-plan.md`,
 `docs/quality-plans/customer-identity-whatsapp-handoff-plan.md`,
 memoria de sessao `whatsapp-vendas-smoke-findings`.
 
