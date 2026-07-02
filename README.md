@@ -12,7 +12,7 @@
 
 Agente de suporte com RAG para responder duvidas recorrentes de VPS, WhatsApp e automacoes com seguranca, rastreabilidade e escalonamento humano.
 
-O `supportFAQagent` transforma conhecimento tecnico versionado em respostas consistentes, auditaveis e reutilizaveis por dominio. O primeiro dominio do produto e `suporte-vps-whatsapp`, voltado para atendimento tecnico de VPS, WhatsApp e automacoes operacionais.
+O `supportFAQagent` transforma conhecimento tecnico versionado em respostas consistentes, auditaveis e reutilizaveis por dominio. O mesmo nucleo atende hoje dominios diferentes com personas e politicas proprias: `suporte-vps-whatsapp` (atendimento tecnico de VPS, WhatsApp e automacoes) e `vendas` (qualificacao consultiva e recomendacao de planos), com dominios adicionais de suporte em preparacao — a tese de reutilizacao por dominio deixou de ser promessa e virou operacao.
 
 ## O Problema
 
@@ -30,27 +30,47 @@ Este projeto resolve isso com um nucleo Python modular que:
 ## O Que Ja Funciona
 
 - API HTTP com FastAPI
-- dominio inicial para suporte de VPS, WhatsApp e automacoes
+- multiplos dominios no mesmo nucleo: suporte tecnico (VPS/WhatsApp/automacoes)
+  e vendas consultivas, cada um com persona, escopo, conhecimento e politica de
+  escalonamento proprios, mais flags de comportamento por dominio
+- roteamento de dominio por mensagem no WhatsApp, com stickiness duravel de
+  sessao (PostgreSQL) para o cliente nao ser rebaixado ao menu a cada turno
 - retrieval lexical como padrao seguro para local/CI
 - retrieval PostgreSQL/pgvector como default operacional do staging por
   `RETRIEVAL_BACKEND=pgvector`
 - provider real de LLM com OpenAI/Anthropic
 - fallback seguro quando credenciais ou providers falham
-- handoff estruturado por baixa confianca, pedido humano, termo sensivel ou erro tecnico
+- handoff estruturado por baixa confianca, pedido humano, termo sensivel ou erro
+  tecnico, com taxonomia que separa sinal fraco (so log/metrica) de fila humana
+  real
+- ticket duravel de suporte (`support_cases`) criado na mesma transacao do turno
+  escalado, inbox interno de leitura para triagem do time e notificacao WhatsApp
+  ao time com contexto sanitizado
+- identidade de cliente no web chat por OTP via WhatsApp, com gate de
+  consentimento LGPD antes de qualquer contato direto do time
+- historico curto real por sessao + resumo de atendimentos anteriores
+  (sumarizacao noturna + recall no prompt, marcado como dado nao confiavel)
+- detector de numero de cartao (Luhn) que recusa checkout, redige antes de
+  persistir e nunca ecoa o dado
 - feedback persistente e confiavel quando `PERSISTENCE_BACKEND=postgres`
 - fachada publica `POST /web/chat` e `POST /web/feedback` para website sem expor segredo no navegador
 - adaptador para ler arquivos do GitHub pela Contents API oficial, sem scraping de HTML
 - rate limit no `/chat`
 - `X-Request-ID` em todas as respostas
-- testes automatizados cobrindo API, seguranca, retrieval, LLM, handoff e contratos
+- testes automatizados cobrindo API, seguranca, retrieval, LLM, handoff e
+  contratos, mais suites de eval por dominio (casos base, confinamento,
+  dados de pagamento, recall de resumo e gate pgvector)
 
 ## Casos De Uso
 
 - atendimento inicial em WhatsApp
 - atendimento inicial em website com chat publico controlado
 - suporte tecnico para VPS
+- qualificacao consultiva de leads e recomendacao de planos, com escalonamento
+  humano para pagamento, contrato e cobranca
 - triagem de duvidas recorrentes
 - consulta a FAQs e artigos internos
+- triagem humana de tickets escalados com contexto de conversa organizado
 - canais externos consumindo uma API estavel, sem mover inteligencia para fora
   do backend
 - base para agentes reutilizaveis em outros dominios
@@ -113,68 +133,88 @@ O projeto foi desenhado para uso operacional controlado:
 Pronto no MVP atual:
 
 - API principal
-- dominio inicial
+- dois dominios operacionais (suporte tecnico e vendas consultivas), com
+  roteamento por mensagem e stickiness duravel no WhatsApp
 - resposta com fallback seguro
-- handoff estruturado
+- handoff estruturado com taxonomia de motivos, ticket duravel, inbox interno
+  de triagem e notificacao WhatsApp ao time
+- identidade de cliente por OTP no web chat com gate de consentimento LGPD
 - persistencia PostgreSQL de feedback, conversas e mensagens sanitizadas por
-  feature flag
+  feature flag (migrations `001-013`)
+- persistencia em camadas: estado quente de sessao em Redis, sumarizacao
+  noturna de conversas e recall do resumo no prompt — tudo atras de flag e
+  ligado em staging
 - historico curto real isolado por dominio, canal e hash de sessao
 - readiness separado para banco, migrations, retrieval e outbox
 - retrieval lexical preservado como fallback local e rollback operacional
 - pgvector promovido como default operacional do staging real
 - `pgvector_gate.yaml` validada em staging com `76/78`
-- Fase 0 implementada e validada localmente com PostgreSQL/pgvector real,
-  migrations `001-008` e `356` testes verdes
+- alerta de capacidade de disco da VPS via systemd timer, com aviso por
+  WhatsApp em nivel critico e guarda dos volumes PostgreSQL contra limpeza
+  indevida
 - fundacao Meta WhatsApp Cloud API implementada por feature flag, com webhook,
   parser, cliente HTTP, entrega OTP e transporte de chat desativados por padrao
-- Hermes disponivel apenas como adapter temporario para entrega OTP
-- testes e documentacao base
+- Hermes operando como ponte temporaria de chat WhatsApp em staging (cutover
+  verificado ponta a ponta), alem da entrega de OTP; a direcao estrategica
+  segue sendo a Meta WhatsApp Cloud API nativa
+- suites de eval por dominio (casos base, confinamento, pagamento, recall de
+  resumo), `679` testes verdes
+- testes e documentacao base, com mapa vivo em `docs/project-map.md`
 
 Proxima fase operacional:
 
 - executar restore cronometrado em ambiente isolado e medir `RPO <= 24h` /
-  `RTO <= 4h`
+  `RTO <= 4h` (ferramenta e run-sheet prontos; falta a execucao no host
+  isolado)
 - executar smoke privado da Meta WhatsApp Cloud API antes de qualquer ativacao
   real
-- manter Hermes como ponte temporaria somente se reduzir risco operacional
-- operacao reproduzivel e monitoramento da VPS
+- ligar o archive sink off-box (Cloudflare R2) quando as credenciais chegarem
+- registrar a metrica de custo da sumarizacao
 - acompanhar pgvector como default do staging com rollback documentado para
   lexical
 
 Roadmap:
 
-- calibragem com perguntas reais
-- expansao para novos dominios
+- expansao para novos dominios de suporte (hospedagem) e o minion de
+  diagnostico (contrato HTTP ja especificado, v1 somente leitura)
+- calibragem continua com perguntas reais
 
 Risco operacional conhecido:
 
-- o staging chegou a `100%` de uso do disco por cache de build Docker; depois
-  da limpeza e promocao parcial ficou em `81%`, portanto precisa de alerta e
-  politica de limpeza antes de producao
 - a Fase 0 operacional continua `not_approved` ate o restore isolado passar;
   `n8n` foi removido do projeto e nao e gate do MVP
+- o disco do staging ja atingiu `100%` no passado; hoje opera em ~`63%` com
+  alerta automatico ativo e politica de limpeza documentada
+  (`docs/runbooks/vps-capacity-and-docker-cleanup.md`)
 
 ## Estrutura
 
 ```text
 app/
   api/               # rotas e schemas HTTP
-  core/              # configuracao, logging e utilitarios
-  db/                # modelos e conexao de persistencia
-  domain_engine/     # carga de dominios, prompts e politicas
+  conversations/     # historico, estado de sessao, sumarizacao e recall
+  core/              # configuracao, logging, sanitizacao e utilitarios
+  db/                # modelos, conexao e escrita operacional (audit/outbox)
+  domain_engine/     # carga de dominios, roteador e politicas
   evals/             # runner e modelos de calibragem local
   feedback/          # contrato e servico de feedback operacional
-  handoff/           # regras reutilizaveis de escalonamento humano
+  handoff/           # regras reutilizaveis e taxonomia de escalonamento humano
+  health/            # readiness por dependencia
+  identity/          # resolucao da identidade atual do cliente
   ingestion/         # leitura e chunking da base de conhecimento
+  integrations/      # transportes externos (Hermes, Meta WhatsApp)
   llm/               # contratos e provedores de modelos
+  notifications/     # renderizacao de alertas ao time
   orchestration/     # fluxo principal de atendimento
   retrieval/         # embeddings, vetores e recuperacao
   static/            # chat UI local para validacao controlada
-domains/
-  suporte-vps-whatsapp/
-    domain.yaml
-    knowledge/
-    prompts/
+  support/           # inbox interno e contexto de tickets
+  web_auth/          # OTP via WhatsApp para o web chat
+domains/                  # cada dominio: domain.yaml, knowledge/, prompts/, evals/
+  suporte-vps-whatsapp/   # suporte tecnico (dominio operacional)
+  vendas/                 # vendas consultivas (dominio operacional)
+  suporte-hospedagem/     # em preparacao
+  suporte-vps/            # em preparacao
 docs/                # documentacao por pasta (mapa em docs/project-map.md)
   architecture/      # design, fronteiras, contratos e padroes do sistema
   setup/             # guias de instalacao e configuracao de ambiente
