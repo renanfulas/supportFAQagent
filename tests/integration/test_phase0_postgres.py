@@ -21,6 +21,7 @@ from app.db.operational import (
 from app.api.schemas.feedback import FeedbackRequest
 from app.conversations.service import ConversationHistoryService, hash_session
 from app.integrations.webhook_ingress import CLAIMED, IN_PROGRESS, WebhookIngressRepository
+from app.support.repository import SupportCaseRepository
 from app.web_auth.models import OtpChallenge, VerifiedIdentity
 from app.web_auth.storage import PostgresWebAuthStore
 from scripts.dispatch_outbox import PermanentDeliveryError, dispatch_one
@@ -789,6 +790,125 @@ def test_escalated_chat_creates_idempotent_support_case_and_handoff_outbox(
     assert reason_codes == ["explicit_human_request"]
     assert len(outbox_rows) == 1
     assert outbox_rows[0][0]["support_case_id"] == support_case_id
+
+
+def test_consent_gate_creates_pending_case_hidden_from_default_inbox(
+    runtime: DatabaseRuntime,
+) -> None:
+    # Sprint 4b end-to-end: with the gate on and channel=web, the support_case
+    # is created (atomicity preserved) but with status='pending_consent', no
+    # handoff.requested outbox row, and it must not surface in the team's
+    # default (unfiltered) inbox view -- only via an explicit status filter.
+    _ensure_domain(runtime)
+    runtime.settings.enable_handoff_consent_gate = True
+    try:
+        repository = OperationalRepository(runtime)
+        audit = ChatAuditInput(
+            request_id="req-consent-gate-e2e",
+            domain="suporte-vps-whatsapp",
+            session_id="consent-gate-session",
+            question="Quero falar com atendente",
+            answer="Vou escalar",
+            confidence=0.1,
+            escalated=True,
+            handoff_reasons=["explicit_human_request"],
+            references=[],
+            error_code=None,
+            channel="web",
+        )
+
+        result = repository.record_chat(audit)
+
+        assert result.handoff_status == "handoff_pending_consent"
+        with runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT status FROM support_cases WHERE request_id = %s",
+                    ("req-consent-gate-e2e",),
+                )
+                (status,) = cursor.fetchone()
+                cursor.execute(
+                    "SELECT count(*) FROM operational_outbox WHERE request_id = %s",
+                    ("req-consent-gate-e2e",),
+                )
+                (outbox_count,) = cursor.fetchone()
+        assert status == "pending_consent"
+        assert outbox_count == 0
+
+        inbox = SupportCaseRepository(runtime)
+        default_view = inbox.list_cases(
+            domain="suporte-vps-whatsapp", status=None, limit=25, offset=0
+        )
+        assert all(case.request_id != "req-consent-gate-e2e" for case in default_view)
+
+        explicit_view = inbox.list_cases(
+            domain="suporte-vps-whatsapp",
+            status="pending_consent",
+            limit=25,
+            offset=0,
+        )
+        assert any(case.request_id == "req-consent-gate-e2e" for case in explicit_view)
+
+        # POST /web/handoff/consent's backend: OTP confirmed (customer_id known),
+        # name/email supplied -- promotes the case and (deferred) notification.
+        customer_id = "00000000-0000-0000-0000-000000000401"
+        with runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO customers (id, default_channel) VALUES (%s, 'web')",
+                    (customer_id,),
+                )
+
+        promotion = repository.promote_pending_consent(
+            request_id="req-consent-gate-e2e",
+            customer_id=customer_id,
+            name="Renan",
+            email="renan@example.com",
+        )
+
+        assert promotion.status == "open"
+        assert promotion.already_promoted is False
+        with runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT status, customer_id::text FROM support_cases WHERE request_id = %s",
+                    ("req-consent-gate-e2e",),
+                )
+                (final_status, final_customer_id) = cursor.fetchone()
+                cursor.execute(
+                    "SELECT display_label, email FROM customers WHERE id = %s",
+                    (customer_id,),
+                )
+                (display_label, email) = cursor.fetchone()
+                cursor.execute(
+                    "SELECT count(*) FROM operational_outbox WHERE request_id = %s AND event_type = 'handoff.requested'",
+                    ("req-consent-gate-e2e",),
+                )
+                (handoff_outbox_count,) = cursor.fetchone()
+        assert final_status == "open"
+        assert final_customer_id == customer_id
+        assert display_label == "Renan"
+        assert email == "renan@example.com"
+        assert handoff_outbox_count == 1
+
+        # Re-promoting the same request_id is a no-op, not a second notification.
+        repeat = repository.promote_pending_consent(
+            request_id="req-consent-gate-e2e",
+            customer_id=customer_id,
+            name=None,
+            email=None,
+        )
+        assert repeat.already_promoted is True
+        with runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT count(*) FROM operational_outbox WHERE request_id = %s AND event_type = 'handoff.requested'",
+                    ("req-consent-gate-e2e",),
+                )
+                (handoff_outbox_count_after_repeat,) = cursor.fetchone()
+        assert handoff_outbox_count_after_repeat == 1
+    finally:
+        runtime.settings.enable_handoff_consent_gate = False
 
 
 def _ensure_domain(runtime: DatabaseRuntime) -> None:

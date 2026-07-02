@@ -14,9 +14,12 @@ from app.core.persistence_sanitize import (
 from app.db.runtime import DatabaseRuntime
 from app.db.operational import (
     ChatAuditInput,
+    ConsentCaseNotFound,
     HANDOFF_NOT_REQUIRED,
+    HANDOFF_PENDING_CONSENT,
     HANDOFF_QUEUED,
     HANDOFF_UNAVAILABLE,
+    InvalidConsentContact,
     PERSISTENCE_PERSISTED,
     OperationalRepository,
 )
@@ -477,6 +480,195 @@ def test_escalated_chat_is_recorded_with_idempotent_outbox_key() -> None:
     assert "user@example.com" not in str(runtime.cursor.calls)
     assert "reference-secret" not in str(runtime.cursor.calls)
     assert "ghp_" not in str(runtime.cursor.calls)
+
+
+def test_consent_gate_defers_notification_and_marks_case_pending() -> None:
+    # Sprint 4b: with the flag on and channel=web, the support_case is still
+    # created inside the same transaction as always (atomicity preserved), but
+    # with status='pending_consent' and WITHOUT enqueueing the handoff.requested
+    # outbox event or the support-team WhatsApp notification. Only 5 fetchone()
+    # results are consumed (no outbox insert row) because that step is skipped.
+    runtime = RecordingRuntime(
+        rows=[
+            ("domain-id",),
+            (False,),
+            ("audit-id", "turn-id"),
+            ("conversation-id",),
+            ("support-case-id",),
+        ]
+    )
+    runtime.settings.enable_handoff_consent_gate = True
+    repository = OperationalRepository(runtime)
+
+    status = repository.record_chat(
+        ChatAuditInput(
+            request_id="req-consent",
+            domain="suporte-vps-whatsapp",
+            session_id="raw-session",
+            question="quero falar com atendente",
+            answer="vou escalar",
+            confidence=0.2,
+            escalated=True,
+            handoff_reasons=["explicit_human_request"],
+            references=[],
+            error_code=None,
+            channel="web",
+        )
+    )
+
+    assert status.handoff_status == HANDOFF_PENDING_CONSENT
+    assert status.persistence_status == PERSISTENCE_PERSISTED
+    support_case_call = next(
+        call for call in runtime.cursor.calls if "INSERT INTO support_cases" in call[0]
+    )
+    assert "pending_consent" in support_case_call[1]
+    assert all("operational_outbox" not in call[0] for call in runtime.cursor.calls)
+
+
+def test_consent_gate_does_not_apply_to_non_web_channels() -> None:
+    # WhatsApp native (Hermes/Meta) keeps today's behavior even with the flag on:
+    # the team replies in the thread the customer already started, so this is not
+    # a new outbound contact and does not need the consent gate.
+    runtime = RecordingRuntime(
+        rows=[
+            ("domain-id",),
+            (False,),
+            ("audit-id", "turn-id"),
+            ("conversation-id",),
+            ("support-case-id",),
+            ("pending",),
+        ]
+    )
+    runtime.settings.enable_handoff_consent_gate = True
+    repository = OperationalRepository(runtime)
+
+    status = repository.record_chat(
+        ChatAuditInput(
+            request_id="req-whatsapp",
+            domain="suporte-vps-whatsapp",
+            session_id="raw-session",
+            question="quero falar com atendente",
+            answer="vou escalar",
+            confidence=0.2,
+            escalated=True,
+            handoff_reasons=["explicit_human_request"],
+            references=[],
+            error_code=None,
+            channel="whatsapp",
+        )
+    )
+
+    assert status.handoff_status == HANDOFF_QUEUED
+    support_case_call = next(
+        call for call in runtime.cursor.calls if "INSERT INTO support_cases" in call[0]
+    )
+    assert "pending_consent" not in support_case_call[1]
+
+
+def test_promote_pending_consent_flips_status_and_notifies() -> None:
+    runtime = RecordingRuntime(
+        rows=[
+            (
+                "case-1",
+                "pending_consent",
+                None,
+                "2026-07-01T00:00:00Z",
+                {
+                    "summary": "quero falar com atendente",
+                    "references": [],
+                    "handoff_reasons": ["explicit_human_request"],
+                },
+                "suporte-vps-whatsapp",
+            )
+        ]
+    )
+    repository = OperationalRepository(runtime)
+
+    result = repository.promote_pending_consent(
+        request_id="req-consent",
+        customer_id="customer-1",
+        name="Renan",
+        email="renan@example.com",
+    )
+
+    assert result.support_case_id == "case-1"
+    assert result.status == "open"
+    assert result.already_promoted is False
+    sql_calls = [call[0] for call in runtime.cursor.calls]
+    assert any("UPDATE customers" in sql for sql in sql_calls)
+    assert any("UPDATE support_cases" in sql and "'open'" in sql for sql in sql_calls)
+    assert any("handoff.requested" in sql for sql in sql_calls)
+
+
+def test_promote_pending_consent_is_idempotent_when_already_open() -> None:
+    runtime = RecordingRuntime(
+        rows=[
+            (
+                "case-1",
+                "open",
+                "customer-1",
+                "2026-07-01T00:00:00Z",
+                {"summary": "ja promovido", "references": [], "handoff_reasons": []},
+                "suporte-vps-whatsapp",
+            )
+        ]
+    )
+    repository = OperationalRepository(runtime)
+
+    result = repository.promote_pending_consent(
+        request_id="req-consent", customer_id="customer-1", name=None, email=None
+    )
+
+    assert result.already_promoted is True
+    assert result.status == "open"
+    # No UPDATE/INSERT beyond the initial SELECT: re-promoting never double-notifies.
+    assert len(runtime.cursor.calls) == 1
+
+
+def test_promote_pending_consent_raises_not_found_for_unknown_request_id() -> None:
+    runtime = RecordingRuntime(rows=[])
+    repository = OperationalRepository(runtime)
+
+    with pytest.raises(ConsentCaseNotFound):
+        repository.promote_pending_consent(
+            request_id="missing", customer_id="customer-1", name=None, email=None
+        )
+
+
+def test_promote_pending_consent_hides_ownership_mismatch_as_not_found() -> None:
+    runtime = RecordingRuntime(
+        rows=[
+            (
+                "case-1",
+                "pending_consent",
+                "someone-else",
+                "2026-07-01T00:00:00Z",
+                {"summary": "x", "references": [], "handoff_reasons": []},
+                "suporte-vps-whatsapp",
+            )
+        ]
+    )
+    repository = OperationalRepository(runtime)
+
+    with pytest.raises(ConsentCaseNotFound):
+        repository.promote_pending_consent(
+            request_id="req-consent", customer_id="customer-1", name=None, email=None
+        )
+
+
+def test_promote_pending_consent_rejects_invalid_email() -> None:
+    runtime = RecordingRuntime(rows=[])
+    repository = OperationalRepository(runtime)
+
+    with pytest.raises(InvalidConsentContact):
+        repository.promote_pending_consent(
+            request_id="req-consent",
+            customer_id="customer-1",
+            name=None,
+            email="not-an-email",
+        )
+    # Validation happens before any DB call.
+    assert runtime.cursor.calls == []
 
 
 def test_soft_low_confidence_turn_is_not_enqueued_for_human_queue() -> None:

@@ -161,6 +161,15 @@ class Settings(BaseSettings):
     )
     identity_hash_secret: str | None = Field(default=None, alias="IDENTITY_HASH_SECRET")
     otp_digest_secret: str | None = Field(default=None, alias="OTP_DIGEST_SECRET")
+    enable_handoff_consent_gate: bool = Field(
+        default=False,
+        alias="ENABLE_HANDOFF_CONSENT_GATE",
+    )
+    otp_abandonment_reminder_minutes: int = Field(
+        default=15,
+        alias="OTP_ABANDONMENT_REMINDER_MINUTES",
+        ge=1,
+    )
     web_auth_otp_delivery_transport: str = Field(
         default="memory",
         alias="WEB_AUTH_OTP_DELIVERY_TRANSPORT",
@@ -295,6 +304,10 @@ class Settings(BaseSettings):
         )
         if self.web_auth_otp_delivery_transport not in {"memory", "meta", "hermes"}:
             raise ValueError("WEB_AUTH_OTP_DELIVERY_TRANSPORT must be memory, meta or hermes")
+        if self.enable_handoff_consent_gate and not self.enable_web_whatsapp_auth:
+            raise ValueError(
+                "ENABLE_HANDOFF_CONSENT_GATE requires ENABLE_WEB_WHATSAPP_AUTH=true"
+            )
 
         if self.enable_web_whatsapp_auth:
             self.identity_hash_secret = _normalize_required_secret(

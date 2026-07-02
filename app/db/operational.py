@@ -4,7 +4,9 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 from dataclasses import dataclass, field
+from typing import Any
 from uuid import uuid4
 
 from app.api.schemas.feedback import (
@@ -32,6 +34,12 @@ logger = logging.getLogger(__name__)
 HANDOFF_NOT_REQUIRED = "handoff_not_required"
 HANDOFF_QUEUED = "handoff_queued"
 HANDOFF_UNAVAILABLE = "handoff_unavailable"
+# Sprint 4b: the support_case was created, but the team was NOT notified yet —
+# it is waiting on the web chat customer to confirm LGPD consent (OTP + name/
+# email) via POST /web/handoff/consent before any outbound contact happens.
+HANDOFF_PENDING_CONSENT = "handoff_pending_consent"
+SUPPORT_CASE_STATUS_OPEN = "open"
+SUPPORT_CASE_STATUS_PENDING_CONSENT = "pending_consent"
 PERSISTENCE_DISABLED = "persistence_disabled"
 PERSISTENCE_PERSISTED = "persisted"
 PERSISTENCE_UNAVAILABLE = "persistence_unavailable"
@@ -39,6 +47,37 @@ PERSISTENCE_UNAVAILABLE = "persistence_unavailable"
 
 class FeedbackIntegrityConflictError(DatabaseUnavailableError):
     """Raised when an idempotency key is reused with a different payload."""
+
+
+class ConsentCaseNotFound(Exception):
+    """No pending web-chat support_case matches request_id for this identity.
+
+    Deliberately raised both when the case truly does not exist and when it
+    belongs to a different customer_id -- the caller must not be able to tell
+    the two apart (see promote_pending_consent's ownership check).
+    """
+
+
+class InvalidConsentContact(Exception):
+    """name/email supplied to POST /web/handoff/consent failed validation."""
+
+
+_EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _load_json_field(value: Any, *, default: Any) -> Any:
+    """JSONB columns may arrive parsed (psycopg default) or as text."""
+
+    if value is None:
+        return default
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, (str, bytes, bytearray)):
+        try:
+            return json.loads(value)
+        except (ValueError, TypeError):
+            return default
+    return default
 
 
 @dataclass(frozen=True)
@@ -75,6 +114,16 @@ class ChatPersistenceResult:
     persistence_status: str
     turn_id: str
     request_id_reused: bool = False
+
+
+@dataclass(frozen=True)
+class ConsentPromotionResult:
+    support_case_id: str
+    status: str
+    opened_at: Any
+    summary: str | None
+    domain: str
+    already_promoted: bool = False
 
 
 class OperationalRepository:
@@ -213,6 +262,19 @@ class OperationalRepository:
                         )
                     handoff_status = HANDOFF_NOT_REQUIRED
                     if audit.human_queue_required:
+                        # Sprint 4b: the LGPD consent gate only applies to the web chat
+                        # channel — WhatsApp native (Hermes/Meta) keeps today's behavior
+                        # (the team replies in the thread the customer already started,
+                        # not a new outbound contact) and is intentionally unaffected.
+                        consent_gate_active = (
+                            bool(getattr(self.runtime.settings, "enable_handoff_consent_gate", False))
+                            and audit.channel == "web"
+                        )
+                        case_status = (
+                            SUPPORT_CASE_STATUS_PENDING_CONSENT
+                            if consent_gate_active
+                            else SUPPORT_CASE_STATUS_OPEN
+                        )
                         support_case_id, organized_context = (
                             self._upsert_support_case(
                                 cursor=cursor,
@@ -226,49 +288,56 @@ class OperationalRepository:
                                 references=references,
                                 error_code=error_code,
                                 summary=question[:500],
+                                status=case_status,
                             )
                         )
-                        payload = {
-                            **payload,
-                            "support_case_id": support_case_id,
-                        }
-                        # Push carries the same bounded context the read surface
-                        # serves, so both describe the handoff identically. The
-                        # block is already sanitized inside the snapshot build.
-                        if organized_context is not None:
-                            payload["organized_context"] = organized_context
-                        cursor.execute(
-                            """
-                            INSERT INTO operational_outbox (
-                              event_type, idempotency_key, request_id, payload_sanitized
+                        if consent_gate_active:
+                            # Ticket exists (same atomicity guarantee as always), but
+                            # nobody is notified yet: notification is deferred to
+                            # POST /web/handoff/consent, after the customer confirms.
+                            handoff_status = HANDOFF_PENDING_CONSENT
+                        else:
+                            payload = {
+                                **payload,
+                                "support_case_id": support_case_id,
+                            }
+                            # Push carries the same bounded context the read surface
+                            # serves, so both describe the handoff identically. The
+                            # block is already sanitized inside the snapshot build.
+                            if organized_context is not None:
+                                payload["organized_context"] = organized_context
+                            cursor.execute(
+                                """
+                                INSERT INTO operational_outbox (
+                                  event_type, idempotency_key, request_id, payload_sanitized
+                                )
+                                VALUES ('handoff.requested', %s, %s, %s::jsonb)
+                                ON CONFLICT (idempotency_key)
+                                DO UPDATE SET idempotency_key = EXCLUDED.idempotency_key
+                                RETURNING status
+                                """,
+                                (
+                                    f"handoff:{persisted_turn_id}",
+                                    safe_request_id,
+                                    json.dumps(payload),
+                                ),
                             )
-                            VALUES ('handoff.requested', %s, %s, %s::jsonb)
-                            ON CONFLICT (idempotency_key)
-                            DO UPDATE SET idempotency_key = EXCLUDED.idempotency_key
-                            RETURNING status
-                            """,
-                            (
-                                f"handoff:{persisted_turn_id}",
-                                safe_request_id,
-                                json.dumps(payload),
-                            ),
-                        )
-                        outbox_row = cursor.fetchone()
-                        handoff_status = (
-                            HANDOFF_QUEUED
-                            if outbox_row is not None and outbox_row[0] != "dead_letter"
-                            else HANDOFF_UNAVAILABLE
-                        )
-                        self._enqueue_support_team_notifications(
-                            cursor=cursor,
-                            turn_id=str(persisted_turn_id),
-                            support_case_id=support_case_id,
-                            request_id=safe_request_id,
-                            domain=audit.domain,
-                            handoff_reasons=handoff_reasons,
-                            summary=question[:500],
-                            references=references,
-                        )
+                            outbox_row = cursor.fetchone()
+                            handoff_status = (
+                                HANDOFF_QUEUED
+                                if outbox_row is not None and outbox_row[0] != "dead_letter"
+                                else HANDOFF_UNAVAILABLE
+                            )
+                            self._enqueue_support_team_notifications(
+                                cursor=cursor,
+                                turn_id=str(persisted_turn_id),
+                                support_case_id=support_case_id,
+                                request_id=safe_request_id,
+                                domain=audit.domain,
+                                handoff_reasons=handoff_reasons,
+                                summary=question[:500],
+                                references=references,
+                            )
             return ChatPersistenceResult(
                 handoff_status=handoff_status,
                 persistence_status=PERSISTENCE_PERSISTED,
@@ -364,6 +433,7 @@ class OperationalRepository:
         references: list[str],
         error_code: str | None,
         summary: str,
+        status: str = SUPPORT_CASE_STATUS_OPEN,
     ) -> tuple[str, dict | None]:
         snapshot: dict = {
             "request_id": request_id,
@@ -392,9 +462,9 @@ class OperationalRepository:
             """
             INSERT INTO support_cases (
               domain_id, customer_id, conversation_id, request_id, channel,
-              reason_codes, context_snapshot_sanitized, idempotency_key
+              reason_codes, context_snapshot_sanitized, idempotency_key, status
             )
-            VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s)
+            VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s)
             ON CONFLICT (idempotency_key)
             DO UPDATE SET
               updated_at = now(),
@@ -410,6 +480,7 @@ class OperationalRepository:
                 json.dumps(handoff_reasons),
                 json.dumps(context_snapshot),
                 f"support_case:{turn_id}",
+                status,
             ),
         )
         return str(cursor.fetchone()[0]), context_snapshot.get("organized_context")
@@ -487,6 +558,147 @@ class OperationalRepository:
                     ),
                 ),
             )
+
+    def promote_pending_consent(
+        self,
+        *,
+        request_id: str,
+        customer_id: str,
+        name: str | None,
+        email: str | None,
+    ) -> ConsentPromotionResult:
+        """Sprint 4b: confirm LGPD consent for a web-chat handoff.
+
+        The support_case already exists (created atomically with the escalated
+        turn, see ``record_chat``); this only flips it from ``pending_consent``
+        to ``open`` and enqueues the team notification that was deferred until
+        now. Idempotent: calling twice for an already-promoted case is a no-op
+        that returns the current state instead of double-notifying.
+        """
+        safe_request_id = safe_feedback_identifier(request_id, field_name="request_id")
+        if safe_request_id is None:
+            raise ConsentCaseNotFound(request_id)
+
+        clean_name = None
+        if name and name.strip():
+            clean_name = sanitize_for_persistence(name.strip()[:120])
+        clean_email = None
+        if email and email.strip():
+            candidate = email.strip()[:200]
+            if not _EMAIL_PATTERN.fullmatch(candidate):
+                raise InvalidConsentContact("email")
+            clean_email = candidate
+
+        try:
+            with self.runtime.transaction() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT sc.id, sc.status, sc.customer_id, sc.opened_at,
+                               sc.context_snapshot_sanitized, d.name
+                        FROM support_cases sc
+                        JOIN domains d ON d.id = sc.domain_id
+                        WHERE sc.request_id = %s AND sc.channel = 'web'
+                        FOR UPDATE
+                        """,
+                        (safe_request_id,),
+                    )
+                    row = cursor.fetchone()
+                    if row is None:
+                        raise ConsentCaseNotFound(safe_request_id)
+                    case_id, status, existing_customer_id, opened_at, snapshot, domain_name = row
+                    # Ownership: an unclaimed case can be promoted by whoever proves
+                    # OTP first; an already-claimed case only accepts its own
+                    # customer_id. Mismatch is reported the same as "not found" --
+                    # never confirm or deny that a request_id belongs to someone
+                    # else's conversation.
+                    if existing_customer_id is not None and str(
+                        existing_customer_id
+                    ) != str(customer_id):
+                        raise ConsentCaseNotFound(safe_request_id)
+
+                    snapshot = _load_json_field(snapshot, default={})
+                    summary = snapshot.get("summary")
+                    references = snapshot.get("references") or []
+                    handoff_reasons = snapshot.get("handoff_reasons") or []
+
+                    if status != "pending_consent":
+                        return ConsentPromotionResult(
+                            support_case_id=str(case_id),
+                            status=str(status),
+                            opened_at=opened_at,
+                            summary=str(summary) if summary else None,
+                            domain=str(domain_name),
+                            already_promoted=True,
+                        )
+
+                    if clean_name or clean_email:
+                        cursor.execute(
+                            """
+                            UPDATE customers
+                            SET display_label = COALESCE(display_label, %s),
+                                email = COALESCE(email, %s),
+                                updated_at = now()
+                            WHERE id = %s
+                            """,
+                            (clean_name, clean_email, customer_id),
+                        )
+
+                    cursor.execute(
+                        """
+                        UPDATE support_cases
+                        SET status = 'open', customer_id = %s, updated_at = now()
+                        WHERE id = %s AND status = 'pending_consent'
+                        """,
+                        (customer_id, case_id),
+                    )
+
+                    payload = sanitize_payload(
+                        {
+                            "request_id": safe_request_id,
+                            "domain": domain_name,
+                            "support_case_id": str(case_id),
+                            "summary": summary,
+                        }
+                    )
+                    cursor.execute(
+                        """
+                        INSERT INTO operational_outbox (
+                          event_type, idempotency_key, request_id, payload_sanitized
+                        )
+                        VALUES ('handoff.requested', %s, %s, %s::jsonb)
+                        ON CONFLICT (idempotency_key) DO NOTHING
+                        """,
+                        (f"handoff:consent:{case_id}", safe_request_id, json.dumps(payload)),
+                    )
+                    self._enqueue_support_team_notifications(
+                        cursor=cursor,
+                        turn_id=str(case_id),
+                        support_case_id=str(case_id),
+                        request_id=safe_request_id,
+                        domain=str(domain_name),
+                        handoff_reasons=list(handoff_reasons),
+                        summary=str(summary) if summary else "",
+                        references=list(references),
+                    )
+        except (ConsentCaseNotFound, InvalidConsentContact):
+            raise
+        except Exception as exc:
+            log_event(
+                logger,
+                "handoff_consent_promotion_unavailable",
+                request_id=safe_request_id,
+                error_type=type(exc).__name__,
+            )
+            raise DatabaseUnavailableError("handoff consent promotion failed") from exc
+
+        return ConsentPromotionResult(
+            support_case_id=str(case_id),
+            status="open",
+            opened_at=opened_at,
+            summary=str(summary) if summary else None,
+            domain=str(domain_name),
+        )
 
     def record_feedback(self, feedback: FeedbackRequest) -> FeedbackResponse:
         if not self.runtime.persistence_enabled:

@@ -61,6 +61,7 @@ def start_whatsapp_otp(
         challenge_id=challenge.id,
         expires_in_seconds=settings.otp_code_ttl_seconds,
         retry_after_seconds=settings.otp_resend_cooldown_seconds,
+        abandonment_reminder_seconds=settings.otp_abandonment_reminder_minutes * 60,
     )
 
 

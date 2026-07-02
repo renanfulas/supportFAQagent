@@ -11,6 +11,73 @@ migration da CI: `apply --target 006` -> backfill de privacidade -> `apply` ->
 (`ENABLE_SUPPORT_INBOX` ligado; ver `docs/architecture/integration-contracts.md`).
 Data de revisao: 2026-06-29.
 
+**Extensao futura BLOQUEADA (registrada 2026-07-01, aguardando o Juliano):**
+combinado em conversa fora do repo (WhatsApp) entre Juliano e Renan sobre um
+componente novo, o **"minion"** — um script bash (depois plugin cPanel/EasyPanel)
+que o cliente roda no proprio servidor de **hospedagem**, chama um endpoint do
+agente perguntando o que precisa (ex.: configs do Dovecot/Postfix), busca esses
+arquivos **ja sanitizados no cliente** e manda de volta por outro endpoint para o
+agente analisar e responder com o diagnostico/correcao. Ideia de conexao com este
+plano: reaproveitar a infraestrutura de OTP como **autorizacao de acao sensivel**
+(nao so "posso contatar", mas "posso aplicar esta mudanca") — e, no dominio
+`suporte-hospedagem` especificamente, inverter a ordem do fluxo padrao: em vez de
+escalar->OTP->ticket, seria detectar problema->acionar minion+OTP->tenta resolver
+automaticamente->se resolveu, fim (sem ticket); se nao, cai no handoff normal
+(mesmo gate de consentimento do Sprint 4b).
+
+Duas coisas ficaram **em aberto** e bloqueiam o design detalhado:
+1. O minion ainda nao existe (Juliano: "acho que ate amanha finalizo").
+2. **Divergencia de escopo nao resolvida**: Juliano foi explicito que a v1 (script
+   bash) seria **so leitura** ("nao quero chegar nesse ponto [escrita], pelo menos
+   ainda"); Renan sugeriu entrar com OTP + escrita ja na v1 ("onde o agente faz as
+   alteracoes e o usuario autoriza"). Nao ficou confirmado se o Juliano topou ou so
+   reagiu com entusiasmo geral. **Precisa alinhamento explicito antes de desenhar.**
+
+Sem risco de atropelo enquanto isso: `suporte-hospedagem` ainda nao esta no
+roteador (Fase 2 pendente, ver `domains/suporte-hospedagem/domain.yaml`), entao
+nao ha trafego real hoje.
+
+**Contrato HTTP ja adiantado (2026-07-01), sem esperar o minion existir**: o
+pairing token, `GET /internal/minion/{token}/manifest` e
+`POST /internal/minion/{token}/submit` estao especificados em
+`docs/architecture/integration-contracts.md` ("Minion de diagnostico (dominio
+hospedagem)") — v1 **somente leitura/diagnostico**, escopo de escrita fica como
+extensao futura explicita, marcada como nao-implementada ate o alinhamento
+leitura-vs-escrita com o Juliano. O que ainda falta e apenas: (a) o Juliano
+construir o minion contra esse contrato, e (b) o hook de branching por dominio
+no `HandoffService`/`ChatFlowService` do lado supportFAQagent (ainda nao
+escrito). Reforcar: a autenticacao minion<->agente (pairing token) e uma camada
+separada da autorizacao cliente via OTP — nao confundir as duas.
+
+**Escopo esclarecido (2026-07-01):** o Auth via WhatsApp/OTP neste plano **nao**
+existe para unificar identidade entre o WhatsApp nativo (Hermes/Meta) e o web
+chat — sao propositalmente canais separados. O objetivo real e mais estreito:
+dar ao cliente do **web chat** um fluxo de autenticacao para abrir ticket, e o
+motivo de existir Auth **e** exatamente o gate de consentimento LGPD antes de a
+equipe poder entrar em contato direto com o cliente. Ou seja: Auth nao e sobre
+"saber quem e o cliente" de forma geral, e sim sobre **autorizacao explicita
+para contato direto no momento do handoff**. O WhatsApp nativo ja tem
+continuidade de historico "boa o suficiente" via hash deterministico do
+telefone (`_safe_hermes_session_id`), sem depender de `customer_id`/Auth — isso
+e aceito como permanente, nao e gap a fechar.
+
+**Cripto do web chat validada (2026-07-01):** telefone via HMAC-SHA256 chaveado
+(`IDENTITY_HASH_SECRET`), OTP de 6 digitos com `secrets.randbelow` (CSPRNG),
+digest do codigo nunca em texto puro e escopado por `challenge_id`
+(`OTP_DIGEST_SECRET`), `attempts_remaining` decrementa e trava o desafio,
+expiracao checada, rate limit por IP e por telefone na geracao. Considerado
+aceitavel. Nitpick nao bloqueante: `consume_challenge` compara o digest com
+`!=` em vez de `hmac.compare_digest` (constant-time) — o `attempts_remaining`
+ja fecha a janela de forca bruta, entao nao e risco pratico, so troca
+recomendada por defesa em profundidade.
+
+**Gap real encontrado (2026-07-01):** a intencao acima ("handoff so autoriza
+contato direto apos LGPD/Auth") **nao esta implementada**. Hoje
+`_upsert_support_case` (`app/db/operational.py`) cria o `support_case` e
+enfileira a notificacao ao time incondicionalmente quando `escalated=True` —
+`customer_id` e aceito `None` sem nenhum gate. Decisao pendente com o Renan
+sobre o desenho exato do gate (ver secao de proximos passos abaixo).
+
 ## Diagnostico
 
 O projeto ja tem pecas importantes para esta frente:
@@ -210,6 +277,8 @@ Campos sugeridos:
 - `id uuid primary key`
 - `status text not null default 'active'`
 - `display_label text null`
+- `email text null` — **adicionado 2026-07-01** (migration `013_`), coletado no
+  gate de consentimento do Sprint 4b, junto com `display_label`.
 - `default_channel text null`
 - `last_seen_at timestamptz null`
 - `created_at timestamptz not null`
@@ -218,6 +287,9 @@ Campos sugeridos:
 Observacoes:
 
 - `display_label` deve ser opcional e sanitizado.
+- `email`, quando preenchido, fica legivel (nao hash) porque a equipe usa para
+  contato real — diferente do telefone. Validar formato basico no backend
+  antes de salvar; nao logar em observabilidade geral.
 - Nao salvar telefone bruto.
 - Evitar campos de CRM grandes nesta fase.
 
@@ -587,6 +659,127 @@ Criterio de pronto:
 - retry da mesma escalacao nao cria dois tickets.
 - caso existe mesmo se notificacao externa falhar.
 - payload nao contem telefone bruto, prompt bruto ou session id bruto.
+
+### Sprint 4b - Gate De Consentimento LGPD No Handoff (implementado 2026-07-01)
+
+Status: ✅ implementado, dark por `ENABLE_HANDOFF_CONSENT_GATE` (default
+`false`). Fecha o gap descrito no topo do documento ("Gap real encontrado").
+Migration `013_customer_contact_and_consent.sql` (`customers.email` +
+`pending_consent` no status de `support_cases`). Endpoint novo
+`POST /web/handoff/consent` (`app/api/routes/web_handoff.py`,
+`OperationalRepository.promote_pending_consent`). Vazamento no support inbox
+corrigido (`GET /internal/support-cases` sem filtro nunca devolve
+`pending_consent`). Widget (`app/static/chat/app.js`) implementa o fluxo
+completo: convite → telefone → OTP → nome/e-mail → confirmacao do ticket.
+Verificado manualmente no navegador (fluxo completo ate a promocao final, que
+degrada graciosamente com `503` quando o Postgres esta fora, sem quebrar a
+pagina). Cobertura: `tests/test_phase0_operational_safety.py`,
+`tests/test_support_inbox.py`, `tests/test_web_handoff.py`,
+`tests/integration/test_phase0_postgres.py` (gated). Detalhes tecnicos (mapa
+de superficies, migrations, riscos, decisao de arquitetura sobre o lembrete):
+[`customer-identity-whatsapp-handoff-tech-plan.md`](./customer-identity-whatsapp-handoff-tech-plan.md).
+
+**Pendente**: ligar a flag em staging (smoke real) e o hook de branching por
+dominio para o "minion" de hospedagem (ver secao "Extensao futura BLOQUEADA"
+no topo deste documento).
+
+Objetivo:
+
+- Handoff no **web chat** so autoriza contato direto da equipe apos o cliente
+  autenticar via OTP, disparado no momento exato da intencao de escalar (nao
+  upfront). Fora de escopo por agora: WhatsApp nativo (Hermes/Meta), onde o
+  numero ja e conhecido pelo proprio canal — OTP ali seria redundante.
+
+Fluxo alvo:
+
+1. Cliente conversa normalmente no web chat (anonimo, sem Auth).
+2. Cliente sinaliza que quer falar com atendente (intencao de handoff, deteccao
+   atual do `ChatFlowService`).
+3. Bot pergunta explicitamente se o cliente confirma que quer atendimento
+   humano.
+4. Se sim, dispara OTP (reaproveita `WebWhatsAppAuthService.start`).
+5. Cliente digita o codigo (`confirm`).
+6. **Apos OTP confirmado**: se o `customer_id` resolvido ainda nao tem
+   `display_label`/`email` salvos, bot pergunta "Qual seu nome? E-mail?" e
+   grava em `customers` (fica salvo para os proximos tickets desse mesmo
+   cliente — nao pergunta de novo). Se ja tiver, pula direto para o passo 7.
+7. `support_case` e criado (ou confirmado) e a notificacao ao time e
+   enfileirada. Mensagem automatica de confirmacao volta ao cliente com numero
+   do ticket, tema, data/hora e o contexto sanitizado que sera passado ao
+   atendente (transparencia = parte do consentimento informado).
+
+Decisoes de design fechadas (2026-07-01):
+
+- **Abandono do OTP — corrigido durante a implementacao (2026-07-01)**: a ideia
+  original era um job de backend reenviando o codigo apos 15 min. Isso **nao e
+  implementavel** com a disciplina de privacidade atual do projeto:
+  `otp_challenges` so guarda `identity_candidate_hash` (HMAC do telefone,
+  irreversivel por design — `migrations/002_web_auth.sql` e explicito que
+  "phone_e164 nunca persiste nessas tabelas"), entao nenhum job assincrono
+  saberia para qual numero reenviar. **Desenho final: lembrete client-side.**
+  `POST /web/auth/whatsapp/start` devolve `abandonment_reminder_seconds` (15
+  min); o widget mostra localmente "ainda nao recebeu? reenviar codigo" apos
+  essa janela, reaproveitando o mesmo endpoint de start — sem job novo, sem
+  dado sensivel novo em repouso. Limitacao aceita: se o cliente fechar a aba,
+  nao ha como avisa-lo (nao existe canal para isso sem guardar o telefone).
+  A conversa/intencao de escalacao continua sendo persistida normalmente
+  (sinal preservado via `escalated=true` no turno); o `support_case` formal
+  ja nasce (status `pending_consent`), so a notificacao ao time fica adiada
+  ate o OTP confirmar.
+- **Origem do nome — investigado e descartado o "get automatico"**: o
+  WhatsApp so entra no fluxo de OTP como canal de **envio** (`send_text`); a
+  confirmacao do codigo acontece pelo cliente digitando na tela do web chat
+  (`POST /web/auth/whatsapp/confirm`), entao o sistema nunca recebe uma
+  mensagem *de volta* pelo WhatsApp nesse fluxo — e e so numa mensagem
+  recebida que a Cloud API entrega `contacts[].profile.name` (que hoje nem e
+  parseado em `app/integrations/meta_whatsapp/schemas.py`, mesmo no canal
+  nativo). Pegar o nome automatico exigiria mudar a confirmacao para acontecer
+  via resposta no WhatsApp em vez de digitar no widget — mudanca de
+  arquitetura maior, e o nome capturado seria um apelido nao verificado, nao
+  identidade real. **Decisao: pedir nome e e-mail como campos simples no fluxo
+  do handoff** (ex.: "qual seu nome? e-mail?"), dados explicitamente pelo
+  cliente apos o OTP.
+- **Persistencia de nome/e-mail (2026-07-01)**: gravados em `customers` (nao
+  so no ticket), para reaproveitar em tickets futuros do mesmo cliente sem
+  perguntar de novo. `display_label` ja existe e e opcional no schema atual;
+  falta adicionar `customers.email text null` — proxima migration disponivel
+  e a `013_` (ultima aplicada e a `012_conversation_summaries.sql`).
+  Diferente do telefone (que so guarda `phone_hash`+`phone_last4`), o
+  e-mail precisa ficar **legivel** porque o time vai usa-lo de verdade para
+  contato — nao faz sentido so um hash aqui. Validar formato basico de e-mail
+  no backend antes de salvar; nao expor em logs gerais (só dentro do
+  `context_snapshot_sanitized` do `support_case` e do proprio registro em
+  `customers`, que ja seguem a mesma disciplina de acesso restrito).
+- **WhatsApp nativo confirmado fora do escopo do gate**: no web chat o
+  visitante e anonimo ate provar o telefone via OTP; no WhatsApp nativo
+  (Hermes/Meta) o numero ja e conhecido desde a primeira mensagem — a propria
+  plataforma garante que quem manda e dono daquele WhatsApp, e a equipe
+  responde **na mesma conversa que o cliente iniciou** (nao e contato novo
+  "do nada"). Por isso o gate de consentimento fica restrito ao web chat;
+  handoff no WhatsApp nativo continua funcionando como hoje, sem esse passo
+  extra.
+- **Onde este passo entra no codigo — decidido durante a implementacao**:
+  **nao** um estado tipo `ESCAPE_STATE` dentro do `ChatFlowService` (isso
+  quebraria a garantia de atomicidade "turno escalado = ticket criado na mesma
+  transacao", ver achado no tech-plan §1). Em vez disso: `_upsert_support_case`
+  continua rodando sempre, incondicionalmente, dentro de `record_chat`; só o
+  `status` inicial muda (`pending_consent` em vez de `open`) e a notificacao
+  fica adiada. A orquestracao dos passos (telefone → OTP → nome/e-mail) fica
+  inteiramente no **widget** chamando endpoints ja existentes mais o novo
+  `POST /web/handoff/consent` — nenhuma maquina de estados nova no backend.
+
+Criterio de pronto:
+
+- sem OTP confirmado, o `support_case` existe (`pending_consent`) mas nenhuma
+  notificacao ao time nasce para o web chat.
+- conversa/intencao de escalacao nao se perde mesmo se o cliente abandonar o OTP.
+- cliente ve um lembrete local (client-side) apos 15 min se nao completar o
+  codigo e ainda estiver na pagina (sem push proativo — ver achado acima).
+- mensagem de confirmacao ao cliente reflete exatamente o que foi enviado ao
+  time (sem PII alem do que ja e sanitizado), incluindo o nome quando
+  informado.
+- WhatsApp nativo (Hermes/Meta) continua sem esse gate — handoff la funciona
+  como hoje.
 
 ### Sprint 5 - Notificacao WhatsApp Para O Time
 

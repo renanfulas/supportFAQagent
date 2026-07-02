@@ -14,6 +14,11 @@ class WhatsAppOtpStartResponse(BaseModel):
     status: Literal["pending"] = "pending"
     expires_in_seconds: int
     retry_after_seconds: int
+    # Sprint 4b: hint for the widget to show a client-side "still there?" nudge
+    # (reusing this same start endpoint to resend) -- there is no server-side
+    # reminder job, since the raw phone is never persisted long enough for one
+    # to know who to re-contact.
+    abandonment_reminder_seconds: int
 
 
 class WhatsAppOtpConfirmRequest(BaseModel):

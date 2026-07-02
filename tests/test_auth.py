@@ -74,6 +74,23 @@ def test_web_whatsapp_auth_requires_distinct_secrets(monkeypatch) -> None:
         Settings(_env_file=None)
 
 
+def test_handoff_consent_gate_requires_web_whatsapp_auth(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_HANDOFF_CONSENT_GATE", "true")
+    monkeypatch.setenv("ENABLE_WEB_WHATSAPP_AUTH", "false")
+
+    with pytest.raises(ValueError, match="ENABLE_HANDOFF_CONSENT_GATE requires"):
+        Settings(_env_file=None)
+
+
+def test_handoff_consent_gate_disabled_by_default(monkeypatch) -> None:
+    monkeypatch.delenv("ENABLE_HANDOFF_CONSENT_GATE", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.enable_handoff_consent_gate is False
+    assert settings.otp_abandonment_reminder_minutes == 15
+
+
 def test_chat_requires_api_key() -> None:
     response = client.post(
         "/chat",

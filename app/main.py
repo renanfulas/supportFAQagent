@@ -21,6 +21,7 @@ from app.api.routes import (
     support,
     web_auth,
     web_chat,
+    web_handoff,
     zoom,
 )
 from app.core.config import DEV_ENVS, get_settings
@@ -269,6 +270,9 @@ def create_app() -> FastAPI:
     application.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
     application.include_router(web_chat.router, prefix="/web", tags=["web"])
     application.include_router(web_auth.router, prefix="/web/auth", tags=["web-auth"])
+    application.include_router(
+        web_handoff.router, prefix="/web/handoff", tags=["web-handoff"]
+    )
     application.include_router(zoom.router, prefix="/zoom", tags=["zoom"])
     application.include_router(
         meta_whatsapp.router,

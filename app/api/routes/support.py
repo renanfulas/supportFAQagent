@@ -40,6 +40,10 @@ _ALLOWED_STATUSES = {
     "waiting_customer",
     "closed",
     "cancelled",
+    # Sprint 4b: not returned by default (see SupportCaseRepository.list_cases),
+    # but staff can still filter for it explicitly (e.g. to debug the consent
+    # gate / spot abandoned tickets).
+    "pending_consent",
 }
 
 

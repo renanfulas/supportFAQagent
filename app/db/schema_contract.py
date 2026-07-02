@@ -3,7 +3,7 @@
 from typing import Any
 
 
-CONTRACT_MIGRATION = "009_customer_identity_support_cases.sql"
+CONTRACT_MIGRATION = "013_customer_contact_and_consent.sql"
 
 REQUIRED_COLUMNS = {
     "chat_audits": {
@@ -32,6 +32,7 @@ REQUIRED_COLUMNS = {
         "id",
         "status",
         "default_channel",
+        "email",
         "last_seen_at",
         "created_at",
         "updated_at",
