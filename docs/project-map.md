@@ -90,39 +90,23 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    preservando volumes do PostgreSQL (`runbooks/vps-capacity-and-docker-cleanup.md`).
 4. **Fase 0 do tiering (archive sink R2)**: unico item de persistencia em camadas
    ainda desligado, bloqueado por credenciais Cloudflare R2 (bucket/endpoint/chaves).
-   Redis (Fase 2) e batch+recall (Fases 3-4) ja estao live na VPS desde 2026-07-01,
-   com amostragem de qualidade dos resumos ja feita (0 achados de PII/PAN). O caso
-   de eval do recall foi entregue em 2026-07-02 (`evals/summary_recall.yaml`, 3/3
-   estavel com LLM real; o run revelou e corrigiu o rotulo do bloco de resumo no
-   prompt, que fazia o modelo ignorar o recall) e **confirmado na VPS no mesmo
-   dia** (box reconciliada em `c57248e`, `supportfaq.service` saudavel, suite
-   3/3 contra pgvector + LLM reais). Resta a metrica de custo da
-   sumarizacao (ver `quality-plans/conversation-persistence-tiering-tech-plan.md`
-   Fase 4).
-5. ~~**Fechar frentes parciais**~~ — **ambas fechadas**. O hardening do funil
-   de vendas fechou em 2026-07-01 com a decisao 2 (`confidence_threshold` do
-   vendas 0.55 → 0.45, com base no dado do WS-0; evals e suites de confinamento
-   verdes); a mudanca chega em prod no proximo deploy/restart (Juliano). O
-   enriquecimento de push do support inbox (identidade + handoff) fechou em
-   2026-07-01: notificacao do consent carrega o contato autorizado (nome,
-   e-mail, final do WhatsApp), o detalhe do inbox expoe o bloco `customer`
-   via join com `customers`, e `POST /web/handoff/consent` devolve
-   `customer_name` (ver Sprint 5 em
-   `quality-plans/customer-identity-whatsapp-handoff-plan.md`).
-6. ~~Sprint 4b (gate de consentimento LGPD no handoff do web chat)~~ —
-   **concluido em 2026-07-01**: migration 013 aplicada na VPS,
-   `ENABLE_HANDOFF_CONSENT_GATE=true` em staging, smoke real ponta a ponta
-   validado (case nasce `pending_consent` invisivel no inbox; consent sem OTP
-   retorna 401; OTP real entregue via WhatsApp/Hermes; consent promove para
-   `open` na mesma transacao que enfileira `handoff.requested`, idempotente) e
-   `run_domain_eval suporte-vps-whatsapp` com chave real + pgvector na VPS com
-   0 falhas.
-7. **Minion de hospedagem**: contrato HTTP ja escrito adiantado
+   Redis (Fase 2), batch+recall (Fases 3-4) e o eval do recall (2026-07-02,
+   `evals/summary_recall.yaml`, confirmado tambem na VPS contra pgvector + LLM
+   reais) ja estao entregues. Resta so a metrica de custo da sumarizacao (ver
+   `quality-plans/conversation-persistence-tiering-tech-plan.md` Fase 4).
+5. **Minion de hospedagem**: contrato HTTP ja escrito adiantado
    (`architecture/integration-contracts.md`, "Minion de diagnostico"), v1
    somente leitura/diagnostico. BLOQUEADO no Juliano so para a implementacao do
    minion em si e o alinhamento leitura-vs-escrita da v1 (ver
    `customer-identity-whatsapp-handoff-plan.md`). O hook de branching por
    dominio no `HandoffService`/`ChatFlowService` ainda nao foi escrito.
+6. **Evolucao do chat web** (V0 publica ja no ar): proximas fases do
+   `quality-plans/web-chat-evolution-plan.md` ainda por planejar/implementar.
+
+Itens ja fechados (funil de vendas, enriquecimento de push do support inbox,
+Sprint 4b do consentimento LGPD, eval do recall da Fase 4) ficam registrados
+nos planos de cada frente na tabela acima e em `quality-plans/`; nao repetidos
+aqui para o mapa nao acumular ruido historico.
 
 ---
 

@@ -59,6 +59,27 @@ real ponta a ponta (Postgres + OTP via WhatsApp) e `run_domain_eval
 suporte-vps-whatsapp` com chave real + pgvector sem falhas. Evidencias em
 `docs/quality-plans/customer-identity-whatsapp-handoff-plan.md` (Sprint 4b).
 
+Em 02/07/2026, tres frentes fecharam do lado de codigo:
+
+- **Hardening do funil de vendas**: `confidence_threshold` do dominio `vendas`
+  baixado de `0.55` para `0.45` (decisao 2, com base no dado do WS-0). Evals e
+  suites de confinamento verdes; muda comportamento em prod so no proximo
+  deploy/restart. Ver `docs/quality-plans/vendas-funnel-hardening-plan.md`.
+- **Enriquecimento de push do support inbox (Sprint 5)**: a notificacao adiada
+  pelo gate de consentimento LGPD agora carrega o contato autorizado (nome,
+  e-mail, final do WhatsApp verificado); o detalhe do inbox expoe o mesmo bloco
+  `customer` via join com `customers`; `POST /web/handoff/consent` devolve
+  `customer_name`. Ver `docs/quality-plans/customer-identity-whatsapp-handoff-plan.md`
+  (Sprint 5) e `docs/architecture/integration-contracts.md`.
+- **Eval do recall (tiering Fase 4)**: suite opt-in
+  `domains/suporte-vps-whatsapp/evals/summary_recall.yaml` valida que o resumo
+  recuperado melhora e nao polui a resposta. O primeiro run com LLM real
+  revelou que o rotulo antigo do bloco de resumo no prompt fazia o modelo
+  recusar usar o recall; corrigido em `app/orchestration/prompt_builder.py`.
+  Confirmado tambem na VPS (deploy ate `c57248e`) contra pgvector + LLM reais,
+  3/3. Ver `docs/quality-plans/conversation-persistence-tiering-tech-plan.md`
+  (Fase 4).
+
 ## Documentos Historicos
 
 Planos antigos podem citar Alexandre e Silotto ou descrever entregas que ja
