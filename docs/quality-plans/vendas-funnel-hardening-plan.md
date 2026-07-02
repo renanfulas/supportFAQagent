@@ -12,11 +12,17 @@ real, sem nenhuma escrita em prod (answer() nao persiste) — rodado na VPS. **W
 layer 1 verificado**: com historico real + WS-2, o loop nao persiste — converge para
 recomendacao de plano nomeada + fechamento; o loop do smoke era artefato de
 persistencia-off. Layer 2 (prompt) testada e nao shippada (sem ganho claro num A/B
-pequeno; risco de variancia); layer 3 (slots) nao justificada. Funil de vendas
-essencialmente fechado; em aberto so a **decisao 2** (avaliar baixar
-`confidence_threshold`, hoje de baixo impacto pratico pois WS-3 ja torna
-`low_confidence` soft).
-Data de revisao: 2026-06-29.
+pequeno; risco de variancia); layer 3 (slots) nao justificada. **Decisao 2 resolvida
+(2026-07-01): `confidence_threshold` do vendas baixado de 0.55 para 0.45**, com
+base no dado do WS-0 (21/34 turnos consultivos legitimos presos na faixa
+0.30-0.55; media 0.509, mediana 0.49). Validacao na trilha deterministica:
+eval `vendas` (12/12) + 4 suites de confinamento (8/8) + regressao
+`suporte-vps-whatsapp` (20/20) verdes; o confinamento out_of_scope lexical fica
+em 0.27-0.38, abaixo do novo corte, entao a rede de fora-de-escopo nao afrouxa
+no gate. Rollback: voltar a 0.55 + restart. A mudanca chega em prod no proximo
+deploy (Juliano); acompanhar a taxa de `low_confidence`/`out_of_scope` pelos
+logs apos a ativacao. **Frente encerrada do lado de codigo.**
+Data de revisao: 2026-07-01.
 Owner de coordenacao: Renan. Time ativo: Renan (handoff/orquestracao/seguranca/
 persistencia/schema scratch) + Juliano (runtime/deploy/onde rodar + retrieval).
 Alexandre e Silotto sairam do projeto; suas frentes foram absorvidas pela dupla.
@@ -385,9 +391,19 @@ Resolvidas:
 5. ~~**Flags:** padronizar um mecanismo de flag por dominio antes de WS-2/WS-3?~~
    **Resolvida**: campo por dominio em `domain.yaml` (#89).
 
-Ainda abertas (precisam de decisao antes de codar):
-2. **Threshold (WS-3):** manter 0.55 e resolver so por taxonomia, ou tambem baixar
-   `confidence_threshold` do vendas apos dado do WS-0?
-3. **WS-4:** comecar so por verificacao + prompt e decidir slots depois?
+2. ~~**Threshold (WS-3):** manter 0.55 e resolver so por taxonomia, ou tambem baixar
+   `confidence_threshold` do vendas apos dado do WS-0?~~ **Resolvida (2026-07-01,
+   Renan): baixado para 0.45** em `domains/vendas/domain.yaml`. Evidencia: WS-0
+   mediu 21/34 turnos legitimos na faixa 0.30-0.55 gerando sinal falso; na trilha
+   lexical o confinamento out_of_scope opera em 0.27-0.38 (margem preservada) e
+   todos os evals/suites seguem verdes. Como WS-3 ja tornou `low_confidence` soft,
+   o efeito e de fidelidade de sinal (menos `escalated` falso em log/metrica) e um
+   `out_of_scope` single-turn mais estreito na faixa 0.45-0.55 — aceito pelo dado
+   do WS-0 (treatment manteve o unico out_of_scope legitimo do sample).
+3. ~~**WS-4:** comecar so por verificacao + prompt e decidir slots depois?~~
+   **Resolvida na pratica** (ver WS-4: layer 1 verificada, layers 2/3 nao
+   justificadas).
+
+Ainda aberta (operacional, fora do escopo de codigo desta frente):
 4. **Deploy:** quem opera o sync para prod e em que janela, dado o drift? (Juliano,
    apos a saida do Silotto)
