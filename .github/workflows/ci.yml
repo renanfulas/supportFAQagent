@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test:
-    name: Compile and test (${{ matrix.os }})
+    name: Compile and test (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -20,6 +20,12 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
+        # Version policy: 3.11 is what the VPS production runtime runs;
+        # 3.12 is what local development uses. CI must cover both so a
+        # 3.12-only feature never breaks production silently.
+        python-version:
+          - "3.11"
+          - "3.12"
 
     env:
       API_SECRET_KEY: local-dev-api-key
@@ -32,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
           cache: pip
 
       - name: Install dependencies

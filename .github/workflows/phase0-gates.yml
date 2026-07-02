@@ -28,7 +28,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          # Pinned to the VPS production runtime (3.11) so the integration
+          # gate exercises the interpreter production actually runs. The
+          # 3.11/3.12 pair is covered by the ci.yml matrix.
+          python-version: "3.11"
           cache: pip
 
       - name: Install dependencies
@@ -80,7 +83,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          # Pinned to the VPS production runtime (3.11) so the integration
+          # gate exercises the interpreter production actually runs. The
+          # 3.11/3.12 pair is covered by the ci.yml matrix.
+          python-version: "3.11"
           cache: pip
 
       - name: Install dependencies
