@@ -73,6 +73,15 @@ python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/pgvector_c
 Essa suite nao deve entrar como gate obrigatorio de CI enquanto depender de
 `DATABASE_URL`, provider externo e dados ingeridos no pgvector.
 
+Para a suite opt-in do recall de resumo (tiering Fase 4; precisa de provider
+real e `ENABLE_SUMMARY_RECALL=true` — o resumo do caso e injetado pelo runner,
+sem depender do warehouse):
+
+```bash
+ENABLE_SUMMARY_RECALL=true \
+python -m app.evals.run_domain_eval suporte-vps-whatsapp --file evals/summary_recall.yaml
+```
+
 O comando retorna JSON com:
 
 - total de casos
@@ -106,8 +115,16 @@ cases:
 - `id`: identificador curto e estavel.
 - `category`: frente do produto, como `setup_tecnico`, `operacao_whatsapp`, `integracoes`.
 - `question`: pergunta real ou adaptada de usuario.
+- `customer_summary` (opcional): resumo de atendimentos anteriores injetado
+  pelo runner como o resumo recuperado deste caso (formato
+  `Problema: ... | Solucao: ... | Status: ...`). Exercita o caminho real do
+  recall (`ENABLE_SUMMARY_RECALL` + bloco nao-confiavel do prompt) sem
+  precisar de linha no warehouse. Ver `evals/summary_recall.yaml`.
 - `should_escalate`: se o caso deve ir para humano.
 - `required_terms`: termos que precisam aparecer na resposta.
+- `forbidden_terms`: termos que NAO podem aparecer na resposta — e como um
+  caso prova o lado negativo de um gate (ex.: canario de injecao dentro do
+  resumo recuperado, assunto antigo que nao pode contaminar a resposta nova).
 - `expected_references`: trechos esperados nas fontes recuperadas.
 - `allowed_handoff_reasons`: motivos de escalonamento aceitos, quando aplicavel.
 
