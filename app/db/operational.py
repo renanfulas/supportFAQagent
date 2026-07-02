@@ -124,6 +124,10 @@ class ConsentPromotionResult:
     summary: str | None
     domain: str
     already_promoted: bool = False
+    # Effective display name on the customer record after promotion (an earlier
+    # consent wins over a retyped one), so the widget can mirror to the client
+    # exactly what the team was told. None on the idempotent replay path.
+    customer_name: str | None = None
 
 
 class OperationalRepository:
@@ -496,6 +500,9 @@ class OperationalRepository:
         handoff_reasons: list[str],
         summary: str,
         references: list[str],
+        customer_name: str | None = None,
+        customer_email: str | None = None,
+        customer_phone_last4: str | None = None,
     ) -> None:
         """Fan a handoff out to internal WhatsApp recipients, one event each.
 
@@ -526,6 +533,9 @@ class OperationalRepository:
                 summary=summary,
                 references=references,
                 recipients=recipients,
+                customer_name=customer_name,
+                customer_email=customer_email,
+                customer_phone_last4=customer_phone_last4,
             )
         except Exception as exc:  # noqa: BLE001 - degrade, never drop the ticket
             log_event(
@@ -644,6 +654,35 @@ class OperationalRepository:
                             (clean_name, clean_email, customer_id),
                         )
 
+                    # Effective contact after the COALESCE above (an earlier
+                    # consent wins over a retyped one). This is the identity the
+                    # customer just authorized the team to use, so it enriches
+                    # the deferred notification below; the e-mail stays readable
+                    # only in `customers` and in this team-facing alert, never in
+                    # sanitized payloads or logs.
+                    effective_name: str | None = clean_name
+                    effective_email: str | None = clean_email
+                    phone_last4: str | None = None
+                    cursor.execute(
+                        """
+                        SELECT c.display_label, c.email,
+                               (SELECT vi.phone_last4
+                                FROM verified_identities vi
+                                WHERE vi.customer_id = c.id
+                                  AND vi.status = 'verified'
+                                ORDER BY vi.verified_at DESC
+                                LIMIT 1)
+                        FROM customers c
+                        WHERE c.id = %s
+                        """,
+                        (customer_id,),
+                    )
+                    contact_row = cursor.fetchone()
+                    if contact_row is not None:
+                        effective_name = contact_row[0] or clean_name
+                        effective_email = contact_row[1] or clean_email
+                        phone_last4 = contact_row[2]
+
                     cursor.execute(
                         """
                         UPDATE support_cases
@@ -680,6 +719,9 @@ class OperationalRepository:
                         handoff_reasons=list(handoff_reasons),
                         summary=str(summary) if summary else "",
                         references=list(references),
+                        customer_name=effective_name,
+                        customer_email=effective_email,
+                        customer_phone_last4=phone_last4,
                     )
         except (ConsentCaseNotFound, InvalidConsentContact):
             raise
@@ -698,6 +740,7 @@ class OperationalRepository:
             opened_at=opened_at,
             summary=str(summary) if summary else None,
             domain=str(domain_name),
+            customer_name=effective_name,
         )
 
     def record_feedback(self, feedback: FeedbackRequest) -> FeedbackResponse:

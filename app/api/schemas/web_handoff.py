@@ -15,3 +15,6 @@ class HandoffConsentResponse(BaseModel):
     opened_at: str
     summary: str | None = None
     domain: str
+    # Effective display name the team was told (an earlier consent wins over a
+    # retyped one), so the widget mirrors to the client exactly what was sent.
+    customer_name: str | None = None

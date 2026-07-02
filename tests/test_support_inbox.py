@@ -103,6 +103,58 @@ def test_build_case_context_handles_missing_conversation() -> None:
     assert context.transcript == []
     assert context.summary is None
     assert context.references == []
+    assert context.customer is None
+
+
+def test_build_case_context_exposes_customer_contact_when_present() -> None:
+    case = {
+        "id": "case-3",
+        "domain": "suporte-vps-whatsapp",
+        "status": "open",
+        "priority": "normal",
+        "channel": "web",
+        "request_id": "req-3",
+        "reason_codes": ["explicit_human_request"],
+        "context_snapshot": {},
+        "opened_at": None,
+        "updated_at": None,
+        "customer_display_label": "Ana",
+        "customer_email": "ana@example.com",
+        "customer_phone_last4": "1234",
+    }
+
+    context = build_case_context(case, [])
+
+    assert context.customer is not None
+    assert context.customer.display_label == "Ana"
+    assert context.customer.email == "ana@example.com"
+    assert context.customer.phone_last4 == "1234"
+
+
+def test_build_case_context_customer_block_partial_fields() -> None:
+    # A customer row can exist with only some fields (e.g. consent gave no
+    # e-mail); the block still surfaces what the team is allowed to use.
+    case = {
+        "id": "case-4",
+        "domain": "suporte-vps-whatsapp",
+        "status": "open",
+        "priority": "normal",
+        "channel": "web",
+        "request_id": "req-4",
+        "reason_codes": [],
+        "context_snapshot": {},
+        "opened_at": None,
+        "updated_at": None,
+        "customer_display_label": None,
+        "customer_email": None,
+        "customer_phone_last4": "5678",
+    }
+
+    context = build_case_context(case, [])
+
+    assert context.customer is not None
+    assert context.customer.display_label is None
+    assert context.customer.phone_last4 == "5678"
 
 
 # --------------------------------------------------------------------------- #
@@ -255,6 +307,9 @@ def test_get_case_with_context_follows_conversation() -> None:
         "conv-1",
         datetime(2026, 6, 28, tzinfo=timezone.utc),
         datetime(2026, 6, 28, tzinfo=timezone.utc),
+        None,  # customer display_label (no linked customer)
+        None,  # customer email
+        None,  # customer phone_last4
     )
     transcript_rows = [
         (1, "user", "oi", None, False, [], [], None, datetime(2026, 6, 28, tzinfo=timezone.utc)),
@@ -271,6 +326,36 @@ def test_get_case_with_context_follows_conversation() -> None:
     assert context is not None
     assert context.turn_count == 2
     assert context.references == ["kb:a", "kb:b"]
+    assert context.customer is None
+
+
+def test_get_case_with_context_maps_customer_contact() -> None:
+    case_row = (
+        "case-1",
+        "suporte-vps-whatsapp",
+        "open",
+        "normal",
+        "web",
+        "req-1",
+        [],
+        {},
+        None,
+        None,
+        None,
+        "Ana",
+        "ana@example.com",
+        "1234",
+    )
+    cursor = FakeCursor(fetchone_results=[case_row], fetchall_results=[])
+    repository = SupportCaseRepository(FakeRuntime(cursor))
+
+    context = repository.get_case_with_context("case-1")
+
+    assert context is not None
+    assert context.customer is not None
+    assert context.customer.display_label == "Ana"
+    assert context.customer.email == "ana@example.com"
+    assert context.customer.phone_last4 == "1234"
 
 
 def test_fetch_conversation_transcript_returns_rows_with_limit() -> None:
@@ -322,6 +407,9 @@ def test_get_case_with_context_skips_transcript_without_conversation() -> None:
         None,  # conversation_id
         None,
         None,
+        None,  # customer display_label
+        None,  # customer email
+        None,  # customer phone_last4
     )
     cursor = FakeCursor(fetchone_results=[case_row], fetchall_results=[])
     repository = SupportCaseRepository(FakeRuntime(cursor))
@@ -541,6 +629,9 @@ def test_detail_endpoint_assembles_transcript(monkeypatch: pytest.MonkeyPatch) -
         "conv-1",
         datetime(2026, 6, 28, tzinfo=timezone.utc),
         datetime(2026, 6, 28, tzinfo=timezone.utc),
+        "Ana",
+        "ana@example.com",
+        "1234",
     )
     transcript_rows = [
         (1, "user", "oi", None, False, [], [], None, datetime(2026, 6, 28, tzinfo=timezone.utc)),
@@ -562,6 +653,11 @@ def test_detail_endpoint_assembles_transcript(monkeypatch: pytest.MonkeyPatch) -
     assert body["turn_count"] == 2
     assert body["references"] == ["kb:a", "kb:b"]
     assert [turn["role"] for turn in body["transcript"]] == ["user", "assistant"]
+    assert body["customer"] == {
+        "display_label": "Ana",
+        "email": "ana@example.com",
+        "phone_last4": "1234",
+    }
 
 
 def test_detail_endpoint_returns_404_when_absent(
