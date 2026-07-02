@@ -359,8 +359,12 @@ pois não há job.
 6. ✅ **Frontend**: telefone → OTP (com lembrete local) → nome/e-mail →
    confirmação. Verificado manualmente no navegador (fluxo completo, incluindo
    o caminho de erro gracioso sem Postgres disponível).
-7. **Pendente** (fora do escopo de código): ligar `ENABLE_HANDOFF_CONSENT_GATE`
-   em staging + smoke manual real (com Postgres e WhatsApp de verdade).
+7. ✅ **Ligado e validado em staging (2026-07-01)**: migration 013 aplicada na
+   VPS, `ENABLE_HANDOFF_CONSENT_GATE=true`, smoke manual real completo —
+   escalação → `pending_consent` (invisível no inbox sem filtro) → 401 sem
+   OTP → OTP real via WhatsApp/Hermes → consent promove para `open` +
+   `handoff.requested` enfileirado na mesma transação (timestamps idênticos) →
+   consent repetido idempotente → case visível no inbox como `open`.
 
 ---
 
@@ -382,11 +386,9 @@ pois não há job.
   compila, não executada nesta sessão por falta de Postgres local): migration
   013 aplica limpo; fluxo ponta-a-ponta criar caso → promover → aparecer no
   inbox só depois → nome/e-mail persistidos → reenvio não duplica notificação.
-- `python -m app.evals.run_domain_eval suporte-vps-whatsapp`: não rodado nesta
-  sessão (exige chave de provider real configurada para o caminho
-  determinístico); o gate não muda `ChatFlowService`/geração de resposta, só o
-  handoff, então risco de regressão é baixo, mas fica registrado como
-  pendência de validação.
+- ✅ `python -m app.evals.run_domain_eval suporte-vps-whatsapp`: rodado em
+  2026-07-01 **na própria VPS de staging** (chave real + pgvector real, a
+  configuração exata de produção) com **0 falhas** — pendência quitada.
 
 ---
 
@@ -399,7 +401,9 @@ pois não há job.
   ainda vale considerar se o TTL do cookie cobre confortavelmente o tempo
   típico do fluxo completo (telefone → OTP → nome/e-mail), mas não é mais um
   requisito duro de "minutos até um push chegar".
-- Rodar `python -m app.evals.run_domain_eval suporte-vps-whatsapp` com chave
-  real antes de ligar a flag em staging, por disciplina do projeto.
-- Smoke real em staging (Postgres + WhatsApp de verdade) antes de considerar a
-  frente encerrada — nada aqui foi validado contra infraestrutura real.
+- ~~Rodar `run_domain_eval` com chave real antes de ligar a flag~~ — feito em
+  2026-07-01 na VPS (chave real + pgvector), 0 falhas.
+- ~~Smoke real em staging (Postgres + WhatsApp de verdade)~~ — feito em
+  2026-07-01; evidências registradas na seção do Sprint 4b em
+  [`customer-identity-whatsapp-handoff-plan.md`](./customer-identity-whatsapp-handoff-plan.md)
+  e no §10 acima. A frente está validada contra infraestrutura real.

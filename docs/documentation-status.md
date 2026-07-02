@@ -53,6 +53,12 @@ documentado para `RETRIEVAL_BACKEND=lexical`. A promocao operacional continua
 nao foi executado. Consulte
 `docs/runbooks/phase0-staging-promotion-evidence.md`.
 
+Em 01/07/2026, a migration `013_customer_contact_and_consent.sql` foi aplicada
+no staging e `ENABLE_HANDOFF_CONSENT_GATE=true` entrou em operacao, com smoke
+real ponta a ponta (Postgres + OTP via WhatsApp) e `run_domain_eval
+suporte-vps-whatsapp` com chave real + pgvector sem falhas. Evidencias em
+`docs/quality-plans/customer-identity-whatsapp-handoff-plan.md` (Sprint 4b).
+
 ## Documentos Historicos
 
 Planos antigos podem citar Alexandre e Silotto ou descrever entregas que ja

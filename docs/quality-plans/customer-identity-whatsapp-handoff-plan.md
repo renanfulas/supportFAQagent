@@ -662,8 +662,12 @@ Criterio de pronto:
 
 ### Sprint 4b - Gate De Consentimento LGPD No Handoff (implementado 2026-07-01)
 
-Status: ✅ implementado, dark por `ENABLE_HANDOFF_CONSENT_GATE` (default
-`false`). Fecha o gap descrito no topo do documento ("Gap real encontrado").
+Status: ✅ implementado e **validado em staging em 2026-07-01**:
+`ENABLE_HANDOFF_CONSENT_GATE=true` na VPS (migration 013 aplicada), smoke real
+ponta a ponta com Postgres e OTP entregue por WhatsApp de verdade (via Hermes),
+e `run_domain_eval suporte-vps-whatsapp` com chave real + pgvector na propria
+VPS com 0 falhas. Fecha o gap descrito no topo do documento ("Gap real
+encontrado").
 Migration `013_customer_contact_and_consent.sql` (`customers.email` +
 `pending_consent` no status de `support_cases`). Endpoint novo
 `POST /web/handoff/consent` (`app/api/routes/web_handoff.py`,
@@ -679,9 +683,21 @@ pagina). Cobertura: `tests/test_phase0_operational_safety.py`,
 de superficies, migrations, riscos, decisao de arquitetura sobre o lembrete):
 [`customer-identity-whatsapp-handoff-tech-plan.md`](./customer-identity-whatsapp-handoff-tech-plan.md).
 
-**Pendente**: ligar a flag em staging (smoke real) e o hook de branching por
-dominio para o "minion" de hospedagem (ver secao "Extensao futura BLOQUEADA"
-no topo deste documento).
+**Smoke real em staging (2026-07-01), evidencias:** case criado por escalacao
+no `/web/chat` nasceu `pending_consent` e nao apareceu em
+`GET /internal/support-cases` sem filtro (so com `?status=pending_consent`
+explicito); `POST /web/handoff/consent` sem OTP retornou `401
+otp_confirmation_required`; OTP real chegou no WhatsApp e o `confirm` verificou;
+o consent promoveu o case para `open` gravando nome/e-mail em `customers` e
+enfileirando exatamente 1 `handoff.requested` no outbox **na mesma transacao**
+(timestamp do evento identico ao `updated_at` do case, microsegundo a
+microsegundo); consent repetido foi idempotente (mesmo case, sem evento novo).
+Nota: `ENABLE_SUPPORT_TEAM_WHATSAPP_NOTIFY` segue desligada em staging (sem
+recipients configurados), entao a promocao enfileira so o `handoff.requested` —
+comportamento esperado com a flag off.
+
+**Pendente**: apenas o hook de branching por dominio para o "minion" de
+hospedagem (ver secao "Extensao futura BLOQUEADA" no topo deste documento).
 
 Objetivo:
 
