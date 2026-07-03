@@ -875,9 +875,10 @@ Fronteira de responsabilidade:
 
 ## Fachada web staff do console de suporte (`/web/support/*`)
 
-Status: Fase A entregue (auth OTP staff dedicado + fila com semaforo, leitura).
-Plano: `docs/quality-plans/support-team-console-tech-plan.md`. Dark por padrao:
-so responde quando `ENABLE_SUPPORT_CONSOLE=true`; com a flag desligada toda a
+Status: Fase A (auth OTP staff dedicado + fila com semaforo, leitura) e Fase B
+(escrita auditada + dono na fila) entregues. Plano:
+`docs/quality-plans/support-team-console-tech-plan.md`. Dark por padrao: so
+responde quando `ENABLE_SUPPORT_CONSOLE=true`; com a flag desligada toda a
 superficie (inclusive auth) retorna `404`. Consumidor: a area interna `/team`
 do `ask-host-genius`, same-origin — nenhum segredo, nenhum `X-API-Key`, nenhum
 telefone bruto no JS do cliente.
@@ -889,6 +890,7 @@ GET  /web/support/auth/session
 POST /web/support/auth/logout
 GET  /web/support/cases
 GET  /web/support/cases/{case_id}
+POST /web/support/cases/{case_id}/transition
 ```
 
 Autenticacao (OTP WhatsApp dedicado, staff nao e cliente):
@@ -928,7 +930,10 @@ Autenticacao (OTP WhatsApp dedicado, staff nao e cliente):
 - query: `view` (`active` padrao | `history`), `domain`, `status` (mesmos
   valores do inbox interno; `pending_consent` so aparece com filtro
   explicito), `color` (`green|yellow|red|paused`), `sort` (`attention` padrao
-  | `opened_at`), `limit` (1..100, padrao 25), `offset`;
+  | `opened_at`), `assignee` (`me`; qualquer outro valor -> `422
+  invalid_assignee_filter` — a fachada resolve `me` para o `staff_id` da
+  propria sessao, nunca aceita um id vindo do cliente), `limit` (1..100,
+  padrao 25), `offset`;
 - `active`: SQL so filtra e limita (`SUPPORT_CONSOLE_ACTIVE_CASES_CAP`, com
   `truncated: true` na resposta quando atingido); SLA, ordenacao "attention"
   (estourado-e-nao-pausado primeiro, depois peso de prioridade, depois mais
@@ -946,18 +951,73 @@ Autenticacao (OTP WhatsApp dedicado, staff nao e cliente):
     "paused": false,
     "explanation": "urgente, aberto há 6h12, prazo estourado há 5h12"
   },
-  "assignee": null,
+  "assignee": { "display_name": "Renan" },
   "truncated": false
 }
 ```
 
-- `assignee` fica `null` ate a Fase B; casos pausados (`waiting_customer`,
-  `pending_consent`) nunca ficam vermelhos e `paused: true` guia o chip neutro
-  da UI.
+- `assignee` e `null` quando o caso nao tem dono; casos pausados
+  (`waiting_customer`, `pending_consent`) nunca ficam vermelhos e
+  `paused: true` guia o chip neutro da UI;
+- **Fase B**: `elapsed_ratio`/`deadline_at` usam `waiting_seconds` real —
+  soma dos intervalos `wait_customer` -> `resume` de
+  `support_case_events`; uma pausa ainda aberta (sem `resume`) conta ate o
+  `now()` da mesma query, entao o relogio pausa de verdade enquanto o caso
+  segue `waiting_customer`.
 
 `GET /web/support/cases/{case_id}`: igual ao detalhe do inbox interno
 (transcript sanitizado, referencias, contato autorizado via consent gate) +
-blocos `sla` (null para fechados/cancelados) e `assignee`.
+blocos `sla` (null para fechados/cancelados, com `waiting_seconds` real da
+Fase B), `assignee` e `events` (historico de transicoes, mais antigo primeiro):
+
+```json
+"events": [
+  {
+    "action": "claim",
+    "from_status": "open",
+    "to_status": "in_progress",
+    "note": null,
+    "actor_display_name": "Renan",
+    "created_at": "2026-07-03T18:00:00Z"
+  }
+]
+```
+
+`POST /web/support/cases/{case_id}/transition` (Fase B; exige sessao staff
+valida **e** o cabecalho `X-Requested-With: XMLHttpRequest` — sem ele,
+`403 csrf_header_required` antes de qualquer acesso ao banco):
+
+```json
+{ "action": "claim" | "release" | "wait_customer" | "resume" | "close" | "cancel",
+  "note": "opcional, ate 1000 caracteres, sanitizado e truncado em 500 antes de persistir" }
+```
+
+Matriz de transicoes (tudo fora disso -> `409` com
+`{ "detail": { "code": "invalid_transition", "status": "<status atual>" } }`):
+
+```text
+open              -> claim         -> in_progress   (seta assignee; exige caso sem dono)
+in_progress       -> release       -> open          (limpa assignee; devolve a fila)
+in_progress       -> wait_customer -> waiting_customer
+waiting_customer  -> resume        -> in_progress
+in_progress       -> close         -> closed        (closed_at = now())
+open|in_progress  -> cancel        -> cancelled     (closed_at = now())
+```
+
+- concorrencia por compare-and-swap: `SELECT ... FOR UPDATE` trava a linha e
+  le o estado atual na mesma transacao do `UPDATE` (guarda extra
+  `WHERE status = '<atual>'`) e do `INSERT` no `support_case_events` — commit
+  e rollback sempre em conjunto; dois `claim` simultaneos: exatamente um
+  vence, o outro recebe `409` com o estado ja vencido (nao "open"), sem gravar
+  evento duplicado. Validado em
+  `tests/integration/test_support_transitions_postgres.py` (opt-in, real
+  Postgres com duas threads);
+- decisao v1: `claim` exige caso sem dono (`assignee_staff_id IS NULL`); as
+  demais acoes qualquer staff ativo pode executar (time pequeno, tudo
+  auditado);
+- resposta de sucesso: `{ "case_id", "status", "assignee": { "display_name" } | null }`;
+- `404 support_case_not_found` quando o caso nao existe; banco indisponivel ->
+  `503 support_inbox_storage_unavailable`.
 
 Guardas e erros:
 
@@ -966,6 +1026,8 @@ Guardas e erros:
   'active'` (desativar um staff derruba as sessoes vivas no ato); falha ->
   `401` com detail generico; rate limit de leitura por sessao
   (`SUPPORT_CONSOLE_READS_PER_SESSION_PER_MINUTE`) -> `429`;
+- escritas (`POST .../transition`) exigem tambem `X-Requested-With:
+  XMLHttpRequest` (mitigacao CSRF alem do `SameSite=Lax` do cookie);
 - banco indisponivel -> `503 support_inbox_storage_unavailable` (mesmo
   contrato do inbox interno);
 - break-glass: `GET /internal/support-cases` com `X-API-Key` continua
@@ -973,6 +1035,7 @@ Guardas e erros:
 
 Observabilidade (sem PII, hashes truncados, nunca telefone/transcript/token):
 `support_console_auth_started`, `support_console_auth_confirmed`,
+`support_console_transition` (case_id, action, from/to, actor_staff_id),
 `support_console_auth_delivery_failed`, `support_console_listed`,
 `support_console_case_viewed`, `support_console_active_cap_reached`.
 
@@ -982,7 +1045,8 @@ rotacao de `IDENTITY_HASH_SECRET` invalida os hashes staff e exige recadastro.
 
 Fronteira de responsabilidade:
 
-- Renan: contrato HTTP, auth staff, SLA, repositorio, migration 014, testes;
+- Renan: contrato HTTP, auth staff, SLA, transicoes, repositorio, migrations
+  014/015, testes;
 - Juliano: deploy da tela `/team` no `ask-host-genius` (mesmo fluxo do
   `deploy_ask_host_genius`); a UI nao recalcula regra de negocio.
 

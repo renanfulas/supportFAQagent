@@ -3,7 +3,7 @@
 from typing import Any
 
 
-CONTRACT_MIGRATION = "014_support_console_staff.sql"
+CONTRACT_MIGRATION = "015_support_case_events.sql"
 
 REQUIRED_COLUMNS = {
     "chat_audits": {
@@ -58,6 +58,16 @@ REQUIRED_COLUMNS = {
         "attempt_count",
         "available_at",
     },
+    "support_case_events": {
+        "id",
+        "case_id",
+        "actor_staff_id",
+        "action",
+        "from_status",
+        "to_status",
+        "note_sanitized",
+        "created_at",
+    },
     "support_cases": {
         "id",
         "domain_id",
@@ -71,6 +81,7 @@ REQUIRED_COLUMNS = {
         "context_snapshot_sanitized",
         "idempotency_key",
         "assigned_team",
+        "assignee_staff_id",
         "opened_at",
         "updated_at",
         "closed_at",
@@ -124,6 +135,8 @@ REQUIRED_INDEXES = {
     "idx_staff_login_hints_staff",
     "idx_staff_sessions_expires",
     "idx_staff_sessions_staff",
+    "idx_support_case_events_case",
+    "idx_support_cases_assignee",
     "idx_support_cases_domain_status_opened",
     "idx_support_cases_customer",
     "idx_support_cases_conversation",

@@ -1,4 +1,4 @@
-# Runbook - Smoke do console de suporte (Fase A)
+# Runbook - Smoke do console de suporte (Fases A e B)
 
 Roteiro de validacao da fachada staff `/web/support/*` em staging antes de
 promover a producao. Plano tecnico:
@@ -6,8 +6,9 @@ promover a producao. Plano tecnico:
 
 ## Pre-requisitos
 
-1. Migration `014_support_console_staff.sql` aplicada pelo fluxo padrao de
-   deploy (`python scripts/migrate.py`).
+1. Migrations `014_support_console_staff.sql` e
+   `015_support_case_events.sql` aplicadas pelo fluxo padrao de deploy
+   (`python scripts/migrate.py`).
 2. `PERSISTENCE_BACKEND=postgres` ativo e entrega de OTP configurada
    (`WEB_AUTH_OTP_DELIVERY_TRANSPORT=hermes` ou `meta`).
 3. Operadores cadastrados:
@@ -47,13 +48,24 @@ Executar na origem do backend (ou via proxy `/web/*`), guardando os
    `{"forget_device": true}` o `hint` some.
 8. **Logs**: conferir `support_console_auth_started/confirmed` sem telefone,
    codigo ou token — apenas hash truncado e `staff_id`.
+9. **Transicao (Fase B)**: `POST /web/support/cases/{case_id}/transition`
+   com `{"action": "claim"}` **sem** `X-Requested-With` → `403
+   csrf_header_required`; com o cabecalho → `200` com `assignee.display_name`
+   e o caso passa a aparecer em `GET /web/support/cases?assignee=me`; repetir
+   o mesmo `claim` de uma segunda sessao/operador → `409 invalid_transition`
+   com o status ja assumido.
+10. **Ciclo completo**: `wait_customer` (caso vira `waiting_customer`, chip
+    pausado na fila, SLA nao vermelho) → `resume` → `close` (`closed_at`
+    preenchido); `GET /web/support/cases/{case_id}` mostra o bloco `events`
+    com a sequencia completa.
 
 ## Smoke pela UI (`/team` no ask-host-genius)
 
 Apos o deploy da tela por Juliano (mesmo fluxo do `deploy_ask_host_genius`),
-repetir os passos 2-7 pela interface: login com codigo de 6 celulas, botao
+repetir os passos 2-10 pela interface: login com codigo de 6 celulas, botao
 "Entrar como <nome>" no segundo acesso, fila com semaforo e filtros, detalhe,
-"entrar com outro numero" e "esquecer este dispositivo".
+"entrar com outro numero" e "esquecer este dispositivo", botoes de transicao
+com confirmacao e filtro "meus casos".
 
 ## Promocao a producao
 

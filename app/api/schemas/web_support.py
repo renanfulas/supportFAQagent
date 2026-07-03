@@ -1,13 +1,13 @@
 """Contratos HTTP da fachada web staff (/web/support/*).
 
 O bloco de caso reusa os contratos do inbox interno (mesma fonte de dados) e
-acrescenta os blocos ``sla`` e ``assignee`` do console. ``assignee`` fica
-``null`` ate a Fase B.
+acrescenta os blocos ``sla`` e ``assignee`` do console.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -83,6 +83,29 @@ class ConsoleCaseListResponse(BaseModel):
     cases: list[ConsoleCaseSummaryResponse] = Field(default_factory=list)
 
 
+class ConsoleCaseEventResponse(BaseModel):
+    action: str
+    from_status: str
+    to_status: str
+    note: str | None = None
+    actor_display_name: str
+    created_at: datetime
+
+
 class ConsoleCaseDetailResponse(SupportCaseDetailResponse):
     sla: ConsoleSlaResponse | None = None
+    assignee: ConsoleAssigneeResponse | None = None
+    events: list[ConsoleCaseEventResponse] = Field(default_factory=list)
+
+
+class StaffTransitionRequest(BaseModel):
+    action: Literal[
+        "claim", "release", "wait_customer", "resume", "close", "cancel"
+    ]
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class StaffTransitionResponse(BaseModel):
+    case_id: str
+    status: str
     assignee: ConsoleAssigneeResponse | None = None

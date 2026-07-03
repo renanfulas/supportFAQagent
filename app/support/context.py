@@ -66,6 +66,10 @@ class SupportCaseContext:
     opened_at: datetime | None
     updated_at: datetime | None
     customer: SupportCaseCustomer | None = None
+    # Fase B (console): dono do caso. None quando o caller nao passa as
+    # chaves (ex.: o push-side snapshot nunca usa build_case_context).
+    assignee_staff_id: str | None = None
+    assignee_display_name: str | None = None
 
 
 def build_case_context(
@@ -111,6 +115,8 @@ def build_case_context(
         opened_at=case.get("opened_at"),
         updated_at=case.get("updated_at"),
         customer=customer,
+        assignee_staff_id=_optional_str(case.get("assignee_staff_id")),
+        assignee_display_name=_optional_str(case.get("assignee_display_name")),
     )
 
 

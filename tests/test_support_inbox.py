@@ -310,6 +310,8 @@ def test_get_case_with_context_follows_conversation() -> None:
         None,  # customer display_label (no linked customer)
         None,  # customer email
         None,  # customer phone_last4
+        None,  # assignee_staff_id
+        None,  # assignee_display_name
     )
     transcript_rows = [
         (1, "user", "oi", None, False, [], [], None, datetime(2026, 6, 28, tzinfo=timezone.utc)),
@@ -345,6 +347,8 @@ def test_get_case_with_context_maps_customer_contact() -> None:
         "Ana",
         "ana@example.com",
         "1234",
+        None,  # assignee_staff_id
+        None,  # assignee_display_name
     )
     cursor = FakeCursor(fetchone_results=[case_row], fetchall_results=[])
     repository = SupportCaseRepository(FakeRuntime(cursor))
@@ -410,6 +414,8 @@ def test_get_case_with_context_skips_transcript_without_conversation() -> None:
         None,  # customer display_label
         None,  # customer email
         None,  # customer phone_last4
+        None,  # assignee_staff_id
+        None,  # assignee_display_name
     )
     cursor = FakeCursor(fetchone_results=[case_row], fetchall_results=[])
     repository = SupportCaseRepository(FakeRuntime(cursor))
@@ -632,6 +638,8 @@ def test_detail_endpoint_assembles_transcript(monkeypatch: pytest.MonkeyPatch) -
         "Ana",
         "ana@example.com",
         "1234",
+        None,  # assignee_staff_id
+        None,  # assignee_display_name
     )
     transcript_rows = [
         (1, "user", "oi", None, False, [], [], None, datetime(2026, 6, 28, tzinfo=timezone.utc)),

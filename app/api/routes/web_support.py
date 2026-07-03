@@ -25,7 +25,9 @@ from app.api.routes.support import (
     _summary_to_response,
 )
 from app.api.schemas.web_support import (
+    ConsoleAssigneeResponse,
     ConsoleCaseDetailResponse,
+    ConsoleCaseEventResponse,
     ConsoleCaseListResponse,
     ConsoleCaseSummaryResponse,
     ConsoleSlaResponse,
@@ -36,6 +38,8 @@ from app.api.schemas.web_support import (
     StaffOtpStartRequest,
     StaffOtpStartResponse,
     StaffSessionResponse,
+    StaffTransitionRequest,
+    StaffTransitionResponse,
 )
 from app.core.errors import DatabaseUnavailableError
 from app.core.logging import log_event
@@ -60,6 +64,11 @@ from app.support.staff_auth import (
     StaffPrincipal,
     SupportConsoleRuntime,
 )
+from app.support.transitions import (
+    CaseNotFound,
+    InvalidTransition,
+    SupportCaseTransitionService,
+)
 from app.web_auth.service import InvalidOrExpiredCode
 
 
@@ -74,6 +83,9 @@ STAFF_HINT_COOKIE_PATH = "/web/support/auth"
 
 _ACTIVE_SORTS = {"attention", "opened_at"}
 _VIEWS = {"active", "history"}
+_ASSIGNEE_FILTERS = {"me"}
+CSRF_HEADER_NAME = "X-Requested-With"
+CSRF_HEADER_VALUE = "XMLHttpRequest"
 
 
 def _ensure_enabled(request: Request) -> None:
@@ -113,6 +125,13 @@ def require_staff_session(request: Request) -> StaffPrincipal:
             headers={"Retry-After": str(exc.retry_after_seconds)},
         ) from exc
     return principal
+
+
+def _require_csrf_header(request: Request) -> None:
+    """Escritas (Fase B) exigem o cabecalho, alem do `SameSite=Lax` do cookie."""
+
+    if request.headers.get(CSRF_HEADER_NAME) != CSRF_HEADER_VALUE:
+        raise HTTPException(status_code=403, detail="csrf_header_required")
 
 
 @router.post("/auth/start", response_model=StaffOtpStartResponse, status_code=202)
@@ -288,6 +307,7 @@ def list_console_cases(
     status: str | None = Query(default=None, max_length=40),
     color: str | None = Query(default=None, max_length=10),
     sort: str = Query(default="attention", max_length=20),
+    assignee: str | None = Query(default=None, max_length=10),
     limit: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     offset: int = Query(default=0, ge=0),
     principal: StaffPrincipal = Depends(require_staff_session),
@@ -300,6 +320,9 @@ def list_console_cases(
         raise HTTPException(status_code=422, detail="invalid_color_filter")
     if sort not in _ACTIVE_SORTS:
         raise HTTPException(status_code=422, detail="invalid_sort")
+    if assignee is not None and assignee not in _ASSIGNEE_FILTERS:
+        raise HTTPException(status_code=422, detail="invalid_assignee_filter")
+    assignee_staff_id = principal.staff_id if assignee == "me" else None
 
     settings = request.app.state.settings
     repository = SupportCaseRepository(request.app.state.database_runtime)
@@ -312,10 +335,14 @@ def list_console_cases(
                 status=status,
                 limit=limit,
                 offset=offset,
+                assignee_staff_id=assignee_staff_id,
             )
             # Historico nao passa por SLA: paginacao SQL normal.
             cases = [
-                ConsoleCaseSummaryResponse(**_summary_to_response(case).model_dump())
+                ConsoleCaseSummaryResponse(
+                    **_summary_to_response(case).model_dump(),
+                    assignee=_assignee_from_summary(case),
+                )
                 for case in summaries
             ]
         else:
@@ -323,6 +350,7 @@ def list_console_cases(
                 domain=domain,
                 status=status,
                 cap=settings.support_console_active_cases_cap,
+                assignee_staff_id=assignee_staff_id,
             )
             truncated = active.truncated
             if truncated:
@@ -353,6 +381,7 @@ def list_console_cases(
                 ConsoleCaseSummaryResponse(
                     **_summary_to_response(case).model_dump(),
                     sla=_sla_to_response(sla),
+                    assignee=_assignee_from_summary(case),
                 )
                 for case, sla in page
             ]
@@ -370,6 +399,7 @@ def list_console_cases(
         status_filter=status,
         color_filter=color,
         sort=sort,
+        assignee_filter=assignee,
         result_count=len(cases),
         truncated=truncated,
     )
@@ -399,6 +429,7 @@ def get_console_case(
         sla = None
         if context.status not in {"closed", "cancelled"} and context.opened_at:
             db_now = repository.database_now()
+            waiting_seconds = repository.get_case_waiting_seconds(case_id, db_now)
             sla = _sla_to_response(
                 compute_sla(
                     context.priority,
@@ -406,8 +437,10 @@ def get_console_case(
                     context.status,
                     db_now,
                     settings,
+                    waiting_seconds=waiting_seconds,
                 ),
             )
+        events = repository.get_case_events(case_id)
     except DatabaseUnavailableError as exc:
         raise HTTPException(
             status_code=503, detail="support_inbox_storage_unavailable"
@@ -425,11 +458,82 @@ def get_console_case(
     return ConsoleCaseDetailResponse(
         **_context_to_response(request_id, context).model_dump(),
         sla=sla,
+        assignee=_assignee_from_context(context),
+        events=[
+            ConsoleCaseEventResponse(
+                action=event.action,
+                from_status=event.from_status,
+                to_status=event.to_status,
+                note=event.note,
+                actor_display_name=event.actor_display_name,
+                created_at=event.created_at,
+            )
+            for event in events
+        ],
+    )
+
+
+@router.post(
+    "/cases/{case_id}/transition",
+    response_model=StaffTransitionResponse,
+)
+def transition_console_case(
+    case_id: str,
+    payload: StaffTransitionRequest,
+    request: Request,
+    principal: StaffPrincipal = Depends(require_staff_session),
+) -> StaffTransitionResponse:
+    _require_csrf_header(request)
+    service = SupportCaseTransitionService(request.app.state.database_runtime)
+    try:
+        result = service.apply(
+            case_id=case_id,
+            action=payload.action,
+            actor_staff_id=principal.staff_id,
+            note=payload.note,
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="support_case_not_found") from exc
+    except InvalidTransition as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "invalid_transition", "status": exc.status},
+        ) from exc
+    except DatabaseUnavailableError as exc:
+        raise HTTPException(
+            status_code=503, detail="support_inbox_storage_unavailable"
+        ) from exc
+
+    log_event(
+        logger,
+        "support_console_transition",
+        request_id=get_request_id(request),
+        case_id=result.case_id,
+        action=payload.action,
+        from_status=result.from_status,
+        to_status=result.to_status,
+        actor_staff_id=principal.staff_id,
+    )
+    return StaffTransitionResponse(
+        case_id=result.case_id,
+        status=result.to_status,
+        assignee=(
+            ConsoleAssigneeResponse(display_name=result.assignee_display_name)
+            if result.assignee_display_name
+            else None
+        ),
     )
 
 
 def _assess(case: SupportCaseSummary, db_now: object, settings: object) -> SlaAssessment:
-    return compute_sla(case.priority, case.opened_at, case.status, db_now, settings)
+    return compute_sla(
+        case.priority,
+        case.opened_at,
+        case.status,
+        db_now,
+        settings,
+        waiting_seconds=case.waiting_seconds,
+    )
 
 
 def _sla_to_response(sla: SlaAssessment) -> ConsoleSlaResponse:
@@ -440,3 +544,15 @@ def _sla_to_response(sla: SlaAssessment) -> ConsoleSlaResponse:
         paused=sla.paused,
         explanation=sla.explanation,
     )
+
+
+def _assignee_from_summary(case: SupportCaseSummary) -> ConsoleAssigneeResponse | None:
+    if not case.assignee_display_name:
+        return None
+    return ConsoleAssigneeResponse(display_name=case.assignee_display_name)
+
+
+def _assignee_from_context(context) -> ConsoleAssigneeResponse | None:
+    if not context.assignee_display_name:
+        return None
+    return ConsoleAssigneeResponse(display_name=context.assignee_display_name)

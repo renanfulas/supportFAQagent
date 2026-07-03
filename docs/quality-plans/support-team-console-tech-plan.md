@@ -9,8 +9,14 @@ e expiracao fixa as 4h da manha no fuso do time.
 `app/support/staff_auth.py`, fachada `/web/support/*`, `manage_staff.py`,
 readiness + schema contract, testes verdes; contrato registrado em
 `docs/architecture/integration-contracts.md`, smoke em
-`docs/runbooks/support-console-smoke.md`). Faltam: smoke em staging, UI
-`/team` (Juliano), Fase B e Fase C.
+`docs/runbooks/support-console-smoke.md`).
+**Fase B implementada em 2026-07-03** (migration 015 —
+`assignee_staff_id` + `support_case_events` —, `app/support/transitions.py`
+com compare-and-swap e evento auditavel na mesma transacao, `waiting_seconds`
+real plugado em `compute_sla`, filtro `assignee=me`, historico de eventos no
+detalhe, endpoint `POST /web/support/cases/{case_id}/transition` com CSRF por
+`X-Requested-With`; testes unitarios + integracao postgres opt-in com
+concorrencia real). Faltam: smoke em staging, UI `/team` (Juliano) e Fase C.
 Plano de produto: [support-team-console-plan.md](support-team-console-plan.md).
 
 ## Decisao Arquitetural

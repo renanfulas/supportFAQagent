@@ -32,9 +32,19 @@ DB_NOW = datetime(2026, 7, 2, 18, 0, tzinfo=UTC)
 
 
 class FakeCursor:
-    def __init__(self, fetchone_results: list, fetchall_results: list) -> None:
+    def __init__(
+        self,
+        fetchone_results: list,
+        fetchall_results: list,
+        *,
+        update_rowcounts: list[int] | None = None,
+    ) -> None:
         self._fetchone = list(fetchone_results)
         self._fetchall = list(fetchall_results)
+        # Transitions: rowcount defaults to a successful CAS (1) for every
+        # UPDATE support_cases unless a test scripts a lost CAS explicitly.
+        self._update_rowcounts = list(update_rowcounts) if update_rowcounts is not None else None
+        self.rowcount = 0
         self.executed: list[tuple] = []
 
     def __enter__(self) -> "FakeCursor":
@@ -45,6 +55,10 @@ class FakeCursor:
 
     def execute(self, sql: str, params: tuple = ()) -> None:
         self.executed.append((sql, params))
+        if "UPDATE support_cases" in sql:
+            self.rowcount = (
+                self._update_rowcounts.pop(0) if self._update_rowcounts is not None else 1
+            )
 
     def fetchone(self):
         return self._fetchone.pop(0)
@@ -68,6 +82,8 @@ def _active_row(
     priority: str = "normal",
     status: str = "open",
     opened_at: datetime,
+    assignee_staff_id: str | None = None,
+    assignee_display_name: str | None = None,
 ) -> tuple:
     return (
         case_id,
@@ -80,6 +96,8 @@ def _active_row(
         {"summary": f"resumo {case_id}"},
         opened_at,
         opened_at,
+        assignee_staff_id,
+        assignee_display_name,
         DB_NOW,
     )
 
@@ -107,15 +125,17 @@ def _console_client(
         get_settings.cache_clear()
 
 
-def _seed_staff(app, *, display_name: str = "Renan", phone: str = STAFF_PHONE) -> None:
+def _seed_staff(app, *, display_name: str = "Renan", phone: str = STAFF_PHONE) -> str:
+    staff_id = str(uuid4())
     app.state.support_console_runtime.service.staff_store.add_staff(
         StaffMember(
-            id=str(uuid4()),
+            id=staff_id,
             phone_hash=_hmac_digest(IDENTITY_SECRET, phone),
             phone_last4=phone[-4:],
             display_name=display_name,
         )
     )
+    return staff_id
 
 
 def _login(client: TestClient, app) -> str:
@@ -302,7 +322,8 @@ def test_active_queue_orders_by_attention_and_serves_sla(
         _seed_staff(app)
         _login(client, app)
         app.state.database_runtime = FakeRuntime(
-            FakeCursor(fetchone_results=[], fetchall_results=[rows])
+            # Segundo fetchall: consulta de waiting_seconds (sem eventos).
+            FakeCursor(fetchone_results=[], fetchall_results=[rows, []])
         )
 
         response = client.get("/web/support/cases")
@@ -339,7 +360,7 @@ def test_active_queue_color_filter(monkeypatch: pytest.MonkeyPatch) -> None:
         _seed_staff(app)
         _login(client, app)
         app.state.database_runtime = FakeRuntime(
-            FakeCursor(fetchone_results=[], fetchall_results=[rows])
+            FakeCursor(fetchone_results=[], fetchall_results=[rows, []])
         )
 
         response = client.get("/web/support/cases?color=green")
@@ -361,7 +382,8 @@ def test_active_queue_marks_truncated_when_cap_is_hit(
         _seed_staff(app)
         _login(client, app)
         app.state.database_runtime = FakeRuntime(
-            FakeCursor(fetchone_results=[], fetchall_results=[rows])
+            # Segundo fetchall: consulta de waiting_seconds (sem eventos).
+            FakeCursor(fetchone_results=[], fetchall_results=[rows, []])
         )
 
         response = client.get("/web/support/cases")
@@ -386,6 +408,8 @@ def test_history_view_paginates_without_sla(
         {"summary": "resolvido"},
         DB_NOW - timedelta(days=2),
         DB_NOW - timedelta(days=1),
+        None,  # assignee_staff_id
+        None,  # assignee_display_name
     )
     with _console_client(monkeypatch) as (client, app):
         _seed_staff(app)
@@ -429,6 +453,8 @@ def test_case_detail_includes_sla_block(monkeypatch: pytest.MonkeyPatch) -> None
         "Ana",
         "ana@example.com",
         "1234",
+        None,  # assignee_staff_id
+        None,  # assignee_display_name
     )
     transcript_rows = [
         (1, "user", "oi", None, False, [], [], None, DB_NOW - timedelta(hours=6)),
@@ -446,7 +472,9 @@ def test_case_detail_includes_sla_block(monkeypatch: pytest.MonkeyPatch) -> None
     ]
     cursor = FakeCursor(
         fetchone_results=[case_row, (DB_NOW,)],
-        fetchall_results=[transcript_rows],
+        # get_case_with_context transcript, get_case_waiting_seconds (no pause
+        # events), get_case_events (no history yet).
+        fetchall_results=[transcript_rows, [], []],
     )
     with _console_client(monkeypatch) as (client, app):
         _seed_staff(app)
@@ -473,6 +501,203 @@ def test_case_detail_404_when_absent(monkeypatch: pytest.MonkeyPatch) -> None:
         )
         response = client.get("/web/support/cases/missing")
     assert response.status_code == 404
+
+
+# --------------------------------------------------------------------------- #
+# Fase B: transicoes auditadas
+# --------------------------------------------------------------------------- #
+
+CSRF_HEADERS = {"X-Requested-With": "XMLHttpRequest"}
+
+
+def test_transition_requires_csrf_header(monkeypatch: pytest.MonkeyPatch) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+
+        response = client.post(
+            "/web/support/cases/case-1/transition", json={"action": "claim"}
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "csrf_header_required"
+
+
+def test_transition_requires_staff_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+
+        response = client.post(
+            "/web/support/cases/case-1/transition",
+            json={"action": "claim"},
+            headers=CSRF_HEADERS,
+        )
+
+    assert response.status_code == 401
+
+
+def test_claim_transition_succeeds_and_returns_assignee(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app, display_name="Renan")
+        _login(client, app)
+        app.state.database_runtime = FakeRuntime(
+            FakeCursor(
+                fetchone_results=[("open", None), ("Renan",)],
+                fetchall_results=[],
+            )
+        )
+
+        response = client.post(
+            "/web/support/cases/case-1/transition",
+            json={"action": "claim", "note": "assumindo o caso"},
+            headers=CSRF_HEADERS,
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["case_id"] == "case-1"
+    assert body["status"] == "in_progress"
+    assert body["assignee"] == {"display_name": "Renan"}
+
+
+def test_release_transition_clears_assignee(monkeypatch: pytest.MonkeyPatch) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+        app.state.database_runtime = FakeRuntime(
+            FakeCursor(
+                fetchone_results=[("in_progress", "someone-else")],
+                fetchall_results=[],
+            )
+        )
+
+        response = client.post(
+            "/web/support/cases/case-1/transition",
+            json={"action": "release"},
+            headers=CSRF_HEADERS,
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "open"
+    assert body["assignee"] is None
+
+
+def test_invalid_transition_returns_409_with_current_status(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+        app.state.database_runtime = FakeRuntime(
+            FakeCursor(fetchone_results=[("closed", None)], fetchall_results=[])
+        )
+
+        response = client.post(
+            "/web/support/cases/case-1/transition",
+            json={"action": "claim"},
+            headers=CSRF_HEADERS,
+        )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == {"code": "invalid_transition", "status": "closed"}
+
+
+def test_transition_case_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+        app.state.database_runtime = FakeRuntime(
+            FakeCursor(fetchone_results=[None], fetchall_results=[])
+        )
+
+        response = client.post(
+            "/web/support/cases/missing/transition",
+            json={"action": "claim"},
+            headers=CSRF_HEADERS,
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "support_case_not_found"
+
+
+def test_transition_rejects_unknown_action(monkeypatch: pytest.MonkeyPatch) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+
+        response = client.post(
+            "/web/support/cases/case-1/transition",
+            json={"action": "teleport"},
+            headers=CSRF_HEADERS,
+        )
+
+    assert response.status_code == 422
+
+
+def test_transition_note_never_leaks_into_logs(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+        app.state.database_runtime = FakeRuntime(
+            FakeCursor(
+                fetchone_results=[("open", None), ("Renan",)],
+                fetchall_results=[],
+            )
+        )
+
+        with caplog.at_level(logging.INFO):
+            response = client.post(
+                "/web/support/cases/case-1/transition",
+                json={"action": "claim", "note": "telefone pessoal 11999990000"},
+                headers=CSRF_HEADERS,
+            )
+
+    assert response.status_code == 200
+    assert "telefone pessoal" not in caplog.text
+    assert "11999990000" not in caplog.text
+
+
+# --------------------------------------------------------------------------- #
+# Fase B: filtro assignee=me
+# --------------------------------------------------------------------------- #
+
+
+def test_assignee_filter_rejects_unknown_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+
+        response = client.get("/web/support/cases?assignee=everyone")
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "invalid_assignee_filter"
+
+
+def test_assignee_me_filter_resolves_to_logged_in_staff_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        staff_id = _seed_staff(app)
+        _login(client, app)
+        cursor = FakeCursor(fetchone_results=[], fetchall_results=[[], []])
+        app.state.database_runtime = FakeRuntime(cursor)
+
+        response = client.get("/web/support/cases?assignee=me")
+
+    assert response.status_code == 200
+    # A fachada resolve "me" para o staff_id da sessao, nunca aceita um id cru
+    # vindo do cliente.
+    list_sql, list_params = cursor.executed[0]
+    assert staff_id in list_params
+    assert staff_id != "everyone"
 
 
 # --------------------------------------------------------------------------- #
