@@ -143,10 +143,6 @@ Resumo curto da entrega e por que ela existe.
 - `python -m app.evals.run_domain_eval suporte-vps-whatsapp` quando aplicavel
 ```
 
-Do not append "🤖 Generated with Claude Code" or any `Co-Authored-By` AI
-attribution line to the PR description or commit message. Keep the PR body
-scoped to the template above.
-
 For README, docs, or PR narrative changes, include the product or operational impact and avoid promises that conflict with `docs/product-positioning.md`.
 
 ## Final Response After Push
