@@ -336,3 +336,29 @@ def test_start_purges_expired_sessions() -> None:
     service.start(phone=STAFF_PHONE, hint_cookie=None, client_host="10.0.0.1")
 
     assert staff_store._sessions == {}
+
+
+def test_start_purges_hints_older_than_ttl() -> None:
+    # Higiene: um lembrete cujo cookie o operador ja descartou nunca expira
+    # sozinho no servidor -- a poda oportunista no start pelo mesmo TTL do
+    # cookie (90 dias no default) o remove.
+    service, staff_store, delivery, clock = _service()
+    login = _login(service, delivery)
+    assert login.hint_cookie_value is not None
+    assert service.get_hint_display_name(login.hint_cookie_value) == "Renan"
+
+    clock[0] = clock[0] + timedelta(days=91)
+    service.start(phone=STAFF_PHONE, hint_cookie=None, client_host="10.0.0.1")
+
+    assert staff_store._hints == {}
+    assert service.get_hint_display_name(login.hint_cookie_value) is None
+
+
+def test_start_keeps_hints_within_ttl() -> None:
+    service, staff_store, delivery, clock = _service()
+    login = _login(service, delivery)
+
+    clock[0] = clock[0] + timedelta(days=30)
+    service.start(phone=STAFF_PHONE, hint_cookie=None, client_host="10.0.0.1")
+
+    assert service.get_hint_display_name(login.hint_cookie_value) == "Renan"

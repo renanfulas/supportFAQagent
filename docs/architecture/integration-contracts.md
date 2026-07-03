@@ -877,11 +877,12 @@ Fronteira de responsabilidade:
 
 Status: Fase A (auth OTP staff dedicado + fila com semaforo, leitura), Fase B
 (escrita auditada + dono na fila) e Fase C (metricas) entregues. Plano:
-`docs/quality-plans/support-team-console-tech-plan.md`. Dark por padrao: so
-responde quando `ENABLE_SUPPORT_CONSOLE=true`; com a flag desligada toda a
-superficie (inclusive auth) retorna `404`. Consumidor: a area interna `/team`
-do `ask-host-genius`, same-origin — nenhum segredo, nenhum `X-API-Key`, nenhum
-telefone bruto no JS do cliente.
+`docs/quality-plans/support-team-console-tech-plan.md`. Dark por padrao: o
+router so e montado quando `ENABLE_SUPPORT_CONSOLE=true` — com a flag
+desligada a superficie inteira (inclusive auth) nem existe (fora do OpenAPI,
+`404` do FastAPI), e as rotas ainda checam a flag como defesa em profundidade.
+Consumidor: a area interna `/team` do `ask-host-genius`, same-origin — nenhum
+segredo, nenhum `X-API-Key`, nenhum telefone bruto no JS do cliente.
 
 ```text
 POST /web/support/auth/start
@@ -997,13 +998,20 @@ Matriz de transicoes (tudo fora disso -> `409` com
 `{ "detail": { "code": "invalid_transition", "status": "<status atual>" } }`):
 
 ```text
-open              -> claim         -> in_progress   (seta assignee; exige caso sem dono)
-in_progress       -> release       -> open          (limpa assignee; devolve a fila)
-in_progress       -> wait_customer -> waiting_customer
-waiting_customer  -> resume        -> in_progress
-in_progress       -> close         -> closed        (closed_at = now())
-open|in_progress  -> cancel        -> cancelled     (closed_at = now())
+open                    -> claim         -> in_progress   (seta assignee; exige caso sem dono)
+in_progress             -> release       -> open          (limpa assignee; devolve a fila)
+in_progress             -> wait_customer -> waiting_customer
+waiting_customer        -> resume        -> in_progress
+in_progress             -> close         -> closed        (closed_at = now())
+open|in_progress        -> cancel        -> cancelled     (closed_at = now())
+pending_consent         -> cancel        -> cancelled     (closed_at = now())
 ```
+
+- `pending_consent -> cancel` e a valvula de escape para o ticket cujo cliente
+  nunca confirmou o consentimento LGPD (ver `POST /web/handoff/consent`): sem
+  ela o caso ficaria eterno, visivel so com filtro explicito e sem acao
+  possivel. Cancelar nao dispara nenhuma notificacao — so encerra o caso
+  abandonado;
 
 - concorrencia por compare-and-swap: `SELECT ... FOR UPDATE` trava a linha e
   le o estado atual na mesma transacao do `UPDATE` (guarda extra
@@ -1080,6 +1088,9 @@ Guardas e erros:
 
 Observabilidade (sem PII, hashes truncados, nunca telefone/transcript/token):
 `support_console_auth_started`, `support_console_auth_confirmed`,
+`support_console_auth_denied` (motivo generico: `invalid_or_expired_code` no
+confirm, `no_valid_session` no guard de rota — da visibilidade de acesso
+negado sem revelar quem tentou),
 `support_console_transition` (case_id, action, from/to, actor_staff_id),
 `support_console_auth_delivery_failed`, `support_console_listed`,
 `support_console_case_viewed`, `support_console_active_cap_reached`,

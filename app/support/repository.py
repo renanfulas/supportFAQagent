@@ -288,10 +288,14 @@ class SupportCaseRepository:
         if not case_ids:
             return {}
         cursor.execute(
+            # ``%s::uuid[]`` e obrigatorio: psycopg adapta a lista de strings
+            # como text[], e ``uuid = ANY(text[])`` nao tem operador no Postgres
+            # ("operator does not exist: uuid = text"). O cast converte o array
+            # para uuid[] antes da comparacao.
             """
             SELECT case_id, action, created_at
             FROM support_case_events
-            WHERE case_id = ANY(%s) AND action IN ('wait_customer', 'resume')
+            WHERE case_id = ANY(%s::uuid[]) AND action IN ('wait_customer', 'resume')
             ORDER BY case_id, created_at ASC
             """,
             (case_ids,),

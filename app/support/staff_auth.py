@@ -101,6 +101,7 @@ class StaffAuthStore(Protocol):
     def save_hint(self, hint_hash: str, staff_id: str, now: datetime) -> None: ...
     def get_hint_staff(self, hint_hash: str, now: datetime) -> StaffMember | None: ...
     def delete_hint(self, hint_hash: str) -> None: ...
+    def delete_expired_hints(self, cutoff: datetime) -> None: ...
 
 
 def next_session_cutoff(now: datetime, timezone_name: str, hour: int) -> datetime:
@@ -178,6 +179,12 @@ class StaffConsoleAuthService:
         self._phone_limiter.check(phone_hash)
         self._resend_limiter.check(phone_hash)
         self.staff_store.delete_expired_sessions(now)
+        # Higiene: hints cujo cookie o operador ja descartou (limpou cookies,
+        # trocou de maquina) nunca expiram no lado servidor — o TTL so vive no
+        # cookie. Poda oportunista pelo mesmo TTL do cookie.
+        self.staff_store.delete_expired_hints(
+            now - timedelta(days=self.settings.support_staff_hint_ttl_days)
+        )
 
         staff = self.staff_store.get_active_staff_by_phone_hash(phone_hash)
         if staff is None:
@@ -486,6 +493,16 @@ class InMemoryStaffAuthStore:
         with self._lock:
             self._hints.pop(hint_hash, None)
 
+    def delete_expired_hints(self, cutoff: datetime) -> None:
+        with self._lock:
+            expired = [
+                key
+                for key, hint in self._hints.items()
+                if hint["created_at"] <= cutoff
+            ]
+            for key in expired:
+                self._hints.pop(key, None)
+
 
 class PostgresStaffAuthStore:
     def __init__(self, runtime: DatabaseRuntime) -> None:
@@ -604,6 +621,14 @@ class PostgresStaffAuthStore:
                 cursor.execute(
                     "DELETE FROM staff_login_hints WHERE hint_hash = %s",
                     (hint_hash,),
+                )
+
+    def delete_expired_hints(self, cutoff: datetime) -> None:
+        with self.runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM staff_login_hints WHERE created_at <= %s",
+                    (cutoff,),
                 )
 
 

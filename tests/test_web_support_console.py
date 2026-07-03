@@ -736,6 +736,34 @@ def test_auth_logs_never_leak_phone_code_or_tokens(
     assert _hmac_digest(IDENTITY_SECRET, STAFF_PHONE) not in caplog.text
 
 
+def test_confirm_failure_emits_auth_denied(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        start = client.post("/web/support/auth/start", json={"phone": STAFF_PHONE})
+        with caplog.at_level(logging.INFO):
+            response = client.post(
+                "/web/support/auth/confirm",
+                json={"challenge_id": start.json()["challenge_id"], "code": "000000"},
+            )
+    assert response.status_code == 400
+    assert "support_console_auth_denied" in caplog.text
+    assert "invalid_or_expired_code" in caplog.text
+
+
+def test_unauthenticated_case_access_emits_auth_denied(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        with caplog.at_level(logging.INFO):
+            response = client.get("/web/support/cases")
+    assert response.status_code == 401
+    assert "support_console_auth_denied" in caplog.text
+    assert "no_valid_session" in caplog.text
+
+
 # --------------------------------------------------------------------------- #
 # Readiness: combinacao invalida de flags aparece como alerta
 # --------------------------------------------------------------------------- #

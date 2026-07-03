@@ -25,6 +25,17 @@ reusando `compute_sla` sobre o conjunto ativo — uma fonte de verdade so —,
 `response_times` via medianas `percentile_cont`; endpoint
 `GET /web/support/metrics` + schema; testes com fixtures deterministicas).
 Faltam: smoke em staging e a UI `/team` (Juliano).
+**Hardening pos-entrega (2026-07-03)**: (1) evento `support_console_auth_denied`
+no confirm falho e no guard 401 (visibilidade de acesso negado sem eco de
+identificadores); (2) `pending_consent -> cancel` na matriz de transicoes,
+valvula de escape para o ticket cujo cliente nunca confirma o consentimento;
+(3) poda oportunista de `staff_login_hints` expirados no start (o TTL so vivia
+no cookie — lembrete orfao nunca expirava no servidor); (4) router
+`/web/support/*` montado so com a flag ligada (dark real: fora do OpenAPI com
+flag off); (5) correcao de tipo em `_load_waiting_seconds` (`ANY(%s::uuid[])`
+— `uuid = ANY(text[])` nao tem operador no Postgres); (6) teste de integracao
+opt-in `tests/integration/test_support_console_postgres.py` cobrindo as
+queries de leitura/metricas contra Postgres real.
 Plano de produto: [support-team-console-plan.md](support-team-console-plan.md).
 
 ## Decisao Arquitetural

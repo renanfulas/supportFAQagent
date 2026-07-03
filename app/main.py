@@ -282,9 +282,14 @@ def create_app() -> FastAPI:
     application.include_router(
         web_handoff.router, prefix="/web/handoff", tags=["web-handoff"]
     )
-    application.include_router(
-        web_support.router, prefix="/web/support", tags=["web-support"]
-    )
+    # Console staff: superficie administrativa montada so quando ligada. Com a
+    # flag off a rota nem existe (404 do FastAPI, fora do OpenAPI) — dark by
+    # default mais forte que o 404 interno. As rotas mantêm _ensure_enabled como
+    # defesa em profundidade.
+    if settings.enable_support_console:
+        application.include_router(
+            web_support.router, prefix="/web/support", tags=["web-support"]
+        )
     application.include_router(zoom.router, prefix="/zoom", tags=["zoom"])
     application.include_router(
         meta_whatsapp.router,

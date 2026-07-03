@@ -116,7 +116,14 @@ def require_staff_session(request: Request) -> StaffPrincipal:
             status_code=503, detail="support_inbox_storage_unavailable"
         ) from exc
     if principal is None:
-        # Detail generico, sem eco de identificadores.
+        # Detail generico, sem eco de identificadores; o evento nomeado da
+        # visibilidade de acesso negado sem vazar quem tentou.
+        log_event(
+            logger,
+            "support_console_auth_denied",
+            request_id=get_request_id(request),
+            reason="no_valid_session",
+        )
         raise HTTPException(status_code=401, detail="unauthorized")
     try:
         runtime.reads_limiter.check(session_token or "")
@@ -204,6 +211,12 @@ def confirm_staff_otp(
             hint_cookie=request.cookies.get(STAFF_HINT_COOKIE),
         )
     except InvalidOrExpiredCode as exc:
+        log_event(
+            logger,
+            "support_console_auth_denied",
+            request_id=get_request_id(request),
+            reason="invalid_or_expired_code",
+        )
         raise HTTPException(status_code=400, detail="invalid_or_expired_code") from exc
     except DatabaseUnavailableError as exc:
         raise HTTPException(

@@ -173,6 +173,10 @@ Proxima fase operacional:
 - registrar a metrica de custo da sumarizacao
 - acompanhar pgvector como default do staging com rollback documentado para
   lexical
+- console web do time de suporte (tickets e metricas) implementado atras de
+  `ENABLE_SUPPORT_CONSOLE`: fila com semaforo de SLA, transicoes auditadas com
+  dono do caso e painel de metricas, tudo dark por padrao; falta o smoke em
+  staging e a tela interna `/team` antes de habilitar
 
 Roadmap:
 

@@ -144,6 +144,38 @@ def test_cancel_sets_closed_at_from_open_or_in_progress(from_status: str) -> Non
     assert "closed_at = now()" in update_sql
 
 
+def test_cancel_from_pending_consent_closes_abandoned_ticket() -> None:
+    # Valvula de escape: o ticket que nasceu 'pending_consent' e cujo cliente
+    # nunca confirmou o consentimento pode ser encerrado pelo time.
+    cursor = FakeCursor(fetchone_results=[("pending_consent", None)])
+    service = _service(cursor)
+
+    result = service.apply(
+        case_id="case-1", action="cancel", actor_staff_id=ACTOR_ID, note=None
+    )
+
+    assert result.from_status == "pending_consent"
+    assert result.to_status == "cancelled"
+    update_sql, update_params = cursor.executed[1]
+    assert "closed_at = now()" in update_sql
+    assert "pending_consent" in update_params
+    insert_sql, insert_params = cursor.executed[2]
+    assert "INSERT INTO support_case_events" in insert_sql
+    assert insert_params[3:5] == ("pending_consent", "cancelled")
+
+
+def test_pending_consent_only_allows_cancel() -> None:
+    # Nenhuma outra acao sai de pending_consent (claim/close/etc).
+    for action in ("claim", "close", "wait_customer", "resume", "release"):
+        cursor = FakeCursor(fetchone_results=[("pending_consent", None)])
+        service = _service(cursor)
+        with pytest.raises(InvalidTransition) as exc_info:
+            service.apply(
+                case_id="case-1", action=action, actor_staff_id=ACTOR_ID, note=None
+            )
+        assert exc_info.value.status == "pending_consent"
+
+
 # --------------------------------------------------------------------------- #
 # Transicoes invalidas
 # --------------------------------------------------------------------------- #

@@ -41,6 +41,11 @@ TRANSITION_MATRIX: dict[tuple[str, str], str] = {
     ("in_progress", "close"): "closed",
     ("open", "cancel"): "cancelled",
     ("in_progress", "cancel"): "cancelled",
+    # Valvula de escape para o ticket que nasceu 'pending_consent' e cujo
+    # cliente nunca confirmou o consentimento LGPD: sem isso ele ficaria
+    # eterno na fila (visivel so com filtro explicito, sem acao possivel).
+    # Cancelar nao notifica ninguem — so encerra o caso abandonado.
+    ("pending_consent", "cancel"): "cancelled",
 }
 CLOSING_STATUSES = {"closed", "cancelled"}
 
