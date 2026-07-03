@@ -2,7 +2,9 @@
 
 Status: proposto em 2026-07-02, revisado em 2026-07-02 apos review de hardening
 (staff em tabela propria, sessao diaria, OTP staff dedicado, SLA calculado em
-Python com relogio unico do banco, dono do caso visivel na fila).
+Python com relogio unico do banco, dono do caso visivel na fila). Fluxo de
+login refinado em 2026-07-02: lembrete de dispositivo (1 clique no dia a dia)
+e expiracao fixa as 4h da manha no fuso do time.
 Plano de produto: [support-team-console-plan.md](support-team-console-plan.md).
 
 ## Decisao Arquitetural
@@ -55,10 +57,18 @@ CREATE TABLE staff_sessions (
   session_hash TEXT PRIMARY KEY,        -- HMAC do token; token bruto so no cookie
   staff_id UUID NOT NULL REFERENCES staff_members(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  expires_at TIMESTAMPTZ NOT NULL       -- created_at + TTL (24h); sem renovacao
+  expires_at TIMESTAMPTZ NOT NULL       -- proxima 4h da manha no fuso do time
 );
 CREATE INDEX idx_staff_sessions_staff ON staff_sessions (staff_id);
 CREATE INDEX idx_staff_sessions_expires ON staff_sessions (expires_at);
+
+CREATE TABLE staff_login_hints (
+  hint_hash TEXT PRIMARY KEY,           -- HMAC do token de lembrete; bruto so no cookie
+  staff_id UUID NOT NULL REFERENCES staff_members(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_used_at TIMESTAMPTZ
+);
+CREATE INDEX idx_staff_login_hints_staff ON staff_login_hints (staff_id);
 ```
 
 Decisoes:
@@ -68,26 +78,41 @@ Decisoes:
   gate) ficam livres de contaminacao.
 - **`display_name` resolve a auditoria legivel** (fila mostra "Renan", nao um
   hash) e o mapeamento hash -> nome sem configuracao paralela.
-- **Sessao diaria**: `expires_at = created_at + 24h`, sem renovacao deslizante
-  (renovar a cada request anularia o "diaria"). Expirou -> novo OTP.
+- **Sessao diaria de verdade**: `expires_at` = proxima 4h da manha no fuso
+  `SUPPORT_CONSOLE_TIMEZONE`, sem renovacao deslizante. Todo dia comeca com
+  login novo e a sessao nunca morre no meio do expediente (um `+24h` corrido
+  mataria a sessao de quem logou as 18h no meio da tarde seguinte).
+- **Lembrete de dispositivo**: apos login bem-sucedido, um segundo cookie
+  opaco de longa duracao habilita o botao "Entrar como <nome>" — o dia a dia
+  vira 1 clique + codigo, sem digitar telefone. O lembrete **nao autentica**:
+  sozinho, so dispara OTP para o WhatsApp do proprio operador.
 
 ### Fluxo
 
 ```text
-1. Operador abre /team           -> GET /web/support/auth/session -> 401/expirada
-2. Digita o proprio telefone     -> POST /web/support/auth/start
-3. Recebe codigo no WhatsApp     -> (mesmo adapter de entrega do OTP de cliente)
-4. Digita o codigo no desktop    -> POST /web/support/auth/confirm
-5. Cookie staff emitido          -> console liberado por 24h
+Primeiro acesso no dispositivo:
+1. Abre /team -> sem sessao e sem lembrete -> digita o proprio telefone
+2. POST /web/support/auth/start -> codigo chega no WhatsApp
+3. Digita os 6 digitos no desktop -> POST /web/support/auth/confirm
+4. Sessao ativa ate as 4h + cookie de lembrete do dispositivo
+
+Dia a dia (1 clique):
+1. Abre /team -> botao "Entrar como <nome>" (lembrete presente)
+2. POST /web/support/auth/start sem telefone -> codigo chega no WhatsApp
+3. Digita os 6 digitos -> sessao ativa ate as 4h
 ```
 
 ### Endpoints
 
-`POST /web/support/auth/start` — body `{ "phone": "+55..." }`, responde `202`:
+`POST /web/support/auth/start` — body `{ "phone": "+55..." }` (opcional quando
+o cookie de lembrete estiver presente), responde `202`:
 
-- normaliza o telefone e calcula `phone_hash` com `identity_hash_secret`
-  (mesmo HMAC de `verified_identities`, verificado em `app/web_auth/service.py`);
-- procura `staff_members` com `status = 'active'`;
+- com lembrete valido, resolve o staff direto de `staff_login_hints` (sem
+  telefone digitado) e atualiza `last_used_at`; lembrete invalido ou expirado
+  e ignorado e a UI volta a pedir o telefone;
+- com telefone: normaliza e calcula `phone_hash` com `identity_hash_secret`
+  (mesmo HMAC de `verified_identities`, verificado em `app/web_auth/service.py`)
+  e procura `staff_members` com `status = 'active'`;
 - **anti-enumeracao**: telefone fora da tabela recebe o mesmo `202` com
   `challenge_id` sintetico (UUID aleatorio, nao persistido; o confirm dele cai
   no mesmo `400` de desafio desconhecido/expirado). A resposta nunca revela
@@ -112,22 +137,31 @@ Decisoes:
   telefone staff continua sendo prova de posse do mesmo numero; a checagem
   contra a tabela e o que autoriza);
 - gera token `secrets.token_urlsafe(32)`, grava `staff_sessions` com o HMAC
-  do token e emite cookie:
+  do token (`expires_at` = proxima 4h no fuso do time) e emite os cookies:
 
 ```text
 Set-Cookie: sfa_staff_session=<token>; HttpOnly; Secure; SameSite=Lax;
-            Path=/web/support; Max-Age=86400
+            Path=/web/support; Max-Age=<segundos ate as 4h>
+Set-Cookie: sfa_staff_hint=<token2>; HttpOnly; Secure; SameSite=Lax;
+            Path=/web/support/auth; Max-Age=<SUPPORT_STAFF_HINT_TTL_DAYS>
 ```
 
-- `Path=/web/support` faz o browser nem enviar o cookie para o resto do site;
+- `Path=/web/support` faz o browser nem enviar o cookie para o resto do site
+  (o lembrete e ainda mais restrito: so viaja para `/web/support/auth`);
+- o servidor e a fonte de verdade da expiracao; o `Max-Age` so acompanha;
 - resposta: `{ "display_name": "Renan", "expires_at": "..." }`;
 - codigo invalido/expirado: `400 invalid_or_expired_code` (mesmo contrato do
   web_auth), inclusive para o challenge sintetico da anti-enumeracao.
 
 `GET /web/support/auth/session` — `{ "authenticated": true, "display_name",
-"expires_at" }` ou `401`. E o guard de rota da UI.
+"expires_at" }` ou, sem sessao valida, `401` com corpo
+`{ "authenticated": false, "hint": { "display_name": "Renan" } | null }` — e o
+que permite a tela de login mostrar o botao de 1 clique. E o guard de rota da
+UI.
 
-`POST /web/support/auth/logout` — apaga a linha da sessao e expira o cookie.
+`POST /web/support/auth/logout` — apaga a linha da sessao e expira o cookie de
+sessao. Com `{ "forget_device": true }`, remove tambem o lembrete ("esquecer
+este dispositivo"); sem isso, o lembrete sobrevive ao logout.
 
 ### Dependencia de rota (`require_staff_session`)
 
@@ -141,6 +175,15 @@ Toda rota `/web/support/*` (exceto `auth/*`) usa a dependencia que:
 
 Escritas (Fase B) exigem adicionalmente o cabecalho
 `X-Requested-With: XMLHttpRequest` (mitigacao CSRF alem do `SameSite=Lax`).
+
+### UX da tela de login (contrato com o frontend)
+
+- campo de codigo unico com 6 celulas: aceita colar e envia sozinho no sexto
+  digito;
+- reenviar codigo com countdown visivel (o cooldown ja existe no servico);
+- "entrar com outro numero" (dispositivo compartilhado) e "esquecer este
+  dispositivo" (remove o lembrete) sempre disponiveis;
+- ritual diario alvo: ~10 segundos — 1 clique, ler o codigo, 6 teclas.
 
 ### Gestao de staff (sem restart, sem env var)
 
@@ -166,19 +209,30 @@ servico na VPS.
   `manage_staff.py add` novamente para cada operador apos a rotacao. Registrado
   aqui para nao virar surpresa silenciosa.
 
+### Evolucoes futuras (fora do escopo das Fases A-C)
+
+- **Aprovar respondendo no WhatsApp** (zero digitacao no desktop): exige
+  interceptar mensagens inbound do fluxo do bot para rotear ao auth, mais
+  number-matching na tela contra aprovacao distraida. Acoplamento
+  transporte-auth a avaliar antes de existir.
+- **Passkeys/WebAuthn** (Windows Hello) apos o primeiro OTP: eliminaria o
+  WhatsApp do login recorrente, ao custo de biblioteca e tabela de
+  credenciais novas.
+
 ## Configuracao Nova
 
 Tudo escuro por padrao, no padrao `enable_support_inbox`:
 
 ```text
 ENABLE_SUPPORT_CONSOLE=false          # liga /web/support/* (fachada + auth)
-SUPPORT_STAFF_SESSION_TTL_HOURS=24
+SUPPORT_CONSOLE_TIMEZONE=America/Sao_Paulo  # corte da sessao e das metricas
+SUPPORT_STAFF_SESSION_EXPIRY_HOUR=4   # sessao morre na proxima 4h local
+SUPPORT_STAFF_HINT_TTL_DAYS=90        # lembrete de dispositivo (1 clique)
 SUPPORT_SLA_MINUTES_URGENT=60
 SUPPORT_SLA_MINUTES_HIGH=120
 SUPPORT_SLA_MINUTES_NORMAL=480
 SUPPORT_SLA_MINUTES_LOW=1440
 SUPPORT_CONSOLE_ACTIVE_CASES_CAP=500  # teto do conjunto ativo em memoria
-SUPPORT_METRICS_TIMEZONE=America/Sao_Paulo  # cortes diarios da Fase C
 
 # Rate limits proprios da fachada (separados do chat publico):
 SUPPORT_OTP_START_PER_PHONE_PER_HOUR=5
@@ -368,7 +422,7 @@ Fontes (verificadas no schema):
   ativo) — uma fonte de verdade so;
 - **throughput**: `opened_at` / `closed_at` agrupados por dia na janela
   (`closed_at` garantido pela constraint da 009 em fechados/cancelados);
-  cortes diarios no fuso `SUPPORT_METRICS_TIMEZONE` (default
+  cortes diarios no fuso `SUPPORT_CONSOLE_TIMEZONE` (default
   `America/Sao_Paulo`) — dia cortado em UTC deslocaria o fim da tarde do
   time para o dia seguinte;
 - **escalation_reasons**: `jsonb_array_elements_text(reason_codes)` na janela;
@@ -414,8 +468,13 @@ nota de operador ou token):
 - Fachada dark por padrao; `404` com flag desligada, inclusive auth.
 - Cookie staff proprio, `HttpOnly` + `Secure` + `SameSite=Lax` +
   `Path=/web/support`; token 256-bit aleatorio, armazenado como HMAC.
-- Sessao expira em 24h sem renovacao; desativar staff derruba sessoes vivas
-  (join com `status = 'active'` em cada request).
+- Sessao expira na proxima 4h da manha (fuso do time), sem renovacao;
+  desativar staff derruba sessoes vivas e lembretes (join com
+  `status = 'active'` em cada request).
+- Lembrete de dispositivo nao autentica: sozinho, apenas dispara OTP para o
+  WhatsApp do proprio operador. Nasce somente apos login bem-sucedido
+  (anti-enumeracao preservada) e morre com "esquecer este dispositivo" ou
+  com o staff desativado.
 - Anti-enumeracao no start; protecoes de brute-force do OTP herdadas
   (expiracao, tentativas, cooldown, rate limit por IP e por telefone).
 - CSRF nas escritas: `SameSite=Lax` + cabecalho `X-Requested-With`.
@@ -491,8 +550,12 @@ python -m compileall app tests scripts
 
 - **Fase A**:
   - auth: flag off -> 404; telefone nao-staff -> 202 identico + confirm falha;
-    fluxo staff completo com entrega fake; expiracao 24h com relogio injetado;
-    staff desativado com sessao viva -> 401 no request seguinte; logout;
+    fluxo staff completo com entrega fake; expiracao na proxima 4h com
+    relogio e fuso injetados; staff desativado com sessao viva -> 401 no
+    request seguinte; logout;
+  - lembrete: 1 clique dispara OTP sem telefone; lembrete roubado nao
+    autentica nem lista casos; logout preserva o lembrete e
+    `forget_device: true` remove; staff desativado invalida o lembrete;
   - `compute_sla`: limiares de cor, pausado nunca vermelho, explicacao;
   - fila: ordenacao attention deterministica, filtro por cor, paginacao em
     Python, cap com `truncated`;
@@ -527,8 +590,8 @@ de handoff — apenas le e transiciona casos ja criados.
   desafio sintetico. Aceito como residual — o rate limit por IP/telefone
   limita a sondagem; se um dia incomodar, mover o envio para depois da
   resposta.
-- **Cortes diarios das metricas**: agregacao por dia depende do fuso
-  configurado; testes da Fase C fixam `SUPPORT_METRICS_TIMEZONE` para nao
+- **Cortes diarios das metricas e da sessao**: dependem do fuso configurado;
+  testes fixam `SUPPORT_CONSOLE_TIMEZONE` e injetam o relogio para nao
   flutuar com o ambiente.
 
 ## Dependencias E Sequencia
