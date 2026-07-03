@@ -64,6 +64,7 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
 | Meta WhatsApp nativo | 🟡 fundacao por flag (Ondas 1–3, 6); falta smoke + ativacao | [`quality-plans/meta-whatsapp-native-integration-plan.md`](quality-plans/meta-whatsapp-native-integration-plan.md), [`runbooks/meta-whatsapp-private-smoke.md`](runbooks/meta-whatsapp-private-smoke.md) | transporte Meta (`client.py`, `webhook.py`), desativado por padrao | `test_meta_whatsapp*`, activation suite |
 | Hermes (adapter temporario) | ✅ cutover e2e na VPS (2026-06-29); ponte temporaria | [`quality-plans/hermes-chat-bridge-plan.md`](quality-plans/hermes-chat-bridge-plan.md), [`runbooks/hermes-chat-cutover.md`](runbooks/hermes-chat-cutover.md) | adapter Hermes (transporte externo) | `test_hermes_adapter`, `test_hermes_chat` |
 | Chat web (evolucao / OTP) | 🟡 V0 publica incorporada; fases seguintes planejadas | [`quality-plans/web-chat-evolution-plan.md`](quality-plans/web-chat-evolution-plan.md), [`web-chat-v1-whatsapp-otp-spec.md`](quality-plans/web-chat-v1-whatsapp-otp-spec.md) | `app/static/`, `POST /web/chat`/`/web/feedback`, web auth | `test_web_chat`, `test_web_auth` |
+| Console do time (tickets + metricas) | ⬜ planejado (planos revisados em 2026-07-02; nenhuma fase iniciada) | [`quality-plans/support-team-console-plan.md`](quality-plans/support-team-console-plan.md), [`...-tech-plan.md`](quality-plans/support-team-console-tech-plan.md) | fachada `/web/support/*` (auth OTP staff dedicado, fila com semaforo SLA, transicoes, metricas), UI interna `/team` no `ask-host-genius` | Fase A: `test_support_staff_auth`, `test_support_sla`, `test_web_support_console` (a criar) |
 | Observabilidade e seguranca | ✅ baseline (request_id, sanitizacao, rate limit, confinamento) | [`architecture/observability.md`](architecture/observability.md), [`security/`](security/) | `app/core/`, `app/api/` | `test_request_observability`, `test_privacy`, `tests/security/` |
 | Operacao Fase 5 (VPS/runtime) | 🟡 em andamento | [`setup/configuracaoVPS.md`](setup/configuracaoVPS.md), [`runbooks/vps-controlled-runtime.md`](runbooks/vps-controlled-runtime.md), [`runbooks/vps-capacity-and-docker-cleanup.md`](runbooks/vps-capacity-and-docker-cleanup.md) | `scripts/`, runtime da VPS | preflight de runtime, smoke de staging |
 
@@ -136,6 +137,13 @@ Fontes ativas de verdade e regra de atualizacao: `docs/documentation-status.md`.
    dominio no `HandoffService`/`ChatFlowService` ainda nao foi escrito.
 6. **Evolucao do chat web** (V0 publica ja no ar): proximas fases do
    `quality-plans/web-chat-evolution-plan.md` ainda por planejar/implementar.
+   Decisao 2026-07-02: o frontend segue no `ask-host-genius` (proxy Nginx +
+   contrato `/web/*`); nao havera frontend proprio no backend.
+7. **Console do time (tickets + metricas)**: frente nova planejada em
+   2026-07-02 — entrega incremental da visao V3 do chat web sobre o support
+   inbox existente. Fase A (auth OTP staff dedicado + fila com semaforo SLA)
+   e o primeiro passo implementavel; planos em
+   `quality-plans/support-team-console-plan.md` e `...-tech-plan.md`.
 
 Itens ja fechados (funil de vendas, enriquecimento de push do support inbox,
 Sprint 4b do consentimento LGPD, eval do recall da Fase 4) ficam registrados
