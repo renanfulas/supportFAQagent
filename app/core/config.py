@@ -174,6 +174,65 @@ class Settings(BaseSettings):
         default="memory",
         alias="WEB_AUTH_OTP_DELIVERY_TRANSPORT",
     )
+    enable_support_console: bool = Field(
+        default=False,
+        alias="ENABLE_SUPPORT_CONSOLE",
+    )
+    support_console_timezone: str = Field(
+        default="America/Sao_Paulo",
+        alias="SUPPORT_CONSOLE_TIMEZONE",
+    )
+    support_staff_session_expiry_hour: int = Field(
+        default=4,
+        alias="SUPPORT_STAFF_SESSION_EXPIRY_HOUR",
+        ge=0,
+        le=23,
+    )
+    support_staff_hint_ttl_days: int = Field(
+        default=90,
+        alias="SUPPORT_STAFF_HINT_TTL_DAYS",
+        ge=1,
+    )
+    support_sla_minutes_urgent: int = Field(
+        default=60,
+        alias="SUPPORT_SLA_MINUTES_URGENT",
+        ge=1,
+    )
+    support_sla_minutes_high: int = Field(
+        default=120,
+        alias="SUPPORT_SLA_MINUTES_HIGH",
+        ge=1,
+    )
+    support_sla_minutes_normal: int = Field(
+        default=480,
+        alias="SUPPORT_SLA_MINUTES_NORMAL",
+        ge=1,
+    )
+    support_sla_minutes_low: int = Field(
+        default=1440,
+        alias="SUPPORT_SLA_MINUTES_LOW",
+        ge=1,
+    )
+    support_console_active_cases_cap: int = Field(
+        default=500,
+        alias="SUPPORT_CONSOLE_ACTIVE_CASES_CAP",
+        ge=1,
+    )
+    support_otp_start_per_phone_per_hour: int = Field(
+        default=5,
+        alias="SUPPORT_OTP_START_PER_PHONE_PER_HOUR",
+        ge=1,
+    )
+    support_otp_start_per_ip_per_hour: int = Field(
+        default=20,
+        alias="SUPPORT_OTP_START_PER_IP_PER_HOUR",
+        ge=1,
+    )
+    support_console_reads_per_session_per_minute: int = Field(
+        default=120,
+        alias="SUPPORT_CONSOLE_READS_PER_SESSION_PER_MINUTE",
+        ge=1,
+    )
     enable_meta_whatsapp_webhook: bool = Field(
         default=False,
         alias="ENABLE_META_WHATSAPP_WEBHOOK",
@@ -322,6 +381,51 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "IDENTITY_HASH_SECRET and OTP_DIGEST_SECRET must be different",
                 )
+            if self.web_auth_otp_delivery_transport == "meta":
+                self.meta_whatsapp_access_token = _normalize_required_secret(
+                    self.meta_whatsapp_access_token,
+                    "META_WHATSAPP_ACCESS_TOKEN",
+                )
+                self.meta_whatsapp_phone_number_id = _normalize_required_secret(
+                    self.meta_whatsapp_phone_number_id,
+                    "META_WHATSAPP_PHONE_NUMBER_ID",
+                )
+                self.meta_whatsapp_otp_template_name = _normalize_required_secret(
+                    self.meta_whatsapp_otp_template_name,
+                    "META_WHATSAPP_OTP_TEMPLATE_NAME",
+                )
+            if self.web_auth_otp_delivery_transport == "hermes":
+                self.hermes_base_url = _normalize_required_secret(
+                    self.hermes_base_url,
+                    "HERMES_BASE_URL",
+                )
+                self.hermes_webhook_secret = _normalize_required_secret(
+                    self.hermes_webhook_secret,
+                    "HERMES_WEBHOOK_SECRET",
+                )
+
+        if self.enable_support_console:
+            self.identity_hash_secret = _normalize_required_secret(
+                self.identity_hash_secret,
+                "IDENTITY_HASH_SECRET",
+            )
+            self.otp_digest_secret = _normalize_required_secret(
+                self.otp_digest_secret,
+                "OTP_DIGEST_SECRET",
+            )
+            if self.identity_hash_secret == self.otp_digest_secret:
+                raise ValueError(
+                    "IDENTITY_HASH_SECRET and OTP_DIGEST_SECRET must be different",
+                )
+            self.support_console_timezone = self.support_console_timezone.strip()
+            try:
+                from zoneinfo import ZoneInfo
+
+                ZoneInfo(self.support_console_timezone)
+            except Exception as exc:
+                raise ValueError(
+                    "SUPPORT_CONSOLE_TIMEZONE must be a valid IANA timezone",
+                ) from exc
             if self.web_auth_otp_delivery_transport == "meta":
                 self.meta_whatsapp_access_token = _normalize_required_secret(
                     self.meta_whatsapp_access_token,

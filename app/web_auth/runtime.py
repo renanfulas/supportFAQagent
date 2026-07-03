@@ -28,7 +28,10 @@ def create_web_auth_runtime(
         if settings.web_auth_storage_backend == "postgres" and database_runtime is not None
         else InMemoryWebAuthStore()
     )
-    delivery = _create_delivery_adapter(settings)
+    delivery = create_otp_delivery_adapter(
+        settings,
+        enabled=settings.enable_web_whatsapp_auth,
+    )
     return WebAuthRuntime(
         service=WebWhatsAppAuthService(
             settings=settings,
@@ -39,8 +42,15 @@ def create_web_auth_runtime(
     )
 
 
-def _create_delivery_adapter(settings: Settings) -> OtpDeliveryAdapter:
-    if settings.enable_web_whatsapp_auth and settings.web_auth_otp_delivery_transport == "meta":
+def create_otp_delivery_adapter(
+    settings: Settings,
+    *,
+    enabled: bool,
+) -> OtpDeliveryAdapter:
+    """Transport selection shared by the customer web auth and the staff
+    console; ``enabled`` gates on the caller's own feature flag."""
+
+    if enabled and settings.web_auth_otp_delivery_transport == "meta":
         return MetaWhatsAppOtpDeliveryAdapter(
             client=MetaWhatsAppClient(
                 access_token=settings.meta_whatsapp_access_token or "",
@@ -51,7 +61,7 @@ def _create_delivery_adapter(settings: Settings) -> OtpDeliveryAdapter:
             template_name=settings.meta_whatsapp_otp_template_name or "",
             language_code=settings.meta_whatsapp_otp_template_language,
         )
-    if settings.enable_web_whatsapp_auth and settings.web_auth_otp_delivery_transport == "hermes":
+    if enabled and settings.web_auth_otp_delivery_transport == "hermes":
         return HermesOtpDeliveryAdapter(
             client=HermesClient(
                 base_url=settings.hermes_base_url or "",

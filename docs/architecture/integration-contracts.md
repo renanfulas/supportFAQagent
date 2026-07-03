@@ -873,6 +873,119 @@ Fronteira de responsabilidade:
 - esta rota nao escreve em banco e nao altera o caminho de escrita do handoff
   (`operational.py`) nem o relay de outbox (`internal_webhooks.py`).
 
+## Fachada web staff do console de suporte (`/web/support/*`)
+
+Status: Fase A entregue (auth OTP staff dedicado + fila com semaforo, leitura).
+Plano: `docs/quality-plans/support-team-console-tech-plan.md`. Dark por padrao:
+so responde quando `ENABLE_SUPPORT_CONSOLE=true`; com a flag desligada toda a
+superficie (inclusive auth) retorna `404`. Consumidor: a area interna `/team`
+do `ask-host-genius`, same-origin — nenhum segredo, nenhum `X-API-Key`, nenhum
+telefone bruto no JS do cliente.
+
+```text
+POST /web/support/auth/start
+POST /web/support/auth/confirm
+GET  /web/support/auth/session
+POST /web/support/auth/logout
+GET  /web/support/cases
+GET  /web/support/cases/{case_id}
+```
+
+Autenticacao (OTP WhatsApp dedicado, staff nao e cliente):
+
+- `POST /web/support/auth/start` — body `{ "phone": "+55..." }` (opcional
+  quando o cookie de lembrete `sfa_staff_hint` esta presente). Responde `202`
+  com `{ challenge_id, expires_in_seconds, retry_after_seconds }`.
+  Anti-enumeracao: telefone fora de `staff_members` recebe o mesmo `202` com
+  `challenge_id` sintetico; a resposta tambem nao varia com falha de entrega
+  (vira log interno `support_console_auth_delivery_failed`). Cooldown de
+  reenvio e rate limits proprios (`SUPPORT_OTP_START_*`) aplicados de forma
+  identica para staff e nao-staff; excedido -> `429` com `Retry-After`.
+  Sem telefone e sem lembrete valido -> `422 invalid_phone`.
+- `POST /web/support/auth/confirm` — body `{ challenge_id, code, phone? }`.
+  Sucesso: `{ display_name, expires_at }` + cookies `HttpOnly; Secure;
+  SameSite=Lax`: `sfa_staff_session` (`Path=/web/support`, expira na proxima
+  `SUPPORT_STAFF_SESSION_EXPIRY_HOUR` no fuso `SUPPORT_CONSOLE_TIMEZONE`; o
+  servidor e a fonte de verdade, o `Max-Age` so acompanha) e `sfa_staff_hint`
+  (`Path=/web/support/auth`, `SUPPORT_STAFF_HINT_TTL_DAYS`). Codigo
+  invalido/expirado (inclusive challenge sintetico) -> `400
+  invalid_or_expired_code`. O `phone` opcional e reenviado pela tela no
+  primeiro acesso para vincular o lembrete: o cookie de lembrete carrega
+  `<token>.<E.164>` e o telefone so e aceito se o HMAC bater com o
+  `phone_hash` do staff dono do token — o banco nunca guarda telefone bruto e
+  o lembrete sozinho so consegue disparar OTP para o numero registrado do
+  proprio operador.
+- `GET /web/support/auth/session` — `200 { authenticated: true, display_name,
+  expires_at }` ou `401 { authenticated: false, hint: { display_name } | null }`
+  (o `hint` habilita o botao de 1 clique "Entrar como <nome>"). E o guard de
+  rota da UI.
+- `POST /web/support/auth/logout` — body opcional
+  `{ "forget_device": true }` remove tambem o lembrete; sem isso o lembrete
+  sobrevive ao logout. Apaga a linha da sessao e expira o cookie.
+
+`GET /web/support/cases` (fila com semaforo; exige sessao staff valida):
+
+- query: `view` (`active` padrao | `history`), `domain`, `status` (mesmos
+  valores do inbox interno; `pending_consent` so aparece com filtro
+  explicito), `color` (`green|yellow|red|paused`), `sort` (`attention` padrao
+  | `opened_at`), `limit` (1..100, padrao 25), `offset`;
+- `active`: SQL so filtra e limita (`SUPPORT_CONSOLE_ACTIVE_CASES_CAP`, com
+  `truncated: true` na resposta quando atingido); SLA, ordenacao "attention"
+  (estourado-e-nao-pausado primeiro, depois peso de prioridade, depois mais
+  antigo), filtro por cor e paginacao acontecem em Python sobre o relogio do
+  banco (`now()` na mesma query — um relogio so);
+- `history`: fechados/cancelados, paginacao SQL por `opened_at DESC`, sem SLA;
+- resposta = resumo do inbox + blocos novos por caso:
+
+```json
+{
+  "sla": {
+    "deadline_at": "2026-07-02T18:00:00Z",
+    "elapsed_ratio": 1.7,
+    "color": "red",
+    "paused": false,
+    "explanation": "urgente, aberto há 6h12, prazo estourado há 5h12"
+  },
+  "assignee": null,
+  "truncated": false
+}
+```
+
+- `assignee` fica `null` ate a Fase B; casos pausados (`waiting_customer`,
+  `pending_consent`) nunca ficam vermelhos e `paused: true` guia o chip neutro
+  da UI.
+
+`GET /web/support/cases/{case_id}`: igual ao detalhe do inbox interno
+(transcript sanitizado, referencias, contato autorizado via consent gate) +
+blocos `sla` (null para fechados/cancelados) e `assignee`.
+
+Guardas e erros:
+
+- toda rota fora de `auth/*` usa `require_staff_session`: cookie -> HMAC ->
+  `staff_sessions` com `expires_at > now()` join `staff_members.status =
+  'active'` (desativar um staff derruba as sessoes vivas no ato); falha ->
+  `401` com detail generico; rate limit de leitura por sessao
+  (`SUPPORT_CONSOLE_READS_PER_SESSION_PER_MINUTE`) -> `429`;
+- banco indisponivel -> `503 support_inbox_storage_unavailable` (mesmo
+  contrato do inbox interno);
+- break-glass: `GET /internal/support-cases` com `X-API-Key` continua
+  funcionando servidor-servidor se a entrega de OTP cair.
+
+Observabilidade (sem PII, hashes truncados, nunca telefone/transcript/token):
+`support_console_auth_started`, `support_console_auth_confirmed`,
+`support_console_auth_delivery_failed`, `support_console_listed`,
+`support_console_case_viewed`, `support_console_active_cap_reached`.
+
+Gestao de operadores: `scripts/manage_staff.py add|disable|list` (usa
+`DATABASE_URL` + `IDENTITY_HASH_SECRET`, nunca imprime telefone completo);
+rotacao de `IDENTITY_HASH_SECRET` invalida os hashes staff e exige recadastro.
+
+Fronteira de responsabilidade:
+
+- Renan: contrato HTTP, auth staff, SLA, repositorio, migration 014, testes;
+- Juliano: deploy da tela `/team` no `ask-host-genius` (mesmo fluxo do
+  `deploy_ask_host_genius`); a UI nao recalcula regra de negocio.
+
 ## Webhook Meta WhatsApp Cloud API
 
 Status: fundacao nativa implementada por feature flag, sem ativacao operacional

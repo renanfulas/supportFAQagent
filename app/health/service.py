@@ -37,6 +37,7 @@ class HealthService:
             "migrations": {"status": "disabled"},
             "retrieval": self._disabled_or_lexical_retrieval(),
             "outbox": {"status": "disabled"},
+            "support_console": self._support_console_baseline(),
         }
         if not self.runtime.pool_enabled:
             if getattr(self.runtime, "postgres_required", False):
@@ -45,7 +46,16 @@ class HealthService:
                 components["migrations"] = unavailable
                 components["outbox"] = unavailable
                 return {"status": "unavailable", "components": components}
-            return {"status": "ok", "components": components}
+            # A combinacao invalida de flags do console (ligado sem
+            # persistencia/entrega) precisa aparecer como alerta mesmo sem pool.
+            statuses = {component["status"] for component in components.values()}
+            if "unavailable" in statuses:
+                overall = "unavailable"
+            elif "degraded" in statuses:
+                overall = "degraded"
+            else:
+                overall = "ok"
+            return {"status": overall, "components": components}
 
         try:
             with self.runtime.transaction() as connection:
@@ -55,6 +65,10 @@ class HealthService:
                     components["migrations"] = self._migration_status(cursor, schema)
                     components["retrieval"] = self._retrieval_status(cursor, schema)
                     components["outbox"] = self._outbox_status(cursor, schema)
+                    components["support_console"] = self._support_console_status(
+                        schema,
+                        components["support_console"],
+                    )
         except DatabaseUnavailableError:
             components["database"] = {"status": "unavailable"}
             if self.runtime.retrieval_enabled:
@@ -62,6 +76,8 @@ class HealthService:
             if self.runtime.persistence_enabled:
                 components["outbox"] = {"status": "unavailable"}
             components["migrations"] = {"status": "unavailable"}
+            if components["support_console"]["status"] != "disabled":
+                components["support_console"] = {"status": "unavailable"}
 
         statuses = {component["status"] for component in components.values()}
         if "unavailable" in statuses:
@@ -71,6 +87,46 @@ class HealthService:
         else:
             overall = "ok"
         return {"status": overall, "components": components}
+
+    def _support_console_baseline(self) -> dict[str, Any]:
+        """Flag combinations the console needs before the DB is even touched.
+
+        ENABLE_SUPPORT_CONSOLE=true exige persistencia PostgreSQL (tabelas
+        staff da migration 014) e uma entrega de OTP configurada; combinacao
+        invalida aparece aqui como alerta, no mesmo padrao das outras frentes.
+        """
+
+        settings = getattr(self.runtime, "settings", None)
+        if not getattr(settings, "enable_support_console", False):
+            return {"status": "disabled"}
+        if getattr(settings, "persistence_backend", "disabled") != "postgres":
+            return {
+                "status": "unavailable",
+                "reason": "postgres_persistence_required",
+            }
+        if getattr(settings, "web_auth_otp_delivery_transport", "memory") == "memory":
+            return {"status": "degraded", "reason": "otp_delivery_not_configured"}
+        return {"status": "ok"}
+
+    def _support_console_status(
+        self,
+        schema: dict[str, Any],
+        baseline: dict[str, Any],
+    ) -> dict[str, Any]:
+        if baseline["status"] in {"disabled", "unavailable"}:
+            return baseline
+        missing = [
+            table
+            for table in ("staff_members", "staff_sessions", "staff_login_hints")
+            if not schema.get(table)
+        ]
+        if missing:
+            return {
+                "status": "unavailable",
+                "reason": "staff_tables_missing",
+                "missing_tables": missing,
+            }
+        return baseline
 
     def _disabled_or_lexical_retrieval(self) -> dict[str, Any]:
         if self.runtime.retrieval_enabled:
@@ -95,6 +151,9 @@ class HealthService:
               to_regclass(format('%I.%I', current_schema(), 'web_sessions'))::text,
               to_regclass(format('%I.%I', current_schema(), 'otp_challenges'))::text,
               to_regclass(format('%I.%I', current_schema(), 'webhook_ingress_receipts'))::text,
+              to_regclass(format('%I.%I', current_schema(), 'staff_members'))::text,
+              to_regclass(format('%I.%I', current_schema(), 'staff_sessions'))::text,
+              to_regclass(format('%I.%I', current_schema(), 'staff_login_hints'))::text,
               EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')
             """
         )
@@ -113,6 +172,9 @@ class HealthService:
             web_sessions,
             otp_challenges,
             webhook_ingress_receipts,
+            staff_members,
+            staff_sessions,
+            staff_login_hints,
             vector_enabled,
         ) = cursor.fetchone()
         return {
@@ -130,6 +192,9 @@ class HealthService:
             "web_sessions": bool(web_sessions),
             "otp_challenges": bool(otp_challenges),
             "webhook_ingress_receipts": bool(webhook_ingress_receipts),
+            "staff_members": bool(staff_members),
+            "staff_sessions": bool(staff_sessions),
+            "staff_login_hints": bool(staff_login_hints),
             "vector": bool(vector_enabled),
         }
 

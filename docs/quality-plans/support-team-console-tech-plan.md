@@ -5,6 +5,12 @@ Status: proposto em 2026-07-02, revisado em 2026-07-02 apos review de hardening
 Python com relogio unico do banco, dono do caso visivel na fila). Fluxo de
 login refinado em 2026-07-02: lembrete de dispositivo (1 clique no dia a dia)
 e expiracao fixa as 4h da manha no fuso do time.
+**Fase A implementada em 2026-07-03** (migration 014, `app/support/sla.py`,
+`app/support/staff_auth.py`, fachada `/web/support/*`, `manage_staff.py`,
+readiness + schema contract, testes verdes; contrato registrado em
+`docs/architecture/integration-contracts.md`, smoke em
+`docs/runbooks/support-console-smoke.md`). Faltam: smoke em staging, UI
+`/team` (Juliano), Fase B e Fase C.
 Plano de produto: [support-team-console-plan.md](support-team-console-plan.md).
 
 ## Decisao Arquitetural
@@ -86,6 +92,16 @@ Decisoes:
   opaco de longa duracao habilita o botao "Entrar como <nome>" — o dia a dia
   vira 1 clique + codigo, sem digitar telefone. O lembrete **nao autentica**:
   sozinho, so dispara OTP para o WhatsApp do proprio operador.
+- **Refinamento da implementacao (2026-07-03)**: o banco nao guarda telefone
+  bruto, mas a entrega do OTP no fluxo de 1 clique precisa do numero. O cookie
+  de lembrete carrega `<token>.<E.164>` (HttpOnly, `Path=/web/support/auth`):
+  no start, o telefone do cookie so e aceito se o token resolver em
+  `staff_login_hints` **e** o HMAC do telefone bater com o `phone_hash` do
+  staff dono do token. Adulterar o telefone quebra o vinculo e o lembrete e
+  ignorado; roubo do cookie continua so disparando OTP para o numero
+  registrado do operador. O cookie e rotacionado a cada login. O cooldown de
+  reenvio virou limiter uniforme por telefone (staff e nao-staff respondem
+  identico, sem oraculo de enumeracao via 429).
 
 ### Fluxo
 

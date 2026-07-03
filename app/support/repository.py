@@ -36,6 +36,20 @@ class SupportCaseSummary:
     updated_at: Any
 
 
+@dataclass(frozen=True)
+class ActiveCaseSet:
+    """Conjunto ativo para o console: casos nao-fechados + relogio do banco.
+
+    ``db_now`` sai da mesma query que ``opened_at`` (mesmo relogio, sem
+    drift); todo o calculo de SLA/ordenacao acontece em Python sobre este
+    conjunto. ``truncated`` marca quando o cap foi atingido.
+    """
+
+    cases: list[SupportCaseSummary]
+    db_now: Any
+    truncated: bool
+
+
 class SupportCaseRepository:
     def __init__(self, runtime: DatabaseRuntime) -> None:
         self.runtime = runtime
@@ -79,6 +93,107 @@ class SupportCaseRepository:
                 )
                 rows = cursor.fetchall()
         return [self._to_summary(row) for row in rows]
+
+    def list_active_cases(
+        self,
+        *,
+        domain: str | None,
+        status: str | None,
+        cap: int,
+    ) -> ActiveCaseSet:
+        """Fetch the console's active set with the database clock attached.
+
+        SQL only filters and limits (the operational queue is small by
+        nature); attention ordering, SLA and color filtering happen in Python
+        over this set. ``pending_consent`` only appears with an explicit
+        status filter, same as the inbox.
+        """
+
+        bounded_cap = max(1, int(cap))
+        with self.runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT sc.id, d.name, sc.status, sc.priority, sc.channel,
+                           sc.request_id, sc.reason_codes,
+                           sc.context_snapshot_sanitized, sc.opened_at,
+                           sc.updated_at, now() AS db_now
+                    FROM support_cases sc
+                    JOIN domains d ON d.id = sc.domain_id
+                    WHERE sc.status NOT IN ('closed', 'cancelled')
+                      AND (%s::text IS NULL OR d.name = %s)
+                      AND (
+                        (%s::text IS NULL AND sc.status != 'pending_consent')
+                        OR sc.status = %s
+                      )
+                    ORDER BY sc.opened_at ASC
+                    LIMIT %s
+                    """,
+                    (
+                        domain,
+                        domain,
+                        status,
+                        status,
+                        bounded_cap + 1,
+                    ),
+                )
+                rows = cursor.fetchall()
+        truncated = len(rows) > bounded_cap
+        rows = rows[:bounded_cap]
+        db_now = rows[0][10] if rows else None
+        return ActiveCaseSet(
+            cases=[self._to_summary(row) for row in rows],
+            db_now=db_now,
+            truncated=truncated,
+        )
+
+    def list_history_cases(
+        self,
+        *,
+        domain: str | None,
+        status: str | None,
+        limit: int,
+        offset: int,
+    ) -> list[SupportCaseSummary]:
+        """Closed/cancelled cases; plain SQL pagination, no SLA math."""
+
+        bounded_limit = max(1, min(int(limit), MAX_PAGE_SIZE))
+        bounded_offset = max(0, int(offset))
+        with self.runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT sc.id, d.name, sc.status, sc.priority, sc.channel,
+                           sc.request_id, sc.reason_codes,
+                           sc.context_snapshot_sanitized, sc.opened_at,
+                           sc.updated_at
+                    FROM support_cases sc
+                    JOIN domains d ON d.id = sc.domain_id
+                    WHERE sc.status IN ('closed', 'cancelled')
+                      AND (%s::text IS NULL OR d.name = %s)
+                      AND (%s::text IS NULL OR sc.status = %s)
+                    ORDER BY sc.opened_at DESC
+                    LIMIT %s OFFSET %s
+                    """,
+                    (
+                        domain,
+                        domain,
+                        status,
+                        status,
+                        bounded_limit,
+                        bounded_offset,
+                    ),
+                )
+                rows = cursor.fetchall()
+        return [self._to_summary(row) for row in rows]
+
+    def database_now(self) -> Any:
+        """Database clock, so SLA math never mixes clocks with ``opened_at``."""
+
+        with self.runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT now()")
+                return cursor.fetchone()[0]
 
     def get_case_with_context(self, case_id: str) -> SupportCaseContext | None:
         with self.runtime.transaction() as connection:
