@@ -1,4 +1,4 @@
-# Runbook - Smoke do console de suporte (Fases A e B)
+# Runbook - Smoke do console de suporte (Fases A, B e C)
 
 Roteiro de validacao da fachada staff `/web/support/*` em staging antes de
 promover a producao. Plano tecnico:
@@ -58,14 +58,20 @@ Executar na origem do backend (ou via proxy `/web/*`), guardando os
     pausado na fila, SLA nao vermelho) → `resume` → `close` (`closed_at`
     preenchido); `GET /web/support/cases/{case_id}` mostra o bloco `events`
     com a sequencia completa.
+11. **Metricas (Fase C)**: `GET /web/support/metrics?window=14d` → `200`;
+    conferir `backlog.by_color` batendo com a fila atual, `throughput` com
+    14 dias (zero-fillado), `feedback.helpful_rate` e `unknown_domain_count`,
+    `response_times` (`null` se ainda nao houver caso fechado/com acao na
+    janela); `?window=7d` → `422 invalid_window`.
 
 ## Smoke pela UI (`/team` no ask-host-genius)
 
 Apos o deploy da tela por Juliano (mesmo fluxo do `deploy_ask_host_genius`),
-repetir os passos 2-10 pela interface: login com codigo de 6 celulas, botao
+repetir os passos 2-11 pela interface: login com codigo de 6 celulas, botao
 "Entrar como <nome>" no segundo acesso, fila com semaforo e filtros, detalhe,
 "entrar com outro numero" e "esquecer este dispositivo", botoes de transicao
-com confirmacao e filtro "meus casos".
+com confirmacao, filtro "meus casos" e o painel de metricas com as quatro
+visoes.
 
 ## Promocao a producao
 

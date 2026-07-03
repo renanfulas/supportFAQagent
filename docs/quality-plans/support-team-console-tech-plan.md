@@ -16,7 +16,15 @@ com compare-and-swap e evento auditavel na mesma transacao, `waiting_seconds`
 real plugado em `compute_sla`, filtro `assignee=me`, historico de eventos no
 detalhe, endpoint `POST /web/support/cases/{case_id}/transition` com CSRF por
 `X-Requested-With`; testes unitarios + integracao postgres opt-in com
-concorrencia real). Faltam: smoke em staging, UI `/team` (Juliano) e Fase C.
+concorrencia real).
+**Fase C implementada em 2026-07-03** (`app/support/metrics.py`: `backlog`
+reusando `compute_sla` sobre o conjunto ativo — uma fonte de verdade so —,
+`throughput` diario zero-fillado no fuso do time, `escalation_reasons` via
+`jsonb_array_elements_text`, `feedback` com `helpful_rate` e
+`unknown_domain_count` a partir do join `feedback -> chat_audits`,
+`response_times` via medianas `percentile_cont`; endpoint
+`GET /web/support/metrics` + schema; testes com fixtures deterministicas).
+Faltam: smoke em staging e a UI `/team` (Juliano).
 Plano de produto: [support-team-console-plan.md](support-team-console-plan.md).
 
 ## Decisao Arquitetural

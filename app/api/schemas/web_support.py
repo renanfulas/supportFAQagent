@@ -109,3 +109,44 @@ class StaffTransitionResponse(BaseModel):
     case_id: str
     status: str
     assignee: ConsoleAssigneeResponse | None = None
+
+
+class MetricsBacklogResponse(BaseModel):
+    by_color: dict[str, int]
+    by_status: dict[str, int]
+    truncated: bool = False
+
+
+class MetricsThroughputEntry(BaseModel):
+    day: str
+    opened: int
+    closed: int
+
+
+class MetricsEscalationReasonEntry(BaseModel):
+    reason_code: str
+    count: int
+
+
+class MetricsFeedbackResponse(BaseModel):
+    helpful: int
+    not_helpful: int
+    helpful_rate: float | None = None
+    unknown_domain_count: int
+    sample_note: str | None = None
+
+
+class MetricsResponseTimesResponse(BaseModel):
+    median_seconds_to_first_action: float | None = None
+    median_seconds_to_close: float | None = None
+
+
+class ConsoleMetricsResponse(BaseModel):
+    request_id: str | None = None
+    window: str
+    domain: str | None = None
+    backlog: MetricsBacklogResponse
+    throughput: list[MetricsThroughputEntry] = Field(default_factory=list)
+    escalation_reasons: list[MetricsEscalationReasonEntry] = Field(default_factory=list)
+    feedback: MetricsFeedbackResponse
+    response_times: MetricsResponseTimesResponse

@@ -30,6 +30,7 @@ from app.api.schemas.web_support import (
     ConsoleCaseEventResponse,
     ConsoleCaseListResponse,
     ConsoleCaseSummaryResponse,
+    ConsoleMetricsResponse,
     ConsoleSlaResponse,
     StaffLoginResponse,
     StaffLogoutRequest,
@@ -45,6 +46,7 @@ from app.core.errors import DatabaseUnavailableError
 from app.core.logging import log_event
 from app.core.rate_limit import RateLimitExceeded
 from app.core.request_context import get_request_id
+from app.support.metrics import WINDOW_DAYS, SupportMetricsRepository, build_console_metrics
 from app.support.repository import (
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
@@ -522,6 +524,51 @@ def transition_console_case(
             if result.assignee_display_name
             else None
         ),
+    )
+
+
+@router.get("/metrics", response_model=ConsoleMetricsResponse)
+def get_console_metrics(
+    request: Request,
+    window: str = Query(default="14d", max_length=5),
+    domain: str | None = Query(default=None, max_length=80),
+    principal: StaffPrincipal = Depends(require_staff_session),
+) -> ConsoleMetricsResponse:
+    if window not in WINDOW_DAYS:
+        raise HTTPException(status_code=422, detail="invalid_window")
+
+    settings = request.app.state.settings
+    database_runtime = request.app.state.database_runtime
+    case_repository = SupportCaseRepository(database_runtime)
+    metrics_repository = SupportMetricsRepository(database_runtime)
+    try:
+        now = case_repository.database_now()
+        metrics = build_console_metrics(
+            case_repository=case_repository,
+            metrics_repository=metrics_repository,
+            window=window,
+            domain=domain,
+            settings=settings,
+            now=now,
+        )
+    except DatabaseUnavailableError as exc:
+        raise HTTPException(
+            status_code=503, detail="support_inbox_storage_unavailable"
+        ) from exc
+
+    request_id = get_request_id(request)
+    log_event(
+        logger,
+        "support_console_metrics_viewed",
+        request_id=request_id,
+        window=window,
+        domain_present=domain is not None,
+    )
+    return ConsoleMetricsResponse(
+        request_id=request_id,
+        window=window,
+        domain=domain,
+        **metrics,
     )
 
 

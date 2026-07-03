@@ -875,8 +875,8 @@ Fronteira de responsabilidade:
 
 ## Fachada web staff do console de suporte (`/web/support/*`)
 
-Status: Fase A (auth OTP staff dedicado + fila com semaforo, leitura) e Fase B
-(escrita auditada + dono na fila) entregues. Plano:
+Status: Fase A (auth OTP staff dedicado + fila com semaforo, leitura), Fase B
+(escrita auditada + dono na fila) e Fase C (metricas) entregues. Plano:
 `docs/quality-plans/support-team-console-tech-plan.md`. Dark por padrao: so
 responde quando `ENABLE_SUPPORT_CONSOLE=true`; com a flag desligada toda a
 superficie (inclusive auth) retorna `404`. Consumidor: a area interna `/team`
@@ -891,6 +891,7 @@ POST /web/support/auth/logout
 GET  /web/support/cases
 GET  /web/support/cases/{case_id}
 POST /web/support/cases/{case_id}/transition
+GET  /web/support/metrics
 ```
 
 Autenticacao (OTP WhatsApp dedicado, staff nao e cliente):
@@ -1033,11 +1034,56 @@ Guardas e erros:
 - break-glass: `GET /internal/support-cases` com `X-API-Key` continua
   funcionando servidor-servidor se a entrega de OTP cair.
 
+`GET /web/support/metrics` (Fase C; exige sessao staff valida):
+
+- query: `window` (`14d` padrao | `30d`; qualquer outro valor ->
+  `422 invalid_window`), `domain` opcional;
+- **uma fonte de verdade so**: `backlog` reusa o mesmo caminho Python da
+  fila (`compute_sla` sobre o conjunto ativo de `list_active_cases`), nao
+  recalcula cor em SQL. As demais agregacoes rodam em SQL dedicado
+  (`SupportMetricsRepository`) porque a janela de 14/30 dias nao cabe
+  inteira em memoria como a fila operacional cabe;
+- `throughput` e zero-fillado por todo dia da janela (mesmo sem atividade)
+  para o grafico nao ter buracos; corte diario no fuso
+  `SUPPORT_CONSOLE_TIMEZONE` via `AT TIME ZONE` — um corte em UTC
+  deslocaria o fim de tarde do time para o dia seguinte;
+- `escalation_reasons` vem de `jsonb_array_elements_text(reason_codes)` dos
+  casos abertos na janela (`opened_at`), ordenado por contagem decrescente;
+- `feedback`: `helpful`/`not_helpful` contam tudo na janela; feedback
+  `orphan` (sem `chat_audit_id`, `context_status = 'orphan'`) entra em
+  `unknown_domain_count` quando **sem** filtro de dominio — filtrar por
+  dominio exclui naturalmente o que nao tem dominio conhecido, entao
+  `unknown_domain_count` fica `0` nesse caso; `helpful_rate` e `null` sem
+  volume, e `sample_note: "amostra pequena"` aparece abaixo de 20 votos
+  totais (sempre acompanhado dos contadores absolutos);
+- `response_times`: medianas via `percentile_cont(0.5)` — `null` quando nao
+  ha dado na janela (nunca erro). `median_seconds_to_first_action` usa o
+  primeiro `support_case_events` de cada caso (criacao -> primeira acao);
+  `median_seconds_to_close` usa `closed_at - opened_at` dos casos
+  fechados/cancelados cujo `closed_at` cai na janela;
+
+```json
+{
+  "backlog": { "by_color": {"green": 3, "yellow": 2, "red": 1, "paused": 2},
+               "by_status": {"open": 4, "in_progress": 2},
+               "truncated": false },
+  "throughput": [ {"day": "2026-07-01", "opened": 5, "closed": 3} ],
+  "escalation_reasons": [ {"reason_code": "low_confidence", "count": 12} ],
+  "feedback": { "helpful": 34, "not_helpful": 6, "helpful_rate": 0.85,
+                "unknown_domain_count": 3, "sample_note": "amostra pequena" },
+  "response_times": { "median_seconds_to_first_action": 900.0,
+                      "median_seconds_to_close": 5400.0 }
+}
+```
+
+- banco indisponivel -> `503 support_inbox_storage_unavailable`.
+
 Observabilidade (sem PII, hashes truncados, nunca telefone/transcript/token):
 `support_console_auth_started`, `support_console_auth_confirmed`,
 `support_console_transition` (case_id, action, from/to, actor_staff_id),
 `support_console_auth_delivery_failed`, `support_console_listed`,
-`support_console_case_viewed`, `support_console_active_cap_reached`.
+`support_console_case_viewed`, `support_console_active_cap_reached`,
+`support_console_metrics_viewed` (window, domain presente).
 
 Gestao de operadores: `scripts/manage_staff.py add|disable|list` (usa
 `DATABASE_URL` + `IDENTITY_HASH_SECRET`, nunca imprime telefone completo);
@@ -1045,8 +1091,8 @@ rotacao de `IDENTITY_HASH_SECRET` invalida os hashes staff e exige recadastro.
 
 Fronteira de responsabilidade:
 
-- Renan: contrato HTTP, auth staff, SLA, transicoes, repositorio, migrations
-  014/015, testes;
+- Renan: contrato HTTP, auth staff, SLA, transicoes, metricas, repositorio,
+  migrations 014/015, testes;
 - Juliano: deploy da tela `/team` no `ask-host-genius` (mesmo fluxo do
   `deploy_ask_host_genius`); a UI nao recalcula regra de negocio.
 
