@@ -118,9 +118,11 @@ tempo mediano ate fechamento.
 - Operador autentica com o proprio WhatsApp (codigo OTP digitado no desktop)
   e so entra se estiver cadastrado como staff (tabela propria; staff nunca
   vira "cliente" no banco).
-- Sessao staff dura 24h; expirou, novo codigo pela manha. Adicionar ou
-  remover operador e um comando, sem editar configuracao nem reiniciar
-  servico.
+- No dia a dia o login e 1 clique ("Entrar como Renan", lembrete do
+  dispositivo) + codigo de 6 digitos — ritual de ~10 segundos. A sessao
+  expira todo dia as 4h da manha (fuso do time), nunca no meio do
+  expediente. Adicionar ou remover operador e um comando, sem editar
+  configuracao nem reiniciar servico.
 - Fila abre com ordenacao "atencao" e explicacao por linha.
 - Semaforo correto para os prazos configurados.
 - Detalhe do ticket completo, sem nenhum segredo no browser.

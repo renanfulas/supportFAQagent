@@ -22,6 +22,7 @@ from app.api.routes import (
     web_auth,
     web_chat,
     web_handoff,
+    web_support,
     zoom,
 )
 from app.core.config import DEV_ENVS, get_settings
@@ -38,6 +39,7 @@ from app.orchestration.session_domain_store import (
     InMemorySessionDomainStore,
     build_session_domain_store,
 )
+from app.support.staff_auth import create_support_console_runtime
 from app.web_auth.runtime import create_web_auth_runtime
 from app.conversations.session_state import build_session_state_store_from_env
 from app.db.runtime import DatabaseRuntime
@@ -93,6 +95,13 @@ def create_app() -> FastAPI:
     # covers only the body, so an identical request is otherwise replayable).
     application.state.hermes_replay_guard = HermesReplayGuard()
     application.state.web_auth_runtime = create_web_auth_runtime(
+        settings,
+        application.state.database_runtime,
+    )
+    # Console staff (/web/support/*): fachada web sobre o support inbox. As
+    # rotas respondem 404 com a flag desligada; o runtime existe sempre para
+    # manter o estado da aplicacao uniforme.
+    application.state.support_console_runtime = create_support_console_runtime(
         settings,
         application.state.database_runtime,
     )
@@ -273,6 +282,14 @@ def create_app() -> FastAPI:
     application.include_router(
         web_handoff.router, prefix="/web/handoff", tags=["web-handoff"]
     )
+    # Console staff: superficie administrativa montada so quando ligada. Com a
+    # flag off a rota nem existe (404 do FastAPI, fora do OpenAPI) — dark by
+    # default mais forte que o 404 interno. As rotas mantêm _ensure_enabled como
+    # defesa em profundidade.
+    if settings.enable_support_console:
+        application.include_router(
+            web_support.router, prefix="/web/support", tags=["web-support"]
+        )
     application.include_router(zoom.router, prefix="/zoom", tags=["zoom"])
     application.include_router(
         meta_whatsapp.router,

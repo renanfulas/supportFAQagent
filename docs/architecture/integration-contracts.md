@@ -873,6 +873,240 @@ Fronteira de responsabilidade:
 - esta rota nao escreve em banco e nao altera o caminho de escrita do handoff
   (`operational.py`) nem o relay de outbox (`internal_webhooks.py`).
 
+## Fachada web staff do console de suporte (`/web/support/*`)
+
+Status: Fase A (auth OTP staff dedicado + fila com semaforo, leitura), Fase B
+(escrita auditada + dono na fila) e Fase C (metricas) entregues. Plano:
+`docs/quality-plans/support-team-console-tech-plan.md`. Dark por padrao: o
+router so e montado quando `ENABLE_SUPPORT_CONSOLE=true` — com a flag
+desligada a superficie inteira (inclusive auth) nem existe (fora do OpenAPI,
+`404` do FastAPI), e as rotas ainda checam a flag como defesa em profundidade.
+Consumidor: a area interna `/team` do `ask-host-genius`, same-origin — nenhum
+segredo, nenhum `X-API-Key`, nenhum telefone bruto no JS do cliente.
+
+```text
+POST /web/support/auth/start
+POST /web/support/auth/confirm
+GET  /web/support/auth/session
+POST /web/support/auth/logout
+GET  /web/support/cases
+GET  /web/support/cases/{case_id}
+POST /web/support/cases/{case_id}/transition
+GET  /web/support/metrics
+```
+
+Autenticacao (OTP WhatsApp dedicado, staff nao e cliente):
+
+- `POST /web/support/auth/start` — body `{ "phone": "+55..." }` (opcional
+  quando o cookie de lembrete `sfa_staff_hint` esta presente). Responde `202`
+  com `{ challenge_id, expires_in_seconds, retry_after_seconds }`.
+  Anti-enumeracao: telefone fora de `staff_members` recebe o mesmo `202` com
+  `challenge_id` sintetico; a resposta tambem nao varia com falha de entrega
+  (vira log interno `support_console_auth_delivery_failed`). Cooldown de
+  reenvio e rate limits proprios (`SUPPORT_OTP_START_*`) aplicados de forma
+  identica para staff e nao-staff; excedido -> `429` com `Retry-After`.
+  Sem telefone e sem lembrete valido -> `422 invalid_phone`.
+- `POST /web/support/auth/confirm` — body `{ challenge_id, code, phone? }`.
+  Sucesso: `{ display_name, expires_at }` + cookies `HttpOnly; Secure;
+  SameSite=Lax`: `sfa_staff_session` (`Path=/web/support`, expira na proxima
+  `SUPPORT_STAFF_SESSION_EXPIRY_HOUR` no fuso `SUPPORT_CONSOLE_TIMEZONE`; o
+  servidor e a fonte de verdade, o `Max-Age` so acompanha) e `sfa_staff_hint`
+  (`Path=/web/support/auth`, `SUPPORT_STAFF_HINT_TTL_DAYS`). Codigo
+  invalido/expirado (inclusive challenge sintetico) -> `400
+  invalid_or_expired_code`. O `phone` opcional e reenviado pela tela no
+  primeiro acesso para vincular o lembrete: o cookie de lembrete carrega
+  `<token>.<E.164>` e o telefone so e aceito se o HMAC bater com o
+  `phone_hash` do staff dono do token — o banco nunca guarda telefone bruto e
+  o lembrete sozinho so consegue disparar OTP para o numero registrado do
+  proprio operador.
+- `GET /web/support/auth/session` — `200 { authenticated: true, display_name,
+  expires_at }` ou `401 { authenticated: false, hint: { display_name } | null }`
+  (o `hint` habilita o botao de 1 clique "Entrar como <nome>"). E o guard de
+  rota da UI.
+- `POST /web/support/auth/logout` — body opcional
+  `{ "forget_device": true }` remove tambem o lembrete; sem isso o lembrete
+  sobrevive ao logout. Apaga a linha da sessao e expira o cookie.
+
+`GET /web/support/cases` (fila com semaforo; exige sessao staff valida):
+
+- query: `view` (`active` padrao | `history`), `domain`, `status` (mesmos
+  valores do inbox interno; `pending_consent` so aparece com filtro
+  explicito), `color` (`green|yellow|red|paused`), `sort` (`attention` padrao
+  | `opened_at`), `assignee` (`me`; qualquer outro valor -> `422
+  invalid_assignee_filter` — a fachada resolve `me` para o `staff_id` da
+  propria sessao, nunca aceita um id vindo do cliente), `limit` (1..100,
+  padrao 25), `offset`;
+- `active`: SQL so filtra e limita (`SUPPORT_CONSOLE_ACTIVE_CASES_CAP`, com
+  `truncated: true` na resposta quando atingido); SLA, ordenacao "attention"
+  (estourado-e-nao-pausado primeiro, depois peso de prioridade, depois mais
+  antigo), filtro por cor e paginacao acontecem em Python sobre o relogio do
+  banco (`now()` na mesma query — um relogio so);
+- `history`: fechados/cancelados, paginacao SQL por `opened_at DESC`, sem SLA;
+- resposta = resumo do inbox + blocos novos por caso:
+
+```json
+{
+  "sla": {
+    "deadline_at": "2026-07-02T18:00:00Z",
+    "elapsed_ratio": 1.7,
+    "color": "red",
+    "paused": false,
+    "explanation": "urgente, aberto há 6h12, prazo estourado há 5h12"
+  },
+  "assignee": { "display_name": "Renan" },
+  "truncated": false
+}
+```
+
+- `assignee` e `null` quando o caso nao tem dono; casos pausados
+  (`waiting_customer`, `pending_consent`) nunca ficam vermelhos e
+  `paused: true` guia o chip neutro da UI;
+- **Fase B**: `elapsed_ratio`/`deadline_at` usam `waiting_seconds` real —
+  soma dos intervalos `wait_customer` -> `resume` de
+  `support_case_events`; uma pausa ainda aberta (sem `resume`) conta ate o
+  `now()` da mesma query, entao o relogio pausa de verdade enquanto o caso
+  segue `waiting_customer`.
+
+`GET /web/support/cases/{case_id}`: igual ao detalhe do inbox interno
+(transcript sanitizado, referencias, contato autorizado via consent gate) +
+blocos `sla` (null para fechados/cancelados, com `waiting_seconds` real da
+Fase B), `assignee` e `events` (historico de transicoes, mais antigo primeiro):
+
+```json
+"events": [
+  {
+    "action": "claim",
+    "from_status": "open",
+    "to_status": "in_progress",
+    "note": null,
+    "actor_display_name": "Renan",
+    "created_at": "2026-07-03T18:00:00Z"
+  }
+]
+```
+
+`POST /web/support/cases/{case_id}/transition` (Fase B; exige sessao staff
+valida **e** o cabecalho `X-Requested-With: XMLHttpRequest` — sem ele,
+`403 csrf_header_required` antes de qualquer acesso ao banco):
+
+```json
+{ "action": "claim" | "release" | "wait_customer" | "resume" | "close" | "cancel",
+  "note": "opcional, ate 1000 caracteres, sanitizado e truncado em 500 antes de persistir" }
+```
+
+Matriz de transicoes (tudo fora disso -> `409` com
+`{ "detail": { "code": "invalid_transition", "status": "<status atual>" } }`):
+
+```text
+open                    -> claim         -> in_progress   (seta assignee; exige caso sem dono)
+in_progress             -> release       -> open          (limpa assignee; devolve a fila)
+in_progress             -> wait_customer -> waiting_customer
+waiting_customer        -> resume        -> in_progress
+in_progress             -> close         -> closed        (closed_at = now())
+open|in_progress        -> cancel        -> cancelled     (closed_at = now())
+pending_consent         -> cancel        -> cancelled     (closed_at = now())
+```
+
+- `pending_consent -> cancel` e a valvula de escape para o ticket cujo cliente
+  nunca confirmou o consentimento LGPD (ver `POST /web/handoff/consent`): sem
+  ela o caso ficaria eterno, visivel so com filtro explicito e sem acao
+  possivel. Cancelar nao dispara nenhuma notificacao — so encerra o caso
+  abandonado;
+
+- concorrencia por compare-and-swap: `SELECT ... FOR UPDATE` trava a linha e
+  le o estado atual na mesma transacao do `UPDATE` (guarda extra
+  `WHERE status = '<atual>'`) e do `INSERT` no `support_case_events` — commit
+  e rollback sempre em conjunto; dois `claim` simultaneos: exatamente um
+  vence, o outro recebe `409` com o estado ja vencido (nao "open"), sem gravar
+  evento duplicado. Validado em
+  `tests/integration/test_support_transitions_postgres.py` (opt-in, real
+  Postgres com duas threads);
+- decisao v1: `claim` exige caso sem dono (`assignee_staff_id IS NULL`); as
+  demais acoes qualquer staff ativo pode executar (time pequeno, tudo
+  auditado);
+- resposta de sucesso: `{ "case_id", "status", "assignee": { "display_name" } | null }`;
+- `404 support_case_not_found` quando o caso nao existe; banco indisponivel ->
+  `503 support_inbox_storage_unavailable`.
+
+Guardas e erros:
+
+- toda rota fora de `auth/*` usa `require_staff_session`: cookie -> HMAC ->
+  `staff_sessions` com `expires_at > now()` join `staff_members.status =
+  'active'` (desativar um staff derruba as sessoes vivas no ato); falha ->
+  `401` com detail generico; rate limit de leitura por sessao
+  (`SUPPORT_CONSOLE_READS_PER_SESSION_PER_MINUTE`) -> `429`;
+- escritas (`POST .../transition`) exigem tambem `X-Requested-With:
+  XMLHttpRequest` (mitigacao CSRF alem do `SameSite=Lax` do cookie);
+- banco indisponivel -> `503 support_inbox_storage_unavailable` (mesmo
+  contrato do inbox interno);
+- break-glass: `GET /internal/support-cases` com `X-API-Key` continua
+  funcionando servidor-servidor se a entrega de OTP cair.
+
+`GET /web/support/metrics` (Fase C; exige sessao staff valida):
+
+- query: `window` (`14d` padrao | `30d`; qualquer outro valor ->
+  `422 invalid_window`), `domain` opcional;
+- **uma fonte de verdade so**: `backlog` reusa o mesmo caminho Python da
+  fila (`compute_sla` sobre o conjunto ativo de `list_active_cases`), nao
+  recalcula cor em SQL. As demais agregacoes rodam em SQL dedicado
+  (`SupportMetricsRepository`) porque a janela de 14/30 dias nao cabe
+  inteira em memoria como a fila operacional cabe;
+- `throughput` e zero-fillado por todo dia da janela (mesmo sem atividade)
+  para o grafico nao ter buracos; corte diario no fuso
+  `SUPPORT_CONSOLE_TIMEZONE` via `AT TIME ZONE` — um corte em UTC
+  deslocaria o fim de tarde do time para o dia seguinte;
+- `escalation_reasons` vem de `jsonb_array_elements_text(reason_codes)` dos
+  casos abertos na janela (`opened_at`), ordenado por contagem decrescente;
+- `feedback`: `helpful`/`not_helpful` contam tudo na janela; feedback
+  `orphan` (sem `chat_audit_id`, `context_status = 'orphan'`) entra em
+  `unknown_domain_count` quando **sem** filtro de dominio — filtrar por
+  dominio exclui naturalmente o que nao tem dominio conhecido, entao
+  `unknown_domain_count` fica `0` nesse caso; `helpful_rate` e `null` sem
+  volume, e `sample_note: "amostra pequena"` aparece abaixo de 20 votos
+  totais (sempre acompanhado dos contadores absolutos);
+- `response_times`: medianas via `percentile_cont(0.5)` — `null` quando nao
+  ha dado na janela (nunca erro). `median_seconds_to_first_action` usa o
+  primeiro `support_case_events` de cada caso (criacao -> primeira acao);
+  `median_seconds_to_close` usa `closed_at - opened_at` dos casos
+  fechados/cancelados cujo `closed_at` cai na janela;
+
+```json
+{
+  "backlog": { "by_color": {"green": 3, "yellow": 2, "red": 1, "paused": 2},
+               "by_status": {"open": 4, "in_progress": 2},
+               "truncated": false },
+  "throughput": [ {"day": "2026-07-01", "opened": 5, "closed": 3} ],
+  "escalation_reasons": [ {"reason_code": "low_confidence", "count": 12} ],
+  "feedback": { "helpful": 34, "not_helpful": 6, "helpful_rate": 0.85,
+                "unknown_domain_count": 3, "sample_note": "amostra pequena" },
+  "response_times": { "median_seconds_to_first_action": 900.0,
+                      "median_seconds_to_close": 5400.0 }
+}
+```
+
+- banco indisponivel -> `503 support_inbox_storage_unavailable`.
+
+Observabilidade (sem PII, hashes truncados, nunca telefone/transcript/token):
+`support_console_auth_started`, `support_console_auth_confirmed`,
+`support_console_auth_denied` (motivo generico: `invalid_or_expired_code` no
+confirm, `no_valid_session` no guard de rota — da visibilidade de acesso
+negado sem revelar quem tentou),
+`support_console_transition` (case_id, action, from/to, actor_staff_id),
+`support_console_auth_delivery_failed`, `support_console_listed`,
+`support_console_case_viewed`, `support_console_active_cap_reached`,
+`support_console_metrics_viewed` (window, domain presente).
+
+Gestao de operadores: `scripts/manage_staff.py add|disable|list` (usa
+`DATABASE_URL` + `IDENTITY_HASH_SECRET`, nunca imprime telefone completo);
+rotacao de `IDENTITY_HASH_SECRET` invalida os hashes staff e exige recadastro.
+
+Fronteira de responsabilidade:
+
+- Renan: contrato HTTP, auth staff, SLA, transicoes, metricas, repositorio,
+  migrations 014/015, testes;
+- Juliano: deploy da tela `/team` no `ask-host-genius` (mesmo fluxo do
+  `deploy_ask_host_genius`); a UI nao recalcula regra de negocio.
+
 ## Webhook Meta WhatsApp Cloud API
 
 Status: fundacao nativa implementada por feature flag, sem ativacao operacional

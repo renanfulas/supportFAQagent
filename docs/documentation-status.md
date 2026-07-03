@@ -80,6 +80,23 @@ Em 02/07/2026, tres frentes fecharam do lado de codigo:
   3/3. Ver `docs/quality-plans/conversation-persistence-tiering-tech-plan.md`
   (Fase 4).
 
+Em 03/07/2026, as Fases A, B e C do console do time entraram no codigo:
+migration `014_support_console_staff.sql` (staff_members, staff_sessions,
+staff_login_hints), fachada `/web/support/*` (auth por OTP WhatsApp dedicado
+com lembrete de dispositivo + fila com semaforo de SLA), `scripts/manage_staff.py`,
+componente `support_console` no readiness e objetos da 014 no schema contract;
+migration `015_support_case_events.sql` (`support_cases.assignee_staff_id` +
+tabela de eventos), `POST /web/support/cases/{case_id}/transition` com
+compare-and-swap e evento auditavel na mesma transacao, `waiting_seconds` real
+plugado em `compute_sla`, filtro `assignee=me` e historico de eventos no
+detalhe; `GET /web/support/metrics` (backlog reusando `compute_sla`,
+throughput diario zero-fillado no fuso do time, escalation reasons, feedback
+com `helpful_rate`/`unknown_domain_count`, medianas de tempo de resposta).
+Tudo dark por padrao atras de `ENABLE_SUPPORT_CONSOLE`; nada aplicado
+em staging ainda. Contrato em `docs/architecture/integration-contracts.md`,
+smoke em `docs/runbooks/support-console-smoke.md`, estado em
+`docs/quality-plans/support-team-console-tech-plan.md`.
+
 ## Documentos Historicos
 
 Planos antigos podem citar Alexandre e Silotto ou descrever entregas que ja

@@ -3,7 +3,7 @@
 from typing import Any
 
 
-CONTRACT_MIGRATION = "013_customer_contact_and_consent.sql"
+CONTRACT_MIGRATION = "015_support_case_events.sql"
 
 REQUIRED_COLUMNS = {
     "chat_audits": {
@@ -58,6 +58,16 @@ REQUIRED_COLUMNS = {
         "attempt_count",
         "available_at",
     },
+    "support_case_events": {
+        "id",
+        "case_id",
+        "actor_staff_id",
+        "action",
+        "from_status",
+        "to_status",
+        "note_sanitized",
+        "created_at",
+    },
     "support_cases": {
         "id",
         "domain_id",
@@ -71,9 +81,31 @@ REQUIRED_COLUMNS = {
         "context_snapshot_sanitized",
         "idempotency_key",
         "assigned_team",
+        "assignee_staff_id",
         "opened_at",
         "updated_at",
         "closed_at",
+    },
+    "staff_login_hints": {
+        "hint_hash",
+        "staff_id",
+        "created_at",
+        "last_used_at",
+    },
+    "staff_members": {
+        "id",
+        "phone_hash",
+        "phone_last4",
+        "display_name",
+        "status",
+        "created_at",
+        "updated_at",
+    },
+    "staff_sessions": {
+        "session_hash",
+        "staff_id",
+        "created_at",
+        "expires_at",
     },
     "verified_identities": {
         "customer_id",
@@ -100,6 +132,11 @@ REQUIRED_INDEXES = {
     "idx_feedback_idempotency_key",
     "idx_messages_turn_role",
     "idx_outbox_dispatch",
+    "idx_staff_login_hints_staff",
+    "idx_staff_sessions_expires",
+    "idx_staff_sessions_staff",
+    "idx_support_case_events_case",
+    "idx_support_cases_assignee",
     "idx_support_cases_domain_status_opened",
     "idx_support_cases_customer",
     "idx_support_cases_conversation",
@@ -123,6 +160,7 @@ REQUIRED_CONSTRAINTS = {
     "feedback_idempotency_fingerprint_check",
     "feedback_session_hash_version_check",
     "otp_challenges_status_check",
+    "staff_members_status_check",
     "support_cases_context_snapshot_object_check",
     "support_cases_closed_at_check",
     "support_cases_idempotency_key_unique",

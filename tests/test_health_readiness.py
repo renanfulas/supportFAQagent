@@ -382,6 +382,7 @@ def test_readiness_route_keeps_liveness_contract_and_returns_components(
         "migrations",
         "retrieval",
         "outbox",
+        "support_console",
     }
     get_settings.cache_clear()
 
