@@ -89,11 +89,19 @@ Decisoes:
   (mesmo HMAC de `verified_identities`, verificado em `app/web_auth/service.py`);
 - procura `staff_members` com `status = 'active'`;
 - **anti-enumeracao**: telefone fora da tabela recebe o mesmo `202` com
-  `challenge_id` sintetico (o confirm dele sempre falha). A resposta nunca
-  revela quem e staff. A negativa e logada internamente com hash truncado;
+  `challenge_id` sintetico (UUID aleatorio, nao persistido; o confirm dele cai
+  no mesmo `400` de desafio desconhecido/expirado). A resposta nunca revela
+  quem e staff. A negativa e logada internamente com hash truncado;
+- **a resposta nao varia com a entrega**: diferente do fluxo de cliente, o
+  start staff devolve `202` mesmo se o envio WhatsApp falhar — um `503` aqui
+  denunciaria quem e staff, ja que o desafio sintetico nunca toca a entrega.
+  Falha de envio vira log interno (`support_console_auth_delivery_failed`) e o
+  operador simplesmente pede outro codigo. O canal lateral de timing residual
+  (envio real demora mais que o sintetico) fica registrado como risco aceito;
 - staff valido: cria desafio OTP com as protecoes existentes (expiracao,
   tentativas, cooldown de reenvio, rate limit por IP e por telefone) e envia
   pelo adapter de entrega ja usado no OTP de cliente;
+- multiplas sessoes por operador sao permitidas (desktop + notebook);
 - limpeza oportunista: apaga `staff_sessions` expiradas neste momento.
 
 `POST /web/support/auth/confirm` — body `{ "challenge_id", "code" }`:
@@ -170,6 +178,12 @@ SUPPORT_SLA_MINUTES_HIGH=120
 SUPPORT_SLA_MINUTES_NORMAL=480
 SUPPORT_SLA_MINUTES_LOW=1440
 SUPPORT_CONSOLE_ACTIVE_CASES_CAP=500  # teto do conjunto ativo em memoria
+SUPPORT_METRICS_TIMEZONE=America/Sao_Paulo  # cortes diarios da Fase C
+
+# Rate limits proprios da fachada (separados do chat publico):
+SUPPORT_OTP_START_PER_PHONE_PER_HOUR=5
+SUPPORT_OTP_START_PER_IP_PER_HOUR=20
+SUPPORT_CONSOLE_READS_PER_SESSION_PER_MINUTE=120
 ```
 
 Flag desligada -> `404` em toda a superficie (mesmo comportamento do inbox).
@@ -241,7 +255,8 @@ peso: urgent=4, high=3, normal=2, low=1
 Query: `view` (`active` padrao | `history`), `status`, `domain`, `color`,
 `sort` (`attention` padrao | `opened_at`), `assignee` (`me`, Fase B),
 `limit`, `offset`. `pending_consent` so aparece com filtro explicito
-(comportamento herdado do repositorio).
+(comportamento herdado do repositorio). Banco indisponivel ->
+`503 support_inbox_storage_unavailable`, mesmo contrato do inbox interno.
 
 Resposta = resumo atual do inbox + blocos novos:
 
@@ -294,9 +309,11 @@ SET status = 'in_progress', assignee_staff_id = %s, updated_at = now()
 WHERE id = %s AND status = 'open' AND assignee_staff_id IS NULL
 ```
 
-`rowcount = 0` -> reconsulta o status -> `409`. Dois operadores clicando
-juntos: exatamente um vence, o outro ve quem assumiu. Evento auditavel inserido
-**na mesma transacao** do UPDATE.
+`rowcount = 0` -> nada foi escrito; a transacao le o status/dono atual e
+responde `409` com esse estado (evento so e inserido quando o UPDATE vence).
+Dois operadores clicando juntos: exatamente um vence, o outro ve quem assumiu.
+Evento auditavel inserido **na mesma transacao** do UPDATE — commit e rollback
+sempre em conjunto.
 
 Decisao v1: `claim` exige caso sem dono; as demais acoes qualquer staff ativo
 pode executar (time pequeno, tudo auditado). Restricao por dono fica para
@@ -351,6 +368,9 @@ Fontes (verificadas no schema):
   ativo) — uma fonte de verdade so;
 - **throughput**: `opened_at` / `closed_at` agrupados por dia na janela
   (`closed_at` garantido pela constraint da 009 em fechados/cancelados);
+  cortes diarios no fuso `SUPPORT_METRICS_TIMEZONE` (default
+  `America/Sao_Paulo`) — dia cortado em UTC deslocaria o fim da tarde do
+  time para o dia seguinte;
 - **escalation_reasons**: `jsonb_array_elements_text(reason_codes)` na janela;
 - **feedback**: join direto `feedback.chat_audit_id -> chat_audits.domain_id`
   (migration 004; `idx_feedback_created` cobre a janela). Feedback `orphan`
@@ -404,6 +424,30 @@ nota de operador ou token):
   nao re-processa nem enriquece PII.
 - `403`/`401` com detail generico, sem eco de identificadores.
 
+## Prontidao, Migrations E Rollout
+
+- **Readiness**: `ENABLE_SUPPORT_CONSOLE=true` exige persistencia PostgreSQL
+  ativa (tabelas staff) e entrega de OTP configurada. Combinacao invalida
+  aparece no readiness como alerta, no mesmo padrao Auth + historico +
+  handoff ja usado pela frente de identidade.
+- **Schema contract**: tabelas, indexes e constraints das migrations 014 e
+  015 entram em `app/db/schema_contract.py` (`REQUIRED_*`), para a guarda de
+  schema cobrir o console como cobre o resto do banco.
+- **Migrations aditivas**: 014 cria tabelas novas; 015 adiciona coluna
+  nullable e tabela nova — sem rewrite de tabela, sem downtime esperado.
+- **Rollout da Fase A** (staging antes de prod):
+  1. aplicar a migration 014 pelo fluxo padrao de deploy;
+  2. cadastrar operadores com `scripts/manage_staff.py add`;
+  3. ligar `ENABLE_SUPPORT_CONSOLE` no staging;
+  4. smoke pela API: login OTP real, fila com semaforo, detalhe de caso,
+     logout, telefone nao-staff negado — registrar o roteiro em runbook novo
+     `runbooks/support-console-smoke.md` (a criar na entrega da Fase A);
+  5. deploy da tela `/team` no `ask-host-genius` (Juliano) e repetir o smoke
+     pela UI;
+  6. promover a prod com os mesmos passos.
+- `docs/documentation-status.md` e atualizado quando a Fase A entregar
+  contrato HTTP e migration (regra do git-flow).
+
 ## Fases E Arquivos Provaveis
 
 ### Fase A - auth staff + fila com semaforo (leitura)
@@ -414,6 +458,8 @@ nota de operador ou token):
 - `app/api/routes/web_support.py` + `app/api/schemas/web_support.py` (novos)
 - `app/support/repository.py` (conjunto ativo com `db_now` + cap; historico)
 - `app/core/config.py` (flags e SLAs) · `app/main.py` (router condicional)
+- `app/db/schema_contract.py` (objetos da 014) · readiness em `app/health/`
+  (alerta para combinacao invalida de flags)
 - `scripts/manage_staff.py` (novo)
 - `tests/test_support_staff_auth.py`, `tests/test_support_sla.py`,
   `tests/test_web_support_console.py`
@@ -422,6 +468,7 @@ nota de operador ou token):
 ### Fase B - escrita auditada + dono na fila
 
 - `migrations/015_support_case_events.sql` (eventos + `assignee_staff_id`)
+- `app/db/schema_contract.py` (objetos da 015)
 - `app/support/transitions.py` (novo) + extensao do repositorio
 - pausa real do relogio em `compute_sla` (via `waiting_seconds` dos eventos)
 - filtro `assignee=me` na fila; `assignee` no contrato
@@ -449,7 +496,9 @@ python -m compileall app tests scripts
   - `compute_sla`: limiares de cor, pausado nunca vermelho, explicacao;
   - fila: ordenacao attention deterministica, filtro por cor, paginacao em
     Python, cap com `truncated`;
-  - privacidade: caplog sem telefone/PII/token; contrato das respostas.
+  - privacidade: caplog sem telefone/PII/token; contrato das respostas;
+  - readiness acusa flag ligada sem persistencia/entrega configuradas;
+  - start staff com entrega quebrada continua respondendo `202`.
 - **Fase B**: matriz completa de transicoes validas/invalidas; concorrencia
   (dois claims -> um vence, outro 409); evento na mesma transacao (rollback
   conjunto); constraint `closed_at`; integracao postgres opt-in.
@@ -474,6 +523,13 @@ de handoff — apenas le e transiciona casos ja criados.
 - **Desafio OTP compartilhado entre fluxo cliente e staff**: mitigado — o
   confirm staff so autoriza se o `phone_hash` do desafio estiver em
   `staff_members` ativo; posse do numero continua sendo o fator.
+- **Canal lateral de timing no start staff**: o envio real demora mais que o
+  desafio sintetico. Aceito como residual — o rate limit por IP/telefone
+  limita a sondagem; se um dia incomodar, mover o envio para depois da
+  resposta.
+- **Cortes diarios das metricas**: agregacao por dia depende do fuso
+  configurado; testes da Fase C fixam `SUPPORT_METRICS_TIMEZONE` para nao
+  flutuar com o ambiente.
 
 ## Dependencias E Sequencia
 
