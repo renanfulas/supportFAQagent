@@ -7,6 +7,14 @@ E a metade cliente da visao V3 do
 ([support-team-console-tech-plan.md](support-team-console-tech-plan.md)) e a
 metade interna, sobre os mesmos dados.
 
+> **Decisao (2026-07-04) — rebaixado (opcao C):** o painel `/web/tickets`
+> separado (pull) **nao sera construido como estava**; o status vira um bloco no
+> widget web existente + CTA "continuar no WhatsApp". O "fechar o ciclo" passou
+> para a frente de WhatsApp
+> ([whatsapp-support-bridge-tech-plan.md](whatsapp-support-bridge-tech-plan.md)).
+> As secoes abaixo (projecao cliente-safe, autorizacao) seguem validas como
+> referencia e para o bloco no widget.
+
 ## Decisao Arquitetural
 
 Uma **fachada web de cliente** read-only sobre `support_cases`, autenticada pela

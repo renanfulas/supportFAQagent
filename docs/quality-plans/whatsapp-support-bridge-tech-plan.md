@@ -118,32 +118,32 @@ fora daquela request. **Logo, atendimento console<->WhatsApp exige guardar o
 numero do cliente.** Isso contradiz a disciplina atual de "so `phone_hash` +
 `phone_last4`, nunca telefone bruto".
 
-Decisao: **guardar o `wa_id` cifrado, escopado ao caso aberto, purgado no
-fechamento.**
+**Decisao (fechada 2026-07-04): Opcao A — guardar o `wa_id` cifrado, escopado ao
+caso, com retencao dupla.** E necessidade da frente: sem o numero em repouso nao
+existe resposta assincrona do atendente nem notificacao proativa (o ponto todo).
+A Opcao B (nao guardar, so sincrono/pull) foi **descartada** — inviabiliza a
+frente.
 
 - Cifra simetrica autenticada (AES-GCM ou Fernet), chave dedicada
   `SUPPORT_WA_ENC_KEY` (nunca reusar `IDENTITY_HASH_SECRET`); **decifra apenas no
   caminho de envio**, nunca em log/leitura geral.
-- Vive numa tabela propria (`case_whatsapp_bindings`), separada do caso duravel,
-  e e **apagada quando o caso fecha/cancela** (retencao minima, finalidade
-  clara: atender aquele chamado).
-- Base legal LGPD: necessario para a prestacao do atendimento que o cliente
-  pediu e consentiu; minimizado (so `wa_id`, so caso aberto) e temporario.
+- Vive numa tabela propria (`case_whatsapp_bindings`), separada do caso duravel.
+- **Retencao dupla (o que vier primeiro):** apagado **quando o caso fecha/cancela**
+  **ou** apos **15 dias** sem resolucao (`bound_at + SUPPORT_WA_BINDING_MAX_DAYS`).
+  Um caso parado 15 dias perde o numero; se o cliente voltar, ele reabre a janela
+  e o vinculo e refeito pelo token. Retencao minima, finalidade clara.
+- Base legal LGPD: necessario para o atendimento que o cliente pediu e consentiu;
+  minimizado (so `wa_id`), cifrado e temporario com teto explicito.
 
 Isso **revisa** a conclusao da Fase C do customer-ticket-status ("so e-mail,
-porque nao guardamos telefone"): com o armazenamento cifrado e escopado, o
-WhatsApp volta a ser canal viavel — e o e-mail continua como canal paralelo
-(`customers.email`, ja legivel/consentido) para quem opta ou nao tem thread
-ativa.
+porque nao guardamos telefone"): com o armazenamento cifrado, escopado e com teto
+de 15 dias, o WhatsApp volta a ser canal viavel — e o e-mail continua como canal
+paralelo (`customers.email`, ja legivel/consentido) para quem opta ou nao tem
+thread ativa.
 
 Consentimento: o gate LGPD (Sprint 4b) ja cobre "contato direto da equipe"; a
 copy do consent passa a ser explicita sobre "vamos te atender pelo WhatsApp e
-guardar seu numero **enquanto o atendimento estiver aberto**".
-
-Alternativa privacy-max (registrada, nao recomendada como default): **nao**
-guardar o numero e so responder de forma sincrona/pull — inviabiliza resposta
-assincrona do atendente e notificacao proativa, que sao o proprio ponto da
-frente.
+guardar seu numero **ate o atendimento fechar, no maximo 15 dias**".
 
 ## Vinculo De Identidade (Cliente -> Thread De Suporte)
 
@@ -193,15 +193,21 @@ CREATE TABLE case_whatsapp_bindings (
   wa_id_encrypted BYTEA NOT NULL,        -- E.164 cifrado (AES-GCM/Fernet)
   last_customer_message_at TIMESTAMPTZ,  -- janela de 24h
   bound_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  unbound_at TIMESTAMPTZ,                -- setado no fechamento; row purgada por job
+  expires_at TIMESTAMPTZ NOT NULL,       -- bound_at + SUPPORT_WA_BINDING_MAX_DAYS (15d)
+  unbound_at TIMESTAMPTZ,                -- setado no fechamento/purga
   CONSTRAINT case_whatsapp_bindings_case_unique UNIQUE (case_id)
 );
 CREATE INDEX idx_case_wa_bindings_open
   ON case_whatsapp_bindings (case_id) WHERE unbound_at IS NULL;
+CREATE INDEX idx_case_wa_bindings_expiry
+  ON case_whatsapp_bindings (expires_at) WHERE unbound_at IS NULL;
 ```
 
-Purga: no fechamento do caso, `unbound_at = now()`; um job (ou o proprio
-fechamento) apaga a linha, zerando o telefone em repouso.
+Purga (retencao dupla, o que vier primeiro): no **fechamento/cancelamento** do
+caso **ou** quando `now() > expires_at` (15 dias sem resolucao). O fechamento
+zera na hora; um **job periodico** varre `expires_at` (indice
+`idx_case_wa_bindings_expiry`) e apaga `wa_id_encrypted`, marcando `unbound_at`.
+Depois disso, se o cliente voltar, o token do deep link refaz o vinculo.
 
 ### Migration 017 - ator generico nos eventos
 
@@ -341,10 +347,11 @@ ENABLE_WHATSAPP_SUPPORT_NUMBER=false      # liga a frente (dark por padrao)
 META_SUPPORT_PHONE_NUMBER_ID=...          # numero de suporte na WABA
 META_SUPPORT_WABA_ID=...
 SUPPORT_WA_ENC_KEY=...                     # chave da cifra do wa_id (dedicada)
+SUPPORT_WA_BINDING_MAX_DAYS=15             # teto de retencao do numero (purga)
 SUPPORT_WA_WINDOW_HOURS=24                 # janela Meta (config p/ teste)
 SUPPORT_BUSINESS_HOURS=Mon-Fri 09:00-18:00 # thin bot / auto-reply
 SUPPORT_CONSOLE_TIMEZONE=America/Sao_Paulo # ja existe no console
-SUPPORT_WA_TEMPLATES=ticket_recebido,atendente_assumiu,precisa_info,ticket_resolvido
+SUPPORT_WA_TEMPLATES=atendente_assumiu,precisa_info,ticket_resolvido,reengajar
 ```
 
 Flag off -> handler de inbound do numero de suporte e compositor ausentes
@@ -408,7 +415,8 @@ Prova o loop inteiro dentro da janela de 24h, sem templates e sem push proativo.
 - deep link no handoff (numero bot -> numero suporte)
 - `app/core/config.py`, `schema_contract.py`, readiness
 - `tests/test_support_whatsapp_bridge.py` (bind por token, append, janela aberta
-  envia free-form, thin bot, status de entrega, purga no fechamento; sem PII em log)
+  envia free-form, thin bot, status de entrega, purga no fechamento e em 15 dias;
+  sem PII em log)
 - `runbooks/whatsapp-support-bridge-smoke.md` (a criar na entrega)
 
 **Prova mais barata**: caso native-origin (numero ja conhecido) ou teste manual
@@ -430,7 +438,7 @@ Timeline unica por `customer_id` juntando conversa do numero bot + thread de
 suporte; reconciliacao dos dominios de hash. So se o produto quiser a visao
 unificada.
 
-## Relacao Com O Painel De Status Web (decisao aberta)
+## Relacao Com O Painel De Status Web (decidido: opcao C)
 
 Esta frente se sobrepoe ao
 [web-chat-customer-ticket-status-plan.md](web-chat-customer-ticket-status-plan.md)
@@ -451,15 +459,17 @@ perde razao de ser. Alternativas:
 - **D - Manter os dois em paralelo:** cobertura maxima, dobro de superficie pra
   ganho incremental baixo; contradiz "o valor migrou pro WhatsApp".
 
-Recomendacao: **C** (com **A** como variante mais enxuta). Na pratica, o
-`web-chat-customer-ticket-status` Fase A (painel `/web/tickets` separado) fica
-**rebaixado / nao construido como estava**: vira um bloco de status no widget +
-deep link. Decisao do dono do produto.
+**Decisao (2026-07-04): opcao C.** O `web-chat-customer-ticket-status` Fase A
+(painel `/web/tickets` separado, pull com re-OTP) fica **rebaixado — nao sera
+construido como estava**: o status vira um **bloco dentro do widget web existente
++ CTA "continuar no WhatsApp"**. A `/web/tickets` como fachada propria sai do
+roteiro. E-mail segue como canal paralelo para quem nao usa WhatsApp.
 
 ## Riscos Tecnicos
 
 - **Telefone em repouso** (mesmo cifrado) amplia superficie: mitigado por escopo
-  (so caso aberto), purga no fechamento, chave dedicada, decifra so no envio.
+  (so caso aberto), purga no fechamento **ou em 15 dias**, chave dedicada,
+  decifra so no envio.
 - **Baileys (numero bot) fragil/ban**: por isso o atendimento humano e o proativo
   ficam no numero **Meta**; o bot no Hermes e ponte temporaria.
 - **Aprovacao de template** e dependencia externa de calendario: Fase 1 nao
@@ -482,7 +492,8 @@ python -m pytest tests/test_docs_links.py
 - **Fase 1**: bind por token resolve o caso certo (token invalido -> erro
   amigavel, nunca caso errado); inbound anexa e reabre janela;
   compositor envia free-form dentro da janela e recusa (`409`) fora; thin bot
-  responde ack/horario e nunca RAG; purga zera o `wa_id` no fechamento; caplog
+  responde ack/horario e nunca RAG; purga zera o `wa_id` no fechamento e no teto
+  de 15 dias; caplog
   sem `wa_id`/telefone/token/chave; readiness acusa flag sem chave/persistencia/
   Meta.
 - **Fase 2**: fora de janela envia template, nunca free-form; botao/inbound

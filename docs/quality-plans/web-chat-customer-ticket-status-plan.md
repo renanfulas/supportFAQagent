@@ -7,6 +7,14 @@ ver [support-team-console-plan.md](support-team-console-plan.md)).
 Plano tecnico correspondente:
 [web-chat-customer-ticket-status-tech-plan.md](web-chat-customer-ticket-status-tech-plan.md).
 
+> **Decisao (2026-07-04) — rebaixado (opcao C):** com a frente de WhatsApp
+> ([whatsapp-support-bridge-tech-plan.md](whatsapp-support-bridge-tech-plan.md))
+> assumindo o "fechar o ciclo" pelo canal que o cliente prefere, a Fase A (painel
+> `/web/tickets` separado, pull com re-OTP) **nao sera construida como estava**.
+> O status vira um **bloco dentro do widget web existente + CTA "continuar no
+> WhatsApp"**; o e-mail segue como canal paralelo. Este doc fica como referencia
+> do desenho pull.
+
 ## Contexto E Problema
 
 Hoje toda a maquina de handoff e team-facing. Quando o cliente do web chat
