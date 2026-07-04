@@ -265,6 +265,13 @@ WHERE request_id = %s AND customer_id = %s AND status = 'waiting_customer'
 
 ## Notificacao De Status Ao Cliente (Fase C) - a pegadinha
 
+> **Revisao (2026-07-04):** a conclusao "so e-mail" abaixo foi **superada** pela
+> frente de ponte WhatsApp<->console
+> ([whatsapp-support-bridge-tech-plan.md](whatsapp-support-bridge-tech-plan.md)):
+> com `wa_id` cifrado e escopado ao caso aberto (purgado no fechamento), o
+> WhatsApp volta a ser canal viavel para status/atendimento; o e-mail continua
+> como canal paralelo. O texto abaixo permanece como o raciocinio original.
+
 O reflexo natural seria "avisar o cliente no WhatsApp quando o status mudar",
 reusando o `whatsapp.message.requested` do Sprint 5. **Nao da, pela propria
 disciplina de privacidade do projeto:** o telefone bruto do cliente nunca e
