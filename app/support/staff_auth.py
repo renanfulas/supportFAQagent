@@ -637,6 +637,9 @@ class SupportConsoleRuntime:
     service: StaffConsoleAuthService
     delivery: OtpDeliveryAdapter
     reads_limiter: InMemoryRateLimiter
+    # Ponte WhatsApp<->console: limite do compositor, por caso (nao por
+    # sessao staff -- varios operadores nao devem somar limite por caso).
+    reply_limiter: InMemoryRateLimiter
 
 
 def create_support_console_runtime(
@@ -677,6 +680,10 @@ def create_support_console_runtime(
         delivery=delivery,
         reads_limiter=InMemoryRateLimiter(
             max_requests=settings.support_console_reads_per_session_per_minute,
+            window_seconds=60,
+        ),
+        reply_limiter=InMemoryRateLimiter(
+            max_requests=settings.support_wa_reply_rate_limit_per_case_per_minute,
             window_seconds=60,
         ),
     )

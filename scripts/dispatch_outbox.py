@@ -142,7 +142,7 @@ def dispatch_one(database_url: str) -> bool:
                 )
 
         try:
-            deliver(event)
+            delivery_result = deliver(event)
         except Exception as exc:
             attempts = int(event["attempt_count"]) + 1
             terminal = isinstance(exc, PermanentDeliveryError) or attempts >= MAX_ATTEMPTS
@@ -187,21 +187,48 @@ def dispatch_one(database_url: str) -> bool:
                         """,
                         (event["id"],),
                     )
+                    _maybe_record_message_delivery(
+                        cursor, event=event, result=delivery_result
+                    )
     return True
 
 
-def deliver(event: dict) -> None:
+@dataclass(frozen=True)
+class DeliveryResult:
+    """``meta_message_id`` is only set for a successful ``meta_whatsapp``
+    send; used to correlate the delivery-status webhook back to the
+    originating ``messages`` row (ponte WhatsApp<->console, compositor)."""
+
+    meta_message_id: str | None = None
+
+
+def _maybe_record_message_delivery(cursor, *, event: dict, result: "DeliveryResult") -> None:
+    payload = event["payload_sanitized"]
+    message_row_id = payload.get("message_row_id") if isinstance(payload, dict) else None
+    if not message_row_id or not result.meta_message_id:
+        return
+    cursor.execute(
+        """
+        UPDATE messages
+        SET meta_message_id = %s, delivery_status = 'sent'
+        WHERE id = %s
+        """,
+        (result.meta_message_id, message_row_id),
+    )
+
+
+def deliver(event: dict) -> DeliveryResult:
     route = resolve_delivery_route(str(event["event_type"]))
     transport = resolve_delivery_transport(route)
     if transport == "disabled":
         raise PermanentDeliveryError(f"delivery route is disabled: {route.name}")
     if transport == "meta_whatsapp":
-        deliver_meta_whatsapp(event=event, route=route)
-        return
+        return deliver_meta_whatsapp(event=event, route=route)
     if transport == "append_only_sink":
         deliver_conversation_archive(event=event)
-        return
+        return DeliveryResult()
     deliver_internal_webhook(event=event, route=route)
+    return DeliveryResult()
 
 
 def deliver_conversation_archive(*, event: dict) -> None:
@@ -253,7 +280,7 @@ def deliver_internal_webhook(*, event: dict, route: DeliveryRoute) -> None:
         raise
 
 
-def deliver_meta_whatsapp(*, event: dict, route: DeliveryRoute) -> None:
+def deliver_meta_whatsapp(*, event: dict, route: DeliveryRoute) -> DeliveryResult:
     if route.name not in META_WHATSAPP_ROUTES:
         raise PermanentDeliveryError(
             f"meta_whatsapp transport is not supported for route: {route.name}",
@@ -263,19 +290,30 @@ def deliver_meta_whatsapp(*, event: dict, route: DeliveryRoute) -> None:
         raise PermanentDeliveryError("meta_whatsapp payload must be an object")
     recipient = _required_text(payload, "to")
     text = _required_text(payload, "text")
+    # Modo-por-numero: "support" e a ponte WhatsApp<->console (numero de
+    # suporte, atendimento humano); ausente/qualquer outro valor e o
+    # comportamento de hoje (numero do bot/notificacao ao time). Mesma WABA,
+    # mesmo access token -- so o phone_number_id muda entre numeros.
+    phone_number_kind = payload.get("phone_number_kind")
+    phone_number_id_env = (
+        "META_SUPPORT_PHONE_NUMBER_ID"
+        if phone_number_kind == "support"
+        else "META_WHATSAPP_PHONE_NUMBER_ID"
+    )
     client = MetaWhatsAppClient(
         access_token=_required_env("META_WHATSAPP_ACCESS_TOKEN"),
-        phone_number_id=_required_env("META_WHATSAPP_PHONE_NUMBER_ID"),
+        phone_number_id=_required_env(phone_number_id_env),
         graph_api_version=os.getenv("META_WHATSAPP_GRAPH_API_VERSION", "v25.0"),
         timeout_seconds=_positive_int_env("META_WHATSAPP_REQUEST_TIMEOUT_SECONDS", 5),
     )
     try:
-        client.send_text(to=recipient, text=text)
+        result = client.send_text(to=recipient, text=text)
     except MetaWhatsAppRequestError as exc:
         if exc.status_code is not None and 400 <= exc.status_code < 500:
             if exc.status_code not in RETRYABLE_HTTP_STATUS:
                 raise PermanentDeliveryError("permanent meta whatsapp rejection") from exc
         raise
+    return DeliveryResult(meta_message_id=result.message_id)
 
 
 def resolve_delivery_route(event_type: str) -> DeliveryRoute:

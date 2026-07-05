@@ -81,4 +81,5 @@ def confirm_handoff_consent(
         summary=result.summary,
         domain=result.domain,
         customer_name=result.customer_name,
+        support_deep_link=result.support_deep_link,
     )

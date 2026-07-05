@@ -116,6 +116,7 @@ def create_web_chat(
         references=list(chat_response["references"]),
         support_code=chat_response["request_id"],
         error_code=chat_response["error_code"],
+        support_deep_link=persistence_result.support_deep_link,
     )
 
 

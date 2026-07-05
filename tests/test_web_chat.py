@@ -76,6 +76,7 @@ def test_web_chat_accepts_valid_payload_without_api_key_and_returns_public_contr
         "references": ["qrcode-whatsapp.md"],
         "support_code": "web-chat-ok-1",
         "error_code": None,
+        "support_deep_link": None,
     }
     assert "domain" not in payload
     assert "confidence" not in payload

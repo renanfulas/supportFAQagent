@@ -18,3 +18,6 @@ class HandoffConsentResponse(BaseModel):
     # Effective display name the team was told (an earlier consent wins over a
     # retyped one), so the widget mirrors to the client exactly what was sent.
     customer_name: str | None = None
+    # Ponte WhatsApp<->console: CTA "continuar no WhatsApp", presente na
+    # primeira promocao a 'open' quando a frente esta configurada.
+    support_deep_link: str | None = None

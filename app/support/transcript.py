@@ -17,13 +17,23 @@ from app.support.context import (
 READ_TRANSCRIPT_LIMIT = 200
 
 
+TRANSCRIPT_ROLES = ("user", "assistant", "agent")
+
+
 def fetch_conversation_transcript(
     cursor: Any,
     conversation_id: Any,
     *,
     limit: int,
 ) -> list[dict[str, Any]]:
-    """Return the most recent ``limit`` user/assistant turns, oldest first.
+    """Return the most recent ``limit`` turns, oldest first.
+
+    Includes ``role='agent'`` (ponte WhatsApp<->console: the human agent's
+    replies) alongside the bot's ``user``/``assistant`` turns, so the console
+    case detail shows the full exchange. Deliberately NOT reused by
+    ``ConversationHistoryService.load_recent`` (the bot's own RAG history
+    replay), which stays user/assistant-only -- a live human handling the case
+    should not feed back into the bot's prompt context.
 
     Ordering the inner query DESC then re-sorting ASC keeps the bound on the
     *recent* end of long conversations while still presenting turns in reading
@@ -43,14 +53,14 @@ def fetch_conversation_transcript(
                    m.error_code, m.created_at
             FROM messages m
             WHERE m.conversation_id = %s
-              AND m.role IN ('user', 'assistant')
+              AND m.role = ANY(%s)
               AND m.redaction_version = %s
             ORDER BY m.message_sequence DESC
             LIMIT %s
         ) sub
         ORDER BY sub.message_sequence ASC
         """,
-        (conversation_id, REDACTION_VERSION, limit),
+        (conversation_id, list(TRANSCRIPT_ROLES), REDACTION_VERSION, limit),
     )
     rows = cursor.fetchall()
     return [
@@ -77,10 +87,10 @@ def count_conversation_turns(cursor: Any, conversation_id: Any) -> int:
         SELECT count(*)
         FROM messages m
         WHERE m.conversation_id = %s
-          AND m.role IN ('user', 'assistant')
+          AND m.role = ANY(%s)
           AND m.redaction_version = %s
         """,
-        (conversation_id, REDACTION_VERSION),
+        (conversation_id, list(TRANSCRIPT_ROLES), REDACTION_VERSION),
     )
     row = cursor.fetchone()
     return int(row[0]) if row and row[0] is not None else 0

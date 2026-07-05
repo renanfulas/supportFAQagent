@@ -274,6 +274,8 @@ class HermesChatTransport:
                 f"{answer} O atendimento humano está temporariamente indisponível; "
                 "guarde o request_id para acompanhamento."
             )
+        if persistence.support_deep_link:
+            answer = f"{answer}\n\nContinuar no WhatsApp: {persistence.support_deep_link}"
         # When the bot cannot help (out of scope), offer a clear escape and remember
         # we are waiting for the choice.
         if self.state_store is not None and "out_of_scope" in response["handoff_reasons"]:

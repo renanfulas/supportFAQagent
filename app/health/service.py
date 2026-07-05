@@ -38,6 +38,7 @@ class HealthService:
             "retrieval": self._disabled_or_lexical_retrieval(),
             "outbox": {"status": "disabled"},
             "support_console": self._support_console_baseline(),
+            "whatsapp_bridge": self._whatsapp_bridge_baseline(),
         }
         if not self.runtime.pool_enabled:
             if getattr(self.runtime, "postgres_required", False):
@@ -69,6 +70,10 @@ class HealthService:
                         schema,
                         components["support_console"],
                     )
+                    components["whatsapp_bridge"] = self._whatsapp_bridge_status(
+                        schema,
+                        components["whatsapp_bridge"],
+                    )
         except DatabaseUnavailableError:
             components["database"] = {"status": "unavailable"}
             if self.runtime.retrieval_enabled:
@@ -78,6 +83,8 @@ class HealthService:
             components["migrations"] = {"status": "unavailable"}
             if components["support_console"]["status"] != "disabled":
                 components["support_console"] = {"status": "unavailable"}
+            if components["whatsapp_bridge"]["status"] != "disabled":
+                components["whatsapp_bridge"] = {"status": "unavailable"}
 
         statuses = {component["status"] for component in components.values()}
         if "unavailable" in statuses:
@@ -128,6 +135,46 @@ class HealthService:
             }
         return baseline
 
+    def _whatsapp_bridge_baseline(self) -> dict[str, Any]:
+        """Flag combinations the WhatsApp<->console bridge needs before the
+        DB is even touched.
+
+        ENABLE_WHATSAPP_SUPPORT_NUMBER=true exige persistencia PostgreSQL
+        (tabela ``case_whatsapp_bindings`` da migration 016), o numero de
+        suporte configurado na Meta, e as duas chaves dedicadas (cifra do
+        wa_id e assinatura do token do deep link) -- sem elas a frente nao
+        tem como funcionar, mesmo com o resto ligado.
+        """
+
+        settings = getattr(self.runtime, "settings", None)
+        if not getattr(settings, "enable_whatsapp_support_number", False):
+            return {"status": "disabled"}
+        if getattr(settings, "persistence_backend", "disabled") != "postgres":
+            return {
+                "status": "unavailable",
+                "reason": "postgres_persistence_required",
+            }
+        if not getattr(settings, "meta_support_phone_number_id", None) or not getattr(
+            settings, "meta_whatsapp_access_token", None
+        ):
+            return {"status": "unavailable", "reason": "meta_support_number_not_configured"}
+        if not getattr(settings, "support_wa_enc_key", None):
+            return {"status": "unavailable", "reason": "support_wa_enc_key_missing"}
+        if not getattr(settings, "support_wa_token_secret", None):
+            return {"status": "unavailable", "reason": "support_wa_token_secret_missing"}
+        return {"status": "ok"}
+
+    def _whatsapp_bridge_status(
+        self,
+        schema: dict[str, Any],
+        baseline: dict[str, Any],
+    ) -> dict[str, Any]:
+        if baseline["status"] in {"disabled", "unavailable"}:
+            return baseline
+        if not schema.get("case_whatsapp_bindings"):
+            return {"status": "unavailable", "reason": "bindings_table_missing"}
+        return baseline
+
     def _disabled_or_lexical_retrieval(self) -> dict[str, Any]:
         if self.runtime.retrieval_enabled:
             return {"status": "unavailable", "backend": "pgvector"}
@@ -154,6 +201,7 @@ class HealthService:
               to_regclass(format('%I.%I', current_schema(), 'staff_members'))::text,
               to_regclass(format('%I.%I', current_schema(), 'staff_sessions'))::text,
               to_regclass(format('%I.%I', current_schema(), 'staff_login_hints'))::text,
+              to_regclass(format('%I.%I', current_schema(), 'case_whatsapp_bindings'))::text,
               EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')
             """
         )
@@ -175,6 +223,7 @@ class HealthService:
             staff_members,
             staff_sessions,
             staff_login_hints,
+            case_whatsapp_bindings,
             vector_enabled,
         ) = cursor.fetchone()
         return {
@@ -195,6 +244,7 @@ class HealthService:
             "staff_members": bool(staff_members),
             "staff_sessions": bool(staff_sessions),
             "staff_login_hints": bool(staff_login_hints),
+            "case_whatsapp_bindings": bool(case_whatsapp_bindings),
             "vector": bool(vector_enabled),
         }
 

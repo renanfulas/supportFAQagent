@@ -316,13 +316,17 @@ def test_outbox_meta_whatsapp_delivery_sends_text_without_webhook_secret(
 ) -> None:
     captured: dict[str, object] = {}
 
+    class FakeSendResult:
+        message_id = "wamid.fake-1"
+
     class FakeClient:
         def __init__(self, **kwargs) -> None:
             captured["client_kwargs"] = kwargs
 
-        def send_text(self, *, to: str, text: str) -> None:
+        def send_text(self, *, to: str, text: str) -> FakeSendResult:
             captured["to"] = to
             captured["text"] = text
+            return FakeSendResult()
 
     monkeypatch.setenv("OUTBOX_WHATSAPP_MESSAGE_DELIVERY_TRANSPORT", "meta_whatsapp")
     monkeypatch.setenv("META_WHATSAPP_ACCESS_TOKEN", "meta-token")

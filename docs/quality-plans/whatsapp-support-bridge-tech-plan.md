@@ -1,7 +1,18 @@
 # Plano Tecnico - Ponte WhatsApp <-> Console (Atendimento Humano por Numero de Suporte)
 
-Status: proposto em 2026-07-04. Nenhuma fase iniciada. E a implementacao do
-degrau 3 ("fechar o ciclo com o cliente") da visao V3 do
+Status: proposto em 2026-07-04; **Fase 1 implementada em codigo em 2026-07-05**
+(migrations 016/017/018, cifra/token em `app/support/wa_binding.py`, handler de
+inbound e compositor em `app/support/whatsapp_bridge.py`, roteamento por
+`phone_number_id` no webhook Meta, deep link no handoff, dispatcher com
+selecao de numero e status de entrega, readiness `whatsapp_bridge`, suite de
+testes; 839 testes verdes, `compileall` limpo). Contrato registrado em
+`docs/architecture/integration-contracts.md` ("Ponte WhatsApp<->console"),
+smoke em `docs/runbooks/whatsapp-support-bridge-smoke.md`. **Dark por padrao**
+(`ENABLE_WHATSAPP_SUPPORT_NUMBER=false`) -- falta apenas o provisionamento
+externo na Meta (Juliano: numero de suporte + webhook) para o smoke real e a
+promocao a staging/producao. Fase 2 (templates, push proativo, e-mail) e Fase
+3 (unificacao de identidade) permanecem nao iniciadas.
+E a implementacao do degrau 3 ("fechar o ciclo com o cliente") da visao V3 do
 [web-chat-evolution-plan.md](web-chat-evolution-plan.md), do lado da conversa
 humana. Complementa e **revisa** a conclusao "so e-mail" da Fase C do
 [web-chat-customer-ticket-status-tech-plan.md](web-chat-customer-ticket-status-tech-plan.md)
