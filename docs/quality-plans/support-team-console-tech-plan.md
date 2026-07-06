@@ -56,8 +56,10 @@ agora herdam dela. Teste de regressao novo em
 `tests/test_phase0_operational_safety.py`
 (`test_database_runtime_lets_business_errors_propagate_from_transaction`)
 exercitando o `DatabaseRuntime.transaction()` real (nao fake) para cobrir
-essa classe de bug. `pytest` completo (856 testes) e `compileall` verdes
-apos o fix; ainda **nao commitado/aberto PR** nesta sessao.
+essa classe de bug. `pytest` completo e `compileall` verdes apos o fix;
+aplicado ao vivo na VPS (patch cirurgico, fora do fluxo normal de deploy) e
+retestado com sucesso antes do PR. Ver
+[PR #132](https://github.com/renanfulas/supportFAQagent/pull/132).
 **Hardening pos-entrega (2026-07-03)**: (1) evento `support_console_auth_denied`
 no confirm falho e no guard 401 (visibilidade de acesso negado sem eco de
 identificadores); (2) `pending_consent -> cancel` na matriz de transicoes,
