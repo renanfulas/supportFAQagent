@@ -14,6 +14,13 @@ class OtpChallenge:
     expires_at: datetime
     attempts_remaining: int
     status: str = "pending"
+    # Fase 3 (opcional, opt-in): hash de dominio nativo recalculado em
+    # start() -- unico momento em que o telefone bruto existe em memoria --
+    # e carregado ate confirm() consumir o desafio. None quando a Fase 3 nao
+    # esta configurada (PERSISTENCE_HASH_SECRET ausente) ou o telefone e
+    # invalido para o formato esperado.
+    native_session_hash_hermes: str | None = None
+    native_session_hash_meta: str | None = None
 
 
 @dataclass

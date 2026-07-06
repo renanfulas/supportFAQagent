@@ -296,3 +296,94 @@ def test_logs_do_not_include_raw_phone_or_code(
     combined_logs = " ".join(record.getMessage() for record in caplog.records)
     assert PHONE not in combined_logs
     assert _delivered_code(enabled_client) not in combined_logs
+
+
+# --------------------------------------------------------------------------- #
+# Fase 3 (opcional, opt-in): hash nativo carregado de start() a confirm()
+# --------------------------------------------------------------------------- #
+
+
+def _build_service(*, native_link_enabled: bool, persistence_hash_secret: str | None):
+    from types import SimpleNamespace
+
+    from app.web_auth.delivery import InMemoryOtpDeliveryAdapter
+    from app.web_auth.service import WebWhatsAppAuthService
+    from app.web_auth.storage import InMemoryWebAuthStore
+
+    settings = SimpleNamespace(
+        identity_hash_secret="identity-secret",
+        otp_digest_secret="otp-secret",
+        otp_code_ttl_seconds=300,
+        otp_resend_cooldown_seconds=60,
+        otp_max_attempts=5,
+        otp_start_limit_per_ip_per_hour=10,
+        otp_start_limit_per_phone_per_15_minutes=3,
+        enable_native_identity_link=native_link_enabled,
+        persistence_hash_secret=persistence_hash_secret,
+    )
+    return WebWhatsAppAuthService(
+        settings=settings,
+        store=InMemoryWebAuthStore(),
+        delivery=InMemoryOtpDeliveryAdapter(),
+    )
+
+
+def test_start_computes_native_hashes_when_flag_and_secret_configured() -> None:
+    service = _build_service(
+        native_link_enabled=True, persistence_hash_secret="persistence-secret"
+    )
+
+    challenge = service.start(phone=PHONE, client_host="1.2.3.4")
+
+    assert challenge.native_session_hash_hermes is not None
+    assert challenge.native_session_hash_meta is not None
+    assert challenge.native_session_hash_hermes != challenge.native_session_hash_meta
+
+
+def test_start_skips_native_hashes_when_flag_off() -> None:
+    service = _build_service(
+        native_link_enabled=False, persistence_hash_secret="persistence-secret"
+    )
+
+    challenge = service.start(phone=PHONE, client_host="1.2.3.4")
+
+    assert challenge.native_session_hash_hermes is None
+    assert challenge.native_session_hash_meta is None
+
+
+def test_start_skips_native_hashes_without_persistence_secret() -> None:
+    service = _build_service(native_link_enabled=True, persistence_hash_secret=None)
+
+    challenge = service.start(phone=PHONE, client_host="1.2.3.4")
+
+    assert challenge.native_session_hash_hermes is None
+    assert challenge.native_session_hash_meta is None
+
+
+def test_confirm_returns_native_hashes_from_the_consumed_challenge() -> None:
+    service = _build_service(
+        native_link_enabled=True, persistence_hash_secret="persistence-secret"
+    )
+    challenge = service.start(phone=PHONE, client_host="1.2.3.4")
+    code = service.delivery.requests[-1].code
+
+    confirmed = service.confirm(
+        challenge_id=challenge.id, code=code, session_id="session-1"
+    )
+
+    assert confirmed.identity.customer_id is not None
+    assert confirmed.native_session_hashes is not None
+    assert confirmed.native_session_hashes.hermes == challenge.native_session_hash_hermes
+    assert confirmed.native_session_hashes.meta == challenge.native_session_hash_meta
+
+
+def test_confirm_native_hashes_none_when_flag_off() -> None:
+    service = _build_service(native_link_enabled=False, persistence_hash_secret="secret")
+    challenge = service.start(phone=PHONE, client_host="1.2.3.4")
+    code = service.delivery.requests[-1].code
+
+    confirmed = service.confirm(
+        challenge_id=challenge.id, code=code, session_id="session-1"
+    )
+
+    assert confirmed.native_session_hashes is None

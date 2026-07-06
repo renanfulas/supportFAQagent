@@ -39,6 +39,7 @@ class HealthService:
             "outbox": {"status": "disabled"},
             "support_console": self._support_console_baseline(),
             "whatsapp_bridge": self._whatsapp_bridge_baseline(),
+            "native_identity_link": self._native_identity_link_baseline(),
         }
         if not self.runtime.pool_enabled:
             if getattr(self.runtime, "postgres_required", False):
@@ -85,6 +86,8 @@ class HealthService:
                 components["support_console"] = {"status": "unavailable"}
             if components["whatsapp_bridge"]["status"] != "disabled":
                 components["whatsapp_bridge"] = {"status": "unavailable"}
+            if components["native_identity_link"]["status"] != "disabled":
+                components["native_identity_link"] = {"status": "unavailable"}
 
         statuses = {component["status"] for component in components.values()}
         if "unavailable" in statuses:
@@ -174,6 +177,26 @@ class HealthService:
         if not schema.get("case_whatsapp_bindings"):
             return {"status": "unavailable", "reason": "bindings_table_missing"}
         return baseline
+
+    def _native_identity_link_baseline(self) -> dict[str, Any]:
+        """Fase 3 (opcional, opt-in) da ponte WhatsApp<->console: nao cria
+        tabela nova (so 2 colunas em otp_challenges, ja cobertas pelo
+        structural_drift generico via REQUIRED_COLUMNS), entao baseline e
+        suficiente -- sem status separado pos-DB como support_console/
+        whatsapp_bridge.
+        """
+
+        settings = getattr(self.runtime, "settings", None)
+        if not getattr(settings, "enable_native_identity_link", False):
+            return {"status": "disabled"}
+        if getattr(settings, "persistence_backend", "disabled") != "postgres":
+            return {
+                "status": "unavailable",
+                "reason": "postgres_persistence_required",
+            }
+        if not getattr(settings, "persistence_hash_secret", None):
+            return {"status": "unavailable", "reason": "persistence_hash_secret_missing"}
+        return {"status": "ok"}
 
     def _disabled_or_lexical_retrieval(self) -> dict[str, Any]:
         if self.runtime.retrieval_enabled:

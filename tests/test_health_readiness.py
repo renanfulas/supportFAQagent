@@ -172,6 +172,59 @@ def test_whatsapp_bridge_baseline_ok_when_fully_configured() -> None:
     assert snapshot["components"]["whatsapp_bridge"] == {"status": "ok"}
 
 
+def test_native_identity_link_baseline_disabled_by_default() -> None:
+    snapshot = HealthService(DisabledRuntime()).readiness()
+
+    assert snapshot["components"]["native_identity_link"] == {"status": "disabled"}
+
+
+def test_native_identity_link_baseline_unavailable_without_postgres() -> None:
+    runtime = DisabledRuntime()
+    runtime.settings = SimpleNamespace(
+        default_domain="suporte-vps-whatsapp",
+        enable_native_identity_link=True,
+        persistence_backend="disabled",
+    )
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["components"]["native_identity_link"] == {
+        "status": "unavailable",
+        "reason": "postgres_persistence_required",
+    }
+
+
+def test_native_identity_link_baseline_unavailable_without_hash_secret() -> None:
+    runtime = DisabledRuntime()
+    runtime.settings = SimpleNamespace(
+        default_domain="suporte-vps-whatsapp",
+        enable_native_identity_link=True,
+        persistence_backend="postgres",
+        persistence_hash_secret=None,
+    )
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["components"]["native_identity_link"] == {
+        "status": "unavailable",
+        "reason": "persistence_hash_secret_missing",
+    }
+
+
+def test_native_identity_link_baseline_ok_when_fully_configured() -> None:
+    runtime = DisabledRuntime()
+    runtime.settings = SimpleNamespace(
+        default_domain="suporte-vps-whatsapp",
+        enable_native_identity_link=True,
+        persistence_backend="postgres",
+        persistence_hash_secret="secret",
+    )
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["components"]["native_identity_link"] == {"status": "ok"}
+
+
 def test_readiness_reports_database_failure_without_private_detail() -> None:
     snapshot = HealthService(FailingRuntime()).readiness()
 
@@ -463,6 +516,7 @@ def test_readiness_route_keeps_liveness_contract_and_returns_components(
         "outbox",
         "support_console",
         "whatsapp_bridge",
+        "native_identity_link",
     }
     get_settings.cache_clear()
 

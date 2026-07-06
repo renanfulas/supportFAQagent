@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 import hashlib
 import hmac
@@ -11,6 +12,10 @@ from uuid import uuid4
 
 from app.core.config import Settings
 from app.core.rate_limit import InMemoryRateLimiter
+from app.identity.native_history_link import (
+    NativeSessionHashes,
+    compute_native_session_hashes,
+)
 from app.web_auth.delivery import OtpDeliveryAdapter, OtpDeliveryUnavailable
 from app.web_auth.models import OtpChallenge, OtpDeliveryRequest, VerifiedIdentity
 from app.web_auth.storage import WebAuthStore
@@ -27,6 +32,17 @@ class ResendCooldown(Exception):
     def __init__(self, retry_after_seconds: int) -> None:
         self.retry_after_seconds = retry_after_seconds
         super().__init__("resend cooldown active")
+
+
+@dataclass(frozen=True)
+class ConfirmedSession:
+    identity: VerifiedIdentity
+    # Fase 3 (opcional, opt-in): presente quando PERSISTENCE_HASH_SECRET
+    # estava configurado no momento do start() deste desafio. O chamador
+    # (rota) decide se/quando acionar o backfill do historico nativo -- este
+    # servico so entrega os hashes recalculados, nunca escreve em
+    # conversations/support_cases.
+    native_session_hashes: NativeSessionHashes | None = None
 
 
 class WebWhatsAppAuthService:
@@ -69,6 +85,12 @@ class WebWhatsAppAuthService:
 
             code = f"{secrets.randbelow(1_000_000):06d}"
             challenge_id = str(uuid4())
+            # Fase 3 (opcional, opt-in): unico momento em que o telefone bruto
+            # existe em memoria -- nunca persistido em claro. Se
+            # PERSISTENCE_HASH_SECRET nao estiver configurado, os hashes ficam
+            # None e o backfill do WhatsApp nativo simplesmente nao acontece
+            # para este desafio (degrada em silencio, nao bloqueia o OTP).
+            native_hashes = self._native_session_hashes(normalized_phone)
             challenge = OtpChallenge(
                 id=challenge_id,
                 phone_hash=phone_hash,
@@ -77,6 +99,12 @@ class WebWhatsAppAuthService:
                 created_at=now,
                 expires_at=now + timedelta(seconds=self.settings.otp_code_ttl_seconds),
                 attempts_remaining=self.settings.otp_max_attempts,
+                native_session_hash_hermes=(
+                    native_hashes.hermes if native_hashes else None
+                ),
+                native_session_hash_meta=(
+                    native_hashes.meta if native_hashes else None
+                ),
             )
             self.store.save_challenge(challenge)
         try:
@@ -100,7 +128,7 @@ class WebWhatsAppAuthService:
         challenge_id: str,
         code: str,
         session_id: str,
-    ) -> VerifiedIdentity:
+    ) -> ConfirmedSession:
         challenge = self.store.consume_challenge(
             challenge_id,
             self._digest_code(challenge_id, code),
@@ -120,10 +148,24 @@ class WebWhatsAppAuthService:
         elif identity.customer_id is None:
             identity = self.store.save_identity(identity)
         self.store.bind_session(self._digest_identity(session_id), identity)
-        return identity
+        native_hashes = None
+        if challenge.native_session_hash_hermes and challenge.native_session_hash_meta:
+            native_hashes = NativeSessionHashes(
+                hermes=challenge.native_session_hash_hermes,
+                meta=challenge.native_session_hash_meta,
+            )
+        return ConfirmedSession(identity=identity, native_session_hashes=native_hashes)
 
     def get_session_identity(self, session_id: str) -> VerifiedIdentity | None:
         return self.store.get_identity_for_session(self._digest_identity(session_id))
+
+    def _native_session_hashes(self, phone_e164: str) -> NativeSessionHashes | None:
+        if not getattr(self.settings, "enable_native_identity_link", False):
+            return None
+        secret = self.settings.persistence_hash_secret
+        if not secret:
+            return None
+        return compute_native_session_hashes(phone_e164, persistence_hash_secret=secret)
 
     def logout(self, session_id: str) -> None:
         self.store.clear_session(self._digest_identity(session_id))

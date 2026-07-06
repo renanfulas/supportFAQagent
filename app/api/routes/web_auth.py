@@ -14,6 +14,7 @@ from app.core.logging import log_event
 from app.core.rate_limit import RateLimitExceeded
 from app.core.request_context import get_request_id
 from app.core.web_session import get_or_create_public_session_id, set_public_session_cookie
+from app.identity.native_history_link import NativeHistoryLinkRepository
 from app.web_auth.delivery import OtpDeliveryUnavailable
 from app.web_auth.runtime import WebAuthRuntime
 from app.web_auth.service import InvalidOrExpiredCode, ResendCooldown
@@ -75,7 +76,7 @@ def confirm_whatsapp_otp(
     settings = get_settings()
     session_id, should_set_cookie = get_or_create_public_session_id(request, settings)
     try:
-        identity = runtime.service.confirm(
+        confirmed = runtime.service.confirm(
             challenge_id=payload.challenge_id,
             code=payload.code,
             session_id=session_id,
@@ -83,6 +84,7 @@ def confirm_whatsapp_otp(
     except InvalidOrExpiredCode as exc:
         raise HTTPException(status_code=400, detail="invalid_or_expired_code") from exc
 
+    identity = confirmed.identity
     log_event(
         logger,
         "web_whatsapp_otp_verified",
@@ -90,6 +92,7 @@ def confirm_whatsapp_otp(
         challenge_id=payload.challenge_id,
         phone_hash=identity.phone_hash,
     )
+    _maybe_link_native_history(request, confirmed)
     if should_set_cookie:
         set_public_session_cookie(response, settings, session_id)
     return VerifiedSessionResponse(phone_last4=identity.phone_last4)
@@ -130,3 +133,37 @@ def _get_runtime(request: Request) -> WebAuthRuntime:
     if not settings.enable_web_whatsapp_auth:
         raise HTTPException(status_code=404, detail="Not Found")
     return request.app.state.web_auth_runtime
+
+
+def _maybe_link_native_history(request: Request, confirmed) -> None:
+    """Fase 3 (opcional, opt-in): backfill best-effort do historico do
+    WhatsApp nativo para o customer_id que acabou de provar o telefone via
+    OTP. Nunca falha a resposta do OTP -- so registra em log; o cliente ja
+    esta autenticado independente disso."""
+
+    settings = get_settings()
+    if not getattr(settings, "enable_native_identity_link", False):
+        return
+    if confirmed.native_session_hashes is None or confirmed.identity.customer_id is None:
+        return
+    if settings.persistence_backend != "postgres":
+        return
+    try:
+        result = NativeHistoryLinkRepository(request.app.state.database_runtime).link(
+            customer_id=confirmed.identity.customer_id,
+            hashes=confirmed.native_session_hashes,
+        )
+        log_event(
+            logger,
+            "native_identity_link_applied",
+            request_id=get_request_id(request),
+            conversations_linked=result.conversations_linked,
+            support_cases_linked=result.support_cases_linked,
+        )
+    except Exception as exc:  # noqa: BLE001 - best-effort, never blocks login
+        log_event(
+            logger,
+            "native_identity_link_unavailable",
+            request_id=get_request_id(request),
+            error_type=type(exc).__name__,
+        )
