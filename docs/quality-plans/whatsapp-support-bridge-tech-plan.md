@@ -5,13 +5,27 @@ Status: proposto em 2026-07-04; **Fase 1 implementada em codigo em 2026-07-05**
 inbound e compositor em `app/support/whatsapp_bridge.py`, roteamento por
 `phone_number_id` no webhook Meta, deep link no handoff, dispatcher com
 selecao de numero e status de entrega, readiness `whatsapp_bridge`, suite de
-testes; 839 testes verdes, `compileall` limpo). Contrato registrado em
+testes; 839 testes verdes, `compileall` limpo). **Fase 2 implementada em
+codigo em 2026-07-05** (mesmo dia): `whatsapp.template.requested` +
+`email.message.requested` no outbox (a rota de e-mail fica com transporte
+`disabled` de proposito -- nenhum provedor foi decidido; Juliano liga so
+trocando `OUTBOX_EMAIL_DELIVERY_TRANSPORT`, sem mudar codigo), compositor
+aceita `template` opcional para responder fora da janela
+(`ALLOWED_STAFF_TEMPLATES = {precisa_info, reengajar}`), notificacao proativa
+em `app/support/transitions.py` para `claim` (-> `atendente_assumiu`) e
+`close` (-> `ticket_resolvido`, com resumo), renderer puro em
+`app/notifications/customer_status.py`, opt-out de e-mail em
+`app/support/customer_preferences.py` (default opt-in; le
+`customer_preferences` global). Sem migration nova (reusa
+`case_whatsapp_bindings`, `customer_preferences`, `operational_outbox`);
+856 testes verdes. Contrato registrado em
 `docs/architecture/integration-contracts.md` ("Ponte WhatsApp<->console"),
 smoke em `docs/runbooks/whatsapp-support-bridge-smoke.md`. **Dark por padrao**
-(`ENABLE_WHATSAPP_SUPPORT_NUMBER=false`) -- falta apenas o provisionamento
-externo na Meta (Juliano: numero de suporte + webhook) para o smoke real e a
-promocao a staging/producao. Fase 2 (templates, push proativo, e-mail) e Fase
-3 (unificacao de identidade) permanecem nao iniciadas.
+(`ENABLE_WHATSAPP_SUPPORT_NUMBER=false`) -- falta o provisionamento externo na
+Meta (Juliano: numero de suporte + webhook + aprovacao dos 4 templates) para o
+smoke real e a promocao a staging/producao, e o transporte de e-mail (Juliano,
+provedor ainda nao decidido). Fase 3 (unificacao de identidade) permanece nao
+iniciada, opcional.
 E a implementacao do degrau 3 ("fechar o ciclo com o cliente") da visao V3 do
 [web-chat-evolution-plan.md](web-chat-evolution-plan.md), do lado da conversa
 humana. Complementa e **revisa** a conclusao "so e-mail" da Fase C do
@@ -435,19 +449,84 @@ com um numero controlado — nao depende de template nem de push.
 
 ### Fase 2 - Templates, reabertura de janela e notificacao proativa
 
+Status: **implementada em codigo em 2026-07-05.** Achados relevantes durante a
+implementacao: o resumo do fechamento usa
+`support_cases.context_snapshot_sanitized.summary` (ja sincrono, mesma fonte
+que `app/notifications/support_team.py` usa para o time) -- **nao**
+`conversation_summaries`/`SummaryRecallService` como o plano original sugeria,
+que e um sistema de resumo em lote (batch, chave por `domain+customer_ref`),
+sem garantia de estar pronto no exato momento do fechamento. O opt-out de
+e-mail (`app/support/customer_preferences.py`) foi o primeiro
+leitor/escritor real de `customer_preferences` no projeto (nao existia
+nenhum). "Precisa-info" e "reengajar" ficaram **staff-triggered** (o atendente
+escolhe no compositor quando a janela esta fechada), enquanto
+"atendente_assumiu"/"ticket_resolvido" ficaram **system-triggered** (na
+transicao `claim`/`close`) -- so `claim` dispara `atendente_assumiu` (o
+`resume` de `waiting_customer` tambem chega em `in_progress`, mas o cliente ja
+sabe que ha um atendente, entao fica em silencio).
+
 - `whatsapp.template.requested` no outbox + envio de template no dispatcher
 - decisao free-form vs template no compositor e nas transicoes
 - notificacoes proativas em `app/support/transitions.py` (assumiu/resolvido/
   precisa-info) + resumo no fechamento + e-mail paralelo com opt-out
-- `email.message.requested` (transporte: Juliano)
+- `email.message.requested` (transporte: Juliano; rota fica com transporte
+  `disabled` de proposito ate o provedor ser decidido -- so enfileira)
 - testes de janela (aberta/fechada), template fora de janela, idempotencia,
   opt-out de e-mail, resumo no closed
 
-### Fase 3 - Unificacao de identidade (opcional)
+### Fase 3 - Unificacao de identidade (opcional, decisao aberta 2026-07-06)
 
-Timeline unica por `customer_id` juntando conversa do numero bot + thread de
-suporte; reconciliacao dos dominios de hash. So se o produto quiser a visao
-unificada.
+Status: **pesquisa de codigo concluida em 2026-07-06; mecanismo NAO decidido
+de proposito** -- pausado para o time se organizar antes de implementar.
+Nenhum codigo escrito.
+
+**Achado central (muda o enquadramento do problema):** "reconciliar os
+dominios de hash" nao pode significar comparar os hashes ja gravados --
+sao tres segredos diferentes, por construcao deliberada, e nenhum e
+derivavel do outro:
+
+| Hash | Formula | Segredo | Entrada |
+| --- | --- | --- | --- |
+| `verified_identities.phone_hash` (web) | `HMAC(secret, telefone)` direto | `IDENTITY_HASH_SECRET` | telefone E.164 |
+| `conversations.session_hash` (WhatsApp nativo) | `HMAC(secret, "whatsapp:{hermes\|meta}:" + hash-interno(telefone))`, duas camadas | `PERSISTENCE_HASH_SECRET` | telefone pre-hasheado |
+| `case_whatsapp_bindings.wa_id_hash` (ponte suporte) | `HMAC(secret+"\|hash", telefone)` | `SUPPORT_WA_ENC_KEY` | telefone E.164 |
+
+Confirmado por leitura direta de `app/web_auth/service.py` (`_hmac_digest`),
+`app/conversations/service.py` (`hash_session`) +
+`app/integrations/hermes/chat_transport.py` /
+`app/integrations/meta_whatsapp/chat_transport.py` (`_safe_*_session_id`), e
+`app/support/wa_binding.py` (`hash_wa_id`). Nenhum join por igualdade entre
+esses tres valores existe hoje nem e possivel sem recalcular um deles a
+partir do telefone em claro.
+
+**O que isso habilita:** o telefone em claro existe em tres pontos --
+confirmacao de OTP web, inbound do WhatsApp nativo (Hermes/Meta, antes de
+virar `session_hash`), e o binding da ponte de suporte (`wa_id_encrypted` e
+decifravel). Em qualquer um desses pontos da para recalcular o hash do
+**dominio web** (`HMAC(IDENTITY_HASH_SECRET, telefone)`) e resolver/criar
+`customer_id` pela MESMA logica que `WebWhatsAppAuthStore.save_identity` ja
+usa -- sem re-chavear nada, sem tocar nos hashes ja gravados.
+
+**A decisao real nao e tecnica, e de fronteira de consentimento** (por isso
+ficou aberta): quando aplicar esse recalculo?
+
+- **Opcao A - todo inbound nativo (proativo):** toda mensagem no numero bot
+  ja resolve/cria `customer_id` automaticamente. Mais unificacao, mas
+  reverte silenciosamente a decisao de
+  [customer-identity-whatsapp-handoff-plan.md](customer-identity-whatsapp-handoff-plan.md)
+  de tratar o WhatsApp nativo como pseudonimo por padrao ("aceito como
+  permanente, nao e gap a fechar") -- ninguem deu consentimento explicito
+  para a correlacao entre canais.
+- **Opcao B - so via OTP web (reativo, opt-in):** o historico so se une
+  quando o cliente confirma OTP no site -- o backend recalcula o
+  `session_hash` nativo esperado para aquele telefone e vincula
+  retroativamente as conversas ja existentes. Quem nunca passa pelo web
+  continua pseudonimo. Preserva a decisao anterior; e o mesmo gesto que ja
+  existe hoje para o consent gate (Sprint 4b).
+
+Nenhuma opcao foi escolhida ainda. Retomar esta secao antes de escrever
+qualquer migration/codigo desta fase -- ela depende de uma decisao de
+produto/privacidade, nao so de engenharia.
 
 ## Relacao Com O Painel De Status Web (decidido: opcao C)
 

@@ -56,8 +56,8 @@ Guardar os `request_id`/`case_id` das respostas.
 8. **Sem binding**: compositor num caso sem cliente vinculado ainda →
    `409 {code: no_whatsapp_binding}`.
 9. **Janela fechada**: aguardar (ou simular) mais de 24h sem mensagem do
-   cliente e tentar responder → `409 {code: window_closed, templates: []}`
-   (templates ficam para a Fase 2).
+   cliente e tentar responder → `409 {code: window_closed, templates:
+   ["precisa_info", "reengajar"]}` (lista real, Fase 2).
 10. **Repeat contact**: cliente ja vinculado manda nova mensagem dentro do
     horario comercial → sem ack automatico (silencio do thin bot); fora do
     horario configurado (`SUPPORT_BUSINESS_HOURS_*`) → ack com aviso de
@@ -69,6 +69,39 @@ Guardar os `request_id`/`case_id` das respostas.
 12. **Logs**: conferir `support_wa_inbound`, `support_wa_agent_message`,
     `support_wa_inbound_unmatched` sem `wa_id`, telefone bruto, token ou
     conteudo da mensagem em claro alem do necessario.
+
+## Smoke da Fase 2 (templates, notificacao proativa, e-mail)
+
+Requer os 4 templates (`atendente_assumiu`, `precisa_info`,
+`ticket_resolvido`, `reengajar`) aprovados na WABA e os
+`SUPPORT_WA_TEMPLATE_*` configurados com os nomes reais aprovados.
+
+1. **Retry via template**: com a janela fechada (item 9 acima), reenviar com
+   `{"message": "...", "template": "precisa_info"}` → `200` com `delivery:
+   "template"`; a mensagem chega como template aprovado (nao free-form).
+2. **Template invalido**: `{"message": "...", "template": "qualquer_coisa"}`
+   → `422 {code: unknown_template, templates: [...]}`.
+3. **Claim notifica o cliente**: assumir um caso (`claim`) com binding WA
+   ativo e janela aberta → o cliente recebe free-form ("um atendente assumiu
+   seu chamado..."); com a janela fechada → template `atendente_assumiu`.
+4. **Close notifica com resumo**: fechar (`close`) um caso com binding ativo
+   → o cliente recebe o resumo do caso (via free-form ou `ticket_resolvido`
+   conforme a janela).
+5. **Resume fica em silencio**: `waiting_customer -> resume` (via `resume`)
+   nao gera nenhuma notificacao ao cliente (so `claim` dispara
+   `atendente_assumiu`).
+6. **E-mail paralelo**: com `customers.email` preenchido e sem opt-out, o
+   evento `email.message.requested` e enfileirado (visivel no
+   `operational_outbox`); com `OUTBOX_EMAIL_DELIVERY_TRANSPORT` ainda no
+   default (`disabled`), o dispatcher marca o evento `dead_letter` de
+   proposito (nenhum transporte real existe ainda) -- **isto e esperado**
+   ate o provedor ser decidido.
+7. **Opt-out de e-mail**: com `customer_preferences.preferences_json =
+   {"notify_status_by_email": false}` para o cliente, nenhum
+   `email.message.requested` e enfileirado na transicao.
+8. **Idempotencia**: repetir a mesma transicao (ex.: retry de rede) nao
+   duplica o evento de notificacao (`notify_customer_wa:<case>:<status>` /
+   `notify_customer_email:<case>:<status>`).
 
 ## Retencao do wa_id (verificar em staging, nao apressar em produção)
 
