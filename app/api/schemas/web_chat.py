@@ -26,6 +26,10 @@ class WebChatResponse(BaseModel):
     references: list[str] = Field(default_factory=list)
     support_code: str
     error_code: str | None = None
+    # Ponte WhatsApp<->console: CTA "continuar no WhatsApp". Presente so
+    # quando o caso ja esta aberto (nao pending_consent) e a frente esta
+    # configurada; None em qualquer outro caso.
+    support_deep_link: str | None = None
 
 
 class WebFeedbackRequest(BaseModel):

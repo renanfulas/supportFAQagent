@@ -27,6 +27,7 @@ from app.conversations.repository import ConversationRepository
 from app.conversations.service import hash_session
 from app.notifications.support_team import render_support_team_notifications
 from app.support.transcript import build_support_snapshot_context
+from app.support.wa_binding import build_support_deep_link
 
 
 logger = logging.getLogger(__name__)
@@ -114,6 +115,11 @@ class ChatPersistenceResult:
     persistence_status: str
     turn_id: str
     request_id_reused: bool = False
+    # Ponte WhatsApp<->console: "continuar no WhatsApp" -- so preenchido
+    # quando o caso ja esta 'open' (nao 'pending_consent') e a frente esta
+    # configurada. None em qualquer outro caso; o chamador so exibe o CTA
+    # quando presente.
+    support_deep_link: str | None = None
 
 
 @dataclass(frozen=True)
@@ -128,6 +134,10 @@ class ConsentPromotionResult:
     # consent wins over a retyped one), so the widget can mirror to the client
     # exactly what the team was told. None on the idempotent replay path.
     customer_name: str | None = None
+    # Ponte WhatsApp<->console: "continuar no WhatsApp" -- only set the first
+    # time a pending_consent case is promoted to open (already_promoted=True
+    # replays don't need a fresh CTA).
+    support_deep_link: str | None = None
 
 
 class OperationalRepository:
@@ -265,6 +275,7 @@ class OperationalRepository:
                             error_code=error_code,
                         )
                     handoff_status = HANDOFF_NOT_REQUIRED
+                    support_deep_link: str | None = None
                     if audit.human_queue_required:
                         # Sprint 4b: the LGPD consent gate only applies to the web chat
                         # channel — WhatsApp native (Hermes/Meta) keeps today's behavior
@@ -342,11 +353,17 @@ class OperationalRepository:
                                 summary=question[:500],
                                 references=references,
                             )
+                            # Deep link so ficara valido depois que o
+                            # SELECT ... deste caso resolver 'aberto' no
+                            # bridge (_case_is_open); case_status aqui e
+                            # sempre OPEN, nunca pending_consent.
+                            support_deep_link = self._maybe_deep_link(support_case_id)
             return ChatPersistenceResult(
                 handoff_status=handoff_status,
                 persistence_status=PERSISTENCE_PERSISTED,
                 turn_id=str(persisted_turn_id),
                 request_id_reused=request_id_reused,
+                support_deep_link=support_deep_link,
             )
         except Exception as exc:
             log_event(
@@ -488,6 +505,21 @@ class OperationalRepository:
             ),
         )
         return str(cursor.fetchone()[0]), context_snapshot.get("organized_context")
+
+    def _maybe_deep_link(self, case_id: str) -> str | None:
+        """"Continuar no WhatsApp" CTA -- None when the bridge isn't
+        configured, so callers simply omit the button/text."""
+
+        settings = self.runtime.settings
+        if not getattr(settings, "enable_whatsapp_support_number", False):
+            return None
+        phone = getattr(settings, "meta_support_phone_number_e164", None)
+        token_secret = getattr(settings, "support_wa_token_secret", None)
+        if not phone or not token_secret:
+            return None
+        return build_support_deep_link(
+            case_id, support_phone_e164=phone, token_secret=token_secret
+        )
 
     def _enqueue_support_team_notifications(
         self,
@@ -741,6 +773,7 @@ class OperationalRepository:
             summary=str(summary) if summary else None,
             domain=str(domain_name),
             customer_name=effective_name,
+            support_deep_link=self._maybe_deep_link(str(case_id)),
         )
 
     def record_feedback(self, feedback: FeedbackRequest) -> FeedbackResponse:

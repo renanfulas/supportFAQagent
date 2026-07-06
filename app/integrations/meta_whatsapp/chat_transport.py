@@ -201,6 +201,8 @@ class MetaWhatsAppChatTransport:
                 f"{answer} O atendimento humano está temporariamente indisponível; "
                 "guarde o request_id para acompanhamento."
             )
+        if persistence.support_deep_link:
+            answer = f"{answer}\n\nContinuar no WhatsApp: {persistence.support_deep_link}"
         outbound = self.client.send_text(to=message.from_wa_id, text=answer)
         return MetaWhatsAppChatResult(
             request_id=request_id,

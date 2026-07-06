@@ -1107,6 +1107,135 @@ Fronteira de responsabilidade:
 - Juliano: deploy da tela `/team` no `ask-host-genius` (mesmo fluxo do
   `deploy_ask_host_genius`); a UI nao recalcula regra de negocio.
 
+## Ponte WhatsApp<->console (numero de suporte, Fase 1)
+
+Status: Fase 1 (chat humano bidirecional in-window) implementada em codigo,
+dark por padrao (`ENABLE_WHATSAPP_SUPPORT_NUMBER=false`); depende de
+provisionamento externo na Meta (numero de suporte + webhook) antes de smoke
+real. Plano: `docs/quality-plans/whatsapp-support-bridge-tech-plan.md`. Modo-
+por-numero: o numero de suporte nunca roda RAG/roteador de dominio -- so
+atendimento humano via console. Templates utility, notificacao proativa de
+status e e-mail paralelo sao Fase 2 (nao implementados nesta etapa).
+
+Tese: o console web e o posto de trabalho do atendente; o WhatsApp e a
+superficie do cliente. Dois numeros: numero padrao (bot, Hermes hoje) e
+numero de suporte (humano, Meta-nativo).
+
+### Vinculo cliente<->caso (deep link, sem storage de token)
+
+O handoff (native ou web) gera um `wa.me` link com um **token auto-
+verificavel** (HMAC assinado sobre o `case_id`, `SUPPORT_WA_TOKEN_SECRET`,
+sem tabela de tokens). E o mecanismo **primario** de vinculo -- nao
+`phone_hash` -- porque um caso native-origin provavelmente nao tem
+`customer_id` (WhatsApp nativo se apoia em hash de sessao, nao em Auth).
+Mensagens seguintes do mesmo `wa_id` sao resolvidas por um hash deterministico
+de lookup (`wa_id_hash`, sub-chave derivada de `SUPPORT_WA_ENC_KEY` por
+separacao de contexto -- Fernet e nao-deterministico, nao da para comparar
+`wa_id_encrypted` por igualdade).
+
+Campo novo nas respostas de handoff existentes quando a frente esta
+configurada (`null` caso contrario): `support_deep_link` em
+`WebChatResponse` (`POST /web/chat`) e `HandoffConsentResponse`
+(`POST /web/handoff/consent`). No WhatsApp nativo (Hermes/Meta), o mesmo link
+e anexado ao texto da resposta do bot quando o caso escala.
+
+### Numero de suporte -- inbound (sem RAG)
+
+Todo inbound no `phone_number_id` de suporte (roteado pelo
+`value.metadata.phone_number_id` do payload do webhook Meta, nunca pelo fluxo
+RAG) passa pelo handler dedicado:
+
+1. resolve o caso: binding aberto pelo `wa_id_hash` (repeat contact) ou token
+   do deep link (primeiro contato); token/`wa_id` sem vinculo -> resposta
+   generica ("nao encontrei..."), sem criar nada (numero handoff-only, sem
+   triagem por design);
+2. caso resolvido mas nao em `open|in_progress|waiting_customer` (ex.:
+   `closed`, `pending_consent`) -> mesma resposta generica, nunca anexa;
+3. cria/atualiza o binding cifrado (`wa_id` cifrado, escopado ao caso; ver
+   "Fronteira de privacidade" abaixo), atualiza a janela de 24h
+   (`last_customer_message_at`);
+4. anexa a mensagem na MESMA `conversation_id` do caso (`role='user'`,
+   `channel='whatsapp_support'`) -- o console mostra tudo no mesmo transcript,
+   sem UI nova; promove `conversations.status` para `human_active`;
+5. registra evento em `support_case_events` (`actor_kind='customer'`);
+6. thin bot (unico automatismo, **nunca inicia** -- so responde a um
+   inbound, o que garante que a resposta sempre cai dentro da janela): ack no
+   primeiro contato ("seu chamado foi passado para um atendente...") e/ou
+   aviso de horario comercial fora de `SUPPORT_BUSINESS_HOURS_*`. Repeat
+   contact dentro do horario nao gera nenhuma resposta automatica.
+
+### `POST /web/support/cases/{case_id}/message` (compositor do atendente)
+
+Auth: sessao staff (`require_staff_session`) + `X-Requested-With:
+XMLHttpRequest`. `404` com `ENABLE_WHATSAPP_SUPPORT_NUMBER=false`.
+
+Entrada: `{ "message": "..." }` (1-4000 chars).
+
+Regras:
+
+- exige binding vivo do caso -> sem binding: `409 { code: no_whatsapp_binding
+  }`;
+- so envia **free-form** dentro da janela de 24h (best-effort, espelho de
+  `last_customer_message_at`) -> janela fechada: `409 { code: window_closed,
+  templates: [] }` (lista de templates vazia nesta Fase 1 -- enviar template
+  e Fase 2);
+- rate limit por caso (`SUPPORT_WA_REPLY_RATE_LIMIT_PER_CASE_PER_MINUTE`);
+- anexa `messages(role='agent', channel='whatsapp_support')` na mesma
+  transacao do evento (`actor_kind='staff'`) e enfileira
+  `whatsapp.message.requested` (`phone_number_kind: 'support'`,
+  `message_row_id`) no outbox -- reusa o dispatcher existente
+  (Sprint 5), so escolhendo `META_SUPPORT_PHONE_NUMBER_ID` em vez do numero
+  do bot.
+
+Saida `200`: `{ "message_id": "...", "status": "queued" }`.
+
+### Status de entrega por mensagem
+
+O dispatcher grava o `meta_message_id` retornado pelo envio de volta na linha
+de `messages` (`delivery_status='sent'`). O webhook Meta (mesma rota do bot,
+`parsed.statuses`) atualiza `delivery_status`
+(`queued -> sent -> delivered -> read -> failed`) por `meta_message_id`,
+monotonico por rank (uma callback tardia de `sent` nunca sobrescreve
+`delivered`/`read`; `failed` sempre vence).
+
+### Fronteira de privacidade (wa_id em repouso)
+
+Necessidade da frente: sem o numero do cliente em repouso nao existe resposta
+assincrona do atendente. Decisao: `wa_id` cifrado (Fernet, chave dedicada
+`SUPPORT_WA_ENC_KEY`, nunca reusar `IDENTITY_HASH_SECRET`), decifrado so no
+envio, nunca em log. Retencao dupla (o que vier primeiro): purgado no
+fechamento/cancelamento do caso, ou apos `SUPPORT_WA_BINDING_MAX_DAYS`
+(default 15 dias) sem resolucao.
+
+### Configuracao
+
+```dotenv
+ENABLE_WHATSAPP_SUPPORT_NUMBER=false
+META_SUPPORT_PHONE_NUMBER_ID=...          # id interno da Cloud API
+META_SUPPORT_PHONE_NUMBER_E164=...        # numero discavel, so para o deep link wa.me
+SUPPORT_WA_ENC_KEY=...                     # cifra do wa_id (dedicada)
+SUPPORT_WA_TOKEN_SECRET=...                # assinatura do token do deep link (dedicada)
+SUPPORT_WA_BINDING_MAX_DAYS=15
+SUPPORT_WA_WINDOW_HOURS=24
+SUPPORT_BUSINESS_HOURS_START=09:00
+SUPPORT_BUSINESS_HOURS_END=18:00
+SUPPORT_BUSINESS_DAYS=mon,tue,wed,thu,fri
+SUPPORT_WA_REPLY_RATE_LIMIT_PER_CASE_PER_MINUTE=20
+```
+
+Readiness (`whatsapp_bridge` em `/health/ready`): flag ligada exige
+`PERSISTENCE_BACKEND=postgres`, numero+token da Meta configurados, e as duas
+chaves dedicadas -- combinacao invalida aparece como `unavailable` com motivo,
+mesmo padrao do `support_console`.
+
+Fronteira de responsabilidade:
+
+- Renan: contrato, migrations 016/017/018, cifra/token, roteamento por
+  numero, compositor, dispatcher, readiness, testes;
+- Juliano: provisionar o numero de suporte na WABA, aprovar templates
+  utility (Fase 2), webhook Meta apontando pro backend, transporte de e-mail
+  (Fase 2).
+
 ## Webhook Meta WhatsApp Cloud API
 
 Status: fundacao nativa implementada por feature flag, sem ativacao operacional

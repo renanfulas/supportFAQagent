@@ -1,8 +1,36 @@
 # Plano De Evolucao Do Chat Web
 
-Status: V0 e parte persistente da V2 foram incorporadas. Este documento
-permanece como roadmap; as entregas ainda abertas sao identidade/WhatsApp real,
-continuidade omnichannel e operacao humana.
+Status (reconciliado em 2026-07-03): o roadmap V0->V3 abaixo permanece como
+registro historico da decisao original, mas os V-phases **nao mapeiam mais 1:1
+com o que foi construido**. Leia primeiro a reconciliacao abaixo antes de usar
+as secoes de fase como fonte de verdade.
+
+### Onde cada fase caiu na realidade (reconciliacao 2026-07-03)
+
+- **V0 - chat web publico: OK, entregue.** `/web/chat`, `/web/feedback`, sessao
+  anonima `web:<uuid>`, rate limit e UI sem API key.
+- **V1 - identidade por WhatsApp: entregue, com escopo redefinido.** A
+  infraestrutura de OTP (`/web/auth/whatsapp/*`, `verified_identities`,
+  `web_sessions`, `otp_challenges`) foi construida, mas **nao** virou um "login
+  por WhatsApp" de proposito geral. Ela existe como o **gate de consentimento
+  LGPD no handoff**: o OTP so dispara na intencao de escalar, para autorizar
+  contato direto da equipe. Web chat e WhatsApp nativo sao canais
+  **propositalmente separados** — ver
+  [customer-identity-whatsapp-handoff-plan.md](customer-identity-whatsapp-handoff-plan.md).
+- **V2 - omnichannel real: metade entregue, metade descopada de proposito.**
+  Entregue: persistencia de conversas/mensagens, `customer_id`, `support_cases`
+  duravel, historico por cliente (Sprints 1-4). **Descopado por decisao
+  (2026-07-01):** a continuidade web<->WhatsApp nativo na mesma conversa foi
+  aceita como **permanentemente separada**, nao um gap a fechar; o WhatsApp
+  nativo tem continuidade "boa o suficiente" por hash deterministico do telefone.
+- **V3 - operacao madura: comecou, entregue em fatias fora deste doc.** A
+  primeira fatia e o **console do time** (fila com semaforo SLA, transicoes
+  auditadas, metricas), entregue por
+  [support-team-console-plan.md](support-team-console-plan.md). A metade cliente
+  (status de atendimento) esta planejada em
+  [web-chat-customer-ticket-status-plan.md](web-chat-customer-ticket-status-plan.md).
+  Ainda aberto na visao V3: loop feedback->base de conhecimento, roteamento
+  multi-dominio no web chat, direitos LGPD do titular e gestao de perfis/roles.
 
 Este documento define o plano tecnico para evoluir a interface web do
 `supportFAQagent` de uma experiencia V0 estilo ChatGPT ate um fluxo
@@ -184,6 +212,10 @@ Criterios de aceite:
 
 ### V1 - Identidade Por WhatsApp
 
+> **Reconciliacao (2026-07-03):** entregue, mas o escopo mudou — a OTP virou o
+> gate de consentimento LGPD no handoff, nao um login geral. O texto abaixo e a
+> intencao original; ver o bloco de reconciliacao no topo do doc.
+
 Objetivo:
 
 Adicionar login simples por telefone com verificacao via WhatsApp, sem
@@ -256,6 +288,11 @@ Criterios de aceite:
   entrada.
 
 ### V2 - Omnichannel Real
+
+> **Reconciliacao (2026-07-03):** a persistencia/historico/ticket duravel foi
+> entregue (Sprints 1-4), mas a continuidade web<->WhatsApp nativo na mesma
+> conversa foi **descopada de proposito** (canais permanentemente separados).
+> Ver o bloco de reconciliacao no topo do doc.
 
 Objetivo:
 
@@ -336,6 +373,12 @@ Criterios de aceite:
 - Logs preservam rastreabilidade sem vazar PII.
 
 ### V3 - Operacao Madura E Expansao
+
+> **Reconciliacao (2026-07-03):** ja comecou, em fatias fora deste doc — console
+> do time ([support-team-console-plan.md](support-team-console-plan.md)) e status
+> de atendimento para o cliente
+> ([web-chat-customer-ticket-status-plan.md](web-chat-customer-ticket-status-plan.md)).
+> Ver o bloco de reconciliacao no topo do doc.
 
 Objetivo:
 

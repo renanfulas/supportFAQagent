@@ -239,6 +239,7 @@ def test_get_case_events_maps_rows_oldest_first() -> None:
             "open",
             "in_progress",
             None,
+            "staff",
             "Renan",
             DB_NOW - timedelta(hours=2),
         ),
@@ -247,6 +248,7 @@ def test_get_case_events_maps_rows_oldest_first() -> None:
             "in_progress",
             "closed",
             "resolvido no telefone",
+            "staff",
             "Renan",
             DB_NOW - timedelta(hours=1),
         ),
@@ -259,6 +261,32 @@ def test_get_case_events_maps_rows_oldest_first() -> None:
     assert [event.action for event in events] == ["claim", "close"]
     assert events[1].note == "resolvido no telefone"
     assert events[0].actor_display_name == "Renan"
+    assert events[0].actor_kind == "staff"
+
+
+def test_get_case_events_customer_actor_has_no_staff_display_name() -> None:
+    """LEFT JOIN regression guard: a customer/system event (actor_staff_id
+    NULL) must still surface, never disappear behind an INNER JOIN."""
+
+    rows = [
+        (
+            "message",
+            "waiting_customer",
+            "waiting_customer",
+            None,
+            "customer",
+            None,
+            DB_NOW - timedelta(minutes=5),
+        ),
+    ]
+    cursor = FakeCursor(fetchone_results=[], fetchall_results=[rows])
+    repository = SupportCaseRepository(FakeRuntime(cursor))
+
+    events = repository.get_case_events("case-1")
+
+    assert len(events) == 1
+    assert events[0].actor_kind == "customer"
+    assert events[0].actor_display_name == "Cliente"
 
 
 def test_get_case_events_empty_history() -> None:

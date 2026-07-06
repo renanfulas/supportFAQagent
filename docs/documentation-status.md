@@ -97,6 +97,23 @@ em staging ainda. Contrato em `docs/architecture/integration-contracts.md`,
 smoke em `docs/runbooks/support-console-smoke.md`, estado em
 `docs/quality-plans/support-team-console-tech-plan.md`.
 
+Em 05/07/2026, a Fase 1 da ponte WhatsApp<->console foi implementada em
+codigo: migrations `016_case_whatsapp_bindings.sql` (binding cifrado do
+`wa_id`, retencao dupla), `017_support_case_events_actor_kind.sql` (ator
+generico staff/customer/system) e `018_messages_delivery_status.sql` (status
+de entrega por mensagem); cifra/token em `app/support/wa_binding.py`
+(`SUPPORT_WA_ENC_KEY`, `SUPPORT_WA_TOKEN_SECRET`); handler de inbound sem RAG
+e compositor do atendente em `app/support/whatsapp_bridge.py`; roteamento por
+`phone_number_id` no webhook Meta (modo-por-numero); deep link no handoff
+(`support_deep_link` em `WebChatResponse`/`HandoffConsentResponse`);
+dispatcher com selecao de numero (`phone_number_kind`) e write-back do
+`meta_message_id`; componente `whatsapp_bridge` no readiness. Tudo dark por
+padrao atras de `ENABLE_WHATSAPP_SUPPORT_NUMBER`; nada aplicado em staging
+ainda (falta o numero de suporte provisionado na Meta, dono: Juliano).
+Contrato em `docs/architecture/integration-contracts.md`, smoke em
+`docs/runbooks/whatsapp-support-bridge-smoke.md`, estado em
+`docs/quality-plans/whatsapp-support-bridge-tech-plan.md`.
+
 ## Documentos Historicos
 
 Planos antigos podem citar Alexandre e Silotto ou descrever entregas que ja

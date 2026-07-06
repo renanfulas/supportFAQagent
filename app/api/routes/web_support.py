@@ -29,6 +29,8 @@ from app.api.schemas.web_support import (
     ConsoleCaseDetailResponse,
     ConsoleCaseEventResponse,
     ConsoleCaseListResponse,
+    ConsoleCaseMessageRequest,
+    ConsoleCaseMessageResponse,
     ConsoleCaseSummaryResponse,
     ConsoleMetricsResponse,
     ConsoleSlaResponse,
@@ -46,12 +48,18 @@ from app.core.errors import DatabaseUnavailableError
 from app.core.logging import log_event
 from app.core.rate_limit import RateLimitExceeded
 from app.core.request_context import get_request_id
+from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
 from app.support.metrics import WINDOW_DAYS, SupportMetricsRepository, build_console_metrics
 from app.support.repository import (
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
     SupportCaseRepository,
     SupportCaseSummary,
+)
+from app.support.whatsapp_bridge import (
+    CaseHasNoBinding,
+    SupportWhatsAppBridgeService,
+    SupportWhatsAppWindowClosed,
 )
 from app.support.sla import (
     COLOR_FILTERS,
@@ -480,6 +488,7 @@ def get_console_case(
                 from_status=event.from_status,
                 to_status=event.to_status,
                 note=event.note,
+                actor_kind=event.actor_kind,
                 actor_display_name=event.actor_display_name,
                 created_at=event.created_at,
             )
@@ -538,6 +547,81 @@ def transition_console_case(
             else None
         ),
     )
+
+
+@router.post(
+    "/cases/{case_id}/message",
+    response_model=ConsoleCaseMessageResponse,
+)
+def send_console_case_message(
+    case_id: str,
+    payload: ConsoleCaseMessageRequest,
+    request: Request,
+    principal: StaffPrincipal = Depends(require_staff_session),
+) -> ConsoleCaseMessageResponse:
+    """Ponte WhatsApp<->console: o atendente responde o cliente pelo caso.
+
+    So funciona dentro da janela de 24h da Meta (free-form); fora da janela,
+    responde 409 -- enviar template fica para a Fase 2. Dark quando
+    ``ENABLE_WHATSAPP_SUPPORT_NUMBER`` esta desligada.
+    """
+
+    _require_csrf_header(request)
+    settings = request.app.state.settings
+    if not settings.enable_whatsapp_support_number:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    runtime = _get_runtime(request)
+    try:
+        runtime.reply_limiter.check(case_id)
+    except RateLimitExceeded as exc:
+        raise HTTPException(
+            status_code=429,
+            detail="too_many_requests",
+            headers={"Retry-After": str(exc.retry_after_seconds)},
+        ) from exc
+
+    bridge = SupportWhatsAppBridgeService(
+        settings=settings,
+        database_runtime=request.app.state.database_runtime,
+        client=MetaWhatsAppClient(
+            access_token=settings.meta_whatsapp_access_token or "",
+            phone_number_id=settings.meta_support_phone_number_id or "",
+            graph_api_version=settings.meta_whatsapp_graph_api_version,
+            timeout_seconds=settings.meta_whatsapp_request_timeout_seconds,
+        ),
+    )
+    try:
+        result = bridge.send_agent_reply(
+            case_id=case_id,
+            staff_id=principal.staff_id,
+            text=payload.message,
+        )
+    except CaseHasNoBinding as exc:
+        raise HTTPException(
+            status_code=409, detail={"code": "no_whatsapp_binding"}
+        ) from exc
+    except SupportWhatsAppWindowClosed as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "window_closed", "templates": []},
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="empty_message") from exc
+    except DatabaseUnavailableError as exc:
+        raise HTTPException(
+            status_code=503, detail="support_inbox_storage_unavailable"
+        ) from exc
+
+    log_event(
+        logger,
+        "support_wa_agent_message",
+        request_id=get_request_id(request),
+        case_id=case_id,
+        staff_id=principal.staff_id,
+        delivery="freeform",
+    )
+    return ConsoleCaseMessageResponse(message_id=result.message_id, status="queued")
 
 
 @router.get("/metrics", response_model=ConsoleMetricsResponse)

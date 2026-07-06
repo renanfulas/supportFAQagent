@@ -88,6 +88,7 @@ class ConsoleCaseEventResponse(BaseModel):
     from_status: str
     to_status: str
     note: str | None = None
+    actor_kind: str = "staff"
     actor_display_name: str
     created_at: datetime
 
@@ -109,6 +110,15 @@ class StaffTransitionResponse(BaseModel):
     case_id: str
     status: str
     assignee: ConsoleAssigneeResponse | None = None
+
+
+class ConsoleCaseMessageRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+
+
+class ConsoleCaseMessageResponse(BaseModel):
+    message_id: str
+    status: str = "queued"
 
 
 class MetricsBacklogResponse(BaseModel):

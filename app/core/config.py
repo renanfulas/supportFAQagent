@@ -312,6 +312,67 @@ class Settings(BaseSettings):
         alias="WHATSAPP_CHAT_RATE_LIMIT_PER_MINUTE",
     )
 
+    # Ponte WhatsApp<->console (numero de suporte, Meta-nativo). Dark por
+    # padrao; ver docs/quality-plans/whatsapp-support-bridge-tech-plan.md.
+    enable_whatsapp_support_number: bool = Field(
+        default=False,
+        alias="ENABLE_WHATSAPP_SUPPORT_NUMBER",
+    )
+    meta_support_phone_number_id: str | None = Field(
+        default=None,
+        alias="META_SUPPORT_PHONE_NUMBER_ID",
+    )
+    # Numero DISCAVEL (E.164) do numero de suporte, para o deep link wa.me --
+    # distinto de meta_support_phone_number_id, que e o identificador interno
+    # da Cloud API usado nas chamadas HTTP, nao um numero que o cliente digita.
+    meta_support_phone_number_e164: str | None = Field(
+        default=None,
+        alias="META_SUPPORT_PHONE_NUMBER_E164",
+    )
+    meta_support_waba_id: str | None = Field(
+        default=None,
+        alias="META_SUPPORT_WABA_ID",
+    )
+    # Chave dedicada para cifrar o wa_id em repouso (nunca reusar
+    # identity_hash_secret, que e para HMAC/hash, nao cifra reversivel).
+    support_wa_enc_key: str | None = Field(
+        default=None,
+        alias="SUPPORT_WA_ENC_KEY",
+    )
+    # Secret dedicado para assinar o token do deep link (case_id auto-
+    # verificavel); separado da chave de cifra por higiene de chaves.
+    support_wa_token_secret: str | None = Field(
+        default=None,
+        alias="SUPPORT_WA_TOKEN_SECRET",
+    )
+    support_wa_binding_max_days: int = Field(
+        default=15,
+        ge=1,
+        alias="SUPPORT_WA_BINDING_MAX_DAYS",
+    )
+    support_wa_window_hours: int = Field(
+        default=24,
+        ge=1,
+        alias="SUPPORT_WA_WINDOW_HOURS",
+    )
+    support_business_hours_start: str = Field(
+        default="09:00",
+        alias="SUPPORT_BUSINESS_HOURS_START",
+    )
+    support_business_hours_end: str = Field(
+        default="18:00",
+        alias="SUPPORT_BUSINESS_HOURS_END",
+    )
+    support_business_days: str = Field(
+        default="mon,tue,wed,thu,fri",
+        alias="SUPPORT_BUSINESS_DAYS",
+    )
+    support_wa_reply_rate_limit_per_case_per_minute: int = Field(
+        default=20,
+        ge=1,
+        alias="SUPPORT_WA_REPLY_RATE_LIMIT_PER_CASE_PER_MINUTE",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -93,6 +93,85 @@ def test_readiness_fails_closed_when_postgres_is_required_but_disabled() -> None
     }
 
 
+def test_whatsapp_bridge_baseline_disabled_by_default() -> None:
+    snapshot = HealthService(DisabledRuntime()).readiness()
+
+    assert snapshot["components"]["whatsapp_bridge"] == {"status": "disabled"}
+
+
+def test_whatsapp_bridge_baseline_unavailable_without_postgres() -> None:
+    runtime = DisabledRuntime()
+    runtime.settings = SimpleNamespace(
+        default_domain="suporte-vps-whatsapp",
+        enable_whatsapp_support_number=True,
+        persistence_backend="disabled",
+    )
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["components"]["whatsapp_bridge"] == {
+        "status": "unavailable",
+        "reason": "postgres_persistence_required",
+    }
+
+
+def test_whatsapp_bridge_baseline_unavailable_without_meta_support_number() -> None:
+    runtime = DisabledRuntime()
+    runtime.settings = SimpleNamespace(
+        default_domain="suporte-vps-whatsapp",
+        enable_whatsapp_support_number=True,
+        persistence_backend="postgres",
+        meta_support_phone_number_id=None,
+        meta_whatsapp_access_token="token",
+        support_wa_enc_key="enc-key",
+        support_wa_token_secret="token-secret",
+    )
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["components"]["whatsapp_bridge"] == {
+        "status": "unavailable",
+        "reason": "meta_support_number_not_configured",
+    }
+
+
+def test_whatsapp_bridge_baseline_unavailable_without_enc_key() -> None:
+    runtime = DisabledRuntime()
+    runtime.settings = SimpleNamespace(
+        default_domain="suporte-vps-whatsapp",
+        enable_whatsapp_support_number=True,
+        persistence_backend="postgres",
+        meta_support_phone_number_id="support-number-id",
+        meta_whatsapp_access_token="token",
+        support_wa_enc_key=None,
+        support_wa_token_secret="token-secret",
+    )
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["components"]["whatsapp_bridge"] == {
+        "status": "unavailable",
+        "reason": "support_wa_enc_key_missing",
+    }
+
+
+def test_whatsapp_bridge_baseline_ok_when_fully_configured() -> None:
+    runtime = DisabledRuntime()
+    runtime.settings = SimpleNamespace(
+        default_domain="suporte-vps-whatsapp",
+        enable_whatsapp_support_number=True,
+        persistence_backend="postgres",
+        meta_support_phone_number_id="support-number-id",
+        meta_whatsapp_access_token="token",
+        support_wa_enc_key="enc-key",
+        support_wa_token_secret="token-secret",
+    )
+
+    snapshot = HealthService(runtime).readiness()
+
+    assert snapshot["components"]["whatsapp_bridge"] == {"status": "ok"}
+
+
 def test_readiness_reports_database_failure_without_private_detail() -> None:
     snapshot = HealthService(FailingRuntime()).readiness()
 
@@ -383,6 +462,7 @@ def test_readiness_route_keeps_liveness_contract_and_returns_components(
         "retrieval",
         "outbox",
         "support_console",
+        "whatsapp_bridge",
     }
     get_settings.cache_clear()
 

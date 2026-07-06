@@ -48,6 +48,7 @@ class CaseEventSummary:
     from_status: str
     to_status: str
     note: str | None
+    actor_kind: str
     actor_display_name: str
     created_at: Any
 
@@ -244,16 +245,24 @@ class SupportCaseRepository:
         return waiting.get(str(case_id), 0.0)
 
     def get_case_events(self, case_id: str) -> list[CaseEventSummary]:
-        """Audit trail of transitions (Fase B), oldest first."""
+        """Audit trail of transitions and messages (Fase B + ponte WhatsApp),
+        oldest first.
+
+        Migration 017 made ``actor_staff_id`` nullable so customer/system
+        events can be recorded on the same trail. **This must stay a LEFT
+        JOIN**: an INNER JOIN silently drops any event whose actor isn't
+        staff (see the migration's own warning comment).
+        """
 
         with self.runtime.transaction() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
                     SELECT e.action, e.from_status, e.to_status,
-                           e.note_sanitized, m.display_name, e.created_at
+                           e.note_sanitized, e.actor_kind, m.display_name,
+                           e.created_at
                     FROM support_case_events e
-                    JOIN staff_members m ON m.id = e.actor_staff_id
+                    LEFT JOIN staff_members m ON m.id = e.actor_staff_id
                     WHERE e.case_id = %s
                     ORDER BY e.created_at ASC
                     """,
@@ -266,8 +275,11 @@ class SupportCaseRepository:
                 from_status=str(row[1]),
                 to_status=str(row[2]),
                 note=row[3],
-                actor_display_name=str(row[4]),
-                created_at=row[5],
+                actor_kind=str(row[4]),
+                actor_display_name=_actor_display_name(
+                    actor_kind=str(row[4]), staff_display_name=row[5]
+                ),
+                created_at=row[6],
             )
             for row in rows
         ]
@@ -419,6 +431,14 @@ class SupportCaseRepository:
             opened_at=row[8],
             updated_at=row[9],
         )
+
+
+def _actor_display_name(*, actor_kind: str, staff_display_name: Any) -> str:
+    if actor_kind == "staff":
+        return str(staff_display_name) if staff_display_name else "Atendente"
+    if actor_kind == "customer":
+        return "Cliente"
+    return "Sistema"
 
 
 def _load_json(value: Any, *, default: Any) -> Any:

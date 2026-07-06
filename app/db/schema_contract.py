@@ -3,9 +3,19 @@
 from typing import Any
 
 
-CONTRACT_MIGRATION = "015_support_case_events.sql"
+CONTRACT_MIGRATION = "018_messages_delivery_status.sql"
 
 REQUIRED_COLUMNS = {
+    "case_whatsapp_bindings": {
+        "id",
+        "case_id",
+        "wa_id_encrypted",
+        "wa_id_hash",
+        "last_customer_message_at",
+        "bound_at",
+        "expires_at",
+        "unbound_at",
+    },
     "chat_audits": {
         "request_id",
         "session_hash",
@@ -50,6 +60,8 @@ REQUIRED_COLUMNS = {
         "channel",
         "redaction_version",
         "chat_audit_id",
+        "meta_message_id",
+        "delivery_status",
     },
     "operational_outbox": {
         "idempotency_key",
@@ -62,6 +74,8 @@ REQUIRED_COLUMNS = {
         "id",
         "case_id",
         "actor_staff_id",
+        "actor_kind",
+        "actor_customer_id",
         "action",
         "from_status",
         "to_status",
@@ -120,6 +134,9 @@ REQUIRED_COLUMNS = {
 FORBIDDEN_COLUMNS = {"conversations": {"session_id", "legacy_session_seen_at"}}
 
 REQUIRED_INDEXES = {
+    "idx_case_wa_bindings_open",
+    "idx_case_wa_bindings_wa_id_hash",
+    "idx_case_wa_bindings_expiry",
     "idx_chat_audits_feedback_context",
     "idx_chat_audits_request_fingerprint",
     "idx_conversations_active_session",
@@ -130,12 +147,14 @@ REQUIRED_INDEXES = {
     "idx_customers_last_seen",
     "idx_customers_status",
     "idx_feedback_idempotency_key",
+    "idx_messages_meta_message_id",
     "idx_messages_turn_role",
     "idx_outbox_dispatch",
     "idx_staff_login_hints_staff",
     "idx_staff_sessions_expires",
     "idx_staff_sessions_staff",
     "idx_support_case_events_case",
+    "idx_support_case_events_actor_customer",
     "idx_support_cases_assignee",
     "idx_support_cases_domain_status_opened",
     "idx_support_cases_customer",
@@ -153,14 +172,18 @@ REQUIRED_TRIGGERS = {
 FORBIDDEN_TRIGGERS = {"conversations_legacy_writer_guard"}
 
 REQUIRED_CONSTRAINTS = {
+    "case_whatsapp_bindings_case_unique",
     "chat_audits_session_hash_version_check",
     "customer_preferences_json_object_check",
     "customer_preferences_version_check",
     "customers_status_check",
     "feedback_idempotency_fingerprint_check",
     "feedback_session_hash_version_check",
+    "messages_delivery_status_check",
     "otp_challenges_status_check",
     "staff_members_status_check",
+    "support_case_events_actor_kind_check",
+    "support_case_events_actor_shape_check",
     "support_cases_context_snapshot_object_check",
     "support_cases_closed_at_check",
     "support_cases_idempotency_key_unique",

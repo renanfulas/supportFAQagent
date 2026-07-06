@@ -14,10 +14,12 @@ from app.integrations.meta_whatsapp.chat_transport import (
     MetaWhatsAppChatTransportError,
 )
 from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
+from app.integrations.meta_whatsapp.schemas import MetaInboundTextMessage
 from app.integrations.meta_whatsapp.webhook import (
     parse_meta_webhook_payload,
     verify_meta_signature,
 )
+from app.support.whatsapp_bridge import SupportWhatsAppBridgeService, apply_delivery_status
 
 
 router = APIRouter()
@@ -78,7 +80,16 @@ async def receive_webhook(request: Request) -> dict[str, str]:
         messages_count=len(parsed.messages),
         statuses_count=len(parsed.statuses),
     )
-    if settings.enable_meta_whatsapp_chat and parsed.messages:
+    support_messages, bot_messages = _split_by_number(parsed.messages, settings)
+
+    if support_messages:
+        _handle_support_messages(
+            request=request,
+            settings=settings,
+            messages=support_messages,
+        )
+
+    if settings.enable_meta_whatsapp_chat and bot_messages:
         transport = MetaWhatsAppChatTransport(
             settings=settings,
             database_runtime=request.app.state.database_runtime,
@@ -96,7 +107,7 @@ async def receive_webhook(request: Request) -> dict[str, str]:
             ),
         )
         try:
-            for message in parsed.messages:
+            for message in bot_messages:
                 transport.handle_text_message(
                     message=message,
                     request_id=get_request_id(request),
@@ -117,7 +128,51 @@ async def receive_webhook(request: Request) -> dict[str, str]:
                 status_code=503,
                 detail="meta_whatsapp_chat_processing_failed",
             ) from exc
+
+    if settings.enable_whatsapp_support_number and parsed.statuses:
+        for status in parsed.statuses:
+            apply_delivery_status(request.app.state.database_runtime, status)
+
     return {"status": "accepted"}
+
+
+def _split_by_number(
+    messages: list[MetaInboundTextMessage], settings
+) -> tuple[list[MetaInboundTextMessage], list[MetaInboundTextMessage]]:
+    """Route by ``phone_number_id``: modo-por-numero -- the support number
+    never reaches the bot/RAG path, and vice versa. Messages with an unknown
+    or absent ``phone_number_id`` fall back to the bot path (today's
+    behavior, single-number payloads predating this field)."""
+
+    support_number = settings.meta_support_phone_number_id
+    if not settings.enable_whatsapp_support_number or not support_number:
+        return [], messages
+    support_messages = [m for m in messages if m.phone_number_id == support_number]
+    bot_messages = [m for m in messages if m.phone_number_id != support_number]
+    return support_messages, bot_messages
+
+
+def _handle_support_messages(*, request: Request, settings, messages) -> None:
+    bridge = SupportWhatsAppBridgeService(
+        settings=settings,
+        database_runtime=request.app.state.database_runtime,
+        client=MetaWhatsAppClient(
+            access_token=settings.meta_whatsapp_access_token or "",
+            phone_number_id=settings.meta_support_phone_number_id or "",
+            graph_api_version=settings.meta_whatsapp_graph_api_version,
+            timeout_seconds=settings.meta_whatsapp_request_timeout_seconds,
+        ),
+    )
+    for message in messages:
+        try:
+            bridge.handle_inbound(message=message, request_id=get_request_id(request))
+        except Exception as exc:  # noqa: BLE001 - log and continue the batch
+            log_event(
+                logger,
+                "support_wa_inbound_processing_failed",
+                request_id=get_request_id(request),
+                error_code=type(exc).__name__,
+            )
 
 
 def _ensure_enabled(settings) -> None:
