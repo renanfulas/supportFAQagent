@@ -15,7 +15,7 @@ from app.api.schemas.feedback import (
     safe_feedback_identifier,
     safe_feedback_source,
 )
-from app.core.errors import DatabaseUnavailableError
+from app.core.errors import DatabaseUnavailableError, TransactionBusinessError
 from app.core.logging import log_event
 from app.core.persistence_sanitize import (
     REDACTION_VERSION,
@@ -50,12 +50,15 @@ class FeedbackIntegrityConflictError(DatabaseUnavailableError):
     """Raised when an idempotency key is reused with a different payload."""
 
 
-class ConsentCaseNotFound(Exception):
+class ConsentCaseNotFound(TransactionBusinessError):
     """No pending web-chat support_case matches request_id for this identity.
 
     Deliberately raised both when the case truly does not exist and when it
     belongs to a different customer_id -- the caller must not be able to tell
-    the two apart (see promote_pending_consent's ownership check).
+    the two apart (see promote_pending_consent's ownership check). Some of
+    these raises happen inside ``with self.runtime.transaction()``, so this
+    must subclass TransactionBusinessError to survive that wrapper unchanged
+    instead of being reported as DatabaseUnavailableError.
     """
 
 

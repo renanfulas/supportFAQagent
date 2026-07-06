@@ -21,3 +21,16 @@ class RetrievalError(SupportFAQError):
 
 class DatabaseUnavailableError(SupportFAQError):
     error_code = "database_unavailable"
+
+
+class TransactionBusinessError(SupportFAQError):
+    """Base for domain-level rejections raised inside ``DatabaseRuntime.transaction()``.
+
+    Unlike a real pool/connection failure, these represent a valid business
+    decision (invalid state transition, record not found, ...) computed from
+    data already read inside the transaction. ``DatabaseRuntime.transaction()``
+    lets subclasses of this propagate unchanged instead of masking them as
+    ``DatabaseUnavailableError``.
+    """
+
+    error_code = "transaction_business_error"
