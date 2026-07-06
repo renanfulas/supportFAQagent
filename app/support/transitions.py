@@ -15,6 +15,7 @@ ativo pode executar (time pequeno, tudo auditado).
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -87,8 +88,14 @@ class TransitionResult:
 
 
 class SupportCaseTransitionService:
-    def __init__(self, runtime: DatabaseRuntime) -> None:
+    def __init__(
+        self,
+        runtime: DatabaseRuntime,
+        *,
+        now: Callable[[], datetime] | None = None,
+    ) -> None:
         self.runtime = runtime
+        self._now = now or (lambda: datetime.now(UTC))
 
     def apply(
         self,
@@ -310,7 +317,7 @@ class SupportCaseTransitionService:
         if last_customer_message_at is None:
             return wa_id, False
         window_hours = getattr(settings, "support_wa_window_hours", 24)
-        window_open = (datetime.now(UTC) - last_customer_message_at) < timedelta(
+        window_open = (self._now() - last_customer_message_at) < timedelta(
             hours=window_hours
         )
         return wa_id, window_open

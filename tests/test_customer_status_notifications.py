@@ -192,7 +192,7 @@ def test_claim_inside_window_enqueues_freeform_whatsapp_and_email() -> None:
         "SELECT preferences_json": None,  # sem linha -> opt-in default
     }
     cursor = ScriptedCursor(routes=routes)
-    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()))
+    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()), now=lambda: NOW)
 
     service.apply(case_id="case-1", action="claim", actor_staff_id="staff-1", note=None)
 
@@ -212,7 +212,7 @@ def test_close_outside_window_enqueues_template_with_summary() -> None:
         "SELECT wa_id_encrypted": _wa_binding_row(last_customer_message_at=NOW - timedelta(hours=48)),
     }
     cursor = ScriptedCursor(routes=routes)
-    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()))
+    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()), now=lambda: NOW)
 
     service.apply(case_id="case-1", action="close", actor_staff_id="staff-1", note=None)
 
@@ -232,7 +232,7 @@ def test_close_respects_email_opt_out() -> None:
         "SELECT preferences_json": ('{"notify_status_by_email": false}',),
     }
     cursor = ScriptedCursor(routes=routes)
-    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()))
+    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()), now=lambda: NOW)
 
     service.apply(case_id="case-1", action="close", actor_staff_id="staff-1", note=None)
 
@@ -251,7 +251,7 @@ def test_resume_to_in_progress_does_not_notify() -> None:
         "SELECT display_name FROM staff_members": ("Renan",),
     }
     cursor = ScriptedCursor(routes=routes)
-    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()))
+    service = SupportCaseTransitionService(FakeRuntime(cursor, settings=_settings()), now=lambda: NOW)
 
     service.apply(case_id="case-1", action="resume", actor_staff_id="staff-1", note=None)
 
