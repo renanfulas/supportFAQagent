@@ -398,6 +398,14 @@ class Settings(BaseSettings):
         alias="SUPPORT_WA_TEMPLATE_REENGAJAR",
     )
 
+    # Fase 3 (opcional, opt-in) da ponte WhatsApp<->console: unificacao de
+    # identidade so via OTP web -- WhatsApp nativo continua pseudonimo por
+    # padrao para quem nunca passa pelo web. Dark por padrao.
+    enable_native_identity_link: bool = Field(
+        default=False,
+        alias="ENABLE_NATIVE_IDENTITY_LINK",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

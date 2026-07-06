@@ -130,6 +130,23 @@ batch e pode nao estar pronto no momento do fechamento); renderer puro em
 Continua dark; falta a aprovacao dos 4 templates na WABA e o provedor de
 e-mail (dono: Juliano).
 
+Em 06/07/2026, a Fase 3 (unificacao de identidade, opcional) foi decidida --
+Opcao B, opt-in via OTP web, escolhida sobre a Opcao A (vincular todo inbound
+nativo automaticamente) para preservar o WhatsApp nativo pseudonimo por
+padrao -- e implementada em codigo no mesmo dia: migration
+`019_otp_challenge_native_link.sql` (duas colunas efemeras em
+`otp_challenges` para carregar o hash nativo recalculado de `start()` a
+`confirm()`, unico jeito de contornar o telefone bruto nao sobreviver entre
+as duas chamadas); formula pura + repositorio de backfill em
+`app/identity/native_history_link.py`; wiring em
+`app/web_auth/service.py`/`storage.py`; orquestracao best-effort na rota
+`POST /web/auth/whatsapp/confirm`; componente `native_identity_link` no
+readiness. Dark por padrao (`ENABLE_NATIVE_IDENTITY_LINK=false`). Sem
+mudanca no contrato HTTP publico do OTP. 871 testes verdes. Contrato em
+`docs/architecture/integration-contracts.md`, estado em
+`docs/quality-plans/whatsapp-support-bridge-tech-plan.md`. Sem dependencia
+externa (Juliano) nesta fase.
+
 ## Documentos Historicos
 
 Planos antigos podem citar Alexandre e Silotto ou descrever entregas que ja

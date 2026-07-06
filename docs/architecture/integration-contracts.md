@@ -1287,6 +1287,50 @@ Fronteira de responsabilidade:
 - Juliano: aprovar os 4 templates na WABA, decidir e implementar o
   transporte de e-mail real.
 
+### Fase 3 - Unificacao de identidade (opcional, opt-in via OTP web)
+
+Status: implementada em codigo. Dark por padrao
+(`ENABLE_NATIVE_IDENTITY_LINK=false`). Sem mudanca no contrato HTTP publico
+de `POST /web/auth/whatsapp/confirm` (mesma entrada/saida de sempre) -- o
+mecanismo e inteiramente interno, disparado como efeito colateral
+best-effort apos a confirmacao do OTP.
+
+**Decisao de consentimento:** o WhatsApp nativo (Hermes/Meta) continua
+pseudonimo por padrao. Nada roda automaticamente a cada mensagem recebida no
+numero bot. O historico so se une quando o PROPRIO cliente prova posse do
+telefone via OTP no site -- mesmo gesto que ja existe hoje para o consent
+gate (Sprint 4b).
+
+**Mecanismo:** `verified_identities.phone_hash` (dominio web,
+`IDENTITY_HASH_SECRET`), `conversations.session_hash` (dominio nativo,
+`PERSISTENCE_HASH_SECRET`) e `case_whatsapp_bindings.wa_id_hash`
+(`SUPPORT_WA_ENC_KEY`) sao tres segredos diferentes por construcao
+deliberada -- nenhum e derivavel dos outros, entao a unificacao nao compara
+hashes gravados, recalcula o hash de dominio nativo a partir do telefone em
+claro. Como o telefone bruto **nao sobrevive** de
+`POST /web/auth/whatsapp/start` a `/confirm` (so o `phone_hash` do dominio
+web passa adiante, por desenho de privacidade), o recalculo acontece dentro
+de `start()` -- unico momento com o telefone em claro em memoria -- e e
+carregado ate `confirm()` via duas colunas efemeras novas em
+`otp_challenges` (migration 019: `native_session_hash_hermes`,
+`native_session_hash_meta`).
+
+Em `confirm()`, apos a sessao ser vinculada normalmente, a rota chama
+`NativeHistoryLinkRepository.link(customer_id, hashes)`
+(`app/identity/native_history_link.py`) best-effort (nunca falha a resposta
+do OTP): `UPDATE conversations SET customer_id = ... WHERE session_hash IN
+(hash_hermes, hash_meta) AND customer_id IS NULL`, seguido do mesmo padrao
+para `support_cases` via `conversation_id`. So preenche onde `customer_id`
+esta NULL -- nunca sobrescreve um valor ja atribuido a outro cliente. Nao
+re-chaveia nem toca nenhum hash/segredo existente.
+
+Configuracao nova: `ENABLE_NATIVE_IDENTITY_LINK=false`. Readiness
+(`native_identity_link` em `/health/ready`): flag ligada exige
+`PERSISTENCE_BACKEND=postgres` e `PERSISTENCE_HASH_SECRET` configurado.
+
+Fronteira de responsabilidade: Renan (contrato, formula, backfill, wiring,
+readiness, testes). Sem dependencia externa (Juliano) nesta fase.
+
 ## Webhook Meta WhatsApp Cloud API
 
 Status: fundacao nativa implementada por feature flag, sem ativacao operacional

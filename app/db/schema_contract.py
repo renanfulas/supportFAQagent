@@ -3,7 +3,7 @@
 from typing import Any
 
 
-CONTRACT_MIGRATION = "018_messages_delivery_status.sql"
+CONTRACT_MIGRATION = "019_otp_challenge_native_link.sql"
 
 REQUIRED_COLUMNS = {
     "case_whatsapp_bindings": {
@@ -105,6 +105,10 @@ REQUIRED_COLUMNS = {
         "staff_id",
         "created_at",
         "last_used_at",
+    },
+    "otp_challenges": {
+        "native_session_hash_hermes",
+        "native_session_hash_meta",
     },
     "staff_members": {
         "id",

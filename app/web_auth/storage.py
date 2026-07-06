@@ -121,9 +121,10 @@ class PostgresWebAuthStore:
                     """
                     INSERT INTO otp_challenges (
                       id, identity_candidate_hash, phone_last4, code_digest,
-                      expires_at, attempts_remaining, status, created_at
+                      expires_at, attempts_remaining, status, created_at,
+                      native_session_hash_hermes, native_session_hash_meta
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id) DO UPDATE SET
                       attempts_remaining = EXCLUDED.attempts_remaining,
                       status = EXCLUDED.status,
@@ -138,6 +139,8 @@ class PostgresWebAuthStore:
                         challenge.attempts_remaining,
                         challenge.status,
                         challenge.created_at,
+                        challenge.native_session_hash_hermes,
+                        challenge.native_session_hash_meta,
                     ),
                 )
 
@@ -161,7 +164,8 @@ class PostgresWebAuthStore:
                 cursor.execute(
                     """
                     SELECT id, identity_candidate_hash, phone_last4, code_digest,
-                           created_at, expires_at, attempts_remaining, status
+                           created_at, expires_at, attempts_remaining, status,
+                           native_session_hash_hermes, native_session_hash_meta
                     FROM otp_challenges
                     WHERE id = %s
                     FOR UPDATE
@@ -303,7 +307,8 @@ class PostgresWebAuthStore:
                 cursor.execute(
                     f"""
                     SELECT id, identity_candidate_hash, phone_last4, code_digest,
-                           created_at, expires_at, attempts_remaining, status
+                           created_at, expires_at, attempts_remaining, status,
+                           native_session_hash_hermes, native_session_hash_meta
                     FROM otp_challenges WHERE {predicate} LIMIT 1
                     """,
                     params,
@@ -323,6 +328,8 @@ class PostgresWebAuthStore:
             expires_at=row[5],
             attempts_remaining=row[6],
             status=row[7],
+            native_session_hash_hermes=row[8] if len(row) > 8 else None,
+            native_session_hash_meta=row[9] if len(row) > 9 else None,
         )
 
     @staticmethod

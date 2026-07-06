@@ -474,11 +474,18 @@ sabe que ha um atendente, entao fica em silencio).
 - testes de janela (aberta/fechada), template fora de janela, idempotencia,
   opt-out de e-mail, resumo no closed
 
-### Fase 3 - Unificacao de identidade (opcional, decisao aberta 2026-07-06)
+### Fase 3 - Unificacao de identidade (opcional, implementada 2026-07-06)
 
-Status: **pesquisa de codigo concluida em 2026-07-06; mecanismo NAO decidido
-de proposito** -- pausado para o time se organizar antes de implementar.
-Nenhum codigo escrito.
+Status: **Opcao B (opt-in via OTP web) escolhida e implementada em codigo em
+2026-07-06.** Migration 019 (`otp_challenges.native_session_hash_hermes` +
+`native_session_hash_meta`), formula pura + repositorio de backfill em
+`app/identity/native_history_link.py`, wiring em
+`app/web_auth/service.py`/`storage.py` (o hash nativo e calculado em
+`start()` -- unico momento com o telefone em claro em memoria -- carregado
+ate `confirm()` consumir o desafio), orquestracao best-effort em
+`app/api/routes/web_auth.py`, componente `native_identity_link` no
+readiness. Dark por padrao (`ENABLE_NATIVE_IDENTITY_LINK=false`). 871 testes
+verdes.
 
 **Achado central (muda o enquadramento do problema):** "reconciliar os
 dominios de hash" nao pode significar comparar os hashes ja gravados --
@@ -517,16 +524,43 @@ ficou aberta): quando aplicar esse recalculo?
   de tratar o WhatsApp nativo como pseudonimo por padrao ("aceito como
   permanente, nao e gap a fechar") -- ninguem deu consentimento explicito
   para a correlacao entre canais.
-- **Opcao B - so via OTP web (reativo, opt-in):** o historico so se une
-  quando o cliente confirma OTP no site -- o backend recalcula o
+- **Opcao B - so via OTP web (reativo, opt-in). ESCOLHIDA.** O historico so se
+  une quando o cliente confirma OTP no site -- o backend recalcula o
   `session_hash` nativo esperado para aquele telefone e vincula
   retroativamente as conversas ja existentes. Quem nunca passa pelo web
   continua pseudonimo. Preserva a decisao anterior; e o mesmo gesto que ja
   existe hoje para o consent gate (Sprint 4b).
 
-Nenhuma opcao foi escolhida ainda. Retomar esta secao antes de escrever
-qualquer migration/codigo desta fase -- ela depende de uma decisao de
-produto/privacidade, nao so de engenharia.
+**Obstaculo tecnico achado durante a implementacao (nao previsto na
+pesquisa):** `confirm()` **nao tem mais o telefone em claro** -- por desenho
+de privacidade, so o `phone_hash` (dominio web) sobrevive de `start()` a
+`confirm()`; o telefone bruto e uma variavel local descartada ao fim de
+`start()`. O recalculo do hash nativo teve que ser movido para dentro de
+`start()` (unico momento com o telefone em claro em memoria) e carregado
+ate `confirm()` via duas colunas novas e efemeras em `otp_challenges`
+(migration 019) -- nao recalculado em `confirm()` como a pesquisa original
+sugeria.
+
+**Mecanismo implementado:**
+
+1. `start()`: se `ENABLE_NATIVE_IDENTITY_LINK=true` e `PERSISTENCE_HASH_SECRET`
+   configurado, calcula `NativeSessionHashes` (Hermes e Meta) via
+   `compute_native_session_hashes` -- mesma formula de
+   `_safe_hermes_session_id`/`_safe_meta_session_id` + `hash_session`, com o
+   MESMO secret usado na escrita original (validado por teste cruzado contra
+   o codigo real dos transportes). Grava nas duas colunas novas do desafio.
+2. `confirm()`: le os hashes do desafio (ja consumido) e devolve
+   `ConfirmedSession(identity, native_session_hashes)` -- o servico nunca
+   escreve em `conversations`/`support_cases`, so entrega os hashes.
+3. Rota `POST /web/auth/whatsapp/confirm`: apos confirmar, chama
+   `NativeHistoryLinkRepository.link(customer_id, hashes)` best-effort (nunca
+   falha a resposta do OTP) -- `UPDATE conversations ... WHERE session_hash IN
+   (hermes, meta) AND customer_id IS NULL` seguido do mesmo padrao para
+   `support_cases` via `conversation_id`. So preenche onde `customer_id` esta
+   NULL; nunca sobrescreve um `customer_id` ja atribuido a outro cliente.
+
+Nao re-chaveia nem toca nenhum hash/segredo existente; so preenche uma coluna
+ja nullable (`customer_id`) onde faltava.
 
 ## Relacao Com O Painel De Status Web (decidido: opcao C)
 
