@@ -70,6 +70,10 @@ class FakeCursor:
 class FakeRuntime:
     def __init__(self, cursor: FakeCursor) -> None:
         self._cursor = cursor
+        # Fase 2: claim/close consultam support_cases/customers para a
+        # notificacao proativa; enc_key=None faz o lookup de binding WA
+        # retornar sem tocar case_whatsapp_bindings.
+        self.settings = SimpleNamespace(support_wa_enc_key=None)
 
     @contextmanager
     def transaction(self):
@@ -544,7 +548,7 @@ def test_claim_transition_succeeds_and_returns_assignee(
         _login(client, app)
         app.state.database_runtime = FakeRuntime(
             FakeCursor(
-                fetchone_results=[("open", None), ("Renan",)],
+                fetchone_results=[("open", None), ("Renan",), (None, None, None)],
                 fetchall_results=[],
             )
         )
@@ -646,7 +650,7 @@ def test_transition_note_never_leaks_into_logs(
         _login(client, app)
         app.state.database_runtime = FakeRuntime(
             FakeCursor(
-                fetchone_results=[("open", None), ("Renan",)],
+                fetchone_results=[("open", None), ("Renan",), (None, None, None)],
                 fetchall_results=[],
             )
         )

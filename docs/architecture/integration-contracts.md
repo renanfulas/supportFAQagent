@@ -1228,13 +1228,64 @@ Readiness (`whatsapp_bridge` em `/health/ready`): flag ligada exige
 chaves dedicadas -- combinacao invalida aparece como `unavailable` com motivo,
 mesmo padrao do `support_console`.
 
+### Fase 2 - Templates, notificacao proativa e e-mail paralelo
+
+Status: implementada em codigo. Sem migration nova (reusa
+`case_whatsapp_bindings`, `customer_preferences`, `operational_outbox`).
+
+**Compositor com retry via template** (`POST /web/support/cases/{case_id}/message`):
+o corpo aceita `template` opcional. Dentro da janela, `template` e **ignorado**
+(free-form sempre vence, e gratis). Fora da janela: sem `template` -> `409
+{code: window_closed, templates: ["precisa_info", "reengajar"]}` (lista real,
+nao mais vazia); com um nome fora desse conjunto -> `422 {code:
+unknown_template, templates: [...]}`; com um nome valido, envia
+`whatsapp.template.requested` no lugar do free-form. Resposta ganha o campo
+`delivery: "freeform" | "template"`.
+
+**Notificacao proativa nas transicoes** (`app/support/transitions.py`,
+mesma transacao da transicao): `claim` (-> `in_progress`) enfileira
+`atendente_assumiu`; `close` (-> `closed`) enfileira `ticket_resolvido` com o
+resumo de `support_cases.context_snapshot_sanitized.summary`. Free-form se a
+janela de 24h estiver aberta, template caso contrario. `resume`
+(`waiting_customer -> in_progress`) fica em silencio de proposito -- o
+cliente ja sabe que ha um atendente. Idempotencia por
+`notify_customer_wa:<case_id>:<to_status>` (WhatsApp) e
+`notify_customer_email:<case_id>:<to_status>` (e-mail).
+
+**E-mail paralelo com opt-out**: mesma transicao, quando o cliente tem
+`customers.email` e nao optou por sair. Opt-out lido de
+`customer_preferences` (linha global, `domain_id IS NULL`, chave
+`notify_status_by_email`); **default e opt-in** (ausencia de preferencia ou
+de qualquer linha = notifica), coerente com o consentimento LGPD ja dado para
+contato direto. `email.message.requested` enfileirado no outbox, mas o
+dispatcher trata a rota como `disabled` por padrao -- **nenhum transporte
+real de e-mail foi implementado nesta etapa** (nenhum provedor foi
+decidido). Juliano liga so trocando `OUTBOX_EMAIL_DELIVERY_TRANSPORT`, sem
+mudar codigo.
+
+Templates (nomes internos, configuraveis por env para o nome real aprovado
+na WABA):
+
+| Template | Gatilho | Config do nome |
+| --- | --- | --- |
+| `atendente_assumiu` | sistema, `claim` fora da janela | `SUPPORT_WA_TEMPLATE_ATENDENTE_ASSUMIU` |
+| `ticket_resolvido` | sistema, `close` fora da janela | `SUPPORT_WA_TEMPLATE_TICKET_RESOLVIDO` |
+| `precisa_info` | atendente, compositor fora da janela | `SUPPORT_WA_TEMPLATE_PRECISA_INFO` |
+| `reengajar` | atendente, compositor fora da janela | `SUPPORT_WA_TEMPLATE_REENGAJAR` |
+
+Templates sao enviados **sem componentes dinamicos** nesta fase (copy fixa
+aprovada, sem substituicao de variavel) -- simplificacao deliberada para
+aprovacao mais rapida na WABA.
+
+Configuracao nova: `SUPPORT_WA_TEMPLATE_LANGUAGE` (default `pt_BR`) e os
+quatro `SUPPORT_WA_TEMPLATE_*` acima.
+
 Fronteira de responsabilidade:
 
-- Renan: contrato, migrations 016/017/018, cifra/token, roteamento por
-  numero, compositor, dispatcher, readiness, testes;
-- Juliano: provisionar o numero de suporte na WABA, aprovar templates
-  utility (Fase 2), webhook Meta apontando pro backend, transporte de e-mail
-  (Fase 2).
+- Renan: contrato, renderer (`app/notifications/customer_status.py`),
+  wiring em transitions, compositor, dispatcher, opt-out, testes;
+- Juliano: aprovar os 4 templates na WABA, decidir e implementar o
+  transporte de e-mail real.
 
 ## Webhook Meta WhatsApp Cloud API
 

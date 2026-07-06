@@ -5,13 +5,27 @@ Status: proposto em 2026-07-04; **Fase 1 implementada em codigo em 2026-07-05**
 inbound e compositor em `app/support/whatsapp_bridge.py`, roteamento por
 `phone_number_id` no webhook Meta, deep link no handoff, dispatcher com
 selecao de numero e status de entrega, readiness `whatsapp_bridge`, suite de
-testes; 839 testes verdes, `compileall` limpo). Contrato registrado em
+testes; 839 testes verdes, `compileall` limpo). **Fase 2 implementada em
+codigo em 2026-07-05** (mesmo dia): `whatsapp.template.requested` +
+`email.message.requested` no outbox (a rota de e-mail fica com transporte
+`disabled` de proposito -- nenhum provedor foi decidido; Juliano liga so
+trocando `OUTBOX_EMAIL_DELIVERY_TRANSPORT`, sem mudar codigo), compositor
+aceita `template` opcional para responder fora da janela
+(`ALLOWED_STAFF_TEMPLATES = {precisa_info, reengajar}`), notificacao proativa
+em `app/support/transitions.py` para `claim` (-> `atendente_assumiu`) e
+`close` (-> `ticket_resolvido`, com resumo), renderer puro em
+`app/notifications/customer_status.py`, opt-out de e-mail em
+`app/support/customer_preferences.py` (default opt-in; le
+`customer_preferences` global). Sem migration nova (reusa
+`case_whatsapp_bindings`, `customer_preferences`, `operational_outbox`);
+856 testes verdes. Contrato registrado em
 `docs/architecture/integration-contracts.md` ("Ponte WhatsApp<->console"),
 smoke em `docs/runbooks/whatsapp-support-bridge-smoke.md`. **Dark por padrao**
-(`ENABLE_WHATSAPP_SUPPORT_NUMBER=false`) -- falta apenas o provisionamento
-externo na Meta (Juliano: numero de suporte + webhook) para o smoke real e a
-promocao a staging/producao. Fase 2 (templates, push proativo, e-mail) e Fase
-3 (unificacao de identidade) permanecem nao iniciadas.
+(`ENABLE_WHATSAPP_SUPPORT_NUMBER=false`) -- falta o provisionamento externo na
+Meta (Juliano: numero de suporte + webhook + aprovacao dos 4 templates) para o
+smoke real e a promocao a staging/producao, e o transporte de e-mail (Juliano,
+provedor ainda nao decidido). Fase 3 (unificacao de identidade) permanece nao
+iniciada, opcional.
 E a implementacao do degrau 3 ("fechar o ciclo com o cliente") da visao V3 do
 [web-chat-evolution-plan.md](web-chat-evolution-plan.md), do lado da conversa
 humana. Complementa e **revisa** a conclusao "so e-mail" da Fase C do
@@ -435,11 +449,28 @@ com um numero controlado — nao depende de template nem de push.
 
 ### Fase 2 - Templates, reabertura de janela e notificacao proativa
 
+Status: **implementada em codigo em 2026-07-05.** Achados relevantes durante a
+implementacao: o resumo do fechamento usa
+`support_cases.context_snapshot_sanitized.summary` (ja sincrono, mesma fonte
+que `app/notifications/support_team.py` usa para o time) -- **nao**
+`conversation_summaries`/`SummaryRecallService` como o plano original sugeria,
+que e um sistema de resumo em lote (batch, chave por `domain+customer_ref`),
+sem garantia de estar pronto no exato momento do fechamento. O opt-out de
+e-mail (`app/support/customer_preferences.py`) foi o primeiro
+leitor/escritor real de `customer_preferences` no projeto (nao existia
+nenhum). "Precisa-info" e "reengajar" ficaram **staff-triggered** (o atendente
+escolhe no compositor quando a janela esta fechada), enquanto
+"atendente_assumiu"/"ticket_resolvido" ficaram **system-triggered** (na
+transicao `claim`/`close`) -- so `claim` dispara `atendente_assumiu` (o
+`resume` de `waiting_customer` tambem chega em `in_progress`, mas o cliente ja
+sabe que ha um atendente, entao fica em silencio).
+
 - `whatsapp.template.requested` no outbox + envio de template no dispatcher
 - decisao free-form vs template no compositor e nas transicoes
 - notificacoes proativas em `app/support/transitions.py` (assumiu/resolvido/
   precisa-info) + resumo no fechamento + e-mail paralelo com opt-out
-- `email.message.requested` (transporte: Juliano)
+- `email.message.requested` (transporte: Juliano; rota fica com transporte
+  `disabled` de proposito ate o provedor ser decidido -- so enfileira)
 - testes de janela (aberta/fechada), template fora de janela, idempotencia,
   opt-out de e-mail, resumo no closed
 

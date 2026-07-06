@@ -20,8 +20,13 @@ from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
 from scripts.dispatch_outbox import (
     DeliveryResult,
     DeliveryRoute,
+    PermanentDeliveryError,
     _maybe_record_message_delivery,
+    deliver,
     deliver_meta_whatsapp,
+    deliver_meta_whatsapp_template,
+    resolve_delivery_route,
+    resolve_delivery_transport,
 )
 
 
@@ -178,3 +183,114 @@ def test_maybe_record_message_delivery_noop_when_send_had_no_message_id() -> Non
     _maybe_record_message_delivery(cursor, event=event, result=DeliveryResult())
 
     assert cursor.executed == []
+
+
+# --------------------------------------------------------------------------- #
+# Fase 2: templates + rota de e-mail (so enfileira, sem transporte real)
+# --------------------------------------------------------------------------- #
+
+
+@dataclass
+class RecordingTemplateClient:
+    calls: list = field(default_factory=list)
+
+    def send_template(self, *, to: str, template_name: str, language_code: str, components):
+        self.calls.append(
+            {
+                "to": to,
+                "template_name": template_name,
+                "language_code": language_code,
+                "components": components,
+            }
+        )
+        return SimpleNamespace(message_id="wamid.template-1")
+
+
+TEMPLATE_ROUTE = DeliveryRoute(
+    name="whatsapp_template",
+    url_env="WHATSAPP_TEMPLATE_WEBHOOK_URL",
+    transport_env="OUTBOX_WHATSAPP_TEMPLATE_DELIVERY_TRANSPORT",
+)
+
+
+def test_deliver_meta_whatsapp_template_uses_support_number(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("META_WHATSAPP_ACCESS_TOKEN", "shared-token")
+    monkeypatch.setenv("META_SUPPORT_PHONE_NUMBER_ID", "support-number-id")
+    recorder = RecordingTemplateClient()
+    captured: dict = {}
+    monkeypatch.setattr(
+        MetaWhatsAppClient,
+        "__init__",
+        lambda self, **kw: captured.update(kw) or None,
+    )
+    monkeypatch.setattr(
+        MetaWhatsAppClient,
+        "send_template",
+        lambda self, **kw: recorder.send_template(**kw),
+    )
+
+    event = {
+        "payload_sanitized": {
+            "to": "+5511999999999",
+            "template_name": "ticket_resolvido",
+            "language_code": "pt_BR",
+            "phone_number_kind": "support",
+            "message_row_id": "msg-1",
+        }
+    }
+
+    result = deliver_meta_whatsapp_template(event=event, route=TEMPLATE_ROUTE)
+
+    assert captured["phone_number_id"] == "support-number-id"
+    assert recorder.calls == [
+        {
+            "to": "+5511999999999",
+            "template_name": "ticket_resolvido",
+            "language_code": "pt_BR",
+            "components": None,
+        }
+    ]
+    assert result.meta_message_id == "wamid.template-1"
+
+
+def test_deliver_meta_whatsapp_template_wrong_route_is_permanent_error() -> None:
+    event = {"payload_sanitized": {"to": "x", "template_name": "y", "language_code": "pt_BR"}}
+    wrong_route = DeliveryRoute(
+        name="whatsapp_message",
+        url_env="WHATSAPP_MESSAGE_WEBHOOK_URL",
+        transport_env="OUTBOX_WHATSAPP_MESSAGE_DELIVERY_TRANSPORT",
+    )
+    with pytest.raises(PermanentDeliveryError):
+        deliver_meta_whatsapp_template(event=event, route=wrong_route)
+
+
+def test_email_route_defaults_to_disabled_and_never_sends() -> None:
+    """Fase 2 decision: enqueue only, no real transport yet -- the existing
+    'disabled' guard in deliver() covers this without inventing a provider."""
+
+    route = resolve_delivery_route("email.message.requested")
+    assert route.name == "email"
+    assert resolve_delivery_transport(route) == "disabled"
+
+    with pytest.raises(PermanentDeliveryError, match="delivery route is disabled: email"):
+        deliver(
+            {
+                "event_type": "email.message.requested",
+                "payload_sanitized": {
+                    "to": "cliente@example.com",
+                    "subject": "Seu chamado foi resolvido",
+                    "body": "...",
+                },
+            }
+        )
+
+
+def test_email_route_can_be_overridden_via_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Juliano ligando o provedor de verdade so precisa setar o transport_env
+    -- nao muda nenhum codigo aqui."""
+
+    monkeypatch.setenv("OUTBOX_EMAIL_DELIVERY_TRANSPORT", "internal_webhook")
+    route = resolve_delivery_route("email.message.requested")
+    assert resolve_delivery_transport(route) == "internal_webhook"

@@ -114,6 +114,22 @@ Contrato em `docs/architecture/integration-contracts.md`, smoke em
 `docs/runbooks/whatsapp-support-bridge-smoke.md`, estado em
 `docs/quality-plans/whatsapp-support-bridge-tech-plan.md`.
 
+No mesmo dia (05/07/2026), a Fase 2 tambem foi implementada em codigo, sem
+migration nova: `whatsapp.template.requested` e `email.message.requested` no
+outbox (a rota de e-mail fica com transporte `disabled` de proposito -- nenhum
+provedor foi decidido; Juliano liga so trocando
+`OUTBOX_EMAIL_DELIVERY_TRANSPORT`); compositor aceita `template` opcional para
+responder fora da janela de 24h (`precisa_info`/`reengajar`, staff-triggered);
+notificacao proativa em `app/support/transitions.py` para `claim` (->
+`atendente_assumiu`) e `close` (-> `ticket_resolvido` com resumo de
+`context_snapshot_sanitized.summary` -- nao `conversation_summaries`, que e
+batch e pode nao estar pronto no momento do fechamento); renderer puro em
+`app/notifications/customer_status.py`; opt-out de e-mail em
+`app/support/customer_preferences.py` (primeiro leitor real de
+`customer_preferences` no projeto; default opt-in). 856 testes verdes.
+Continua dark; falta a aprovacao dos 4 templates na WABA e o provedor de
+e-mail (dono: Juliano).
+
 ## Documentos Historicos
 
 Planos antigos podem citar Alexandre e Silotto ou descrever entregas que ja

@@ -114,11 +114,16 @@ class StaffTransitionResponse(BaseModel):
 
 class ConsoleCaseMessageRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
+    # Fase 2: obrigatorio quando a janela de 24h esta fechada (ver
+    # ALLOWED_STAFF_TEMPLATES); ignorado dentro da janela, onde free-form
+    # sempre prevalece (e gratis).
+    template: str | None = Field(default=None, max_length=80)
 
 
 class ConsoleCaseMessageResponse(BaseModel):
     message_id: str
     status: str = "queued"
+    delivery: str = "freeform"
 
 
 class MetricsBacklogResponse(BaseModel):

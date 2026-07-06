@@ -14,12 +14,21 @@ ativo pode executar (time pequeno, tudo auditado).
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.core.errors import TransactionBusinessError
 from app.core.persistence_sanitize import sanitize_for_persistence
 from app.db.runtime import DatabaseRuntime
+from app.notifications.customer_status import (
+    render_customer_status_email,
+    render_customer_status_whatsapp,
+)
+from app.support.customer_preferences import email_notifications_opted_in
+from app.support.wa_binding import decrypt_wa_id
+from app.support.whatsapp_bridge import resolve_template_name
 
 
 NOTE_MAX_LENGTH = 500
@@ -193,6 +202,10 @@ class SupportCaseTransitionService:
                     display_row = cursor.fetchone()
                     assignee_display_name = str(display_row[0]) if display_row else None
 
+                self._maybe_notify_customer(
+                    cursor, case_id=case_id, action=action, to_status=to_status
+                )
+
         return TransitionResult(
             case_id=case_id,
             from_status=current_status,
@@ -200,6 +213,180 @@ class SupportCaseTransitionService:
             assignee_staff_id=new_assignee,
             assignee_display_name=assignee_display_name,
         )
+
+    def _maybe_notify_customer(
+        self, cursor: Any, *, case_id: str, action: str, to_status: str
+    ) -> None:
+        """Fase 2: proactive customer-facing notification, same transaction
+        as the transition. Only two triggers matter here: ``claim`` landing
+        the case in ``in_progress`` (an agent just picked it up -- ``resume``
+        also reaches ``in_progress`` but the customer already knows someone's
+        on it, so that path stays silent), and any action landing in
+        ``closed`` (only ``close`` reaches it per ``TRANSITION_MATRIX``).
+        Checked first, before any query, so the common actions (release,
+        wait_customer, resume, cancel) never pay for the lookups below.
+        """
+
+        notifiable = (action == "claim" and to_status == "in_progress") or (
+            to_status == "closed"
+        )
+        if not notifiable:
+            return
+        settings = self.runtime.settings
+
+        cursor.execute(
+            """
+            SELECT sc.customer_id, sc.context_snapshot_sanitized, c.email
+            FROM support_cases sc
+            LEFT JOIN customers c ON c.id = sc.customer_id
+            WHERE sc.id = %s
+            """,
+            (case_id,),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return
+        customer_id, snapshot_raw, customer_email = row
+
+        summary = None
+        if to_status == "closed":
+            snapshot = _load_json(snapshot_raw, default={})
+            if isinstance(snapshot, dict):
+                summary = snapshot.get("summary")
+
+        wa_id, window_open = self._resolve_wa_window(cursor, case_id=case_id, settings=settings)
+
+        if wa_id is not None:
+            notification = render_customer_status_whatsapp(
+                case_id=case_id,
+                to_status=to_status,
+                window_open=window_open,
+                summary=summary,
+            )
+            if notification is not None:
+                self._enqueue_customer_whatsapp(
+                    cursor,
+                    to=wa_id,
+                    notification=notification,
+                    case_id=case_id,
+                    settings=settings,
+                )
+
+        if customer_id is not None and customer_email:
+            opted_in = email_notifications_opted_in(cursor, str(customer_id))
+            email_notification = render_customer_status_email(
+                case_id=case_id,
+                to_status=to_status,
+                customer_email=customer_email,
+                opted_in=opted_in,
+                summary=summary,
+            )
+            if email_notification is not None:
+                self._enqueue_customer_email(
+                    cursor, notification=email_notification, case_id=case_id
+                )
+
+    def _resolve_wa_window(
+        self, cursor: Any, *, case_id: str, settings: Any
+    ) -> tuple[str | None, bool]:
+        enc_key = getattr(settings, "support_wa_enc_key", None)
+        if not enc_key:
+            return None, False
+        cursor.execute(
+            """
+            SELECT wa_id_encrypted, last_customer_message_at
+            FROM case_whatsapp_bindings
+            WHERE case_id = %s AND unbound_at IS NULL
+            """,
+            (case_id,),
+        )
+        binding_row = cursor.fetchone()
+        if binding_row is None:
+            return None, False
+        wa_id = decrypt_wa_id(binding_row[0], key=enc_key)
+        if wa_id is None:
+            return None, False
+        last_customer_message_at = binding_row[1]
+        if last_customer_message_at is None:
+            return wa_id, False
+        window_hours = getattr(settings, "support_wa_window_hours", 24)
+        window_open = (datetime.now(UTC) - last_customer_message_at) < timedelta(
+            hours=window_hours
+        )
+        return wa_id, window_open
+
+    def _enqueue_customer_whatsapp(
+        self, cursor: Any, *, to: str, notification: Any, case_id: str, settings: Any
+    ) -> None:
+        if notification.kind == "freeform":
+            event_type = "whatsapp.message.requested"
+            payload = {
+                "to": to,
+                "text": notification.text,
+                "support_case_id": case_id,
+                "phone_number_kind": "support",
+            }
+        else:
+            event_type = "whatsapp.template.requested"
+            payload = {
+                "to": to,
+                "template_name": resolve_template_name(
+                    notification.template_label, settings=settings
+                ),
+                "language_code": settings.support_wa_template_language,
+                "support_case_id": case_id,
+                "phone_number_kind": "support",
+            }
+        cursor.execute(
+            """
+            INSERT INTO operational_outbox (
+              event_type, idempotency_key, request_id, payload_sanitized
+            )
+            VALUES (%s, %s, %s, %s::jsonb)
+            ON CONFLICT (idempotency_key) DO NOTHING
+            """,
+            (event_type, notification.idempotency_key, case_id, json.dumps(payload)),
+        )
+
+    def _enqueue_customer_email(
+        self, cursor: Any, *, notification: Any, case_id: str
+    ) -> None:
+        payload = {
+            "to": notification.to,
+            "subject": notification.subject,
+            "body": notification.body,
+            "support_case_id": case_id,
+        }
+        cursor.execute(
+            """
+            INSERT INTO operational_outbox (
+              event_type, idempotency_key, request_id, payload_sanitized
+            )
+            VALUES (%s, %s, %s, %s::jsonb)
+            ON CONFLICT (idempotency_key) DO NOTHING
+            """,
+            (
+                "email.message.requested",
+                notification.idempotency_key,
+                case_id,
+                json.dumps(payload),
+            ),
+        )
+
+
+def _load_json(value: Any, *, default: Any) -> Any:
+    """JSONB columns may arrive parsed (psycopg default) or as text."""
+
+    if value is None:
+        return default
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, (str, bytes, bytearray)):
+        try:
+            return json.loads(value)
+        except (ValueError, TypeError):
+            return default
+    return default
 
 
 def _clean_note(note: str | None) -> str | None:
