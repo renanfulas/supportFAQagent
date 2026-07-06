@@ -373,6 +373,31 @@ class Settings(BaseSettings):
         alias="SUPPORT_WA_REPLY_RATE_LIMIT_PER_CASE_PER_MINUTE",
     )
 
+    # Fase 2 - nomes de template aprovados na WABA. Default = nome interno,
+    # para funcionar out-of-the-box em dev/testes (fake delivery); em
+    # producao a Meta pode exigir nomes diferentes dos internos, ajustados
+    # aqui sem mudar codigo.
+    support_wa_template_language: str = Field(
+        default="pt_BR",
+        alias="SUPPORT_WA_TEMPLATE_LANGUAGE",
+    )
+    support_wa_template_atendente_assumiu: str = Field(
+        default="atendente_assumiu",
+        alias="SUPPORT_WA_TEMPLATE_ATENDENTE_ASSUMIU",
+    )
+    support_wa_template_precisa_info: str = Field(
+        default="precisa_info",
+        alias="SUPPORT_WA_TEMPLATE_PRECISA_INFO",
+    )
+    support_wa_template_ticket_resolvido: str = Field(
+        default="ticket_resolvido",
+        alias="SUPPORT_WA_TEMPLATE_TICKET_RESOLVIDO",
+    )
+    support_wa_template_reengajar: str = Field(
+        default="reengajar",
+        alias="SUPPORT_WA_TEMPLATE_REENGAJAR",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

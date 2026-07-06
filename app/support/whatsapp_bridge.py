@@ -66,6 +66,7 @@ class SupportInboundResult:
 @dataclass(frozen=True)
 class SendReplyResult:
     message_id: str
+    delivery: str  # "freeform" | "template"
 
 
 class CaseHasNoBinding(Exception):
@@ -77,6 +78,42 @@ class SupportWhatsAppWindowClosed(Exception):
     """The 24h Meta customer-service window is closed (best-effort mirror);
     a free-form send would likely be rejected. The caller should offer a
     template instead."""
+
+
+class UnknownStaffTemplate(Exception):
+    """``template`` is not in ALLOWED_STAFF_TEMPLATES -- distinct from a
+    generic ValueError (e.g. empty message) so the route can tell the two
+    apart and return the right error code."""
+
+
+# Fase 2: templates the STAFF can trigger manually from the compositor when
+# the window is closed. ``atendente_assumiu`` and ``ticket_resolvido`` are
+# system-triggered on transitions (app/support/transitions.py), never chosen
+# by the operator here -- keeping the two paths distinct matches the
+# contract table in the tech plan.
+ALLOWED_STAFF_TEMPLATES = frozenset({"precisa_info", "reengajar"})
+
+ALL_TEMPLATE_LABELS = frozenset(
+    {"atendente_assumiu", "precisa_info", "ticket_resolvido", "reengajar"}
+)
+
+
+def resolve_template_name(label: str, *, settings: Settings) -> str:
+    """Map an internal template label to the name approved on the WABA.
+
+    Defaults to the label itself (works out of the box in dev/tests); a
+    production deploy overrides via ``SUPPORT_WA_TEMPLATE_*`` once Meta
+    approves the templates, possibly under different names -- no code change
+    needed.
+    """
+
+    mapping = {
+        "atendente_assumiu": settings.support_wa_template_atendente_assumiu,
+        "precisa_info": settings.support_wa_template_precisa_info,
+        "ticket_resolvido": settings.support_wa_template_ticket_resolvido,
+        "reengajar": settings.support_wa_template_reengajar,
+    }
+    return mapping.get(label, label)
 
 
 class SupportWhatsAppBridgeService:
@@ -150,21 +187,30 @@ class SupportWhatsAppBridgeService:
         case_id: str,
         staff_id: str,
         text: str,
+        template: str | None = None,
     ) -> SendReplyResult:
         """Compositor do atendente: append the reply, then enqueue delivery.
 
-        Only sends free-form (this method never falls back to a template --
-        that is Fase 2 scope); the caller should offer a template instead
-        when this raises ``SupportWhatsAppWindowClosed``.
+        Inside the window, free-form always wins (it's free; a ``template``
+        argument is ignored there on purpose -- no point paying for a
+        template when a normal message works). Outside the window, a
+        ``template`` from ``ALLOWED_STAFF_TEMPLATES`` is required; without
+        one, raises ``SupportWhatsAppWindowClosed`` so the caller can offer
+        the available templates instead of silently failing.
         """
 
         binding = self.bindings.get(case_id)
         if binding is None:
             raise CaseHasNoBinding(case_id)
-        if not self.bindings.is_window_open(
+
+        window_open = self.bindings.is_window_open(
             binding, window_hours=self.settings.support_wa_window_hours
-        ):
-            raise SupportWhatsAppWindowClosed(case_id)
+        )
+        if not window_open:
+            if template is None:
+                raise SupportWhatsAppWindowClosed(case_id)
+            if template not in ALLOWED_STAFF_TEMPLATES:
+                raise UnknownStaffTemplate(template)
 
         message_id = self._append_message(
             case_id=case_id,
@@ -175,13 +221,23 @@ class SupportWhatsAppBridgeService:
         )
         if message_id is None:
             raise ValueError("empty_message")
-        self._enqueue_send(
+
+        if window_open:
+            self._enqueue_send(
+                case_id=case_id,
+                message_id=message_id,
+                to=binding.wa_id,
+                text=text,
+            )
+            return SendReplyResult(message_id=message_id, delivery="freeform")
+
+        self._enqueue_template(
             case_id=case_id,
             message_id=message_id,
             to=binding.wa_id,
-            text=text,
+            template=template,
         )
-        return SendReplyResult(message_id=message_id)
+        return SendReplyResult(message_id=message_id, delivery="template")
 
     def _enqueue_send(self, *, case_id: str, message_id: str, to: str, text: str) -> None:
         # `to` is written verbatim (not through sanitize_payload, which would
@@ -207,6 +263,32 @@ class SupportWhatsAppBridgeService:
                     ON CONFLICT (idempotency_key) DO NOTHING
                     """,
                     (f"support_wa_send:{message_id}", case_id, payload),
+                )
+
+    def _enqueue_template(
+        self, *, case_id: str, message_id: str, to: str, template: str
+    ) -> None:
+        payload = json.dumps(
+            {
+                "to": to,
+                "template_name": resolve_template_name(template, settings=self.settings),
+                "language_code": self.settings.support_wa_template_language,
+                "support_case_id": case_id,
+                "message_row_id": message_id,
+                "phone_number_kind": "support",
+            }
+        )
+        with self.database_runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO operational_outbox (
+                      event_type, idempotency_key, request_id, payload_sanitized
+                    )
+                    VALUES ('whatsapp.template.requested', %s, %s, %s::jsonb)
+                    ON CONFLICT (idempotency_key) DO NOTHING
+                    """,
+                    (f"support_wa_template:{message_id}", case_id, payload),
                 )
 
     def _resolve_case_id(self, message: MetaInboundTextMessage) -> str | None:

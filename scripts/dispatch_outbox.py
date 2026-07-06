@@ -30,6 +30,8 @@ class DeliveryRoute:
 EVENT_DELIVERY_ROUTES = {
     "handoff.requested": "handoff",
     "whatsapp.message.requested": "whatsapp_message",
+    "whatsapp.template.requested": "whatsapp_template",
+    "email.message.requested": "email",
     "otp.delivery.requested": "otp_delivery",
     "conversation.turn.archived": "conversation_archive",
 }
@@ -43,6 +45,21 @@ DELIVERY_ROUTES = {
         name="whatsapp_message",
         url_env="WHATSAPP_MESSAGE_WEBHOOK_URL",
         transport_env="OUTBOX_WHATSAPP_MESSAGE_DELIVERY_TRANSPORT",
+    ),
+    "whatsapp_template": DeliveryRoute(
+        name="whatsapp_template",
+        url_env="WHATSAPP_TEMPLATE_WEBHOOK_URL",
+        transport_env="OUTBOX_WHATSAPP_TEMPLATE_DELIVERY_TRANSPORT",
+    ),
+    # Fase 2: so enfileira. Nenhum provedor de e-mail foi decidido ainda, e o
+    # "disabled" default reusa o guard ja existente (PermanentDeliveryError)
+    # sem inventar um transporte -- Juliano liga isto trocando o transport_env
+    # quando o provedor for escolhido, sem mudar codigo daqui.
+    "email": DeliveryRoute(
+        name="email",
+        url_env="",
+        transport_env="OUTBOX_EMAIL_DELIVERY_TRANSPORT",
+        default_transport="disabled",
     ),
     "otp_delivery": DeliveryRoute(
         name="otp_delivery",
@@ -63,6 +80,7 @@ SUPPORTED_DELIVERY_TRANSPORTS = {
     "disabled",
 }
 META_WHATSAPP_ROUTES = {"whatsapp_message"}
+META_WHATSAPP_TEMPLATE_ROUTES = {"whatsapp_template"}
 MAX_ATTEMPTS = 5
 RETRYABLE_HTTP_STATUS = {408, 409, 425, 429}
 DEFAULT_PROCESSING_STALE_SECONDS = 300
@@ -223,6 +241,8 @@ def deliver(event: dict) -> DeliveryResult:
     if transport == "disabled":
         raise PermanentDeliveryError(f"delivery route is disabled: {route.name}")
     if transport == "meta_whatsapp":
+        if route.name in META_WHATSAPP_TEMPLATE_ROUTES:
+            return deliver_meta_whatsapp_template(event=event, route=route)
         return deliver_meta_whatsapp(event=event, route=route)
     if transport == "append_only_sink":
         deliver_conversation_archive(event=event)
@@ -280,16 +300,7 @@ def deliver_internal_webhook(*, event: dict, route: DeliveryRoute) -> None:
         raise
 
 
-def deliver_meta_whatsapp(*, event: dict, route: DeliveryRoute) -> DeliveryResult:
-    if route.name not in META_WHATSAPP_ROUTES:
-        raise PermanentDeliveryError(
-            f"meta_whatsapp transport is not supported for route: {route.name}",
-        )
-    payload = event["payload_sanitized"]
-    if not isinstance(payload, dict):
-        raise PermanentDeliveryError("meta_whatsapp payload must be an object")
-    recipient = _required_text(payload, "to")
-    text = _required_text(payload, "text")
+def _build_meta_whatsapp_client(payload: dict) -> MetaWhatsAppClient:
     # Modo-por-numero: "support" e a ponte WhatsApp<->console (numero de
     # suporte, atendimento humano); ausente/qualquer outro valor e o
     # comportamento de hoje (numero do bot/notificacao ao time). Mesma WABA,
@@ -300,14 +311,55 @@ def deliver_meta_whatsapp(*, event: dict, route: DeliveryRoute) -> DeliveryResul
         if phone_number_kind == "support"
         else "META_WHATSAPP_PHONE_NUMBER_ID"
     )
-    client = MetaWhatsAppClient(
+    return MetaWhatsAppClient(
         access_token=_required_env("META_WHATSAPP_ACCESS_TOKEN"),
         phone_number_id=_required_env(phone_number_id_env),
         graph_api_version=os.getenv("META_WHATSAPP_GRAPH_API_VERSION", "v25.0"),
         timeout_seconds=_positive_int_env("META_WHATSAPP_REQUEST_TIMEOUT_SECONDS", 5),
     )
+
+
+def deliver_meta_whatsapp(*, event: dict, route: DeliveryRoute) -> DeliveryResult:
+    if route.name not in META_WHATSAPP_ROUTES:
+        raise PermanentDeliveryError(
+            f"meta_whatsapp transport is not supported for route: {route.name}",
+        )
+    payload = event["payload_sanitized"]
+    if not isinstance(payload, dict):
+        raise PermanentDeliveryError("meta_whatsapp payload must be an object")
+    recipient = _required_text(payload, "to")
+    text = _required_text(payload, "text")
+    client = _build_meta_whatsapp_client(payload)
     try:
         result = client.send_text(to=recipient, text=text)
+    except MetaWhatsAppRequestError as exc:
+        if exc.status_code is not None and 400 <= exc.status_code < 500:
+            if exc.status_code not in RETRYABLE_HTTP_STATUS:
+                raise PermanentDeliveryError("permanent meta whatsapp rejection") from exc
+        raise
+    return DeliveryResult(meta_message_id=result.message_id)
+
+
+def deliver_meta_whatsapp_template(*, event: dict, route: DeliveryRoute) -> DeliveryResult:
+    if route.name not in META_WHATSAPP_TEMPLATE_ROUTES:
+        raise PermanentDeliveryError(
+            f"meta_whatsapp template transport is not supported for route: {route.name}",
+        )
+    payload = event["payload_sanitized"]
+    if not isinstance(payload, dict):
+        raise PermanentDeliveryError("meta_whatsapp template payload must be an object")
+    recipient = _required_text(payload, "to")
+    template_name = _required_text(payload, "template_name")
+    language_code = _required_text(payload, "language_code")
+    components = payload.get("components")
+    client = _build_meta_whatsapp_client(payload)
+    try:
+        result = client.send_template(
+            to=recipient,
+            template_name=template_name,
+            language_code=language_code,
+            components=components if isinstance(components, list) else None,
+        )
     except MetaWhatsAppRequestError as exc:
         if exc.status_code is not None and 400 <= exc.status_code < 500:
             if exc.status_code not in RETRYABLE_HTTP_STATUS:

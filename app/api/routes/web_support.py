@@ -57,9 +57,11 @@ from app.support.repository import (
     SupportCaseSummary,
 )
 from app.support.whatsapp_bridge import (
+    ALLOWED_STAFF_TEMPLATES,
     CaseHasNoBinding,
     SupportWhatsAppBridgeService,
     SupportWhatsAppWindowClosed,
+    UnknownStaffTemplate,
 )
 from app.support.sla import (
     COLOR_FILTERS,
@@ -561,8 +563,10 @@ def send_console_case_message(
 ) -> ConsoleCaseMessageResponse:
     """Ponte WhatsApp<->console: o atendente responde o cliente pelo caso.
 
-    So funciona dentro da janela de 24h da Meta (free-form); fora da janela,
-    responde 409 -- enviar template fica para a Fase 2. Dark quando
+    Dentro da janela de 24h da Meta, sempre free-form (e gratis). Fora da
+    janela, exige ``template`` (um de ``ALLOWED_STAFF_TEMPLATES``); sem um,
+    responde 409 com a lista de templates disponiveis para o console
+    reenviar a escolha do operador. Dark quando
     ``ENABLE_WHATSAPP_SUPPORT_NUMBER`` esta desligada.
     """
 
@@ -596,6 +600,7 @@ def send_console_case_message(
             case_id=case_id,
             staff_id=principal.staff_id,
             text=payload.message,
+            template=payload.template,
         )
     except CaseHasNoBinding as exc:
         raise HTTPException(
@@ -604,7 +609,18 @@ def send_console_case_message(
     except SupportWhatsAppWindowClosed as exc:
         raise HTTPException(
             status_code=409,
-            detail={"code": "window_closed", "templates": []},
+            detail={
+                "code": "window_closed",
+                "templates": sorted(ALLOWED_STAFF_TEMPLATES),
+            },
+        ) from exc
+    except UnknownStaffTemplate as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unknown_template",
+                "templates": sorted(ALLOWED_STAFF_TEMPLATES),
+            },
         ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail="empty_message") from exc
@@ -619,9 +635,11 @@ def send_console_case_message(
         request_id=get_request_id(request),
         case_id=case_id,
         staff_id=principal.staff_id,
-        delivery="freeform",
+        delivery=result.delivery,
     )
-    return ConsoleCaseMessageResponse(message_id=result.message_id, status="queued")
+    return ConsoleCaseMessageResponse(
+        message_id=result.message_id, status="queued", delivery=result.delivery
+    )
 
 
 @router.get("/metrics", response_model=ConsoleMetricsResponse)

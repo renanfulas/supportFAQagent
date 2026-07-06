@@ -10,6 +10,7 @@ simulate a lost CAS without a real database.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,6 +19,14 @@ from app.support.transitions import (
     InvalidTransition,
     SupportCaseTransitionService,
 )
+
+# Fase 2: claim/close agora tambem consultam support_cases/customers para a
+# notificacao proativa (_maybe_notify_customer). support_wa_enc_key=None faz
+# _resolve_wa_window() retornar sem tocar case_whatsapp_bindings; um
+# customer_id None no SELECT pula o bloco de e-mail -- so precisa de UM
+# fetchone extra por transicao notificavel (claim->in_progress ou close).
+NO_NOTIFICATION_SETTINGS = SimpleNamespace(support_wa_enc_key=None)
+NO_CUSTOMER_ROW = (None, None, None)
 
 
 class FakeCursor:
@@ -43,8 +52,9 @@ class FakeCursor:
 
 
 class FakeRuntime:
-    def __init__(self, cursor: FakeCursor) -> None:
+    def __init__(self, cursor: FakeCursor, *, settings=NO_NOTIFICATION_SETTINGS) -> None:
         self._cursor = cursor
+        self.settings = settings
 
     @contextmanager
     def transaction(self):
@@ -72,7 +82,7 @@ def _service(cursor: FakeCursor) -> SupportCaseTransitionService:
 
 
 def test_claim_open_case_sets_assignee_and_in_progress() -> None:
-    cursor = FakeCursor(fetchone_results=[("open", None), ("Renan",)])
+    cursor = FakeCursor(fetchone_results=[("open", None), ("Renan",), NO_CUSTOMER_ROW])
     service = _service(cursor)
 
     result = service.apply(case_id="case-1", action="claim", actor_staff_id=ACTOR_ID, note=None)
@@ -105,6 +115,7 @@ def test_release_clears_assignee_and_reopens() -> None:
 
 
 def test_wait_customer_and_resume_round_trip() -> None:
+    # to_status='waiting_customer' nao e notificavel -- sem fetchone extra.
     cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",)])
     service = _service(cursor)
 
@@ -118,7 +129,7 @@ def test_wait_customer_and_resume_round_trip() -> None:
 
 
 def test_close_sets_closed_at() -> None:
-    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",)])
+    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",), NO_CUSTOMER_ROW])
     service = _service(cursor)
 
     result = service.apply(
@@ -244,7 +255,7 @@ def test_lost_cas_raises_invalid_transition_without_recording_event() -> None:
 
 
 def test_note_is_sanitized_before_persisting() -> None:
-    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",)])
+    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",), NO_CUSTOMER_ROW])
     service = _service(cursor)
 
     service.apply(
@@ -262,7 +273,7 @@ def test_note_is_sanitized_before_persisting() -> None:
 
 
 def test_blank_note_becomes_none() -> None:
-    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",)])
+    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",), NO_CUSTOMER_ROW])
     service = _service(cursor)
 
     result_call = service.apply(
@@ -277,7 +288,7 @@ def test_blank_note_becomes_none() -> None:
 
 
 def test_note_is_truncated_to_max_length() -> None:
-    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",)])
+    cursor = FakeCursor(fetchone_results=[("in_progress", "staff-1"), ("Renan",), NO_CUSTOMER_ROW])
     service = _service(cursor)
 
     service.apply(
