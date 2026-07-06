@@ -5,7 +5,7 @@ from typing import Any, Iterator
 
 from app.core.config import Settings
 from app.core.config import DEV_ENVS
-from app.core.errors import DatabaseUnavailableError
+from app.core.errors import DatabaseUnavailableError, TransactionBusinessError
 
 
 class DatabaseRuntime:
@@ -94,6 +94,14 @@ class DatabaseRuntime:
                 with connection.transaction():
                     yield connection
         except DatabaseUnavailableError:
+            raise
+        except TransactionBusinessError:
+            # A business-level rejection computed from data already read
+            # inside the transaction (e.g. InvalidTransition, CaseNotFound).
+            # This generator's ``yield`` sits inside this try, so caller
+            # exceptions are thrown back in at this point; without this
+            # clause they would be misreported as a storage outage (503)
+            # instead of the real 404/409 the caller intends.
             raise
         except Exception as exc:
             raise DatabaseUnavailableError("database transaction failed") from exc

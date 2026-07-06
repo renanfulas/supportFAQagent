@@ -24,7 +24,42 @@ reusando `compute_sla` sobre o conjunto ativo — uma fonte de verdade so —,
 `unknown_domain_count` a partir do join `feedback -> chat_audits`,
 `response_times` via medianas `percentile_cont`; endpoint
 `GET /web/support/metrics` + schema; testes com fixtures deterministicas).
-Faltam: smoke em staging e a UI `/team` (Juliano).
+**Smoke em staging confirmado em 2026-07-06** (deploy real na VPS a partir de
+`origin/main`, migrations 014-018 aplicadas, operador cadastrado via
+`manage_staff.py`, flag `ENABLE_SUPPORT_CONSOLE=true`): dark-check 404,
+login OTP real via WhatsApp, lembrete de dispositivo (1 clique) emitindo e
+resolvendo corretamente, telefone nao-staff negado com resposta identica,
+fila com semaforo e SLA reais sobre o backlog existente, detalhe de caso,
+ciclo completo de transicao (`claim` -> `wait_customer` -> `resume` ->
+`close`) com evento auditado, `assignee=me`, `GET /web/support/metrics` com
+as quatro visoes populadas, `logout` preservando/removendo o lembrete
+conforme `forget_device`, e caplog sem telefone/codigo/token. Falta so a UI
+`/team` (Juliano).
+
+**Bug encontrado e corrigido durante o smoke (2026-07-06):**
+`DatabaseRuntime.transaction()` (`app/db/runtime.py`) convertia **qualquer**
+excecao levantada dentro do `with runtime.transaction()` — inclusive
+rejeicoes de regra de negocio como `InvalidTransition` e `CaseNotFound`
+(`app/support/transitions.py`) — em `DatabaseUnavailableError` (503), porque
+o `yield` do gerador fica dentro do mesmo `try/except Exception` que trata
+falhas reais de pool/conexao. Na pratica, um segundo `claim` no mesmo caso
+respondia `503 support_inbox_storage_unavailable` em vez do `409
+invalid_transition` documentado no contrato — nunca pego pelos testes
+unitarios porque eles usam `FakeRuntime` (nao exercita o `transaction()`
+real). O mesmo padrao ja existia, sem uso pratico ainda notado, em
+`promote_pending_consent` (`app/db/operational.py`): `ConsentCaseNotFound`
+levantada dentro da transacao tambem virava 503 em vez do 404 esperado.
+Corrigido com uma classe marcadora nova, `TransactionBusinessError`
+(`app/core/errors.py`), que `DatabaseRuntime.transaction()` deixa propagar
+sem converter; `InvalidTransition`, `CaseNotFound` e `ConsentCaseNotFound`
+agora herdam dela. Teste de regressao novo em
+`tests/test_phase0_operational_safety.py`
+(`test_database_runtime_lets_business_errors_propagate_from_transaction`)
+exercitando o `DatabaseRuntime.transaction()` real (nao fake) para cobrir
+essa classe de bug. `pytest` completo e `compileall` verdes apos o fix;
+aplicado ao vivo na VPS (patch cirurgico, fora do fluxo normal de deploy) e
+retestado com sucesso antes do PR. Ver
+[PR #132](https://github.com/renanfulas/supportFAQagent/pull/132).
 **Hardening pos-entrega (2026-07-03)**: (1) evento `support_console_auth_denied`
 no confirm falho e no guard 401 (visibilidade de acesso negado sem eco de
 identificadores); (2) `pending_consent -> cancel` na matriz de transicoes,

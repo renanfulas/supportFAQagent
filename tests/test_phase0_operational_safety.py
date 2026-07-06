@@ -84,6 +84,35 @@ def test_database_runtime_maps_pool_failure_to_stable_error() -> None:
             pass
 
 
+def test_database_runtime_lets_business_errors_propagate_from_transaction() -> None:
+    """Regression: a real DatabaseRuntime.transaction() must not mask a
+    caller's business rejection (e.g. ConsentCaseNotFound, InvalidTransition)
+    as DatabaseUnavailableError. Unit tests that fake the whole runtime never
+    exercise this generator, so the bug only showed up against a real
+    transaction() call (confirmed live during the support console smoke,
+    2026-07-06: a repeated ``claim`` came back 503 instead of 409)."""
+
+    class WorkingConnection:
+        @contextmanager
+        def transaction(self):
+            yield
+
+    class WorkingPool:
+        @contextmanager
+        def connection(self):
+            yield WorkingConnection()
+
+    settings = SimpleNamespace(
+        persistence_backend="postgres",
+        web_auth_storage_backend="memory",
+    )
+    runtime = DatabaseRuntime(settings, pool=WorkingPool())
+
+    with pytest.raises(ConsentCaseNotFound):
+        with runtime.transaction():
+            raise ConsentCaseNotFound("req-1")
+
+
 def test_database_runtime_closes_pool_when_initial_wait_fails(monkeypatch) -> None:
     created = []
 

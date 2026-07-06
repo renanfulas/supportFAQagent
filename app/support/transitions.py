@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from app.core.errors import TransactionBusinessError
 from app.core.persistence_sanitize import sanitize_for_persistence
 from app.db.runtime import DatabaseRuntime
 
@@ -50,12 +51,17 @@ TRANSITION_MATRIX: dict[tuple[str, str], str] = {
 CLOSING_STATUSES = {"closed", "cancelled"}
 
 
-class CaseNotFound(Exception):
+class CaseNotFound(TransactionBusinessError):
     pass
 
 
-class InvalidTransition(Exception):
-    """Acao nao aplicavel ao status atual, ou CAS perdido (defesa em profundidade)."""
+class InvalidTransition(TransactionBusinessError):
+    """Acao nao aplicavel ao status atual, ou CAS perdido (defesa em profundidade).
+
+    Both are raised from inside ``with self.runtime.transaction()`` below, so
+    they must subclass TransactionBusinessError to survive that wrapper
+    unchanged instead of being reported as DatabaseUnavailableError (503).
+    """
 
     def __init__(self, status: str) -> None:
         self.status = status
