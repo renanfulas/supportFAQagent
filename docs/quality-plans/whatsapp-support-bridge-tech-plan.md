@@ -474,11 +474,59 @@ sabe que ha um atendente, entao fica em silencio).
 - testes de janela (aberta/fechada), template fora de janela, idempotencia,
   opt-out de e-mail, resumo no closed
 
-### Fase 3 - Unificacao de identidade (opcional)
+### Fase 3 - Unificacao de identidade (opcional, decisao aberta 2026-07-06)
 
-Timeline unica por `customer_id` juntando conversa do numero bot + thread de
-suporte; reconciliacao dos dominios de hash. So se o produto quiser a visao
-unificada.
+Status: **pesquisa de codigo concluida em 2026-07-06; mecanismo NAO decidido
+de proposito** -- pausado para o time se organizar antes de implementar.
+Nenhum codigo escrito.
+
+**Achado central (muda o enquadramento do problema):** "reconciliar os
+dominios de hash" nao pode significar comparar os hashes ja gravados --
+sao tres segredos diferentes, por construcao deliberada, e nenhum e
+derivavel do outro:
+
+| Hash | Formula | Segredo | Entrada |
+| --- | --- | --- | --- |
+| `verified_identities.phone_hash` (web) | `HMAC(secret, telefone)` direto | `IDENTITY_HASH_SECRET` | telefone E.164 |
+| `conversations.session_hash` (WhatsApp nativo) | `HMAC(secret, "whatsapp:{hermes\|meta}:" + hash-interno(telefone))`, duas camadas | `PERSISTENCE_HASH_SECRET` | telefone pre-hasheado |
+| `case_whatsapp_bindings.wa_id_hash` (ponte suporte) | `HMAC(secret+"\|hash", telefone)` | `SUPPORT_WA_ENC_KEY` | telefone E.164 |
+
+Confirmado por leitura direta de `app/web_auth/service.py` (`_hmac_digest`),
+`app/conversations/service.py` (`hash_session`) +
+`app/integrations/hermes/chat_transport.py` /
+`app/integrations/meta_whatsapp/chat_transport.py` (`_safe_*_session_id`), e
+`app/support/wa_binding.py` (`hash_wa_id`). Nenhum join por igualdade entre
+esses tres valores existe hoje nem e possivel sem recalcular um deles a
+partir do telefone em claro.
+
+**O que isso habilita:** o telefone em claro existe em tres pontos --
+confirmacao de OTP web, inbound do WhatsApp nativo (Hermes/Meta, antes de
+virar `session_hash`), e o binding da ponte de suporte (`wa_id_encrypted` e
+decifravel). Em qualquer um desses pontos da para recalcular o hash do
+**dominio web** (`HMAC(IDENTITY_HASH_SECRET, telefone)`) e resolver/criar
+`customer_id` pela MESMA logica que `WebWhatsAppAuthStore.save_identity` ja
+usa -- sem re-chavear nada, sem tocar nos hashes ja gravados.
+
+**A decisao real nao e tecnica, e de fronteira de consentimento** (por isso
+ficou aberta): quando aplicar esse recalculo?
+
+- **Opcao A - todo inbound nativo (proativo):** toda mensagem no numero bot
+  ja resolve/cria `customer_id` automaticamente. Mais unificacao, mas
+  reverte silenciosamente a decisao de
+  [customer-identity-whatsapp-handoff-plan.md](customer-identity-whatsapp-handoff-plan.md)
+  de tratar o WhatsApp nativo como pseudonimo por padrao ("aceito como
+  permanente, nao e gap a fechar") -- ninguem deu consentimento explicito
+  para a correlacao entre canais.
+- **Opcao B - so via OTP web (reativo, opt-in):** o historico so se une
+  quando o cliente confirma OTP no site -- o backend recalcula o
+  `session_hash` nativo esperado para aquele telefone e vincula
+  retroativamente as conversas ja existentes. Quem nunca passa pelo web
+  continua pseudonimo. Preserva a decisao anterior; e o mesmo gesto que ja
+  existe hoje para o consent gate (Sprint 4b).
+
+Nenhuma opcao foi escolhida ainda. Retomar esta secao antes de escrever
+qualquer migration/codigo desta fase -- ela depende de uma decisao de
+produto/privacidade, nao so de engenharia.
 
 ## Relacao Com O Painel De Status Web (decidido: opcao C)
 
