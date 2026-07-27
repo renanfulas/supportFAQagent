@@ -9,6 +9,7 @@ Topologia alvo:
 
 - `/chat-ui` -> `ask-host-genius` em loopback;
 - `/assets/*` -> assets do `ask-host-genius`;
+- `/team` -> area interna do time em `ask-host-genius` (mesmo loopback);
 - `/web/*` -> `supportFAQagent`;
 - `/chat-assets/*` -> legado do backend, mantido apenas como fallback.
 
@@ -100,6 +101,15 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    location ^~ /team {
+        proxy_pass http://127.0.0.1:5173/team;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     location / {
         proxy_pass http://127.0.0.1:8000/;
         proxy_http_version 1.1;
@@ -114,6 +124,8 @@ server {
 ```bash
 curl -i https://chat.ordens.com.br/chat-ui
 
+curl -i https://chat.ordens.com.br/team
+
 curl -i \
   -H "Content-Type: application/json" \
 -d '{"message":"Como conectar o WhatsApp pela Meta API oficial?"}' \
@@ -123,6 +135,7 @@ curl -i \
 Verificar no browser:
 
 - `/chat-ui` mostra o visual novo;
+- `/team` abre o console do time (tela de login OTP), sem 404;
 - assets carregam de `/assets/*`;
 - chamada de chat sai para `/web/chat`;
 - chamada de feedback sai para `/web/feedback`;
@@ -131,17 +144,22 @@ Verificar no browser:
 
 ## Rollback
 
-1. Remover as regras Nginx de `/chat-ui` e `/assets/` que apontam para
-   `127.0.0.1:5173`.
+1. Remover as regras Nginx de `/chat-ui`, `/team` e `/assets/` que apontam
+   para `127.0.0.1:5173`.
 2. Recarregar Nginx.
 3. O backend volta a servir a UI estatica legada em `/chat-ui`, se
-   `ENABLE_PUBLIC_CHAT_UI=true`.
+   `ENABLE_PUBLIC_CHAT_UI=true`. `/team` fica indisponivel ate a regra voltar.
 
 ## Riscos
 
-- Se `/assets/*` nao for roteado para o frontend, a tela abre sem CSS/JS.
+- Se `/assets/*` nao for roteado para o frontend, a tela abre sem CSS/JS
+  (isso afeta `/chat-ui` e `/team`, que compartilham o mesmo bundle).
 - Se `VITE_API_BASE_URL` for preenchido com outro dominio, o browser passa a
   depender de CORS.
-- Se `/web/*` nao ficar no backend, o chat nao conversa com o agente.
+- Se `/web/*` nao ficar no backend, o chat nao conversa com o agente e o
+  console do time (`/web/support/*`) para de autenticar.
+- Se `/team` nao tiver uma regra Nginx propria, a requisicao cai no catch-all
+  `location /` (backend Python) e retorna 404, mesmo com a pagina publicada
+  no `ask-host-genius`.
 - `npm run serve:staging` e adequado para staging. Para producao final, revisar
   target Node/Nitro dedicado antes de alto volume.

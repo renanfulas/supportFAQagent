@@ -29,9 +29,18 @@ class RouteResolution:
 def build_domain_router(
     settings: Settings,
     domain_loader: DomainLoader,
+    *,
+    enabled: bool | None = None,
 ) -> DomainRouter | None:
-    """Build the router from settings, or None when routing is disabled/single."""
-    if not settings.enable_whatsapp_domain_router:
+    """Build the router from settings, or None when routing is disabled/single.
+
+    ``enabled`` overrides ``settings.enable_whatsapp_domain_router`` so a
+    different channel-specific flag (e.g. the web chat's own router flag) can
+    gate the same router-building logic without duplicating it.
+    """
+    if enabled is None:
+        enabled = settings.enable_whatsapp_domain_router
+    if not enabled:
         return None
     configs = [
         config

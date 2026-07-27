@@ -2,7 +2,10 @@
 
 Status: proposto em 2026-07-02, revisado em 2026-07-02 apos review de
 hardening (staff em tabela propria, sessao diaria, dono do caso na fila).
-Nenhuma fase iniciada.
+Fases A, B e C entregues em codigo (2026-07-03), smoke real em staging
+confirmado (2026-07-06) e UI `/team` confirmada funcionando em producao em
+2026-07-27 (`https://chat.ordens.com.br/team`). Frente encerrada do lado de
+entrega.
 Plano tecnico correspondente: [support-team-console-tech-plan.md](support-team-console-tech-plan.md).
 
 ## Contexto E Problema

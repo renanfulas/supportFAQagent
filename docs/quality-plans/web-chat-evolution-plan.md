@@ -26,11 +26,20 @@ as secoes de fase como fonte de verdade.
 - **V3 - operacao madura: comecou, entregue em fatias fora deste doc.** A
   primeira fatia e o **console do time** (fila com semaforo SLA, transicoes
   auditadas, metricas), entregue por
-  [support-team-console-plan.md](support-team-console-plan.md). A metade cliente
-  (status de atendimento) esta planejada em
+  [support-team-console-plan.md](support-team-console-plan.md), com UI `/team`
+  confirmada em producao em 2026-07-27. A metade cliente (status de
+  atendimento) esta planejada em
   [web-chat-customer-ticket-status-plan.md](web-chat-customer-ticket-status-plan.md).
-  Ainda aberto na visao V3: loop feedback->base de conhecimento, roteamento
-  multi-dominio no web chat, direitos LGPD do titular e gestao de perfis/roles.
+  Em 2026-07-27, mais duas fatias da V3 entraram em codigo: **Fase A do loop
+  feedback->base de conhecimento** (`GET /web/support/knowledge-gaps`, fila de
+  perguntas com feedback negativo priorizando as sem referencia de
+  conhecimento usada) e **Fase A do roteamento multi-dominio no web chat**
+  (`ENABLE_WEB_DOMAIN_ROUTER`, dark por padrao, reusa o roteador conversacional
+  ja usado pelo WhatsApp). Direitos LGPD do titular tem plano escrito em
+  [web-chat-lgpd-data-subject-rights-plan.md](web-chat-lgpd-data-subject-rights-plan.md)
+  (Fase A ainda nao implementada de proposito — depende de trazer um
+  responsavel por compliance antes das fases de acesso/eliminacao real).
+  Ainda por planejar na V3: gestao de perfis/roles.
 
 Este documento define o plano tecnico para evoluir a interface web do
 `supportFAQagent` de uma experiencia V0 estilo ChatGPT ate um fluxo

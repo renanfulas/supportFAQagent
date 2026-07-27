@@ -165,3 +165,20 @@ class ConsoleMetricsResponse(BaseModel):
     escalation_reasons: list[MetricsEscalationReasonEntry] = Field(default_factory=list)
     feedback: MetricsFeedbackResponse
     response_times: MetricsResponseTimesResponse
+
+
+class KnowledgeGapEntry(BaseModel):
+    request_id: str
+    domain: str
+    question: str
+    reason: str | None = None
+    comment: str | None = None
+    has_reference: bool
+    created_at: str
+
+
+class ConsoleKnowledgeGapsResponse(BaseModel):
+    request_id: str | None = None
+    window: str
+    domain: str | None = None
+    items: list[KnowledgeGapEntry] = Field(default_factory=list)

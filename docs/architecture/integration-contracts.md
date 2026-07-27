@@ -250,6 +250,22 @@ Regras operacionais:
 - `confidence` e `domain` continuam internos ao backend e nao fazem parte do contrato publico V0
 - se `escalated=true`, a UI deve tratar isso como sinal de revisao humana ou necessidade de continuidade operacional, nao como falha silenciosa
 
+Roteamento multi-dominio (V3, dark por padrao via `ENABLE_WEB_DOMAIN_ROUTER`,
+falado em [web-chat-evolution-plan.md](../quality-plans/web-chat-evolution-plan.md)):
+
+- reusa o mesmo roteador conversacional stateless ja usado pelo WhatsApp
+  (`app/orchestration/channel_routing.py`): saudacao institucional/pergunta de
+  esclarecimento quando ambiguo, atalho numerico/nome quando explicito,
+  stickiness por sessao via o mesmo `session_domain_store` compartilhado;
+  desligado por padrao mantem o comportamento V0 (`suporte-vps-whatsapp`
+  sempre);
+- `domain` continua nao aceito no payload do navegador mesmo com o roteador
+  ligado — a escolha de dominio e sempre conversacional (mesma vocacao do
+  WhatsApp), nunca um campo livre do browser;
+- turnos so de roteamento (saudacao/esclarecimento/boas-vindas) respondem sem
+  chamar o LLM e sem criar `chat_audits` — mesmo comportamento ja aceito para
+  Hermes/Meta WhatsApp.
+
 Fronteira de responsabilidade:
 
 - esta fachada publica nao substitui `/chat` ou webhooks dedicados para Meta
@@ -1086,6 +1102,43 @@ Guardas e erros:
 
 - banco indisponivel -> `503 support_inbox_storage_unavailable`.
 
+`GET /web/support/knowledge-gaps` (V3, "loop feedback -> base de
+conhecimento"; exige sessao staff valida):
+
+- query: `window` (`14d` padrao | `30d`; qualquer outro valor ->
+  `422 invalid_window`), `domain` opcional, `limit` (padrao `20`, maximo `100`);
+- fila de melhoria da base (`docs/architecture/knowledge-authoring.md`):
+  perguntas com `feedback.helpful = false` na janela, join com
+  `chat_audits`/`domains`, ordenadas com `has_reference = false` primeiro (a
+  resposta nao usou nenhum artigo — sinal mais forte de lacuna de
+  conhecimento), depois por mais recente;
+- `question`/`comment` reusam o mesmo texto ja sanitizado (`redaction_version`)
+  que o transcript do inbox ja exibe ao time — nenhuma exposicao nova de
+  privacidade;
+- nao recalcula nem persiste nada: leitura pura sobre `feedback` + `chat_audits`
+  ja existentes; nao substitui a fila manual de autoria (o time ainda decide o
+  que virar artigo novo);
+
+```json
+{
+  "window": "14d",
+  "domain": null,
+  "items": [
+    {
+      "request_id": "uuid",
+      "domain": "suporte-vps-whatsapp",
+      "question": "Como configuro X?",
+      "reason": "no_answer",
+      "comment": null,
+      "has_reference": false,
+      "created_at": "2026-07-02T12:00:00+00:00"
+    }
+  ]
+}
+```
+
+- banco indisponivel -> `503 support_inbox_storage_unavailable`.
+
 Observabilidade (sem PII, hashes truncados, nunca telefone/transcript/token):
 `support_console_auth_started`, `support_console_auth_confirmed`,
 `support_console_auth_denied` (motivo generico: `invalid_or_expired_code` no
@@ -1094,7 +1147,8 @@ negado sem revelar quem tentou),
 `support_console_transition` (case_id, action, from/to, actor_staff_id),
 `support_console_auth_delivery_failed`, `support_console_listed`,
 `support_console_case_viewed`, `support_console_active_cap_reached`,
-`support_console_metrics_viewed` (window, domain presente).
+`support_console_metrics_viewed` (window, domain presente),
+`support_console_knowledge_gaps_viewed` (window, domain presente, item_count).
 
 Gestao de operadores: `scripts/manage_staff.py add|disable|list` (usa
 `DATABASE_URL` + `IDENTITY_HASH_SECRET`, nunca imprime telefone completo);

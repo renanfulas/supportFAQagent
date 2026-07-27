@@ -29,6 +29,8 @@ DEFAULT_WINDOW = "14d"
 # Abaixo deste volume, o helpful_rate fica marcado como amostra pequena --
 # staff nao deve tirar conclusao de 2 votos.
 SAMPLE_SIZE_WARNING_THRESHOLD = 20
+KNOWLEDGE_GAP_DEFAULT_LIMIT = 20
+KNOWLEDGE_GAP_MAX_LIMIT = 100
 
 
 @dataclass(frozen=True)
@@ -286,6 +288,58 @@ class SupportMetricsRepository:
             ),
         }
 
+    def get_knowledge_gap_candidates(
+        self,
+        *,
+        domain: str | None,
+        window_start: datetime,
+        window_end: datetime,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        """Perguntas com feedback negativo, sem referencia de conhecimento
+        usada primeiro -- sinal direto para a fila de melhoria da base
+        (docs/architecture/knowledge-authoring.md). ``question``/``comment``
+        reusam o mesmo texto ja sanitizado que o transcript do inbox exibe;
+        nao expoe nada novo em termos de privacidade."""
+        with self.runtime.transaction() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                      ca.request_id,
+                      d.name,
+                      ca.question_sanitized,
+                      f.reason,
+                      f.comment_sanitized,
+                      (jsonb_array_length(ca.message_references) = 0) AS has_no_reference,
+                      f.created_at
+                    FROM feedback f
+                    JOIN chat_audits ca ON ca.id = f.chat_audit_id
+                    JOIN domains d ON d.id = ca.domain_id
+                    WHERE f.helpful = false
+                      AND f.created_at >= %s AND f.created_at < %s
+                      AND (%s::text IS NULL OR d.name = %s)
+                    ORDER BY has_no_reference DESC, f.created_at DESC
+                    LIMIT %s
+                    """,
+                    (window_start, window_end, domain, domain, limit),
+                )
+                rows = cursor.fetchall()
+        return [
+            {
+                "request_id": str(row[0]),
+                "domain": str(row[1]),
+                "question": str(row[2]),
+                "reason": row[3],
+                "comment": row[4],
+                "has_reference": not bool(row[5]),
+                "created_at": (
+                    row[6].isoformat() if hasattr(row[6], "isoformat") else str(row[6])
+                ),
+            }
+            for row in rows
+        ]
+
 
 def build_console_metrics(
     *,
@@ -336,3 +390,26 @@ def build_console_metrics(
         "feedback": feedback,
         "response_times": response_times,
     }
+
+
+def build_knowledge_gap_report(
+    *,
+    metrics_repository: SupportMetricsRepository,
+    window: str,
+    domain: str | None,
+    limit: int,
+    settings: Any,
+    now: datetime,
+) -> dict[str, Any]:
+    if window not in WINDOW_DAYS:
+        raise ValueError(f"unknown window: {window}")
+    bounds = resolve_window(
+        window, now=now, timezone_name=settings.support_console_timezone
+    )
+    items = metrics_repository.get_knowledge_gap_candidates(
+        domain=domain,
+        window_start=bounds.start_utc,
+        window_end=bounds.end_utc,
+        limit=limit,
+    )
+    return {"items": items}

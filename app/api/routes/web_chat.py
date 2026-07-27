@@ -21,6 +21,11 @@ from app.domain_engine.loader import DomainLoader
 from app.conversations.service import ConversationHistoryService
 from app.conversations.summary import SummaryRecallService
 from app.feedback.service import FeedbackService
+from app.orchestration.channel_routing import (
+    build_domain_router,
+    fallback_routing_text,
+    resolve_sticky_domain,
+)
 from app.orchestration.chat_flow import ChatFlowService
 from app.core.errors import DatabaseUnavailableError
 from app.db.operational import (
@@ -46,7 +51,27 @@ def create_web_chat(
     settings = get_settings()
     session_id, should_set_cookie = get_or_create_public_session_id(request, settings)
     identity_context = _resolve_identity_context(request, settings, session_id)
-    domain = _load_default_domain(settings)
+    domain_loader = DomainLoader(settings.domains_path)
+    domain, routing_reply = _resolve_web_chat_domain(
+        settings=settings,
+        domain_loader=domain_loader,
+        request=request,
+        session_id=session_id,
+        message=payload.message,
+    )
+    if routing_reply is not None:
+        if should_set_cookie:
+            set_public_session_cookie(response, settings, session_id)
+        return WebChatResponse(
+            request_id=request_id,
+            answer=routing_reply,
+            escalated=False,
+            handoff_reasons=[],
+            references=[],
+            support_code=request_id,
+            error_code=None,
+            support_deep_link=None,
+        )
 
     database_runtime = request.app.state.database_runtime
     session_state_store = (
@@ -171,11 +196,71 @@ def create_web_feedback(
     return feedback_response
 
 
-def _load_default_domain(settings):
-    domain = DomainLoader(settings.domains_path).load(settings.default_domain)
+def _load_default_domain(settings, domain_loader: DomainLoader | None = None):
+    loader = domain_loader or DomainLoader(settings.domains_path)
+    domain = loader.load(settings.default_domain)
     if domain is None:
         raise HTTPException(status_code=404, detail="Domain not found")
     return domain
+
+
+def _resolve_web_chat_domain(
+    *,
+    settings,
+    domain_loader: DomainLoader,
+    request: Request,
+    session_id: str,
+    message: str,
+):
+    """Resolve which domain should answer, or a direct routing reply.
+
+    Mirrors the conversational domain routing already used by WhatsApp
+    (``app/orchestration/channel_routing.py``): dark by default via
+    ``ENABLE_WEB_DOMAIN_ROUTER``. When disabled or a single domain is
+    configured, behavior is unchanged from V0 (always the default domain).
+
+    Returns ``(domain, None)`` when the brain should answer, or
+    ``(None, reply_text)`` for an unrouted turn (institutional greeting or
+    clarification) or a bare menu selection (domain welcome) — neither calls
+    the LLM nor persists a chat audit, matching the WhatsApp/Hermes behavior
+    for the same cases.
+    """
+
+    router = build_domain_router(
+        settings, domain_loader, enabled=settings.enable_web_domain_router
+    )
+    if router is None:
+        return _load_default_domain(settings, domain_loader), None
+
+    store = getattr(request.app.state, "session_domain_store", None)
+    last_out_store = getattr(request.app.state, "session_last_out_store", None)
+    resolution = resolve_sticky_domain(
+        router=router,
+        store=store,
+        default_domain=settings.default_domain,
+        text=message,
+        session_id=session_id,
+    )
+
+    if resolution.show_menu or resolution.domain is None:
+        last_outbound = last_out_store.get(session_id) if last_out_store is not None else None
+        text = fallback_routing_text(
+            router, last_outbound=last_outbound, reset=resolution.reset
+        )
+        if last_out_store is not None:
+            last_out_store.set(session_id, text)
+        return None, text
+
+    if resolution.selected:
+        text = router.welcome_text(resolution.domain)
+        if last_out_store is not None:
+            last_out_store.set(session_id, text)
+        return None, text
+
+    domain = domain_loader.load(resolution.domain)
+    if domain is None:
+        return _load_default_domain(settings, domain_loader), None
+    return domain, None
 
 
 def _resolve_identity_context(request: Request, settings, session_id: str):

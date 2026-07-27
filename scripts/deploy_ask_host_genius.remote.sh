@@ -106,6 +106,8 @@ echo "== depois =="
 git log -1 --oneline
 curl -fsSI http://127.0.0.1:5173/chat-ui
 curl -fsSI "https://chat.ordens.com.br/chat-ui?deploy_check=$(date +%s)"
+curl -fsSI http://127.0.0.1:5173/team
+curl -fsSI "https://chat.ordens.com.br/team?deploy_check=$(date +%s)" || echo "AVISO: /team publico falhou; conferir regra Nginx (ver docs/runbooks/chat-ordens-frontend-proxy.md)"
 curl -fsS -H "Content-Type: application/json" -d '{"message":"Como conectar o WhatsApp pela Meta API oficial?"}' https://chat.ordens.com.br/web/chat | head -c 1200
 echo
 

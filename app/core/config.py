@@ -245,6 +245,15 @@ class Settings(BaseSettings):
         default=False,
         alias="ENABLE_WHATSAPP_DOMAIN_ROUTER",
     )
+    # Web chat V3: reuses the same conversational domain router as WhatsApp
+    # (app/orchestration/channel_routing.py), gated by its own flag so rollout
+    # timing is independent per channel. Domain list is shared on purpose
+    # (whatsapp_router_domain_list below): "which domains this deployment
+    # serves conversationally" is not a WhatsApp-only concept.
+    enable_web_domain_router: bool = Field(
+        default=False,
+        alias="ENABLE_WEB_DOMAIN_ROUTER",
+    )
     whatsapp_router_domains: str = Field(
         default="suporte-vps-whatsapp,vendas,suporte-hospedagem,suporte-vps",
         alias="WHATSAPP_ROUTER_DOMAINS",
