@@ -25,7 +25,9 @@ smoke em `docs/runbooks/whatsapp-support-bridge-smoke.md`. **Dark por padrao**
 Meta (Juliano: numero de suporte + webhook + aprovacao dos 4 templates) para o
 smoke real e a promocao a staging/producao, e o transporte de e-mail (Juliano,
 provedor ainda nao decidido). Fase 3 (unificacao de identidade) permanece nao
-iniciada, opcional.
+iniciada, opcional. **Fase 4 (caixa de resposta no console, repo
+`ask-host-genius`) proposta em 2026-07-27, em implementacao** -- ver secao
+propria abaixo.
 E a implementacao do degrau 3 ("fechar o ciclo com o cliente") da visao V3 do
 [web-chat-evolution-plan.md](web-chat-evolution-plan.md), do lado da conversa
 humana. Complementa e **revisa** a conclusao "so e-mail" da Fase C do
@@ -561,6 +563,37 @@ sugeria.
 
 Nao re-chaveia nem toca nenhum hash/segredo existente; so preenche uma coluna
 ja nullable (`customer_id`) onde faltava.
+
+### Fase 4 - Caixa de resposta no console (`ask-host-genius`)
+
+Status: **proposta em 2026-07-27; em implementacao.** O compositor
+(`POST /web/support/cases/{case_id}/message`) ja existe desde a Fase 1/2 --
+esta fase e so a UI que aponta pra ele, no repo `ask-host-genius`
+(`D:\Octobox\ask-host-genius`), fora deste repositorio.
+
+- `src/lib/support-api.ts` (ask-host-genius): schema de
+  `ConsoleCaseMessageResponse` (`message_id`, `status`, `delivery`), funcao
+  `sendSupportCaseMessage(caseId, message, template?)`, e `SupportApiError`
+  estendido para carregar a lista `templates` que vem no corpo de `409
+  window_closed` / `422 unknown_template`.
+- `src/routes/team/cases/$caseId.tsx` + novo `src/components/team/ReplyBox.tsx`
+  (ask-host-genius): caixa de texto (max 4000 chars, mesmo limite do
+  `ConsoleCaseMessageRequest`) no card "Conversa"; ao receber `409
+  window_closed`, oferece um seletor com os templates devolvidos
+  (`ALLOWED_STAFF_TEMPLATES` = `precisa_info`, `reengajar`) para reenviar como
+  template; trata `409 no_whatsapp_binding`, `429` (rate limit do
+  `reply_limiter`), `503 support_inbox_storage_unavailable` e `404` (frente
+  desligada via `ENABLE_WHATSAPP_SUPPORT_NUMBER=false`).
+- **Fora de escopo desta fase (gap conhecido):** `delivery_status`
+  (`queued -> sent -> delivered -> read -> failed`) e gravado em
+  `messages.delivery_status` (`app/support/whatsapp_bridge.py:431`,
+  `apply_delivery_status`) mas **nao e exposto** hoje em
+  `SupportCaseTranscriptTurn` (`app/api/schemas/support.py`), entao o console
+  ainda nao mostra status de entrega por mensagem como o desenho original da
+  Fase 1 pedia (`### Compositor do atendente (console)` acima). Expor esse
+  campo e reconciliar com a UI fica pra uma fase seguinte.
+- Sem suite de testes no `ask-host-genius` hoje (so `eslint`); validar com
+  `bun run lint` la e teste manual contra o backend local.
 
 ## Relacao Com O Painel De Status Web (decidido: opcao C)
 
