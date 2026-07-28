@@ -32,6 +32,7 @@ from app.api.schemas.web_support import (
     ConsoleCaseMessageRequest,
     ConsoleCaseMessageResponse,
     ConsoleCaseSummaryResponse,
+    ConsoleKnowledgeGapsResponse,
     ConsoleMetricsResponse,
     ConsoleSlaResponse,
     StaffLoginResponse,
@@ -49,7 +50,14 @@ from app.core.logging import log_event
 from app.core.rate_limit import RateLimitExceeded
 from app.core.request_context import get_request_id
 from app.integrations.meta_whatsapp.client import MetaWhatsAppClient
-from app.support.metrics import WINDOW_DAYS, SupportMetricsRepository, build_console_metrics
+from app.support.metrics import (
+    KNOWLEDGE_GAP_DEFAULT_LIMIT,
+    KNOWLEDGE_GAP_MAX_LIMIT,
+    WINDOW_DAYS,
+    SupportMetricsRepository,
+    build_console_metrics,
+    build_knowledge_gap_report,
+)
 from app.support.repository import (
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
@@ -684,6 +692,54 @@ def get_console_metrics(
         window=window,
         domain=domain,
         **metrics,
+    )
+
+
+@router.get("/knowledge-gaps", response_model=ConsoleKnowledgeGapsResponse)
+def get_console_knowledge_gaps(
+    request: Request,
+    window: str = Query(default="14d", max_length=5),
+    domain: str | None = Query(default=None, max_length=80),
+    limit: int = Query(
+        default=KNOWLEDGE_GAP_DEFAULT_LIMIT, ge=1, le=KNOWLEDGE_GAP_MAX_LIMIT
+    ),
+    principal: StaffPrincipal = Depends(require_staff_session),
+) -> ConsoleKnowledgeGapsResponse:
+    if window not in WINDOW_DAYS:
+        raise HTTPException(status_code=422, detail="invalid_window")
+
+    settings = request.app.state.settings
+    database_runtime = request.app.state.database_runtime
+    metrics_repository = SupportMetricsRepository(database_runtime)
+    try:
+        now = SupportCaseRepository(database_runtime).database_now()
+        report = build_knowledge_gap_report(
+            metrics_repository=metrics_repository,
+            window=window,
+            domain=domain,
+            limit=limit,
+            settings=settings,
+            now=now,
+        )
+    except DatabaseUnavailableError as exc:
+        raise HTTPException(
+            status_code=503, detail="support_inbox_storage_unavailable"
+        ) from exc
+
+    request_id = get_request_id(request)
+    log_event(
+        logger,
+        "support_console_knowledge_gaps_viewed",
+        request_id=request_id,
+        window=window,
+        domain_present=domain is not None,
+        item_count=len(report["items"]),
+    )
+    return ConsoleKnowledgeGapsResponse(
+        request_id=request_id,
+        window=window,
+        domain=domain,
+        **report,
     )
 
 

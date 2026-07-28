@@ -33,8 +33,11 @@ fila com semaforo e SLA reais sobre o backlog existente, detalhe de caso,
 ciclo completo de transicao (`claim` -> `wait_customer` -> `resume` ->
 `close`) com evento auditado, `assignee=me`, `GET /web/support/metrics` com
 as quatro visoes populadas, `logout` preservando/removendo o lembrete
-conforme `forget_device`, e caplog sem telefone/codigo/token. Falta so a UI
-`/team` (Juliano).
+conforme `forget_device`, e caplog sem telefone/codigo/token.
+**UI `/team` confirmada funcionando em 2026-07-27** em
+`https://chat.ordens.com.br/team` (Juliano, `ask-host-genius`). Console do
+time encerrado do lado de entrega: Fases A, B e C em codigo, smoke real em
+staging e UI em producao.
 
 **Bug encontrado e corrigido durante o smoke (2026-07-06):**
 `DatabaseRuntime.transaction()` (`app/db/runtime.py`) convertia **qualquer**

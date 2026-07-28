@@ -147,6 +147,43 @@ mudanca no contrato HTTP publico do OTP. 871 testes verdes. Contrato em
 `docs/quality-plans/whatsapp-support-bridge-tech-plan.md`. Sem dependencia
 externa (Juliano) nesta fase.
 
+Em 27/07/2026, a UI `/team` do console do time (`ask-host-genius`) foi
+confirmada funcionando em producao em `https://chat.ordens.com.br/team`
+(Juliano). Console do time encerrado do lado de entrega: Fases A, B e C em
+codigo (03/07), smoke real em staging (06/07) e UI em producao (27/07). Ver
+`docs/quality-plans/support-team-console-plan.md` e
+`docs/quality-plans/support-team-console-tech-plan.md`.
+
+No mesmo dia (27/07/2026), duas fatias da V3 do chat web entraram em codigo,
+ambas dark por padrao:
+
+- **Loop feedback -> base de conhecimento (Fase A)**: novo endpoint
+  `GET /web/support/knowledge-gaps` na fachada do console (mesma auth staff
+  `require_staff_session`), listando perguntas com feedback negativo na
+  janela, priorizando as sem nenhuma referencia de conhecimento usada
+  (`SupportMetricsRepository.get_knowledge_gap_candidates`,
+  `app/support/metrics.py`). Reusa dado ja sanitizado de `chat_audits`/
+  `feedback`, sem nova exposicao de privacidade. Contrato em
+  `docs/architecture/integration-contracts.md`.
+- **Roteamento multi-dominio no web chat (Fase A)**: `/web/chat` passa a
+  reusar o roteador conversacional stateless ja usado por WhatsApp/Hermes
+  (`app/orchestration/channel_routing.py`) atras de
+  `ENABLE_WEB_DOMAIN_ROUTER` (desligado por padrao — comportamento V0
+  inalterado). `build_domain_router` ganhou um parametro `enabled` explicito
+  para nao duplicar a logica de montagem do roteador entre os dois flags.
+  `domain` continua nao aceito no payload do navegador; a escolha e sempre
+  conversacional.
+
+Tambem em 27/07/2026, o terceiro item aberto da V3 (direitos LGPD do titular)
+ganhou plano escrito em
+`docs/quality-plans/web-chat-lgpd-data-subject-rights-plan.md`, mapeando os
+direitos do art. 18 da LGPD ao dado existente. Fase A (intake durável via
+`support_cases`, sem eliminacao automatica) fica deliberadamente **sem
+codigo** ainda: reusar a criacao de caso fora do fluxo de turno de chat exige
+mais integracao do que os outros dois itens, e a Fase B/C (acesso/eliminacao
+real) precisa de validacao de alguem responsavel por compliance/juridico —
+papel ainda nao mapeado na ownership do projeto.
+
 ## Documentos Historicos
 
 Planos antigos podem citar Alexandre e Silotto ou descrever entregas que ja

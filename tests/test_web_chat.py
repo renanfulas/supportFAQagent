@@ -213,6 +213,119 @@ def test_web_chat_rate_limit_returns_429_with_retry_after(
     get_settings.cache_clear()
 
 
+def _domain_router_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setenv("ENABLE_PUBLIC_CHAT_UI", "true")
+    monkeypatch.setenv("ENABLE_WEB_DOMAIN_ROUTER", "true")
+    monkeypatch.setenv("WHATSAPP_ROUTER_DOMAINS", "suporte-vps-whatsapp,vendas")
+    get_settings.cache_clear()
+    return TestClient(create_app())
+
+
+def test_web_chat_domain_router_disabled_by_default_keeps_default_domain(
+    monkeypatch: pytest.MonkeyPatch,
+    web_client: TestClient,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_answer(self, domain, question, **kwargs) -> dict[str, object]:
+        captured["domain"] = domain.name
+        return {
+            "request_id": kwargs.get("request_id") or "",
+            "domain": domain.name,
+            "answer": "ok",
+            "confidence": 0.5,
+            "escalated": False,
+            "handoff_reasons": [],
+            "references": [],
+            "error_code": None,
+        }
+
+    monkeypatch.setattr("app.orchestration.chat_flow.ChatFlowService.answer", fake_answer)
+
+    response = web_client.post(
+        "/web/chat",
+        json={"message": "quero contratar um plano de hospedagem"},
+    )
+
+    assert response.status_code == 200
+    assert captured["domain"] == "suporte-vps-whatsapp"
+
+
+def test_web_chat_domain_router_routes_sales_and_reuses_brain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_answer(self, domain, question, **kwargs) -> dict[str, object]:
+        captured["domain"] = domain.name
+        captured["question"] = question
+        return {
+            "request_id": kwargs.get("request_id") or "",
+            "domain": domain.name,
+            "answer": "Resposta de vendas.",
+            "confidence": 0.8,
+            "escalated": False,
+            "handoff_reasons": [],
+            "references": [],
+            "error_code": None,
+        }
+
+    monkeypatch.setattr("app.orchestration.chat_flow.ChatFlowService.answer", fake_answer)
+    client = _domain_router_client(monkeypatch)
+
+    response = client.post(
+        "/web/chat",
+        json={"message": "quero contratar um plano de hospedagem"},
+    )
+
+    assert response.status_code == 200
+    assert captured["domain"] == "vendas"
+    assert response.json()["answer"] == "Resposta de vendas."
+    get_settings.cache_clear()
+
+
+def test_web_chat_domain_router_greeting_without_brain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = {"count": 0}
+
+    def fake_answer(self, domain, question, **kwargs) -> dict[str, object]:
+        calls["count"] += 1
+        raise AssertionError("brain should not be called for an unrouted greeting")
+
+    monkeypatch.setattr("app.orchestration.chat_flow.ChatFlowService.answer", fake_answer)
+    client = _domain_router_client(monkeypatch)
+
+    response = client.post("/web/chat", json={"message": "Oi"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert calls["count"] == 0
+    assert payload["escalated"] is False
+    assert payload["handoff_reasons"] == []
+    assert "HostGator Brasil" in payload["answer"]
+    assert "1)" not in payload["answer"]
+    get_settings.cache_clear()
+
+
+def test_web_chat_domain_router_menu_selection_sends_welcome_without_brain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_answer(self, domain, question, **kwargs) -> dict[str, object]:
+        raise AssertionError("brain should not be called for a bare menu selection")
+
+    monkeypatch.setattr("app.orchestration.chat_flow.ChatFlowService.answer", fake_answer)
+    client = _domain_router_client(monkeypatch)
+
+    response = client.post("/web/chat", json={"message": "2"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "HostGator" in payload["answer"]
+    get_settings.cache_clear()
+
+
 def test_web_feedback_accepts_without_api_key_and_forces_source_web(
     monkeypatch: pytest.MonkeyPatch,
     web_client: TestClient,

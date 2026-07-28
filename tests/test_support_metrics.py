@@ -15,11 +15,13 @@ from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
 from app.support.metrics import (
+    KNOWLEDGE_GAP_DEFAULT_LIMIT,
     SAMPLE_SIZE_WARNING_THRESHOLD,
     SupportMetricsRepository,
     build_backlog_metrics,
     build_console_metrics,
     build_feedback_block,
+    build_knowledge_gap_report,
     build_throughput_series,
     resolve_window,
 )
@@ -356,6 +358,95 @@ def test_get_response_times_null_when_no_data() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# get_knowledge_gap_candidates / build_knowledge_gap_report: fila de melhoria
+# da base de conhecimento (V3, feedback -> knowledge)
+# --------------------------------------------------------------------------- #
+
+
+def test_get_knowledge_gap_candidates_maps_rows_and_flags_missing_reference() -> None:
+    created_at = datetime(2026, 7, 2, 12, 0, tzinfo=UTC)
+    cursor = FakeCursor(
+        fetchone_results=[],
+        fetchall_results=[
+            [
+                ("req-1", "suporte-vps-whatsapp", "Como configuro X?", "no_answer", None, True, created_at),
+                ("req-2", "vendas", "Qual o preco do plano Y?", "wrong_info", "faltou detalhe", False, created_at),
+            ]
+        ],
+    )
+    repository = SupportMetricsRepository(FakeRuntime(cursor))
+
+    items = repository.get_knowledge_gap_candidates(
+        domain=None, window_start=WINDOW_START, window_end=WINDOW_END, limit=20
+    )
+
+    assert items == [
+        {
+            "request_id": "req-1",
+            "domain": "suporte-vps-whatsapp",
+            "question": "Como configuro X?",
+            "reason": "no_answer",
+            "comment": None,
+            "has_reference": False,
+            "created_at": created_at.isoformat(),
+        },
+        {
+            "request_id": "req-2",
+            "domain": "vendas",
+            "question": "Qual o preco do plano Y?",
+            "reason": "wrong_info",
+            "comment": "faltou detalhe",
+            "has_reference": True,
+            "created_at": created_at.isoformat(),
+        },
+    ]
+    _, params = cursor.executed[0]
+    assert params[-1] == 20
+
+
+def test_get_knowledge_gap_candidates_empty_when_no_negative_feedback() -> None:
+    cursor = FakeCursor(fetchone_results=[], fetchall_results=[[]])
+    repository = SupportMetricsRepository(FakeRuntime(cursor))
+
+    items = repository.get_knowledge_gap_candidates(
+        domain=None,
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        limit=KNOWLEDGE_GAP_DEFAULT_LIMIT,
+    )
+
+    assert items == []
+
+
+def test_build_knowledge_gap_report_rejects_unknown_window() -> None:
+    with pytest.raises(ValueError):
+        build_knowledge_gap_report(
+            metrics_repository=SupportMetricsRepository(FakeRuntime(FakeCursor([], []))),
+            window="7d",
+            domain=None,
+            limit=20,
+            settings=SETTINGS,
+            now=datetime.now(UTC),
+        )
+
+
+def test_build_knowledge_gap_report_wraps_items() -> None:
+    cursor = FakeCursor(fetchone_results=[], fetchall_results=[[]])
+    repository = SupportMetricsRepository(FakeRuntime(cursor))
+
+    report = build_knowledge_gap_report(
+        metrics_repository=repository,
+        window="14d",
+        domain="vendas",
+        limit=20,
+        settings=SETTINGS,
+        now=datetime(2026, 7, 3, 18, 0, tzinfo=UTC),
+    )
+
+    assert report == {"items": []}
+
+
+# --------------------------------------------------------------------------- #
 # build_console_metrics: orquestracao ponta a ponta (fixtures deterministicas)
 # --------------------------------------------------------------------------- #
 
@@ -558,4 +649,108 @@ def test_metrics_endpoint_logs_never_leak_details(
 
     assert response.status_code == 200
     assert "support_console_metrics_viewed" in caplog.text
+    assert STAFF_PHONE not in caplog.text
+
+
+# --------------------------------------------------------------------------- #
+# Contrato HTTP: GET /web/support/knowledge-gaps
+# --------------------------------------------------------------------------- #
+
+
+def test_knowledge_gaps_endpoint_is_404_when_flag_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENABLE_SUPPORT_CONSOLE", "false")
+    from app.main import create_app
+
+    get_settings.cache_clear()
+    try:
+        client = TestClient(create_app())
+        response = client.get("/web/support/knowledge-gaps")
+    finally:
+        get_settings.cache_clear()
+    assert response.status_code == 404
+
+
+def test_knowledge_gaps_endpoint_requires_staff_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        response = client.get("/web/support/knowledge-gaps")
+    assert response.status_code == 401
+
+
+def test_knowledge_gaps_endpoint_rejects_unknown_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+        response = client.get("/web/support/knowledge-gaps?window=7d")
+    assert response.status_code == 422
+    assert response.json()["detail"] == "invalid_window"
+
+
+def test_knowledge_gaps_endpoint_returns_items_sorted_no_reference_first(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+        created_at = datetime(2026, 7, 2, 12, 0, tzinfo=UTC)
+
+        class _NowThenGapCursor(FakeCursor):
+            def __init__(self) -> None:
+                super().__init__(
+                    fetchone_results=[
+                        (datetime(2026, 7, 3, 18, 0, tzinfo=UTC),),  # database_now()
+                    ],
+                    fetchall_results=[
+                        [
+                            (
+                                "req-1",
+                                "suporte-vps-whatsapp",
+                                "Como configuro X?",
+                                "no_answer",
+                                None,
+                                True,
+                                created_at,
+                            ),
+                        ]
+                    ],
+                )
+
+        app.state.database_runtime = FakeRuntime(_NowThenGapCursor())
+
+        response = client.get("/web/support/knowledge-gaps?window=14d&limit=5")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["window"] == "14d"
+    assert body["domain"] is None
+    assert body["items"] == [
+        {
+            "request_id": "req-1",
+            "domain": "suporte-vps-whatsapp",
+            "question": "Como configuro X?",
+            "reason": "no_answer",
+            "comment": None,
+            "has_reference": False,
+            "created_at": created_at.isoformat(),
+        }
+    ]
+
+
+def test_knowledge_gaps_endpoint_logs_never_leak_details(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    with _console_client(monkeypatch) as (client, app):
+        _seed_staff(app)
+        _login(client, app)
+        app.state.database_runtime = FakeRuntime(
+            FakeCursor(
+                fetchone_results=[(datetime(2026, 7, 3, 18, 0, tzinfo=UTC),)],
+                fetchall_results=[[]],
+            )
+        )
+        with caplog.at_level(logging.INFO):
+            response = client.get("/web/support/knowledge-gaps")
+
+    assert response.status_code == 200
+    assert "support_console_knowledge_gaps_viewed" in caplog.text
     assert STAFF_PHONE not in caplog.text
