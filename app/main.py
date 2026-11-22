@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -25,6 +25,7 @@ from app.api.routes import (
     web_support,
     zoom,
 )
+from app.core.chat_ui import load_chat_ui_template, render_chat_ui_page
 from app.core.config import DEV_ENVS, get_settings
 from app.core.logging import configure_logging, log_event
 from app.core.rate_limit import InMemoryRateLimiter, RateLimitExceeded
@@ -34,6 +35,7 @@ from app.core.request_context import (
     resolve_request_id,
 )
 from app.core.web_session import extract_public_session_token
+from app.domain_engine.installation import load_installation_config
 from app.integrations.hermes.inbound import HermesReplayGuard
 from app.orchestration.session_domain_store import (
     InMemorySessionDomainStore,
@@ -269,8 +271,15 @@ def create_app() -> FastAPI:
 
         @application.get("/chat-ui", include_in_schema=False)
         @application.get("/chat-ui/", include_in_schema=False)
-        def chat_ui() -> FileResponse:
-            return FileResponse(CHAT_STATIC_DIR / "index.html")
+        def chat_ui() -> HTMLResponse:
+            # Copy comes from <DOMAINS_PATH>/installation.yaml (client pack), so the
+            # page carries no customer brand in the core.
+            installation = load_installation_config(get_settings().domains_path)
+            return HTMLResponse(
+                render_chat_ui_page(
+                    load_chat_ui_template(CHAT_STATIC_DIR), installation.chat_ui
+                )
+            )
 
     application.include_router(health.router)
     application.include_router(domains.router, prefix="/domains", tags=["domains"])

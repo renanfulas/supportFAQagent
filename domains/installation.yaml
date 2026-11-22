@@ -1,0 +1,43 @@
+# Configuracao da instalacao (pacote de cliente). O core nao carrega marca de
+# cliente: saudacao institucional, pergunta de esclarecimento e textos do chat
+# local vem daqui. Sem este arquivo, a instalacao usa textos neutros gerados a
+# partir dos dominios. Contrato: docs/architecture/domain-contract.md
+contract_version: 1
+
+brand:
+  name: HostGator Brasil
+
+routing:
+  greeting: |-
+    Olá! Somos a HostGator Brasil, provedora de hospedagem de sites e servidores.
+
+    Sou o assistente virtual e posso te ajudar com suporte técnico ou com nossos planos de hospedagem e VPS. Se precisar, também te encaminho para um atendente humano.
+
+    Como posso te ajudar?
+  clarification: Você já é cliente e precisa de suporte técnico, ou quer conhecer nossos planos de hospedagem e VPS?
+
+chat_ui:
+  page_title: Suporte VPS & WhatsApp
+  kicker: HostGator support flow
+  heading: Suporte VPS & WhatsApp
+  subtitle: triagem técnica com contexto, referência e escalonamento quando precisar
+  intro: Descreva sua dúvida sobre VPS, WhatsApp ou automações com o máximo de contexto útil. Eu respondo com base na documentação do domínio atual e, se o caso ficar sensível ou incompleto, sinalizo continuidade humana.
+  input_placeholder: "Ex.: meu QR Code não aparece na Evolution API. O que devo checar primeiro?"
+  composer_note: Quanto melhor o contexto, melhor a triagem. Se eu não tiver base suficiente, devolvo um código para continuidade no suporte.
+  quick_prompts:
+    - id: iniciante-primeiros-passos
+      title: Primeiros passos
+      preview: Fluxo seguro para começar pequeno.
+      message: Estou começando com VPS, Evolution API, WhatsApp e n8n. Por onde devo começar?
+    - id: qrcode-whatsapp
+      title: QR Code WhatsApp
+      preview: Sessão, pareamento e conexão.
+      message: O QR Code do WhatsApp não aparece ou não conecta. O que devo verificar?
+    - id: risco-bloqueio-whatsapp
+      title: Risco de bloqueio
+      preview: Boas práticas e limites seguros.
+      message: Quais cuidados devo tomar para reduzir risco de bloqueio do WhatsApp?
+    - id: webhook-n8n-zapi
+      title: Webhook n8n + Z-API
+      preview: Checklist para eventos que não chegam.
+      message: Meu webhook do n8n com Z-API não recebe eventos. Como devo diagnosticar?

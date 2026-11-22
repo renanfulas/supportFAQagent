@@ -70,7 +70,10 @@ Adicionar um backend = nova classe que satisfaz o Protocol + branch no factory
 ## 5. Regras que mantêm o framework (não-negociáveis)
 
 - **R1 — Comportamento de domínio mora em `domains/`.** Nunca hardcode regra de um
-  domínio no core. Sem `if domain == "..."` em `app/`.
+  domínio no core. Sem `if domain == "..."` em `app/`. Vale também para a marca
+  do cliente: textos da instalação (saudação, chat local) ficam em
+  `domains/installation.yaml` (ver `domain-contract.md`), e
+  `tests/test_core_brand_neutrality.py` barra nome de cliente em `app/`.
 - **R2 — Estado específico de domínio é namespaced por domínio.** As chaves de
   sessão já são `(domain, channel, session_hash)`. O `SessionState` **compartilhado**
   não carrega campos de um único domínio (ex.: *discovery slots* de vendas). Estado

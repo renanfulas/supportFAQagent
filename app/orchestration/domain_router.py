@@ -79,17 +79,35 @@ class RouteDecision:
     reason: str
 
 
-GREETING_TEXT = (
-    "Olá! Somos a HostGator Brasil, provedora de hospedagem de sites e servidores.\n\n"
-    "Sou o assistente virtual e posso te ajudar com suporte técnico ou com nossos "
-    "planos de hospedagem e VPS. Se precisar, também te encaminho para um "
-    "atendente humano.\n\n"
-    "Como posso te ajudar?"
-)
-CLARIFICATION_TEXT = (
-    "Você já é cliente e precisa de suporte técnico, ou quer conhecer nossos "
-    "planos de hospedagem e VPS?"
-)
+def _join_options(options: list[str]) -> str:
+    """Join display names in pt-BR: "A", "A ou B", "A, B ou C"."""
+    if not options:
+        return "o atendimento"
+    if len(options) == 1:
+        return options[0]
+    return f"{', '.join(options[:-1])} ou {options[-1]}"
+
+
+def neutral_greeting_text(domains: tuple["RoutableDomain", ...], brand_name: str | None) -> str:
+    """Brand-neutral institutional greeting built from the routable domains.
+
+    Used when the installation does not configure its own greeting, so a fresh
+    install never introduces itself as another company. Listing the display names
+    steers the user toward routable vocabulary.
+    """
+    who = f"o assistente virtual de {brand_name}" if brand_name else "o assistente virtual"
+    options = _join_options([domain.display_name for domain in domains])
+    return (
+        f"Olá! Sou {who}.\n\n"
+        f"Posso te ajudar com {options}. Se precisar, também te encaminho para um "
+        "atendente humano.\n\n"
+        "Como posso te ajudar?"
+    )
+
+
+def neutral_clarification_text(domains: tuple["RoutableDomain", ...]) -> str:
+    options = _join_options([domain.display_name for domain in domains])
+    return f"Para eu te direcionar certo: você quer falar sobre {options}?"
 
 
 @dataclass(frozen=True)
@@ -97,12 +115,14 @@ class DomainRouter:
     domains: tuple[RoutableDomain, ...]
     default_domain: str
     # Customer-facing fallback texts for unrouted turns. The greeting introduces
-    # the company and steers toward routable vocabulary ("suporte tecnico",
-    # "planos", "hospedagem"); the clarification re-asks without repeating the
-    # institutional intro. Numbered selection ("1", "2") keeps working as a
-    # hidden shortcut even though the texts no longer show a numbered menu.
-    greeting: str = GREETING_TEXT
-    clarification: str = CLARIFICATION_TEXT
+    # the installation and steers toward routable vocabulary; the clarification
+    # re-asks without repeating the intro. Numbered selection ("1", "2") keeps
+    # working as a hidden shortcut even though the texts show no numbered menu.
+    # None = brand-neutral default built from the domains; an installation sets
+    # its own copy in ``<DOMAINS_PATH>/installation.yaml`` (never in the core).
+    greeting: str | None = None
+    clarification: str | None = None
+    brand_name: str | None = None
 
     RESET_TRIGGERS = ("menu", "trocar", "voltar", "recomecar")
 
@@ -128,14 +148,16 @@ class DomainRouter:
         default_domain: str,
         greeting: str | None = None,
         clarification: str | None = None,
+        brand_name: str | None = None,
     ) -> "DomainRouter":
         routable = tuple(RoutableDomain.from_config(c) for c in configs)
-        kwargs: dict[str, object] = {"domains": routable, "default_domain": default_domain}
-        if greeting is not None:
-            kwargs["greeting"] = greeting
-        if clarification is not None:
-            kwargs["clarification"] = clarification
-        return cls(**kwargs)  # type: ignore[arg-type]
+        return cls(
+            domains=routable,
+            default_domain=default_domain,
+            greeting=(greeting or "").strip() or None,
+            clarification=(clarification or "").strip() or None,
+            brand_name=(brand_name or "").strip() or None,
+        )
 
     def route(self, text: str) -> RouteDecision:
         if len(self.domains) <= 1:
@@ -157,10 +179,10 @@ class DomainRouter:
         return RouteDecision(domain=None, show_menu=True, reason="menu_prompt")
 
     def greeting_text(self) -> str:
-        return self.greeting
+        return self.greeting or neutral_greeting_text(self.domains, self.brand_name)
 
     def clarification_text(self) -> str:
-        return self.clarification
+        return self.clarification or neutral_clarification_text(self.domains)
 
     def welcome_text(self, domain_name: str) -> str:
         domain = next((d for d in self.domains if d.name == domain_name), None)
