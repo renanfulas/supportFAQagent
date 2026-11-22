@@ -24,13 +24,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import re
-import unicodedata
 
-
-def _normalize(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text)
-    without_accents = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-    return without_accents.casefold().strip()
+from app.core.text import fold
 
 
 @dataclass(frozen=True)
@@ -62,11 +57,11 @@ class RoutableDomain:
         # Generic display words like "vps" or "whatsapp" must NOT become selectors,
         # otherwise they would hijack keyword routing.
         tokens: set[str] = {str(position)}
-        display_lead = re.split(r"[\s\-]+", _normalize(self.display_name))
+        display_lead = re.split(r"[\s\-]+", fold(self.display_name).strip())
         if display_lead and len(display_lead[0]) >= 3:
             tokens.add(display_lead[0])
         for alias in self.aliases:
-            normalized = _normalize(alias)
+            normalized = fold(alias).strip()
             if len(normalized) >= 2:
                 tokens.add(normalized)
         return tokens
@@ -112,7 +107,7 @@ class DomainRouter:
         Must not fire when a trigger word merely appears inside a normal sentence
         (e.g. "Quais opcoes voce tem?" is a question, not a menu command).
         """
-        normalized = _normalize(text)
+        normalized = fold(text).strip()
         if not normalized:
             return False
         tokens = [token for token in re.split(r"[\s\-]+", normalized) if token]
@@ -142,7 +137,7 @@ class DomainRouter:
             target = self.domains[0].name if self.domains else self.default_domain
             return RouteDecision(domain=target, show_menu=False, reason="single_domain")
 
-        normalized = _normalize(text)
+        normalized = fold(text).strip()
         if not normalized:
             return RouteDecision(domain=None, show_menu=True, reason="menu_prompt")
 
@@ -193,7 +188,7 @@ class DomainRouter:
         for domain in self.domains:
             # dedupe within a domain so a keyword listed twice in one config does
             # not look "shared"; ownership is counted per distinct domain name.
-            for keyword in {_normalize(k) for k in domain.keywords}:
+            for keyword in {fold(k).strip() for k in domain.keywords}:
                 if keyword:
                     owners.setdefault(keyword, set()).add(domain.name)
         return {keyword for keyword, names in owners.items() if len(names) >= 2}
@@ -205,7 +200,7 @@ class DomainRouter:
             score = sum(
                 1
                 for keyword in domain.keywords
-                if (normalized_keyword := _normalize(keyword)) not in shared
+                if (normalized_keyword := fold(keyword).strip()) not in shared
                 and self._contains_word(normalized, normalized_keyword)
             )
             scores.append((score, domain.name))

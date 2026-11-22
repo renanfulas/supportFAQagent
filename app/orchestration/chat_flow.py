@@ -1,11 +1,11 @@
 import logging
 import re
 import time
-import unicodedata
 from time import perf_counter
 
 from app.core.errors import ProviderError, RetrievalError
 from app.core.persistence_sanitize import contains_card_number
+from app.core.text import fold
 from app.domain_engine.models import DomainConfig
 from app.handoff.service import HandoffService
 from app.llm.service import LLMService
@@ -18,12 +18,6 @@ from app.conversations.summary import SummaryRecallService
 
 
 logger = logging.getLogger(__name__)
-
-
-def _normalize(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text)
-    without_accents = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-    return without_accents.casefold().strip()
 
 
 class ChatFlowService:
@@ -364,7 +358,7 @@ class ChatFlowService:
         if contains_card_number(question):
             return None
 
-        text = _normalize(question)
+        text = fold(question).strip()
         if not text:
             return None
 
@@ -372,11 +366,11 @@ class ChatFlowService:
             *checkout.decline_phrases,
             *domain.handoff.explicit_human_phrases,
         ]
-        if any(_normalize(phrase) in text for phrase in declines if phrase.strip()):
+        if any(fold(phrase).strip() in text for phrase in declines if phrase.strip()):
             return None
 
         if not any(
-            _normalize(phrase) in text for phrase in checkout.intent_phrases if phrase.strip()
+            fold(phrase).strip() in text for phrase in checkout.intent_phrases if phrase.strip()
         ):
             return None
 
