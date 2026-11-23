@@ -77,11 +77,14 @@ USER app
 
 EXPOSE 8000
 
-# Liveness sem dependencia externa (curl nao existe na imagem slim).
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+# Liveness sem dependencia externa (curl nao existe na imagem slim). O
+# start-period cobre o bootstrap do banco e a espera do readiness no start.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
     CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/health' % os.environ.get('PORT', '8000'), timeout=4)"]
 
+# Start seguro: inicializa banco novo (STARTUP_MIGRATIONS=auto), espera o
+# readiness passar e so entao faz exec do uvicorn, que vira o PID 1.
 # 0.0.0.0 e o bind dentro do container; quem decide a exposicao e o compose
 # (publica so em 127.0.0.1) e o reverse proxy na frente. FORWARDED_ALLOW_IPS
 # (lido pelo uvicorn) define de quem o X-Forwarded-For e confiavel.
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT}\" --no-server-header"]
+CMD ["python", "-m", "scripts.safe_start"]
