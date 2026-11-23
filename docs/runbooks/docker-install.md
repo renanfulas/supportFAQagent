@@ -16,9 +16,36 @@ pela imagem e uma decisao separada, com snapshot e janela propria.
 | `.dockerignore` | Allowlist: so `app/`, `scripts/`, `migrations/`, `domains/` e `pyproject.toml` entram no build; `.env` e chaves nunca |
 | `docker-compose.prod.yml` | `app` + `postgres` (pgvector, perfil `db`) + `redis` (perfil `redis`, opcional) |
 | `deploy/production.env.example` | Configuracao minima da instalacao |
+| `deploy/docker-smoke.sh` | Smoke do pacote num projeto descartavel (o mesmo que roda no CI) |
+| `.github/workflows/docker-image.yml` | Build + smoke em todo PR; publica a imagem versionada no GHCR em tag `vX.Y.Z` |
 
 A guarda `tests/test_docker_packaging.py` falha se alguma dessas regras mudar
 (porta publica, segredo literal, usuario root, `.env` no contexto de build).
+`tests/test_docker_image_workflow.py` guarda o caminho de release (publicar so
+em tag, imagem publicada = imagem testada, sem `latest`).
+
+## Usar a imagem publicada (sem build na maquina do cliente)
+
+Cada tag `vX.Y.Z` publica `ghcr.io/renanfulas/supportfaqagent:X.Y.Z` e
+`:X.Y`, a mesma imagem que passou no smoke do CI. Nao existe `latest`: a
+instalacao sempre fixa a versao. No `.env`:
+
+```bash
+SUPPORTFAQ_IMAGE=ghcr.io/renanfulas/supportfaqagent:0.1.0
+```
+
+E subir sem build:
+
+```bash
+docker compose -f docker-compose.prod.yml pull app
+docker compose -f docker-compose.prod.yml up -d --no-build
+```
+
+O pacote no GHCR nasce privado. Para o cliente baixar: ou um token de leitura
+(`read:packages`) com `docker login ghcr.io` na maquina dele, ou tornar o pacote
+publico nas configuracoes do GitHub. A imagem nao carrega segredo nem dado de
+cliente, mas carrega o `domains/` padrao do repositorio; o pacote do cliente
+continua montado por fora (`CLIENT_PACK_DIR`).
 
 ## Pre-requisitos
 
@@ -128,6 +155,18 @@ Sem esse passo o chat continua respondendo, mas cada turno registra
 
 ## 4. Smoke
 
+Antes de instalar no cliente (ou para reproduzir o CI), o smoke completo roda num
+projeto descartavel, com segredos aleatorios de uso unico, e apaga tudo no fim:
+
+```bash
+bash deploy/docker-smoke.sh                                       # builda a imagem
+SUPPORTFAQ_IMAGE=ghcr.io/renanfulas/supportfaqagent:0.1.0 bash deploy/docker-smoke.sh
+```
+
+Ele se recusa a rodar se ja existir um `.env` na raiz e so apaga volumes de
+projeto com prefixo `sfaq-smoke`, entao nao toca numa instalacao real. Na
+instalacao em si, a checagem manual e:
+
 ```bash
 curl -i http://127.0.0.1:8000/health
 curl -i -H "X-API-Key: $API_SECRET_KEY" http://127.0.0.1:8000/domains
@@ -177,13 +216,19 @@ pelo passo 3; enquanto isso o `restart` fica tentando e o log mostra
 
 Para voltar: fazer checkout da versao anterior e repetir o `up -d --build`. O
 volume `supportfaq_pgdata` nao e tocado. Migration nova so sobe pelo passo 3,
-nunca sozinha. Se `SUPPORTFAQ_IMAGE` apontar para uma imagem publicada, trocar a
-tag em vez de rebuildar.
+nunca sozinha. Com imagem publicada, trocar a tag de `SUPPORTFAQ_IMAGE` (para
+frente ou para tras) e rodar `pull app` + `up -d --no-build`, em vez de rebuildar.
+
+## Publicar uma versao
+
+1. Subir `version` no `pyproject.toml` (semver) num PR e fazer merge na `main`.
+2. Criar e enviar a tag igual a versao: `git tag v0.2.0 && git push origin v0.2.0`.
+3. O workflow `Docker image` builda, roda o smoke e so entao publica `0.2.0` e
+   `0.2`. Tag diferente da versao do `pyproject.toml` falha antes de publicar.
 
 Nunca rodar `docker compose down -v` em producao: o `-v` apaga o volume do banco.
 
 ## Fora desta fatia
 
-- Imagem publicada e versionada no CI, com smoke dentro do compose.
 - Comando `init` que gera `.env`, migra, cria admin e roda smoke e evals.
 - Perfis de configuracao e `config validate`.
