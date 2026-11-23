@@ -111,6 +111,9 @@ Pontos onde a fronteira hoje vaza — a fila de maturação para virar framework
   Unificar (R2) é dívida aberta.
 - **Slots de descoberta (vendas) sem namespace.** WS-4 layer 3 ainda não tem o
   namespace por-domínio que a R2 exige.
+- **`prompts/` não é lido pelo código.** O §6 lista `prompts/system.txt`, mas o
+  prompt efetivo vem só do `domain.yaml` (`app/orchestration/prompt_builder.py`).
+  Ou o core passa a ler o arquivo, ou o contrato deixa de exigi-lo.
 - **Identidade/cliente parcialmente domain-scoped.** `customer_ref` já é estável,
   mas a fronteira identidade↔domínio ainda não está fechada.
 

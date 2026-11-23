@@ -107,12 +107,29 @@ feature_flags:
 
 ## Como criar um novo dominio
 
-1. Copie `domains/suporte-vps-whatsapp` para uma nova pasta.
-2. Renomeie a pasta e o campo `name` para o novo dominio.
-3. Atualize `display_name`, `description`, `owner` e `behavior`.
-4. Troque os artigos em `knowledge/`.
-5. Rode `python -m pytest`.
-6. Teste `GET /domains` e `POST /chat` usando o novo dominio.
+1. Gere o esqueleto (nunca sobrescreve uma pasta existente; `--dry-run` so lista
+   os arquivos):
+
+   ```bash
+   python -m scripts.new_domain <nome-do-dominio> --display-name "Nome" --owner "Time"
+   ```
+
+   Ele cria `domain.yaml` com as politicas de confinamento preenchidas e
+   `provider: mock`, `knowledge/articles` e `knowledge/faqs` vazias,
+   `prompts/system.txt`, `evals/cases.yaml` e as tres suites de
+   `evals/confinement/` com casos `-acentuado`, e valida tudo antes de gravar.
+2. Resolva os itens `TODO(FDE)` do `domain.yaml` (persona, escopo, termos
+   sensiveis, regras de escalonamento, keywords).
+3. Escreva os artigos em `knowledge/` e os casos reais em `evals/cases.yaml`.
+4. Rode `python -m pytest` e os evals do dominio.
+5. Teste `GET /domains` e `POST /chat` usando o novo dominio.
+
+O passo a passo completo de implantacao em cliente novo esta em
+[`fde-engagement-playbook.md`](../runbooks/fde-engagement-playbook.md).
+
+Observacao: o prompt efetivo e montado a partir do `domain.yaml` em
+`app/orchestration/prompt_builder.py`; os arquivos de `prompts/` hoje nao sao
+lidos pelo codigo.
 
 ## O que o contrato influencia hoje
 
