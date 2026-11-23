@@ -9,6 +9,7 @@ from typing import Any, Protocol
 from app.core.config import get_settings
 from app.domain_engine.models import DomainConfig
 from app.ingestion.models import KnowledgeChunk, KnowledgeDocument
+from app.db.domain_registry import upsert_domain
 
 
 class PgVectorIngestionError(RuntimeError):
@@ -147,18 +148,7 @@ class PgVectorIngestionWriter:
         return values
 
     def _upsert_domain(self, cursor: Any, domain: DomainConfig) -> str:
-        cursor.execute(
-            """
-            INSERT INTO domains (name, display_name)
-            VALUES (%s, %s)
-            ON CONFLICT (name) DO UPDATE
-            SET display_name = EXCLUDED.display_name,
-                updated_at = now()
-            RETURNING id
-            """,
-            (domain.name, domain.display_name),
-        )
-        return str(cursor.fetchone()[0])
+        return upsert_domain(cursor, name=domain.name, display_name=domain.display_name)
 
     def _upsert_article(
         self,

@@ -67,12 +67,23 @@ def _hash_phone(identity_hash_secret: str, phone: str) -> tuple[str, str]:
     return _hmac_digest(identity_hash_secret, normalized), normalized[-4:]
 
 
-def _add(connection, identity_hash_secret: str, phone: str, name: str) -> int:
+def upsert_operator(
+    connection, identity_hash_secret: str, phone: str, name: str
+) -> tuple[str, str]:
+    """Create or reactivate one operator; return (display_name, last4).
+
+    Raises ValueError for an empty name or a phone outside E.164. Never logs
+    the phone; callers show only the last 4 digits.
+    """
+
     display_name = name.strip()
     if not display_name:
-        print("--name cannot be empty.", file=sys.stderr)
-        return 2
-    phone_hash, phone_last4 = _hash_phone(identity_hash_secret, phone)
+        raise ValueError("--name cannot be empty.")
+    try:
+        normalized = normalize_phone(phone)
+    except ValueError:
+        raise ValueError("phone must use E.164 format (e.g. +5511999999999).") from None
+    phone_hash, phone_last4 = _hmac_digest(identity_hash_secret, normalized), normalized[-4:]
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -87,6 +98,17 @@ def _add(connection, identity_hash_secret: str, phone: str, name: str) -> int:
             (phone_hash, phone_last4, display_name),
         )
     connection.commit()
+    return display_name, phone_last4
+
+
+def _add(connection, identity_hash_secret: str, phone: str, name: str) -> int:
+    try:
+        display_name, phone_last4 = upsert_operator(
+            connection, identity_hash_secret, phone, name
+        )
+    except ValueError as error:
+        print(str(error), file=sys.stderr)
+        return 2
     print(f"active: {display_name} (****{phone_last4})")
     return 0
 

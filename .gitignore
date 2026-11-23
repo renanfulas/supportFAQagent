@@ -35,3 +35,6 @@ id_ed25519
 
 docs/security/00_boot_config_hostgator.md
 .agents/skills/supportfaq-test-engineer/
+# Relatorio local do deploy/install.sh (sem segredos, mas e de cada instalacao).
+install-report.md
+install-report.md.tmp*
