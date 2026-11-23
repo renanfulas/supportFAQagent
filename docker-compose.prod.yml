@@ -1,0 +1,101 @@
+# Instalacao de producao do supportFAQagent em uma empresa (single-tenant).
+#
+#   cp deploy/production.env.example .env    # preencher com valores privados
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Servicos:
+#   app       API FastAPI (sempre)
+#   postgres  PostgreSQL + pgvector embarcado (perfil "db")
+#   redis     cache de estado de sessao (perfil "redis", opcional)
+# Os perfis ligados saem de COMPOSE_PROFILES no .env. Com banco gerenciado
+# externo, tire "db" do COMPOSE_PROFILES e aponte DATABASE_URL para ele.
+#
+# Regras de seguranca (guarda: tests/test_docker_packaging.py):
+#   - a API publica so em 127.0.0.1; o acesso externo passa por reverse proxy HTTPS;
+#   - postgres e redis nao publicam porta no host;
+#   - nenhum segredo literal neste arquivo: tudo vem do .env (fora do Git);
+#   - o pacote do cliente (DOMAINS_PATH) entra montado somente leitura.
+#
+# Runbook: docs/runbooks/docker-install.md
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  app:
+    image: ${SUPPORTFAQ_IMAGE:-supportfaqagent:local}
+    build:
+      context: .
+      args:
+        EXTRAS: ${SUPPORTFAQ_EXTRAS:-redis}
+    env_file:
+      - .env
+    environment:
+      DOMAINS_PATH: /srv/client-pack
+      PORT: "8000"
+      # De quem o uvicorn aceita X-Forwarded-For. Sem isso, atras do proxy, todos
+      # os clientes parecem ter o mesmo IP e dividem o mesmo rate limit.
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+    volumes:
+      - ${CLIENT_PACK_DIR:-./domains}:/srv/client-pack:ro
+      - supportfaq_data:/var/lib/supportfaq
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+        required: false
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging: *default-logging
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    profiles: ["db"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-supportfaq}
+      POSTGRES_USER: ${POSTGRES_USER:-supportfaq}
+      # Sem valor, o container do Postgres se recusa a inicializar (fail closed).
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - supportfaq_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["redis"]
+    # Cache sobre a ancora no Postgres (R4 do framework-boundary): sem persistencia.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  supportfaq_data:
+  supportfaq_pgdata:

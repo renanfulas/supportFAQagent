@@ -1,0 +1,21 @@
+# Allowlist: nada entra no contexto de build, exceto o que a imagem precisa.
+# Isso impede que .env, chaves, relatorios locais ou o .git vazem para a imagem.
+# Guarda: tests/test_docker_packaging.py
+*
+
+!pyproject.toml
+!app/
+!scripts/
+!migrations/
+!domains/
+
+# Mesmo dentro das pastas liberadas, segredos e lixo local nunca entram.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/id_rsa
+**/id_ed25519
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
