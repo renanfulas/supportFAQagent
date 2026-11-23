@@ -38,6 +38,10 @@ COMPOSE_ONLY_VARS = {
     "POSTGRES_DB",
     "POSTGRES_USER",
     "POSTGRES_PASSWORD",
+    # Read by scripts/safe_start.py before the app (and its Settings) starts.
+    "STARTUP_MIGRATIONS",
+    "STARTUP_READINESS_TIMEOUT_SECONDS",
+    "STARTUP_LOCK_TIMEOUT_SECONDS",
 }
 
 
@@ -136,6 +140,26 @@ def test_final_image_has_healthcheck_on_liveness_endpoint() -> None:
     assert len(healthchecks) == 1
     assert "/health" in healthchecks[0]
     assert "/health/ready" not in healthchecks[0]
+
+
+def test_image_starts_through_the_safe_start_gate() -> None:
+    commands = [args for keyword, args in _final_stage(_dockerfile_instructions()) if keyword == "CMD"]
+
+    # Starting uvicorn directly would skip the bootstrap and the readiness gate.
+    assert commands == ['["python", "-m", "scripts.safe_start"]']
+    assert "uvicorn" not in commands[0]
+
+
+def test_healthcheck_start_period_covers_the_readiness_wait() -> None:
+    from scripts.safe_start import DEFAULT_READINESS_TIMEOUT_SECONDS
+
+    healthcheck = next(
+        args for keyword, args in _final_stage(_dockerfile_instructions()) if keyword == "HEALTHCHECK"
+    )
+    start_period = re.search(r"--start-period=(\d+)s", healthcheck)
+
+    assert start_period is not None
+    assert int(start_period.group(1)) >= DEFAULT_READINESS_TIMEOUT_SECONDS
 
 
 def test_base_images_are_pinned_and_not_latest() -> None:
