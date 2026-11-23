@@ -105,6 +105,49 @@ feature_flags:
   flag escopada a um dominio, sem variavel de ambiente global. Leia no codigo com
   `domain.is_flag_enabled("<flag>")`, que devolve `False` para flag nao declarada.
 
+## Configuracao da instalacao (`installation.yaml`)
+
+Alem dos dominios, a pasta de `DOMAINS_PATH` (o pacote do cliente) pode ter um
+arquivo opcional `installation.yaml` na raiz, com o texto que pertence a
+instalacao inteira e nao a um dominio. O core nao carrega marca de cliente: uma
+guarda (`tests/test_core_brand_neutrality.py`) falha se o nome de um cliente
+aparecer em `app/`.
+
+```yaml
+contract_version: 1
+brand:
+  name: Acme                 # usado pela saudacao neutra
+routing:
+  greeting: |-               # saudacao institucional do roteador multi-dominio
+    Ola! Somos a Acme...
+  clarification: Voce quer suporte ou conhecer nossos planos?
+chat_ui:                     # textos do chat local (/chat-ui)
+  page_title: Atendimento Acme
+  kicker: Acme
+  heading: Atendimento
+  subtitle: ...
+  intro: ...
+  input_placeholder: ...
+  composer_note: ...
+  quick_prompts:
+    - id: primeiros-passos
+      title: Primeiros passos
+      preview: Comece por aqui.
+      message: Por onde eu comeco?
+```
+
+Regras:
+
+- Todos os campos sao opcionais. Sem o arquivo, a saudacao e a pergunta de
+  esclarecimento sao neutras e listam os `display_name` dos dominios roteaveis;
+  o chat local usa textos genericos e nenhuma pergunta rapida.
+- Arquivo invalido (YAML quebrado, chave desconhecida, `contract_version`
+  diferente de 1) e ignorado com um aviso `installation_config_invalid` no log,
+  sem registrar o conteudo: um erro de digitacao no pacote nao derruba o canal.
+- O arquivo nao e um dominio e nao aparece em `GET /domains`.
+- Os textos do chat local sao escapados como HTML; as perguntas rapidas vao num
+  bloco JSON que o `app.js` le como texto.
+
 ## Como criar um novo dominio
 
 1. Copie `domains/suporte-vps-whatsapp` para uma nova pasta.

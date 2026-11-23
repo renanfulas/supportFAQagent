@@ -276,7 +276,7 @@ def test_transport_greeting_sends_natural_greeting_without_brain() -> None:
 
     assert chat.calls == 0
     assert result.handoff_status == "routing_menu"
-    assert "HostGator Brasil" in client.sent[0]
+    assert client.sent[0] == transport.router.greeting_text()
     assert "assistente virtual" in client.sent[0]
     assert "1)" not in client.sent[0]
 
@@ -310,7 +310,7 @@ def test_transport_ambiguous_flow_greets_then_clarifies_then_nudges() -> None:
     third = transport.handle_text_message(message=_msg("hmm nao sei"), request_id="r3")
 
     assert chat.calls == 0
-    assert "HostGator Brasil" in client.sent[0]
+    assert client.sent[0] == router.greeting_text()
     assert client.sent[1] == router.clarification_text()
     assert third.handoff_status == "repeat_reflection"
     assert client.sent[2] == REPEAT_NUDGE

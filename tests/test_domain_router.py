@@ -88,21 +88,52 @@ def test_single_domain_never_shows_menu() -> None:
     assert decision.domain == "suporte-vps-whatsapp"
 
 
-def test_greeting_text_introduces_company_and_steers_domains() -> None:
+def test_default_greeting_is_brand_neutral_and_steers_domains() -> None:
+    # Without installation copy the core must not introduce itself as any
+    # company; it lists the routable domains so the user picks one.
     text = _router().greeting_text()
-    assert "HostGator Brasil" in text
+    assert "HostGator Brasil" not in text
+    assert "Somos" not in text
     assert "assistente virtual" in text
-    assert "suporte técnico" in text
-    assert "planos" in text
+    assert "Suporte VPS e WhatsApp" in text
+    assert "Vendas HostGator" in text
+    assert "atendente humano" in text
     # The greeting is conversational: no numbered menu lines.
     assert "1)" not in text
 
 
-def test_clarification_text_asks_support_or_sales() -> None:
+def test_default_greeting_uses_brand_name_when_configured() -> None:
+    router = DomainRouter(
+        domains=(SUPPORT, VENDAS),
+        default_domain="suporte-vps-whatsapp",
+        brand_name="Acme",
+    )
+    assert "assistente virtual de Acme" in router.greeting_text()
+
+
+def test_default_clarification_lists_domains_and_differs_from_greeting() -> None:
     text = _router().clarification_text()
-    assert "suporte técnico" in text
-    assert "planos" in text
+    assert "Suporte VPS e WhatsApp ou Vendas HostGator" in text
     assert text != _router().greeting_text()
+
+
+def test_configured_greeting_and_clarification_override_defaults() -> None:
+    router = DomainRouter.from_domain_configs(
+        [],
+        default_domain="x",
+        greeting="  Bem-vindo à Acme.  ",
+        clarification="Suporte ou vendas?",
+    )
+    assert router.greeting_text() == "Bem-vindo à Acme."
+    assert router.clarification_text() == "Suporte ou vendas?"
+
+
+def test_blank_configured_texts_fall_back_to_neutral_defaults() -> None:
+    router = DomainRouter.from_domain_configs(
+        [], default_domain="x", greeting="   ", clarification=""
+    )
+    assert "assistente virtual" in router.greeting_text()
+    assert router.clarification_text().startswith("Para eu te direcionar certo")
 
 
 def test_welcome_text_uses_custom_when_set() -> None:
@@ -330,7 +361,7 @@ def test_transport_greeting_sends_natural_greeting_without_calling_engine() -> N
 
     assert chat.called is False
     assert result.handoff_status == "routing_menu"
-    assert "HostGator Brasil" in client.sent[0]
+    assert client.sent[0] == transport.router.greeting_text()
     assert "1)" not in client.sent[0]
 
 
@@ -346,7 +377,7 @@ def test_transport_second_ambiguous_turn_sends_clarification() -> None:
     )
 
     assert chat.called is False
-    assert "HostGator Brasil" in client.sent[0]
+    assert client.sent[0] == transport.router.greeting_text()
     assert client.sent[1] == transport.router.clarification_text()
 
 

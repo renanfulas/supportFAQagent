@@ -1,3 +1,5 @@
+import html
+
 from fastapi.testclient import TestClient
 
 from app.core.config import LOCAL_DEV_API_KEY, get_settings
@@ -209,7 +211,7 @@ def test_chat_ui_is_available_in_development() -> None:
     response = client.get("/chat-ui")
 
     assert response.status_code == 200
-    assert "Suporte VPS & WhatsApp" in response.text
+    assert "Suporte VPS & WhatsApp" in html.unescape(response.text)
     assert "Perguntas rápidas" in response.text
     assert "Descreva sua dúvida sobre VPS, WhatsApp ou automações com o máximo de" in response.text
     assert "devolvo um código para continuidade no suporte" in response.text
@@ -250,7 +252,7 @@ def test_chat_ui_can_be_enabled_in_staging(monkeypatch) -> None:
     response = staging_client.get("/chat-ui")
 
     assert response.status_code == 200
-    assert "Suporte VPS & WhatsApp" in response.text
+    assert "Suporte VPS & WhatsApp" in html.unescape(response.text)
     get_settings.cache_clear()
 
 
@@ -289,7 +291,7 @@ def test_public_chat_ui_flag_enables_ui_in_production(monkeypatch) -> None:
     response = production_client.get("/chat-ui")
 
     assert response.status_code == 200
-    assert "Suporte VPS & WhatsApp" in response.text
+    assert "Suporte VPS & WhatsApp" in html.unescape(response.text)
     get_settings.cache_clear()
 
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.core.config import Settings
+from app.domain_engine.installation import load_installation_config
 from app.domain_engine.loader import DomainLoader
 from app.orchestration.domain_router import DomainRouter
 from app.orchestration.session_domain_store import SessionDomainStore
@@ -49,9 +50,15 @@ def build_domain_router(
     ]
     if len(configs) <= 1:
         return None
+    # Installation copy (greeting/clarification/brand) comes from the client pack
+    # at the root of DOMAINS_PATH, never from the core.
+    installation = load_installation_config(settings.domains_path)
     return DomainRouter.from_domain_configs(
         configs,
         default_domain=settings.default_domain,
+        greeting=installation.routing.greeting,
+        clarification=installation.routing.clarification,
+        brand_name=installation.brand.name,
     )
 
 

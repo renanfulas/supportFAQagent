@@ -12,34 +12,10 @@ const AUTH_CONFIRM_ENDPOINT = "/web/auth/whatsapp/confirm";
 const HANDOFF_CONSENT_ENDPOINT = "/web/handoff/consent";
 const MAX_VISIBLE_SUPPORT_CODE = 80;
 
-const QUICK_PROMPTS = [
-  {
-    id: "iniciante-primeiros-passos",
-    title: "Primeiros passos",
-    preview: "Fluxo seguro para começar pequeno.",
-    message:
-      "Estou começando com VPS, Evolution API, WhatsApp e n8n. Por onde devo começar?",
-  },
-  {
-    id: "qrcode-whatsapp",
-    title: "QR Code WhatsApp",
-    preview: "Sessão, pareamento e conexão.",
-    message: "O QR Code do WhatsApp não aparece ou não conecta. O que devo verificar?",
-  },
-  {
-    id: "risco-bloqueio-whatsapp",
-    title: "Risco de bloqueio",
-    preview: "Boas práticas e limites seguros.",
-    message: "Quais cuidados devo tomar para reduzir risco de bloqueio do WhatsApp?",
-  },
-  {
-    id: "webhook-n8n-zapi",
-    title: "Webhook n8n + Z-API",
-    preview: "Checklist para eventos que não chegam.",
-    message:
-      "Meu webhook do n8n com Z-API não recebe eventos. Como devo diagnosticar?",
-  },
-];
+// Quick prompts come from the installation config (installation.yaml ->
+// chat_ui.quick_prompts), injected by the server as a JSON data block. Read as
+// text and parsed, never evaluated or rendered as HTML.
+const QUICK_PROMPTS = readQuickPrompts();
 
 let loading = false;
 
@@ -804,7 +780,33 @@ function renderSafeMessageText(container, text) {
   });
 }
 
+function readQuickPrompts() {
+  const node = document.querySelector("#chat-config");
+  if (!node) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(node.textContent || "{}");
+    const prompts = Array.isArray(parsed.quick_prompts) ? parsed.quick_prompts : [];
+    return prompts.filter(
+      (prompt) =>
+        prompt &&
+        typeof prompt.title === "string" &&
+        typeof prompt.message === "string",
+    );
+  } catch (error) {
+    return [];
+  }
+}
+
 function renderQuickPrompts() {
+  if (QUICK_PROMPTS.length === 0) {
+    const section = quickPromptsList.closest(".quick-prompts");
+    if (section) {
+      section.hidden = true;
+    }
+    return;
+  }
   QUICK_PROMPTS.forEach((prompt) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -817,7 +819,7 @@ function renderQuickPrompts() {
 
     const preview = document.createElement("span");
     preview.className = "quick-prompt-preview";
-    preview.textContent = prompt.preview;
+    preview.textContent = typeof prompt.preview === "string" ? prompt.preview : "";
 
     button.append(title, preview);
     button.addEventListener("click", () => selectQuickPrompt(prompt.message));

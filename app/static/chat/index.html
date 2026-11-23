@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Suporte VPS & WhatsApp</title>
+    <title>{{page_title}}</title>
     <link rel="stylesheet" href="/chat-assets/styles.css" />
   </head>
   <body>
@@ -12,9 +12,9 @@
         <header class="chat-header">
           <div class="avatar" aria-hidden="true">SF</div>
           <div>
-            <span class="header-kicker">HostGator support flow</span>
-            <h1>Suporte VPS & WhatsApp</h1>
-            <p>triagem técnica com contexto, referência e escalonamento quando precisar</p>
+            <span class="header-kicker">{{kicker}}</span>
+            <h1>{{heading}}</h1>
+            <p>{{subtitle}}</p>
           </div>
         </header>
 
@@ -24,11 +24,7 @@
             <span class="signal-pill">Código de suporte por resposta</span>
             <span class="signal-pill">Escalonamento humano quando necessário</span>
           </div>
-          <p>
-            Descreva sua dúvida sobre VPS, WhatsApp ou automações com o máximo de
-            contexto útil. Eu respondo com base na documentação do domínio atual e,
-            se o caso ficar sensível ou incompleto, sinalizo continuidade humana.
-          </p>
+          <p>{{intro}}</p>
         </section>
 
         <div id="messages" class="messages"></div>
@@ -47,7 +43,7 @@
             name="message"
             rows="1"
             maxlength="4000"
-            placeholder="Ex.: meu QR Code não aparece na Evolution API. O que devo checar primeiro?"
+            placeholder="{{input_placeholder}}"
             required
           ></textarea>
           <button id="send-button" type="submit" aria-label="Enviar mensagem">
@@ -65,13 +61,11 @@
             </svg>
           </button>
         </form>
-        <p class="composer-note">
-          Quanto melhor o contexto, melhor a triagem. Se eu não tiver base suficiente,
-          devolvo um código para continuidade no suporte.
-        </p>
+        <p class="composer-note">{{composer_note}}</p>
       </section>
     </main>
 
+    <script id="chat-config" type="application/json">{{chat_config_json}}</script>
     <script src="/chat-assets/app.js" defer></script>
   </body>
 </html>
