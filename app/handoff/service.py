@@ -1,4 +1,5 @@
 from app.core.persistence_sanitize import contains_card_number
+from app.core.text import fold
 from app.domain_engine.models import DomainConfig
 from app.handoff.models import HandoffDecision
 
@@ -104,7 +105,7 @@ class HandoffService:
         recent_user_texts: list[str] | None = None,
     ) -> HandoffDecision:
         reasons = self.inspect_question(domain, question)
-        normalized_question = question.lower()
+        normalized_question = fold(question)
 
         has_domain_signal = self._has_domain_signal(domain, normalized_question)
         # WS-2 (behind the per-domain flag, dark by default): a discovery follow-up
@@ -137,7 +138,7 @@ class HandoffService:
 
     def inspect_question(self, domain: DomainConfig, question: str) -> list[str]:
         reasons: list[str] = []
-        normalized_question = question.lower()
+        normalized_question = fold(question)
 
         if self._contains_any(normalized_question, domain.handoff.explicit_human_phrases):
             self._append_reason(reasons, "explicit_human_request")
@@ -201,7 +202,7 @@ class HandoffService:
         if not strong_terms:
             return False
         window = recent_user_texts[-self.CONTEXT_SCOPE_WINDOW :]
-        return any(self._contains_any(text.lower(), strong_terms) for text in window)
+        return any(self._contains_any(text, strong_terms) for text in window)
 
     def _is_benign_auth_context(self, text: str) -> bool:
         return self._contains_any(text, self.BENIGN_AUTH_CONTEXT_PATTERNS)
@@ -212,7 +213,7 @@ class HandoffService:
     def _expand_domain_terms(self, terms: list[str]) -> list[str]:
         expanded_terms: list[str] = []
         for term in terms:
-            normalized = term.strip().lower()
+            normalized = fold(term).strip()
             if not normalized:
                 continue
 
@@ -226,7 +227,11 @@ class HandoffService:
         return list(dict.fromkeys(expanded_terms))
 
     def _contains_any(self, text: str, terms: list[str]) -> bool:
-        return any(term.lower() in text for term in terms if term.strip())
+        # Both sides are folded (accent- and case-insensitive) so a fixed pattern or a
+        # domain.yaml term matches regardless of how the user or the author accented it.
+        # fold() is idempotent, so callers may pass raw or already-folded text.
+        folded_text = fold(text)
+        return any(fold(term) in folded_text for term in terms if term.strip())
 
     def _append_reason(self, reasons: list[str], reason: str) -> None:
         if reason not in reasons:

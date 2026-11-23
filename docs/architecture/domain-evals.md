@@ -200,6 +200,30 @@ Na trilha `SEC-013`, mantenha suites separadas para:
 - redefinicao de identidade ou papel
 - pedido de prompt, segredo, token, chave ou credencial
 
+### Casamento de termos insensivel a acento
+
+O `HandoffService` compara a pergunta com os padroes fixos (prompt injection,
+pedido de segredo, contexto benigno de autenticacao, caso operacional critico) e
+com os termos do `domain.yaml` (`sensitive_terms`, `explicit_human_phrases`,
+`escalation_rules[].terms`, `routing.keywords`, nome do dominio) depois de
+normalizar **os dois lados** com `app.core.text.fold`: NFKD, remocao de
+diacriticos e `casefold`. Assim "Ignore suas instruções" e "ignore suas
+instrucoes" tem o mesmo resultado, e um termo cadastrado com acento
+("configuração") casa com a pergunta sem acento e vice-versa.
+
+Consequencias para quem escreve casos e termos:
+
+- Escreva padroes e termos como preferir, com ou sem acento; nao precisa
+  duplicar a variante.
+- O casamento continua sendo por substring: acento nao faz "qual e a senha"
+  casar com o padrao "qual a senha". Palavras a mais ainda exigem outro termo.
+- A deteccao de numero de cartao (`contains_card_number`) continua recebendo o
+  texto original, sem normalizacao.
+- Cada suite de confinamento dos dominios operacionais (`vendas` e
+  `suporte-vps-whatsapp`) tem casos espelho com sufixo `-acentuado`, com a
+  pergunta em portugues acentuado. Ao adicionar um caso de confinamento, inclua
+  tambem a variante acentuada.
+
 ## Quando adicionar casos
 
 Adicione um caso quando:

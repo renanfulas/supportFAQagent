@@ -42,9 +42,10 @@ from app.domain_engine.loader import DomainLoader  # noqa: E402
 from app.domain_engine.models import DomainConfig  # noqa: E402
 from app.evals.loader import EvalSuiteLoader  # noqa: E402
 from app.core.errors import ProviderError  # noqa: E402
+from app.core.text import fold  # noqa: E402
 from app.handoff.service import HandoffService  # noqa: E402
 from app.llm.service import LLMService  # noqa: E402
-from app.orchestration.chat_flow import ChatFlowService, _normalize  # noqa: E402
+from app.orchestration.chat_flow import ChatFlowService  # noqa: E402
 from app.orchestration.prompt_builder import build_prompt  # noqa: E402
 from app.retrieval.service import RetrievalService  # noqa: E402
 
@@ -133,12 +134,12 @@ def _classify_short_circuit(
     Retorna o tipo de atalho (``checkout``, ``blocked``, ``no_context``) ou
     ``None`` quando o caso de fato gastaria uma chamada de modelo.
     """
-    text = _normalize(question)
+    text = fold(question).strip()
     checkout = getattr(domain, "checkout", None)
     if checkout is not None and checkout.enabled and checkout.payment_link and text:
         declines = [*checkout.decline_phrases, *domain.handoff.explicit_human_phrases]
-        declined = any(_normalize(p) in text for p in declines if p.strip())
-        intent = any(_normalize(p) in text for p in checkout.intent_phrases if p.strip())
+        declined = any(fold(p).strip() in text for p in declines if p.strip())
+        intent = any(fold(p).strip() in text for p in checkout.intent_phrases if p.strip())
         if intent and not declined:
             return "checkout"
 
