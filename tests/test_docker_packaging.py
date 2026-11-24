@@ -18,6 +18,7 @@ import pytest
 import yaml
 
 from app.core.config import Settings
+from scripts.config_validate import TOOL_VARS
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -29,20 +30,8 @@ ENV_EXAMPLE = REPO_ROOT / "deploy" / "production.env.example"
 ALLOWED_BUILD_CONTEXT = {"pyproject.toml", "app/", "scripts/", "migrations/", "domains/"}
 SECRET_NAME = re.compile(r"(KEY|SECRET|TOKEN|PASSWORD)", re.IGNORECASE)
 PLACEHOLDER = "<set-private-value>"
-# Variables read by docker compose itself, not by the app's Settings.
-COMPOSE_ONLY_VARS = {
-    "COMPOSE_PROFILES",
-    "CLIENT_PACK_DIR",
-    "APP_PORT",
-    "FORWARDED_ALLOW_IPS",
-    "POSTGRES_DB",
-    "POSTGRES_USER",
-    "POSTGRES_PASSWORD",
-    # Read by scripts/safe_start.py before the app (and its Settings) starts.
-    "STARTUP_MIGRATIONS",
-    "STARTUP_READINESS_TIMEOUT_SECONDS",
-    "STARTUP_LOCK_TIMEOUT_SECONDS",
-}
+# Variables read by docker compose, install.sh or safe_start, not by the app's Settings.
+COMPOSE_ONLY_VARS = TOOL_VARS
 
 
 def _dockerignore_patterns() -> list[str]:
