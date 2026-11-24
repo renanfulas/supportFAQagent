@@ -75,6 +75,7 @@ sed \
   -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${DB_PASSWORD}|" \
   -e "s|^DATABASE_URL=.*|DATABASE_URL=postgresql://supportfaq:${DB_PASSWORD}@postgres:5432/supportfaq|" \
   -e "s|^PERSISTENCE_HASH_SECRET=.*|PERSISTENCE_HASH_SECRET=${HASH_SECRET}|" \
+  -e "s|^IDENTITY_HASH_SECRET=.*|IDENTITY_HASH_SECRET=$(rand)|" \
   -e "s|^APP_PORT=.*|APP_PORT=${APP_PORT}|" \
   deploy/production.env.example > .env
 if grep -v '^#' .env | grep -q '<set-private-value>'; then

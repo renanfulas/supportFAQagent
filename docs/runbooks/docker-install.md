@@ -16,6 +16,7 @@ pela imagem e uma decisao separada, com snapshot e janela propria.
 | `.dockerignore` | Allowlist: so `app/`, `scripts/`, `migrations/`, `domains/` e `pyproject.toml` entram no build; `.env` e chaves nunca |
 | `docker-compose.prod.yml` | `app` + `postgres` (pgvector, perfil `db`) + `redis` (perfil `redis`, opcional) |
 | `deploy/production.env.example` | Configuracao minima da instalacao |
+| `deploy/install.sh` | Instalacao guiada: gera o `.env`, sobe, registra dominios, cadastra o operador, roda evals e smoke, grava o relatorio |
 | `deploy/docker-smoke.sh` | Smoke do pacote num projeto descartavel (o mesmo que roda no CI) |
 | `.github/workflows/docker-image.yml` | Build + smoke em todo PR; publica a imagem versionada no GHCR em tag `vX.Y.Z` |
 
@@ -56,6 +57,38 @@ continua montado por fora (`CLIENT_PACK_DIR`).
   (ver [domain-contract.md](../architecture/domain-contract.md)). Sem pasta
   propria, o compose usa o `domains/` do repositorio.
 
+## Instalacao guiada (recomendado)
+
+Um comando faz os passos 1 a 4 abaixo e grava `install-report.md`:
+
+```bash
+bash deploy/install.sh --client-pack /srv/acme-pack   --admin-phone +5511999999999 --admin-name "Nome do operador"
+```
+
+1. Gera o `.env` com valores aleatorios e privados (`chmod 600`). Um `.env` que
+   ja existe nunca e sobrescrito: o script reaproveita e so confere se nao sobrou
+   `<set-private-value>`.
+2. Sobe a stack. O start seguro migra o banco novo e espera o readiness.
+3. Roda `scripts.post_install` no container:
+   - registra todos os dominios do pacote na tabela `domains` (sem chave de embedding),
+     entao a conversa ja e gravada no primeiro turno;
+   - cadastra o primeiro operador do console, se `--admin-phone`/`--admin-name`
+     vierem (o relatorio mostra so os 4 ultimos digitos);
+   - roda os evals de confinamento de cada dominio (`evals/cases.yaml` e
+     `evals/confinement/*`). Eles nao dependem da chave do LLM.
+4. Smoke HTTP (`/health`, `/health/ready`, `/domains`, `/chat`) e relatorio.
+
+O relatorio lista passos, dominios, evals e proximos passos (chave de LLM,
+pgvector, chat publico, console). Ele nao tem segredo, URL do banco, telefone
+completo nem `session_id`, e fica fora do Git. Saida: `0` ok, `1` falhou,
+`2` argumento ou configuracao invalida, `3` instalada com eval falhando.
+
+Pode rodar de novo a qualquer momento (ex.: depois de trocar o pacote do cliente):
+reaproveita `.env` e banco, registra dominios novos e refaz evals e smoke. Nunca
+apaga volume nem dado. `--skip-evals` pula os evals.
+
+As secoes abaixo descrevem os mesmos passos feitos a mao.
+
 ## 1. Configurar
 
 ```bash
@@ -66,6 +99,8 @@ Preencher no `.env`, com valores aleatorios e privados por ambiente:
 
 - `API_SECRET_KEY`: obrigatoria fora de desenvolvimento; sem ela a API nao sobe.
 - `POSTGRES_PASSWORD` e a mesma senha dentro de `DATABASE_URL`.
+- `IDENTITY_HASH_SECRET`: chave do hash de telefone dos operadores do console.
+  Trocar depois obriga a recadastrar cada operador.
 - `PERSISTENCE_HASH_SECRET`: chave do hash de sessao. Defina antes do primeiro
   start e nao troque depois (o bootstrap grava a impressao dela no banco).
 - `CLIENT_PACK_DIR`: caminho da pasta do pacote do cliente.
@@ -142,16 +177,16 @@ esse valor depois.
 
 ## 3b. Registrar os dominios no banco
 
-A conversa so e gravada para dominios que ja existem na tabela `domains`, e hoje
-quem cria essa linha e a ingestao no pgvector, que precisa da chave do provider de
-embedding do dominio (`embedding` no `domain.yaml`):
+A conversa so e gravada para dominios que existem na tabela `domains`. A
+instalacao guiada registra todos os dominios do pacote; a mao, o mesmo passo e:
 
 ```bash
-docker compose -f docker-compose.prod.yml run --rm app python -m scripts.ingest_domain_pgvector --domain <dominio>
+docker compose -f docker-compose.prod.yml run --rm -T app python -m scripts.post_install --skip-evals
 ```
 
-Sem esse passo o chat continua respondendo, mas cada turno registra
-`chat_persistence_unavailable` no log e a conversa nao e gravada (fail-open).
+Ele e idempotente: rodar de novo depois de acrescentar um dominio ao pacote so
+registra o novo. A ingestao no pgvector (`scripts.ingest_domain_pgvector`)
+tambem registra o dominio que ingere, mas exige a chave de embedding.
 
 ## 4. Smoke
 
@@ -230,5 +265,6 @@ Nunca rodar `docker compose down -v` em producao: o `-v` apaga o volume do banco
 
 ## Fora desta fatia
 
-- Comando `init` que gera `.env`, migra, cria admin e roda smoke e evals.
+- Gerar o primeiro dominio do cliente pelo `install.sh` (hoje: `python -m scripts.new_domain`
+  no checkout, antes de instalar; ver [fde-engagement-playbook.md](fde-engagement-playbook.md)).
 - Perfis de configuracao e `config validate`.
