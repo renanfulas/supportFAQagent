@@ -91,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
 
         settings = get_settings()
     except Exception:
-        _log("configuration is invalid; check the .env against deploy/production.env.example")
+        _log("configuration is invalid; run python -m scripts.config_validate for every reason")
         return 2
 
     try:

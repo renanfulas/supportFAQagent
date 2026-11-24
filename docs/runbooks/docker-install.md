@@ -15,7 +15,9 @@ pela imagem e uma decisao separada, com snapshot e janela propria.
 | `Dockerfile` | Imagem Python 3.11, dependencias lidas do `pyproject.toml`, usuario nao-root, healthcheck em `/health` |
 | `.dockerignore` | Allowlist: so `app/`, `scripts/`, `migrations/`, `domains/` e `pyproject.toml` entram no build; `.env` e chaves nunca |
 | `docker-compose.prod.yml` | `app` + `postgres` (pgvector, perfil `db`) + `redis` (perfil `redis`, opcional) |
-| `deploy/production.env.example` | Configuracao minima da instalacao |
+| `deploy/production.env.example` | Perfil `minimo` da configuracao |
+| `deploy/profiles/` | Perfis `padrao` e `completo` da configuracao |
+| `scripts/config_validate.py` | Explica o que falta no `.env`, por nome de variavel, sem imprimir valores |
 | `deploy/install.sh` | Instalacao guiada: gera o `.env`, sobe, registra dominios, cadastra o operador, roda evals e smoke, grava o relatorio |
 | `deploy/docker-smoke.sh` | Smoke do pacote num projeto descartavel (o mesmo que roda no CI) |
 | `.github/workflows/docker-image.yml` | Build + smoke em todo PR; publica a imagem versionada no GHCR em tag `vX.Y.Z` |
@@ -57,26 +59,83 @@ continua montado por fora (`CLIENT_PACK_DIR`).
   (ver [domain-contract.md](../architecture/domain-contract.md)). Sem pasta
   propria, o compose usa o `domains/` do repositorio.
 
-## Instalacao guiada (recomendado)
+## Perfis de configuracao
 
-Um comando faz os passos 1 a 4 abaixo e grava `install-report.md`:
+O `.env.example` da raiz lista todas as variaveis (desenvolvimento). Para instalar,
+parta de um dos tres perfis; cada um e um `.env` completo e comentado:
+
+| Perfil | Arquivo | O que liga | Voce cola |
+| --- | --- | --- | --- |
+| `minimo` | `deploy/production.env.example` | API de chat, historico no Postgres, busca lexical, LLM opcional | nada |
+| `padrao` | `deploy/profiles/padrao.env.example` | minimo + LLM obrigatorio, chat publico no site, caixa de handoffs (`/internal/support-cases`) | chave do LLM |
+| `completo` | `deploy/profiles/completo.env.example` | padrao + WhatsApp oficial (Meta), login do cliente por OTP, consentimento LGPD no handoff, console do time, Redis | chave do LLM e credenciais da Meta |
+
+Dois marcadores no arquivo:
+
+- `<set-private-value>`: segredo da instalacao. O `install.sh` gera um valor
+  aleatorio para cada um.
+- `<set-provider-value>`: valor de um fornecedor (OpenAI/Anthropic, Meta). So quem
+  instala tem; o `install.sh` nunca inventa.
+
+O `CONFIG_PROFILE` do `.env` diz qual perfil ele segue. Desligar um recurso do
+perfil e permitido (vira aviso); faltar o que um recurso ligado exige e erro.
+
+### Validar a configuracao
 
 ```bash
-bash deploy/install.sh --client-pack /srv/acme-pack   --admin-phone +5511999999999 --admin-name "Nome do operador"
+python -m scripts.config_validate --env-file .env
+# sem Python no host, pela imagem (o .env entra pela entrada padrao):
+docker compose -f docker-compose.prod.yml run --rm --no-deps -T app   python -m scripts.config_validate --env-file - < .env
 ```
 
-1. Gera o `.env` com valores aleatorios e privados (`chmod 600`). Um `.env` que
-   ja existe nunca e sobrescrito: o script reaproveita e so confere se nao sobrou
-   `<set-private-value>`.
-2. Sobe a stack. O start seguro migra o banco novo e espera o readiness.
-3. Roda `scripts.post_install` no container:
+Le o `.env` sem exportar nada e lista, por nome de variavel, cada problema:
+
+- marcador que sobrou e segredo curto ou repetido em duas variaveis;
+- `DATABASE_URL` que nao bate com `POSTGRES_PASSWORD`/`POSTGRES_USER`/`POSTGRES_DB`,
+  ou servico `postgres`/`redis` fora do `COMPOSE_PROFILES`;
+- perfil `padrao`/`completo` sem chave de LLM, pgvector sem `OPENAI_API_KEY`,
+  console ou login por OTP com entrega em memoria (o codigo nunca chega);
+- dominio padrao (ou do roteador) que nao existe no pacote do cliente;
+- nome desconhecido (com sugestao do nome certo) e variavel repetida;
+- por ultimo, tudo que o app recusaria no start: o `Settings` e montado com
+  exatamente esses valores, isolado do ambiente do shell.
+
+A saida so tem nomes e motivos, nunca valores. Saida: `0` sem erro, `1` com erro
+(ou com aviso, usando `--strict`), `2` arquivo ilegivel. `--profile` cobra outro
+perfil sem editar o arquivo. Sem `--env-file`, valida o ambiente do processo
+(dentro do container, o `env_file` do compose); ai nomes desconhecidos nao sao
+checados. Quando o `safe_start` recusa a configuracao, rode este comando para ver
+todos os motivos de uma vez.
+
+Os preflights de ativacao (`meta_whatsapp_activation_preflight`,
+`staging_phase0_preflight`) continuam valendo para cada canal; o `config validate`
+e a checagem geral da instalacao.
+
+## Instalacao guiada (recomendado)
+
+Um comando faz os passos 1 a 4 das secoes abaixo e grava `install-report.md`:
+
+```bash
+bash deploy/install.sh --profile padrao --client-pack /srv/acme-pack   --admin-phone +5511999999999 --admin-name "Nome do operador"
+```
+
+1. Gera o `.env` a partir do perfil (`--profile`, padrao `minimo`) com valores
+   aleatorios e privados (`chmod 600`). Um `.env` que ja existe nunca e
+   sobrescrito: o script reaproveita, e o `CONFIG_PROFILE` dele decide o perfil.
+2. Para se sobrou `<set-private-value>` ou `<set-provider-value>`, listando so os
+   nomes; no `padrao` e no `completo` a primeira rodada para aqui de proposito,
+   para voce colar os valores do fornecedor e rodar de novo. Depois roda o
+   `config validate` na imagem: com erro, nada sobe.
+3. Sobe a stack. O start seguro migra o banco novo e espera o readiness.
+4. Roda `scripts.post_install` no container:
    - registra todos os dominios do pacote na tabela `domains` (sem chave de embedding),
      entao a conversa ja e gravada no primeiro turno;
    - cadastra o primeiro operador do console, se `--admin-phone`/`--admin-name`
      vierem (o relatorio mostra so os 4 ultimos digitos);
    - roda os evals de confinamento de cada dominio (`evals/cases.yaml` e
      `evals/confinement/*`). Eles nao dependem da chave do LLM.
-4. Smoke HTTP (`/health`, `/health/ready`, `/domains`, `/chat`) e relatorio.
+5. Smoke HTTP (`/health`, `/health/ready`, `/domains`, `/chat`) e relatorio, com a
+   saida do `config validate`.
 
 O relatorio lista passos, dominios, evals e proximos passos (chave de LLM,
 pgvector, chat publico, console). Ele nao tem segredo, URL do banco, telefone
@@ -92,10 +151,11 @@ As secoes abaixo descrevem os mesmos passos feitos a mao.
 ## 1. Configurar
 
 ```bash
-cp deploy/production.env.example .env
+cp deploy/production.env.example .env      # ou deploy/profiles/<perfil>.env.example
 ```
 
-Preencher no `.env`, com valores aleatorios e privados por ambiente:
+Preencher no `.env`, com valores aleatorios e privados por ambiente (e conferir
+com `python -m scripts.config_validate --env-file .env`):
 
 - `API_SECRET_KEY`: obrigatoria fora de desenvolvimento; sem ela a API nao sobe.
 - `POSTGRES_PASSWORD` e a mesma senha dentro de `DATABASE_URL`.
@@ -267,4 +327,7 @@ Nunca rodar `docker compose down -v` em producao: o `-v` apaga o volume do banco
 
 - Gerar o primeiro dominio do cliente pelo `install.sh` (hoje: `python -m scripts.new_domain`
   no checkout, antes de instalar; ver [fde-engagement-playbook.md](fde-engagement-playbook.md)).
-- Perfis de configuracao e `config validate`.
+- Ingerir os dominios no pgvector pelo `install.sh` (hoje: `scripts.ingest_domain_pgvector`,
+  secao 5); por isso os perfis comecam com `RETRIEVAL_BACKEND=lexical`.
+- Avisos do time por WhatsApp (`ENABLE_SUPPORT_TEAM_WHATSAPP_NOTIFY`) ficam fora dos
+  perfis: dependem do outbox agendado no host (secao 5).

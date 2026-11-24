@@ -4,3 +4,4 @@ Dockerfile text eol=lf
 docker-compose*.yml text eol=lf
 deploy/*.env.example text eol=lf
 deploy/*.sh text eol=lf
+deploy/profiles/*.env.example text eol=lf

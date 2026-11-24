@@ -91,6 +91,16 @@ else
 fi
 "${COMPOSE[@]}" "${UP_ARGS[@]}"
 
+# --- config validate dentro da imagem ---------------------------------------------
+VALIDATE_OUT=$("${COMPOSE[@]}" run --rm --no-deps -T app python -m scripts.config_validate --env-file - < .env) \
+  || fail "config validate rejected the smoke .env"
+for secret in "$API_KEY" "$DB_PASSWORD" "$HASH_SECRET"; do
+  if printf '%s' "$VALIDATE_OUT" | grep -qF -- "$secret"; then
+    fail "a secret leaked into the config validate output"
+  fi
+done
+echo "smoke: ok config validate accepted the .env without printing values"
+
 logs() { "${COMPOSE[@]}" logs --no-color app 2>&1; }
 count() { logs | grep -c -- "$1" || true; }
 
