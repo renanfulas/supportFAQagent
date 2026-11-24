@@ -35,6 +35,7 @@ estado das frentes. Os dois se complementam.
 | Fluxo de resposta, LLM ou handoff | `docs/architecture/domain-contract.md`, `docs/MVP/technical-implementation-plan.md` | `app/orchestration/`, `app/llm/`, `app/handoff/` |
 | Artigos, FAQs ou calibragem | `docs/architecture/knowledge-authoring.md`, `docs/architecture/domain-evals.md` | `domains/`, `app/evals/` |
 | Fronteira core vs dominio, seams, extensao (framework) | `docs/architecture/framework-boundary.md`, `docs/architecture/domain-contract.md`, `docs/architecture/architecture.md` | `app/`, `domains/` |
+| Novo dominio ou implantacao em cliente novo (FDE) | `docs/runbooks/fde-engagement-playbook.md`, `docs/architecture/domain-contract.md` | `scripts/new_domain.py`, `app/domain_engine/scaffold.py`, `domains/` |
 | Banco, migrations ou pgvector | `docs/MVP/technical-implementation-plan.md`, `docs/runbooks/pgvector-promotion-checklist.md` | `app/db/`, `migrations/`, `app/retrieval/` |
 | Staging, VPS, Meta WhatsApp, Hermes ou operacao | `docs/setup/environments.md`, `docs/architecture/integration-contracts.md`, runbook especifico em `docs/runbooks/` | `scripts/`, configuracao de runtime |
 | Seguranca ou observabilidade | `SECURITY.md`, `docs/architecture/observability.md` | `app/core/`, `app/api/`, `tests/security/` |
