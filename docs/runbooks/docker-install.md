@@ -16,9 +16,36 @@ pela imagem e uma decisao separada, com snapshot e janela propria.
 | `.dockerignore` | Allowlist: so `app/`, `scripts/`, `migrations/`, `domains/` e `pyproject.toml` entram no build; `.env` e chaves nunca |
 | `docker-compose.prod.yml` | `app` + `postgres` (pgvector, perfil `db`) + `redis` (perfil `redis`, opcional) |
 | `deploy/production.env.example` | Configuracao minima da instalacao |
+| `deploy/docker-smoke.sh` | Smoke do pacote num projeto descartavel (o mesmo que roda no CI) |
+| `.github/workflows/docker-image.yml` | Build + smoke em todo PR; publica a imagem versionada no GHCR em tag `vX.Y.Z` |
 
 A guarda `tests/test_docker_packaging.py` falha se alguma dessas regras mudar
 (porta publica, segredo literal, usuario root, `.env` no contexto de build).
+`tests/test_docker_image_workflow.py` guarda o caminho de release (publicar so
+em tag, imagem publicada = imagem testada, sem `latest`).
+
+## Usar a imagem publicada (sem build na maquina do cliente)
+
+Cada tag `vX.Y.Z` publica `ghcr.io/renanfulas/supportfaqagent:X.Y.Z` e
+`:X.Y`, a mesma imagem que passou no smoke do CI. Nao existe `latest`: a
+instalacao sempre fixa a versao. No `.env`:
+
+```bash
+SUPPORTFAQ_IMAGE=ghcr.io/renanfulas/supportfaqagent:0.1.0
+```
+
+E subir sem build:
+
+```bash
+docker compose -f docker-compose.prod.yml pull app
+docker compose -f docker-compose.prod.yml up -d --no-build
+```
+
+O pacote no GHCR nasce privado. Para o cliente baixar: ou um token de leitura
+(`read:packages`) com `docker login ghcr.io` na maquina dele, ou tornar o pacote
+publico nas configuracoes do GitHub. A imagem nao carrega segredo nem dado de
+cliente, mas carrega o `domains/` padrao do repositorio; o pacote do cliente
+continua montado por fora (`CLIENT_PACK_DIR`).
 
 ## Pre-requisitos
 
@@ -39,8 +66,8 @@ Preencher no `.env`, com valores aleatorios e privados por ambiente:
 
 - `API_SECRET_KEY`: obrigatoria fora de desenvolvimento; sem ela a API nao sobe.
 - `POSTGRES_PASSWORD` e a mesma senha dentro de `DATABASE_URL`.
-- `PERSISTENCE_HASH_SECRET`: chave do hash de sessao. Defina antes das
-  migrations e nao troque depois (o passo 3 grava a impressao dela no banco).
+- `PERSISTENCE_HASH_SECRET`: chave do hash de sessao. Defina antes do primeiro
+  start e nao troque depois (o bootstrap grava a impressao dela no banco).
 - `CLIENT_PACK_DIR`: caminho da pasta do pacote do cliente.
 - `OPENAI_API_KEY` ou `ANTHROPIC_API_KEY`: sem chave, o chat responde com o
   fallback seguro `provider_error`.
@@ -55,35 +82,63 @@ Com banco gerenciado externo: tirar `db` de `COMPOSE_PROFILES` e apontar
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs app
 ```
 
-O `app` so inicia depois que o `postgres` estiver saudavel.
+O `app` so inicia depois que o `postgres` estiver saudavel. O container nao chama
+o uvicorn direto: ele passa antes pelo start seguro (`scripts/safe_start.py`):
 
-## 3. Aplicar as migrations (instalacao nova)
+1. Carrega a configuracao. Configuracao invalida (ex.: sem `API_SECRET_KEY`)
+   encerra o container com `configuration is invalid`.
+2. Com `STARTUP_MIGRATIONS=auto` (padrao), **banco novo e vazio** recebe as
+   migrations na mesma sequencia do gate de CI (`.github/workflows/phase0-gates.yml`),
+   sob advisory lock: duas replicas subindo juntas nao brigam, e a segunda so
+   le o estado depois que a primeira terminou.
+3. Espera o readiness passar (`degraded` e aceito) por ate
+   `STARTUP_READINESS_TIMEOUT_SECONDS` (padrao 60). Se nao passar, o container
+   sai com um resumo dos componentes indisponiveis e o `restart` tenta de novo.
+4. So entao faz `exec` do uvicorn, que passa a receber os sinais do container.
 
-O pacote **nao migra sozinho no start**. Em banco novo e vazio, a sequencia e a
-mesma do gate de CI (`.github/workflows/phase0-gates.yml`). A migration 007 so
-passa depois que o contrato de privacidade e marcado com o
-`PERSISTENCE_HASH_SECRET` definitivo da instalacao, entao defina esse valor no
-`.env` antes deste passo e nao troque depois:
+No log, o esperado no primeiro boot e:
+
+```text
+safe_start: new database detected; applying the bootstrap migrations
+safe_start: bootstrap migrations applied
+safe_start: readiness passed; starting the API
+```
+
+Para checar sem servir (preflight do operador, mesma configuracao):
 
 ```bash
-docker compose -f docker-compose.prod.yml run --rm app python -m scripts.migrate apply --target 006_conversations_messages.sql
-docker compose -f docker-compose.prod.yml run --rm app python -m scripts.backfill_conversation_privacy --verify-contract-ready --quiet-period-seconds 0
+docker compose -f docker-compose.prod.yml run --rm app python -m scripts.safe_start --check
+```
+
+## 3. Migrations
+
+O start so migra banco **novo**. Ele recusa, sem tocar no schema:
+
+- banco com tabelas e sem ledger de migrations: rodar `python -m scripts.migrate baseline`
+  manualmente antes;
+- banco ainda antes da migration 007 que ja tem conversas gravadas: seguir o fluxo
+  com snapshot e expand/contract de [phase0-snapshot-restore.md](phase0-snapshot-restore.md).
+
+Banco que ja passou do bootstrap **nunca e migrado no start**, nem quando a
+versao nova traz migration nova. Nesse caso o readiness acusa
+`migrations(pending=N)` e o app nao sobe ate o operador aplicar, com snapshot:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm app python -m scripts.migrate status
 docker compose -f docker-compose.prod.yml run --rm app python -m scripts.migrate apply
 docker compose -f docker-compose.prod.yml run --rm app python -m scripts.migrate verify
 ```
 
-O `--quiet-period-seconds 0` so vale para banco vazio. Em banco que ja tem dados,
-seguir o fluxo com snapshot e expand/contract de
-[phase0-snapshot-restore.md](phase0-snapshot-restore.md) antes de qualquer `apply`.
+`STARTUP_MIGRATIONS=off` desliga ate o bootstrap de banco novo (ex.: banco
+gerenciado que o time de dados migra por fora). O readiness continua barrando o
+start com migration pendente.
 
-Depois das migrations, ligar a persistencia no `.env` (`PERSISTENCE_BACKEND=postgres`)
-e recriar o app:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d app
-```
+O `PERSISTENCE_HASH_SECRET` precisa estar no `.env` antes do primeiro start: o
+bootstrap grava a impressao dele no banco e recusa rodar sem ele. Nao troque
+esse valor depois.
 
 ## 3b. Registrar os dominios no banco
 
@@ -100,6 +155,18 @@ Sem esse passo o chat continua respondendo, mas cada turno registra
 
 ## 4. Smoke
 
+Antes de instalar no cliente (ou para reproduzir o CI), o smoke completo roda num
+projeto descartavel, com segredos aleatorios de uso unico, e apaga tudo no fim:
+
+```bash
+bash deploy/docker-smoke.sh                                       # builda a imagem
+SUPPORTFAQ_IMAGE=ghcr.io/renanfulas/supportfaqagent:0.1.0 bash deploy/docker-smoke.sh
+```
+
+Ele se recusa a rodar se ja existir um `.env` na raiz e so apaga volumes de
+projeto com prefixo `sfaq-smoke`, entao nao toca numa instalacao real. Na
+instalacao em si, a checagem manual e:
+
 ```bash
 curl -i http://127.0.0.1:8000/health
 curl -i -H "X-API-Key: $API_SECRET_KEY" http://127.0.0.1:8000/domains
@@ -110,9 +177,8 @@ Esperado:
 
 - `/health`: `200` com `{"status":"ok"}`. E o mesmo endpoint do healthcheck do container.
 - `/domains`: os dominios do pacote do cliente. Fora de desenvolvimento exige `X-API-Key`.
-- `/health/ready`: `200` depois que a persistencia estiver ligada. Antes disso
-  ele responde `503` com `postgres_required`, porque fora de desenvolvimento o
-  runtime exige Postgres. Isso e esperado no primeiro boot.
+- `/health/ready`: `200`. Se o app esta no ar, o readiness ja passou no start;
+  um `503` depois disso indica que algo caiu em runtime (ex.: o banco).
 - `/chat-ui` responde `404` em producao ate `ENABLE_PUBLIC_CHAT_UI=true`, que
   exige cookie seguro e o reverse proxy com HTTPS (ver
   [environments.md](../setup/environments.md)).
@@ -144,16 +210,25 @@ git pull --ff-only
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
+Se a versao nova trouxer migration, o app novo nao sobe ate ela ser aplicada
+pelo passo 3; enquanto isso o `restart` fica tentando e o log mostra
+`migrations(pending=N)`. Aplique com snapshot e o proximo restart sobe.
+
 Para voltar: fazer checkout da versao anterior e repetir o `up -d --build`. O
 volume `supportfaq_pgdata` nao e tocado. Migration nova so sobe pelo passo 3,
-nunca sozinha. Se `SUPPORTFAQ_IMAGE` apontar para uma imagem publicada, trocar a
-tag em vez de rebuildar.
+nunca sozinha. Com imagem publicada, trocar a tag de `SUPPORTFAQ_IMAGE` (para
+frente ou para tras) e rodar `pull app` + `up -d --no-build`, em vez de rebuildar.
+
+## Publicar uma versao
+
+1. Subir `version` no `pyproject.toml` (semver) num PR e fazer merge na `main`.
+2. Criar e enviar a tag igual a versao: `git tag v0.2.0 && git push origin v0.2.0`.
+3. O workflow `Docker image` builda, roda o smoke e so entao publica `0.2.0` e
+   `0.2`. Tag diferente da versao do `pyproject.toml` falha antes de publicar.
 
 Nunca rodar `docker compose down -v` em producao: o `-v` apaga o volume do banco.
 
 ## Fora desta fatia
 
-- Imagem publicada e versionada no CI, com smoke dentro do compose.
-- Start seguro com readiness antes de aceitar trafego.
 - Comando `init` que gera `.env`, migra, cria admin e roda smoke e evals.
 - Perfis de configuracao e `config validate`.

@@ -1,0 +1,129 @@
+name: Docker image
+
+# Build + smoke do pacote de producao em todo PR e na main; publicacao da imagem
+# versionada no GHCR so quando sai uma tag vX.Y.Z igual a versao do pyproject.
+# A imagem publicada e exatamente a que passou no smoke (docker save/load).
+# Guarda: tests/test_docker_image_workflow.py
+# Runbook: docs/runbooks/docker-install.md
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-image-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  LOCAL_IMAGE: supportfaqagent:ci
+
+jobs:
+  build-and-smoke:
+    name: Build and compose smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ${{ env.LOCAL_IMAGE }}
+          build-args: |
+            EXTRAS=redis
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Compose smoke
+        env:
+          SUPPORTFAQ_IMAGE: ${{ env.LOCAL_IMAGE }}
+        run: bash deploy/docker-smoke.sh
+
+      - name: Save tested image
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: docker save "$LOCAL_IMAGE" | gzip > image.tar.gz
+
+      - name: Upload tested image
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: tested-image
+          path: image.tar.gz
+          retention-days: 1
+
+  publish:
+    name: Publish versioned image
+    needs: build-and-smoke
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check tag matches pyproject version
+        id: version
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')
+          tag="${GITHUB_REF_NAME}"
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "tag $tag is not vMAJOR.MINOR.PATCH" >&2
+            exit 1
+          fi
+          if [ "$tag" != "v$version" ]; then
+            echo "tag $tag does not match pyproject version $version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Download tested image
+        uses: actions/download-artifact@v4
+        with:
+          name: tested-image
+
+      - name: Load tested image
+        run: gunzip -c image.tar.gz | docker load
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Sem tag "latest": quem instala fixa a versao (SUPPORTFAQ_IMAGE=...:X.Y.Z).
+      - name: Push version tags
+        env:
+          IMAGE: ${{ steps.version.outputs.image }}
+          VERSION: ${{ steps.version.outputs.version }}
+          MINOR: ${{ steps.version.outputs.minor }}
+        run: |
+          for tag in "$VERSION" "$MINOR"; do
+            docker tag "$LOCAL_IMAGE" "$IMAGE:$tag"
+            docker push "$IMAGE:$tag"
+          done
+          docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$VERSION"
