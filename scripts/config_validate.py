@@ -329,14 +329,22 @@ def check_llm(ctx: Context) -> Iterable[Finding]:
 
 
 def check_retrieval(ctx: Context) -> Iterable[Finding]:
+    has_key = bool(ctx.get("OPENAI_API_KEY")) and not ctx.has_placeholder("OPENAI_API_KEY")
     if ctx.get("RETRIEVAL_BACKEND").lower() != "pgvector":
+        if has_key:
+            yield Finding(
+                INFO,
+                "RETRIEVAL_BACKEND",
+                "busca lexical; bash deploy/install.sh --pgvector ingere os dominios e liga a busca vetorial",
+            )
         return
-    if not ctx.get("OPENAI_API_KEY") or ctx.has_placeholder("OPENAI_API_KEY"):
+    if not has_key:
         yield Finding(ERROR, "RETRIEVAL_BACKEND", "pgvector usa embeddings da OpenAI; falta OPENAI_API_KEY")
     yield Finding(
         WARNING,
         "RETRIEVAL_BACKEND",
-        "com pgvector o readiness barra o start ate os dominios serem ingeridos (ver runbook)",
+        "com pgvector o readiness barra o start ate os dominios serem ingeridos; "
+        "num banco novo, instale com lexical e rode install.sh --pgvector",
     )
 
 

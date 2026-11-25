@@ -18,7 +18,8 @@ pela imagem e uma decisao separada, com snapshot e janela propria.
 | `deploy/production.env.example` | Perfil `minimo` da configuracao |
 | `deploy/profiles/` | Perfis `padrao` e `completo` da configuracao |
 | `scripts/config_validate.py` | Explica o que falta no `.env`, por nome de variavel, sem imprimir valores |
-| `deploy/install.sh` | Instalacao guiada: gera o `.env`, sobe, registra dominios, cadastra o operador, roda evals e smoke, grava o relatorio |
+| `deploy/install.sh` | Instalacao guiada: gera o `.env`, cria o primeiro dominio, sobe, sincroniza o pgvector, registra dominios, cadastra o operador, roda evals e smoke, grava o relatorio |
+| `scripts/ingest_domain_pgvector.py` | Sincroniza um dominio (ou o pacote inteiro com `--all`) no pgvector, sem duplicar e sem pagar embedding do que nao mudou |
 | `deploy/docker-smoke.sh` | Smoke do pacote num projeto descartavel (o mesmo que roda no CI) |
 | `.github/workflows/docker-image.yml` | Build + smoke em todo PR; publica a imagem versionada no GHCR em tag `vX.Y.Z` |
 
@@ -116,26 +117,34 @@ e a checagem geral da instalacao.
 Um comando faz os passos 1 a 4 das secoes abaixo e grava `install-report.md`:
 
 ```bash
-bash deploy/install.sh --profile padrao --client-pack /srv/acme-pack   --admin-phone +5511999999999 --admin-name "Nome do operador"
+bash deploy/install.sh --profile padrao --client-pack /srv/acme-pack \
+  --new-domain acme-suporte --display-name "Acme Suporte" --owner "Time Acme" \
+  --admin-phone +5511999999999 --admin-name "Nome do operador"
 ```
 
 1. Gera o `.env` a partir do perfil (`--profile`, padrao `minimo`) com valores
    aleatorios e privados (`chmod 600`). Um `.env` que ja existe nunca e
-   sobrescrito: o script reaproveita, e o `CONFIG_PROFILE` dele decide o perfil.
+   regerado: o script reaproveita, e o `CONFIG_PROFILE` dele decide o perfil. A
+   unica edicao num `.env` existente e a troca do `RETRIEVAL_BACKEND` pelo
+   `--pgvector`.
 2. Para se sobrou `<set-private-value>` ou `<set-provider-value>`, listando so os
    nomes; no `padrao` e no `completo` a primeira rodada para aqui de proposito,
    para voce colar os valores do fornecedor e rodar de novo. Depois roda o
    `config validate` na imagem: com erro, nada sobe.
-3. Sobe a stack. O start seguro migra o banco novo e espera o readiness.
-4. Roda `scripts.post_install` no container:
+3. Com `--new-domain`, cria o primeiro dominio no pacote do cliente (ver
+   "Primeiro dominio e busca vetorial" abaixo). Depois sobe a stack. O start
+   seguro migra o banco novo e espera o readiness.
+4. Com `--pgvector`, sincroniza o pacote no pgvector e so troca
+   `RETRIEVAL_BACKEND` para `pgvector` se a sincronizacao e o readiness passarem.
+5. Roda `scripts.post_install` no container:
    - registra todos os dominios do pacote na tabela `domains` (sem chave de embedding),
      entao a conversa ja e gravada no primeiro turno;
    - cadastra o primeiro operador do console, se `--admin-phone`/`--admin-name`
      vierem (o relatorio mostra so os 4 ultimos digitos);
    - roda os evals de confinamento de cada dominio (`evals/cases.yaml` e
      `evals/confinement/*`). Eles nao dependem da chave do LLM.
-5. Smoke HTTP (`/health`, `/health/ready`, `/domains`, `/chat`) e relatorio, com a
-   saida do `config validate`.
+6. Smoke HTTP (`/health`, `/health/ready`, `/domains`, `/chat`) e relatorio, com a
+   saida do `config validate` e, com `--pgvector`, a tabela da sincronizacao.
 
 O relatorio lista passos, dominios, evals e proximos passos (chave de LLM,
 pgvector, chat publico, console). Ele nao tem segredo, URL do banco, telefone
@@ -145,6 +154,50 @@ completo nem `session_id`, e fica fora do Git. Saida: `0` ok, `1` falhou,
 Pode rodar de novo a qualquer momento (ex.: depois de trocar o pacote do cliente):
 reaproveita `.env` e banco, registra dominios novos e refaz evals e smoke. Nunca
 apaga volume nem dado. `--skip-evals` pula os evals.
+
+### Primeiro dominio e busca vetorial
+
+O caminho de uma empresa nova tem duas rodadas do mesmo comando:
+
+```bash
+# 1. pacote vazio: cria o dominio (vira o DEFAULT_DOMAIN do .env novo) e instala com busca lexical
+bash deploy/install.sh --profile padrao --client-pack /srv/acme-pack \
+  --new-domain acme-suporte --display-name "Acme Suporte" --owner "Time Acme"
+
+# 2. depois de resolver os TODO(FDE) e escrever a base em knowledge/ (playbook FDE)
+bash deploy/install.sh --pgvector
+```
+
+- `--new-domain` gera o scaffold de `scripts.new_domain` (contrato de confinamento,
+  pastas de conhecimento vazias, as quatro suites de eval) e valida antes de
+  gravar. So esse comando monta o pacote com escrita, com o usuario do host; o app
+  continua lendo o pacote somente leitura. Dominio que ja existe fica intocado,
+  entao repetir o comando e seguro. Num `.env` que ja existia o `DEFAULT_DOMAIN`
+  nao muda: o script avisa se ele aponta para outro dominio.
+- `--pgvector` exige `OPENAI_API_KEY` no `.env` (falha antes do build sem ela).
+  Ele roda `scripts.ingest_domain_pgvector --all` no container e:
+  - sincroniza cada dominio: upsert por artigo e por chunk, sem duplicar; chunk
+    com o mesmo texto e o mesmo modelo de embedding guarda o embedding que ja
+    tinha (rodar de novo sem mudanca nao chama o provedor); chunks que sobraram de
+    um artigo mais curto saem; artigo que saiu do pacote vira `archived` (nunca e
+    apagado) e a busca para de devolver. Se a rodada nao achar nenhum conteudo,
+    nada e arquivado: um pacote montado errado nao apaga a base;
+  - so troca `RETRIEVAL_BACKEND=pgvector` (edicao atomica de uma linha, o `.env`
+    continua `chmod 600`) quando todos os dominios sincronizaram e o dominio
+    padrao tem conteudo, e entao reinicia o app. Se o readiness recusar, volta
+    para o backend anterior e sobe de novo; a saida e `1`;
+  - dominio padrao ainda sem conteudo: sincroniza o que existe e continua `lexical`.
+- A tabela "Busca vetorial (pgvector)" do relatorio mostra, por dominio,
+  documentos, chunks, embeddings novos, reaproveitados, removidos e arquivados.
+  Erro do provedor aparece so pelo tipo (ex.: `AuthenticationError`), nunca pela
+  mensagem.
+
+Para trocar a base depois, edite `knowledge/` e rode `bash deploy/install.sh
+--pgvector` de novo: so o que mudou paga embedding.
+
+Restaurar um `.env` com `RETRIEVAL_BACKEND=pgvector` num banco novo nao sobe (o
+readiness pede os embeddings que ainda nao existem): ponha `lexical`, rode
+`--pgvector`, e o script troca de volta.
 
 As secoes abaixo descrevem os mesmos passos feitos a mao.
 
@@ -245,7 +298,7 @@ docker compose -f docker-compose.prod.yml run --rm -T app python -m scripts.post
 ```
 
 Ele e idempotente: rodar de novo depois de acrescentar um dominio ao pacote so
-registra o novo. A ingestao no pgvector (`scripts.ingest_domain_pgvector`)
+registra o novo. A sincronizacao no pgvector (`scripts.ingest_domain_pgvector`)
 tambem registra o dominio que ingere, mas exige a chave de embedding.
 
 ## 4. Smoke
@@ -287,7 +340,13 @@ docker compose -f docker-compose.prod.yml run --rm app python -m scripts.check_r
 docker compose -f docker-compose.prod.yml run --rm app python -m scripts.manage_staff list
 docker compose -f docker-compose.prod.yml run --rm app python -m scripts.dispatch_outbox --once
 docker compose -f docker-compose.prod.yml run --rm app python -m scripts.ingest_domain_pgvector --domain <dominio>
+docker compose -f docker-compose.prod.yml run --rm app python -m scripts.ingest_domain_pgvector --all
 ```
+
+A sincronizacao a mao nao troca o `RETRIEVAL_BACKEND`; o `install.sh --pgvector`
+faz isso com a volta automatica. Saida: `0` ok, `1` um dominio falhou, `2`
+configuracao (sem `DATABASE_URL`, dominio desconhecido, sem chave de embedding),
+`3` sincronizou, mas o dominio padrao nao tem conteudo.
 
 Agendamento (outbox, resumo noturno, retencao) continua por timer do host, como em
 [conversation-summary-batch.md](conversation-summary-batch.md), chamando o
@@ -325,9 +384,11 @@ Nunca rodar `docker compose down -v` em producao: o `-v` apaga o volume do banco
 
 ## Fora desta fatia
 
-- Gerar o primeiro dominio do cliente pelo `install.sh` (hoje: `python -m scripts.new_domain`
-  no checkout, antes de instalar; ver [fde-engagement-playbook.md](fde-engagement-playbook.md)).
-- Ingerir os dominios no pgvector pelo `install.sh` (hoje: `scripts.ingest_domain_pgvector`,
-  secao 5); por isso os perfis comecam com `RETRIEVAL_BACKEND=lexical`.
+- Resolver os `TODO(FDE)` e escrever a base do dominio continua sendo trabalho do
+  FDE com o cliente ([fde-engagement-playbook.md](fde-engagement-playbook.md)); o
+  instalador so gera o esqueleto validado.
+- Reingestao agendada: a base muda quando alguem roda `--pgvector` de novo.
+- Apagar de vez os chunks de artigos arquivados: ficam no banco, fora da busca,
+  ate uma decisao de retencao.
 - Avisos do time por WhatsApp (`ENABLE_SUPPORT_TEAM_WHATSAPP_NOTIFY`) ficam fora dos
   perfis: dependem do outbox agendado no host (secao 5).

@@ -68,6 +68,12 @@ try {
     }
 
     Write-Host "Applying migrations..."
+    # Same order as the CI gate (.github/workflows/phase0-gates.yml): migration 007
+    # requires the conversation privacy contract to be pinned first.
+    python -m scripts.migrate apply --target 006_conversations_messages.sql
+    if ($LASTEXITCODE -ne 0) { throw "Migrations failed." }
+    python -m scripts.backfill_conversation_privacy --verify-contract-ready --quiet-period-seconds 0
+    if ($LASTEXITCODE -ne 0) { throw "Conversation privacy contract check failed." }
     python -m scripts.migrate apply
     if ($LASTEXITCODE -ne 0) { throw "Migrations failed." }
 
