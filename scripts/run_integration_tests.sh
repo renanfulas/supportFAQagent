@@ -54,6 +54,10 @@ if [ "${status:-unknown}" != "healthy" ]; then
 fi
 
 echo "Applying migrations..."
+# Same order as the CI gate (.github/workflows/phase0-gates.yml): migration 007
+# requires the conversation privacy contract to be pinned first.
+python -m scripts.migrate apply --target 006_conversations_messages.sql
+python -m scripts.backfill_conversation_privacy --verify-contract-ready --quiet-period-seconds 0
 python -m scripts.migrate apply
 
 echo "Running integration suite..."

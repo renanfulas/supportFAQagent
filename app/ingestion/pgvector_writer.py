@@ -1,3 +1,17 @@
+"""Persist a domain's knowledge into the platform pgvector schema.
+
+Each run is a sync of the domain's markdown knowledge, safe to repeat:
+
+- articles and chunks are upserted by ``(domain, source)`` and
+  ``(article, chunk_index)``, so a rerun never duplicates content;
+- a chunk whose text and embedding model did not change keeps its stored
+  embedding, so a rerun over unchanged content calls no embedding provider;
+- trailing chunks of an article that got shorter are deleted;
+- markdown articles that left the client pack are archived (never deleted), so
+  retrieval stops returning them. Nothing is archived when the run found no
+  chunk at all: an empty or wrongly mounted pack never wipes the base.
+"""
+
 from collections.abc import Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
@@ -10,6 +24,9 @@ from app.core.config import get_settings
 from app.domain_engine.models import DomainConfig
 from app.ingestion.models import KnowledgeChunk, KnowledgeDocument
 from app.db.domain_registry import upsert_domain
+
+
+SOURCE_TYPE = "markdown"
 
 
 class PgVectorIngestionError(RuntimeError):
@@ -31,11 +48,18 @@ class PgVectorIngestionResult:
     domain: str
     documents: int
     chunks: int
+    # Chunks whose embedding was computed in this run (new or changed text).
     embedded_chunks: int
+    # Unchanged chunks that kept the embedding already stored.
+    reused_chunks: int = 0
+    # Trailing chunks deleted because their article got shorter.
+    removed_chunks: int = 0
+    # Markdown articles archived because they left the client pack.
+    archived_articles: int = 0
 
 
 class PgVectorIngestionWriter:
-    """Persists prepared domain knowledge into the platform pgvector schema."""
+    """Syncs prepared domain knowledge into the platform pgvector schema."""
 
     def __init__(
         self,
@@ -59,19 +83,35 @@ class PgVectorIngestionWriter:
             raise PgVectorIngestionError("DATABASE_URL is required for pgvector ingestion")
 
         chunk_list = list(chunks)
-        embeddings = self._embed_chunks(chunk_list, embedding_provider, domain)
         documents_by_source = {document.source: document for document in documents}
-        embedding_by_position = {
-            position: embedding for position, embedding in enumerate(embeddings)
-        }
         chunks_by_source = self._group_chunks_by_source(chunk_list)
+        model = domain.embedding.model
 
         try:
             with self.connection_factory(database_url) as connection:
                 with connection.cursor() as cursor:
                     domain_id = self._upsert_domain(cursor, domain)
-                    embedded_chunks = 0
+                    stored = self._stored_chunks(cursor, domain_id)
+                # Closes the read transaction: no transaction stays open while the
+                # embedding provider is called over the network.
+                connection.commit()
 
+                pending = [
+                    position
+                    for position, chunk in enumerate(chunk_list)
+                    if stored.get((chunk.source, chunk.chunk_index))
+                    != (self._content_hash(chunk.text), model)
+                ]
+                fresh = self._embed_chunks(
+                    [chunk_list[position] for position in pending],
+                    embedding_provider,
+                    domain,
+                )
+                embedding_by_position = dict(zip(pending, fresh))
+
+                removed_chunks = 0
+                archived_articles = 0
+                with connection.cursor() as cursor:
                     for source, source_chunks in chunks_by_source.items():
                         document = documents_by_source.get(source)
                         first_chunk = source_chunks[0][1]
@@ -88,15 +128,30 @@ class PgVectorIngestionWriter:
                         )
 
                         for chunk_position, chunk in source_chunks:
-                            embedding = embedding_by_position[chunk_position]
+                            embedding = embedding_by_position.get(chunk_position)
+                            if embedding is None:
+                                continue
                             self._upsert_chunk(
                                 cursor,
                                 domain_id=domain_id,
                                 article_id=article_id,
                                 chunk=chunk,
                                 embedding=embedding,
+                                model=model,
                             )
-                            embedded_chunks += 1
+
+                        removed_chunks += self._delete_trailing_chunks(
+                            cursor,
+                            article_id=article_id,
+                            keep=len(source_chunks),
+                        )
+
+                    if chunks_by_source:
+                        archived_articles = self._archive_missing_articles(
+                            cursor,
+                            domain_id=domain_id,
+                            sources=list(chunks_by_source),
+                        )
 
                 connection.commit()
         except PgVectorIngestionError:
@@ -108,7 +163,10 @@ class PgVectorIngestionWriter:
             domain=domain.name,
             documents=len(documents),
             chunks=len(chunk_list),
-            embedded_chunks=embedded_chunks,
+            embedded_chunks=len(pending),
+            reused_chunks=len(chunk_list) - len(pending),
+            removed_chunks=removed_chunks,
+            archived_articles=archived_articles,
         )
 
     def _connect(self, database_url: str) -> AbstractContextManager[Any]:
@@ -129,7 +187,15 @@ class PgVectorIngestionWriter:
         if not texts:
             return []
 
-        embeddings = embedding_provider.embed_documents(texts)
+        try:
+            embeddings = embedding_provider.embed_documents(texts)
+        except PgVectorIngestionError:
+            raise
+        except Exception as exc:
+            # Only the class name: provider messages may echo request details.
+            raise PgVectorIngestionError(
+                f"embedding provider failed ({type(exc).__name__})"
+            ) from exc
         if len(embeddings) != len(texts):
             raise PgVectorIngestionError("embedding provider returned an unexpected count")
 
@@ -149,6 +215,28 @@ class PgVectorIngestionWriter:
 
     def _upsert_domain(self, cursor: Any, domain: DomainConfig) -> str:
         return upsert_domain(cursor, name=domain.name, display_name=domain.display_name)
+
+    def _stored_chunks(
+        self,
+        cursor: Any,
+        domain_id: str,
+    ) -> dict[tuple[str, int], tuple[str, str | None]]:
+        """``(source, chunk_index) -> (content_hash, embedding_model)`` already embedded."""
+        cursor.execute(
+            """
+            SELECT a.source, c.chunk_index, c.content_hash, c.metadata->>'embedding_model'
+            FROM article_chunks c
+            JOIN articles a ON a.id = c.article_id
+            WHERE a.domain_id = %s
+              AND a.source_type = %s
+              AND c.embedding IS NOT NULL
+            """,
+            (domain_id, SOURCE_TYPE),
+        )
+        return {
+            (str(source), int(index)): (str(content_hash), model)
+            for source, index, content_hash, model in cursor.fetchall()
+        }
 
     def _upsert_article(
         self,
@@ -170,7 +258,7 @@ class PgVectorIngestionWriter:
                 updated_at = now()
             RETURNING id
             """,
-            (domain_id, title, source, "markdown", self._content_hash(content)),
+            (domain_id, title, source, SOURCE_TYPE, self._content_hash(content)),
         )
         return str(cursor.fetchone()[0])
 
@@ -182,6 +270,7 @@ class PgVectorIngestionWriter:
         article_id: str,
         chunk: KnowledgeChunk,
         embedding: Sequence[float],
+        model: str,
     ) -> None:
         cursor.execute(
             """
@@ -215,11 +304,44 @@ class PgVectorIngestionWriter:
                         "source": chunk.source,
                         "title": chunk.title,
                         "chunk_index": chunk.chunk_index,
+                        "embedding_model": model,
                     }
                 ),
                 self._vector_literal(embedding),
             ),
         )
+
+    def _delete_trailing_chunks(self, cursor: Any, *, article_id: str, keep: int) -> int:
+        cursor.execute(
+            "DELETE FROM article_chunks WHERE article_id = %s AND chunk_index >= %s",
+            (article_id, keep),
+        )
+        return self._rowcount(cursor)
+
+    def _archive_missing_articles(
+        self,
+        cursor: Any,
+        *,
+        domain_id: str,
+        sources: list[str],
+    ) -> int:
+        cursor.execute(
+            """
+            UPDATE articles
+            SET status = 'archived',
+                updated_at = now()
+            WHERE domain_id = %s
+              AND source_type = %s
+              AND status = 'active'
+              AND NOT (source = ANY(%s))
+            """,
+            (domain_id, SOURCE_TYPE, sources),
+        )
+        return self._rowcount(cursor)
+
+    def _rowcount(self, cursor: Any) -> int:
+        count = getattr(cursor, "rowcount", 0)
+        return count if isinstance(count, int) and count > 0 else 0
 
     def _group_chunks_by_source(
         self,

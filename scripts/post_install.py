@@ -274,8 +274,9 @@ def _next_steps(settings: Any, report: InstallReport, *, admin_registered: bool)
         )
     if getattr(settings, "retrieval_backend", "lexical") != "pgvector":
         steps.append(
-            "Busca lexical ligada. Para busca vetorial: ingerir os dominios com "
-            "scripts.ingest_domain_pgvector e trocar RETRIEVAL_BACKEND=pgvector."
+            "Busca lexical ligada. Para busca vetorial: preencher OPENAI_API_KEY e rodar "
+            "bash deploy/install.sh --pgvector (sincroniza o pacote e so troca "
+            "RETRIEVAL_BACKEND para pgvector se a ingestao e o readiness passarem)."
         )
     if not getattr(settings, "enable_public_chat_ui", False):
         steps.append(

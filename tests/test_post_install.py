@@ -7,6 +7,7 @@ probe; the real flow runs in Docker as described in docs/runbooks/docker-install
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -273,7 +274,7 @@ def test_report_lists_next_steps_for_a_minimal_install() -> None:
 
     joined = " ".join(report.next_steps)
     assert "OPENAI_API_KEY" in joined
-    assert "RETRIEVAL_BACKEND=pgvector" in joined
+    assert "install.sh --pgvector" in joined
     assert "ENABLE_PUBLIC_CHAT_UI" in joined
 
 
@@ -305,7 +306,9 @@ def test_install_script_never_overwrites_env_or_deletes_data() -> None:
 
     assert "set -euo pipefail" in text
     assert "if [ -e .env ]; then" in text
-    assert "down" not in text and "volume rm" not in text and "rm -rf" not in text
+    # Palavra inteira: "--markdown" pode aparecer, "compose down" nunca.
+    assert not re.search(r"\bdown\b", text), "install.sh must never run compose down"
+    assert "volume rm" not in text and "rm -rf" not in text
     assert "umask 077" in text and "chmod 600 .env" in text
 
 
@@ -360,3 +363,87 @@ def test_install_reports_stay_out_of_git() -> None:
     ignored = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 
     assert "install-report.md" in ignored
+
+
+# --- deploy/install.sh: primeiro dominio e pgvector (2.6) -----------------------------
+
+
+@pytest.mark.parametrize("flag", ["--new-domain", "--display-name", "--owner", "--pgvector"])
+def test_install_script_documents_the_domain_and_pgvector_flags(flag) -> None:
+    header = INSTALL_SH.read_text(encoding="utf-8").split("set -euo pipefail")[0]
+
+    assert flag in header
+
+
+def test_install_usage_prints_the_whole_header() -> None:
+    text = INSTALL_SH.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    last_comment = max(i for i, line in enumerate(lines[:40], start=1) if line.startswith("#"))
+    match = re.search(r"sed -n '2,(\d+)p'", text)
+
+    assert match and int(match.group(1)) == last_comment
+
+
+def test_install_mounts_the_pack_writable_only_to_create_the_domain() -> None:
+    text = INSTALL_SH.read_text(encoding="utf-8")
+
+    writable = [line for line in text.splitlines() if ":/srv/client-pack-rw" in line]
+    assert len(writable) == 1
+    scaffold = text.split("# --- 3. primeiro dominio")[1].split("# --- 4.")[0]
+    assert "python -m scripts.new_domain" in scaffold
+    assert '--user "$(id -u):$(id -g)"' in scaffold
+    # Dominio existente nunca e sobrescrito.
+    assert 'if [ -e "${PACK_DIR}/${NEW_DOMAIN}" ]; then' in scaffold
+
+
+def test_install_sets_default_domain_only_in_a_new_env() -> None:
+    text = INSTALL_SH.read_text(encoding="utf-8")
+    generated = text.split("if [ -e .env ]; then")[1].split("chmod 600 .env")[0]
+
+    assert 's|^DEFAULT_DOMAIN=.*|DEFAULT_DOMAIN=${NEW_DOMAIN}|' in generated
+    assert text.count("DEFAULT_DOMAIN=${NEW_DOMAIN}") == 1
+
+
+def test_install_switches_to_pgvector_only_after_the_sync_and_readiness() -> None:
+    text = INSTALL_SH.read_text(encoding="utf-8")
+    section = text.split("# --- 5. busca vetorial")[1].split("# --- 6.")[0]
+
+    assert "scripts.ingest_domain_pgvector --all --markdown" in section
+    sync_ok = section.split("    0)")[1].split("    3)")[0]
+    assert "set_env_value RETRIEVAL_BACKEND pgvector" in sync_ok
+    # Readiness recusou: volta para o backend anterior e sobe de novo.
+    assert 'set_env_value RETRIEVAL_BACKEND "${BACKEND:-lexical}"' in sync_ok
+    assert section.count("set_env_value RETRIEVAL_BACKEND pgvector") == 1
+    # A ingestao roda depois do up e antes dos evals do post_install.
+    assert text.index("# --- 5. busca vetorial") > text.index('if ! up_app; then')
+    assert text.index("# --- 5. busca vetorial") < text.index("python -m scripts.post_install")
+
+
+def test_install_edits_the_env_atomically_and_privately() -> None:
+    text = INSTALL_SH.read_text(encoding="utf-8")
+    helper = text.split("set_env_value() {")[1].split("\n}\n")[0]
+
+    assert "umask 077" in helper and 'chmod 600 "$tmp"' in helper and 'mv -f "$tmp" .env' in helper
+
+
+def test_install_fails_early_when_pgvector_has_no_embedding_key() -> None:
+    text = INSTALL_SH.read_text(encoding="utf-8")
+
+    check = text.index("--pgvector needs OPENAI_API_KEY")
+    assert check < text.index('"${COMPOSE[@]}" build app')
+
+
+def test_install_report_includes_the_pgvector_section() -> None:
+    text = INSTALL_SH.read_text(encoding="utf-8")
+
+    assert 'cat "$REPORT_TMP" "$INGEST_TMP" "${REPORT_TMP}.smoke" > "$REPORT"' in text
+    assert "## Busca vetorial (pgvector)" in text
+
+
+def test_post_install_points_lexical_installs_to_the_pgvector_flag() -> None:
+    settings = SimpleNamespace(openai_api_key="k", retrieval_backend="lexical", enable_public_chat_ui=True)
+    report = post_install.InstallReport(app_name="a", app_env="production", generated_at="now")
+
+    steps = post_install._next_steps(settings, report, admin_registered=False)
+
+    assert any("install.sh --pgvector" in step for step in steps)
