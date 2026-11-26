@@ -68,3 +68,22 @@ def test_phase0_ci_marks_database_disposable_and_runs_real_readiness() -> None:
     assert job["env"]["APP_ENV"] == "staging"
     assert job["env"]["PERSISTENCE_BACKEND"] == "postgres"
     assert "python -m scripts.check_readiness" in commands
+
+
+def test_phase0_ci_runs_every_postgres_integration_test() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "phase0-gates.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    commands = [
+        line.strip()
+        for step in workflow["jobs"]["postgres"]["steps"]
+        for line in str(step.get("run", "")).splitlines()
+    ]
+
+    # A pasta inteira, nunca uma lista: um teste novo nao pode ficar fora do CI.
+    assert "python -m pytest tests/integration -q" in commands
+    assert not any(
+        line.startswith("python -m pytest tests/integration/") for line in commands
+    )
