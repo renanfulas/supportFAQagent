@@ -45,11 +45,13 @@ docker compose -f docker-compose.prod.yml pull app
 docker compose -f docker-compose.prod.yml up -d --no-build
 ```
 
-O pacote no GHCR nasce privado. Para o cliente baixar: ou um token de leitura
-(`read:packages`) com `docker login ghcr.io` na maquina dele, ou tornar o pacote
-publico nas configuracoes do GitHub. A imagem nao carrega segredo nem dado de
-cliente, mas carrega o `domains/` padrao do repositorio; o pacote do cliente
-continua montado por fora (`CLIENT_PACK_DIR`).
+O pacote no GHCR e publico, como o repositorio (open source, MIT): o cliente
+baixa sem `docker login` e sem token. A primeira versao publicada e a `0.1.0`
+(digest `sha256:6ba2dba537d2b8623f1d5e59dd404136951c215283fbad1fea92baa045c9feb1`).
+A imagem nao carrega segredo nem dado de cliente, mas carrega o `domains/`
+padrao do repositorio; o pacote do cliente continua montado por fora
+(`CLIENT_PACK_DIR`). Para fixar exatamente a imagem testada, use o digest em vez
+da tag: `SUPPORTFAQ_IMAGE=ghcr.io/renanfulas/supportfaqagent@sha256:...`.
 
 ## Pre-requisitos
 
@@ -379,6 +381,8 @@ frente ou para tras) e rodar `pull app` + `up -d --no-build`, em vez de rebuilda
 2. Criar e enviar a tag igual a versao: `git tag v0.2.0 && git push origin v0.2.0`.
 3. O workflow `Docker image` builda, roda o smoke e so entao publica `0.2.0` e
    `0.2`. Tag diferente da versao do `pyproject.toml` falha antes de publicar.
+4. Conferir a imagem publicada: `SUPPORTFAQ_IMAGE=ghcr.io/renanfulas/supportfaqagent:0.2.0 bash deploy/docker-smoke.sh`
+   deve terminar em `PASSED`. O digest fica no log do passo "Push version tags".
 
 Nunca rodar `docker compose down -v` em producao: o `-v` apaga o volume do banco.
 
